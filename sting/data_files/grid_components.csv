@@ -1,0 +1,7 @@
+component,type,class,module,input_csv
+inf_src,generator,Infinite_source,sting.generator.infinite_source,infinite_source.csv
+gfli_a,generator,GFLI_a,sting.generator.gfli_a,gfli_a.csv
+line_ns,line,Line_no_series_compensation,sting.line.pi_model,line_ns.csv
+se_rl,branch,Series_rl_branch,sting.branch.series_rl,series_rl.csv
+pa_rc,shunt,Parallel_rc_shunt,sting.shunt.parallel_rc,parallel_rc.csv
+bus,bus,Bus,sting.bus.bus,bus.csv

@@ -1,0 +1,5 @@
+,"('line_ns1_frombus', 'i_d')","('line_ns1_frombus', 'i_q')","('line_ns1_tobus', 'i_d')","('line_ns1_tobus', 'i_q')"
+"('line_ns1_frombus', 'v_d')",5654.8667481872935,0.0,0.0,0.0
+"('line_ns1_frombus', 'v_q')",0.0,5654.8667481872935,0.0,0.0
+"('line_ns1_tobus', 'v_d')",0.0,0.0,5654.8667481872935,0.0
+"('line_ns1_tobus', 'v_q')",0.0,0.0,0.0,5654.8667481872935

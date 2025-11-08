@@ -1,0 +1,12 @@
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class Bus:
+    idx: str
+    v_min: float
+    v_max: float
+    p_load: float	
+    q_load: float
+    name: str = field(default_factory=str)
+    type: str = 'bus'

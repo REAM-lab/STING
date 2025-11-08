@@ -1,0 +1,2 @@
+idx,from_bus,to_bus,r,l,from_bus_vmag,to_bus_vmag,from_bus_vphase,to_bus_vphase,p,plosses,q,qlosses
+from_line_ns1,1,2,0.01,0.5,1.0,1.2768999990414063,0.0,20.66904479571431,-2.421692133324479,0.1303102010071478,2.677018362303314,6.515510050357391
