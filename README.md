@@ -34,3 +34,7 @@ Welcome! This repository contains the STING—**S**pecialized **T**ool for **IN*
     >>> from sting.main import run_ssm
     >>> run_ssm()
     ```
+
+## TODOs
+1. Model reduction module
+2. Additional docs
