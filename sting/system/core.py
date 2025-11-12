@@ -13,9 +13,20 @@ class System:
 
     def __init__(self):
 
-        print('\n')
-        print("=" * 40)
-        print("\u26A1 STING 0.1.0 \u26A1")
+        color1 = "\033[93m"
+        color2 = "\033[0m"
+
+        logo1 = (
+        r"   ______  " + color1 + r" __" + color2 + "\n"       
+        r"  / __/ /_" + color1 + r"_/ /" + color2 + r"_  _____ _" + "\n"
+        r" _\ \/ __" + color1 + r"/ _/" + color2 + r"/ \/ / _ `/" + "\n"
+        r"/___/__/" + color1 + r"//  " + color2 + r"/_/\_/\_, /"  + "\n"
+        r"       " + color1 + r"/   " + color2 + r"      /___/  ")
+
+        #print("=" * 25)
+        print(logo1)
+        #print("\u26A1 STING 0.1.0 \u26A1")
+        print("\nVersion: 0.1.0 (2025-11-05)")
         print("=" * 40)
         print('\n')
         print("> System initialization: \n")
