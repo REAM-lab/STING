@@ -1,7 +1,12 @@
+# Import standard and third-party packages
 import pandas as pd
 import importlib
 import os
 from typing import get_type_hints
+import matlab.engine
+
+# Import src packages
+from sting.utils import data_tools
 from sting import data_files
 
 class System: 
@@ -15,9 +20,18 @@ class System:
         print('\n')
         print("> System initialization: \n")
 
-        module_file_path = data_files.__file__
-        filepath = os.path.join(os.path.dirname(module_file_path), 'grid_components.csv')
-        self.grid_components_df = pd.read_csv(filepath) 
+        # Read a csv file that contains the information of the component types
+        # If csv file does not exist in inputs folder, then read default file.
+        inputfolder_directory = os.path.join(os.getcwd(), 'inputs') 
+        filename = 'grid_components.csv'
+        filepath = os.path.join(inputfolder_directory, filename) 
+        
+        if os.path.exists(filepath):
+            self.grid_components_df = pd.read_csv(filepath) 
+        else:
+            module_file_path = data_files.__file__
+            filepath = os.path.join(os.path.dirname(module_file_path), filename)
+            self.grid_components_df = pd.read_csv(filepath) 
         
         df = self.grid_components_df.copy()
         self.generator_types_list =  df.loc[df['type'] == 'generator', 'component'].to_list()
@@ -174,4 +188,23 @@ class System:
                 for c in list_of_components:
                     c._build_small_signal_model()
 
+    def export_components_data_as_matlab_file(self, matlab_session_name = None):
 
+        current_matlab_sessions = matlab.engine.find_matlab()
+
+        if not matlab_session_name in current_matlab_sessions:
+            print('> Initiate Matlab session, as a session was not founded or entered.')
+            eng = matlab.engine.start_matlab()
+        else:
+            eng = matlab.engine.connect_matlab(matlab_session_name)
+            print(f'> Connect to Matlab session: {matlab_session_name} ... ok.')
+    
+        components_types = self.component_types
+        for typ in components_types:
+            components = getattr(self, typ)
+
+            components_dict = [data_tools.convert_class_instance_to_dictionary(i) for i in components]
+
+            eng.workspace[typ] = components_dict
+
+        eng.quit()

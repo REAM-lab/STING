@@ -4,28 +4,44 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 import numpy as np
 
-class State_space_model(NamedTuple):
+@dataclass(slots=True)
+class State_space_model:
     A: np.ndarray 
     B: np.ndarray 
     C: np.ndarray 
     D: np.ndarray 
-    device_side_inputs: Optional[list] = None
-    grid_side_inputs:  Optional[list] = None
-    states:  Optional[list] = None
-    outputs:  Optional[list] = None
-    inputs:  Optional[list] = None
+    inputs:  list = field(default_factory=list) 
+    states:  list = field(default_factory=list) 
+    outputs: list = field(default_factory=list) 
+    initial_inputs: np.ndarray = field(default_factory=lambda: np.array([]).reshape(-1, 1)) 
+    initial_outputs: np.ndarray = field(default_factory=lambda: np.array([]).reshape(-1, 1)) 
+    initial_states: np.ndarray = field(default_factory=lambda: np.array([]).reshape(-1, 1)) 
+    device_side_inputs: list = field(default_factory=list) 
+    grid_side_inputs:  list = field(default_factory=list) 
+    initial_device_side_inputs: np.ndarray = field(default_factory=lambda: np.array([]).reshape(-1, 1)) 
+    initial_grid_side_inputs: np.ndarray = field(default_factory=lambda: np.array([]).reshape(-1, 1)) 
+    
+    def __post_init__(self):
+        if self.grid_side_inputs or self.device_side_inputs:
+            self.inputs = self.grid_side_inputs + self.device_side_inputs
+        
+        if self.initial_device_side_inputs.size>0 or self.initial_grid_side_inputs.size>0:
+            self.initial_inputs = np.vstack((self.initial_device_side_inputs, self.initial_grid_side_inputs))
+
 
 
 def connect_models_via_CCM(F, G, H, L,
                            components: list[State_space_model],
                            inputs = None,
                            outputs = None):
+    '''Computes state-space model of an interconnnected system using Component Connection Method'''
     
     Astack = block_diag(*[c.A for c in components])
     Bstack = block_diag(*[c.B for c in components])
     Cstack = block_diag(*[c.C for c in components])
     Dstack = block_diag(*[c.D for c in components])
     states = [state for c in components for state in c.states ]
+    initial_state = [x0 for c in components for x0 in c.initial_states ]
 
     ny = F.shape[1]
 
@@ -35,7 +51,9 @@ def connect_models_via_CCM(F, G, H, L,
     D = H @ np.linalg.inv( np.eye(ny) - Dstack @ F ) @ Dstack @ G + L
 
     
-    return State_space_model(A = A, B = B, C = C, D = D, states = states, inputs = inputs, outputs=outputs)
+    return State_space_model(A = A, B = B, C = C, D = D, 
+                             states = states, inputs = inputs, outputs=outputs,
+                             initial_states=initial_state)
 
 def modal_analisis(A : np.ndarray, 
                    show : bool = False, 

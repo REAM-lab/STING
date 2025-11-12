@@ -1,19 +1,22 @@
+# Import standard python packages and third-party packages
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
+
+# Import sting packages
 from sting.utils.linear_systems_tools import State_space_model
 
 class Power_flow_variables(NamedTuple):
-    vmag_bus: float = 0
-    vphase_bus: float = 0
+    vmag_bus: float 
+    vphase_bus: float 
 
 class EMT_initial_conditions(NamedTuple):
-    vmag_bus: float = 0
-    vphase_bus: float = 0
-    v_bus_DQ: float = 0
-    i_bus_DQ: complex = 0
-    x: np.ndarray = 0
-    y: np.ndarray = 0
+    vmag_bus: float 
+    vphase_bus: float 
+    v_bus_D: float
+    v_bus_Q: float
+    i_bus_D: float
+    i_bus_Q: float
 
 @dataclass
 class Parallel_rc_shunt:
@@ -24,8 +27,8 @@ class Parallel_rc_shunt:
     fbase: float
     r: float
     c: float
-    pf: Power_flow_variables = field(default_factory=Power_flow_variables)
-    emt_init_cond: EMT_initial_conditions = field(default_factory=EMT_initial_conditions)
+    pf: Optional[Power_flow_variables] = None
+    emt_init_cond: Optional[EMT_initial_conditions] = None
     ssm: Optional[State_space_model] = None
     name: str = field(default_factory=str)
     type: str = 'shunt'
@@ -47,25 +50,22 @@ class Parallel_rc_shunt:
         vmag_bus = self.pf.vmag_bus
         vphase_bus = self.pf.vphase_bus
 
-        v_bus_DQ = vmag_bus*np.exp(vphase_bus*1j*np.pi/180); 
-        v_bus_D, vbus_Q =  np.real(v_bus_DQ), np.imag(v_bus_DQ) 
-        
+        v_bus_DQ = vmag_bus*np.exp(vphase_bus*1j*np.pi/180);      
         i_bus_DQ =  v_bus_DQ*self.g +  v_bus_DQ*(1j*self.b)
 
-        x = np.array([ v_bus_D, vbus_Q])
-
-        y = np.array([ v_bus_D, vbus_Q])
-
-        local_vars = locals()
-        data = {field: local_vars[field] for field in EMT_initial_conditions._fields}
-
-        self.emt_init_cond = EMT_initial_conditions(**data)
+        self.emt_init_cond = EMT_initial_conditions(vmag_bus = vmag_bus,
+                                                    vphase_bus = vphase_bus,
+                                                    v_bus_D = v_bus_DQ.real,
+                                                    v_bus_Q = v_bus_DQ.imag,
+                                                    i_bus_D = i_bus_DQ.real,
+                                                    i_bus_Q = i_bus_DQ.imag)
 
     def _build_small_signal_model(self):
         g = self.g
         b = self.b
         wb = 2*np.pi*self.fbase
     
+        # Define state-space matrices
         A = wb*np.array([[-g/b, 1],
                          [-1, -g/b]])
 
@@ -76,8 +76,21 @@ class Parallel_rc_shunt:
 
         D = np.zeros((2,2))
 
-        grid_side_inputs = ["i_d", "i_q"]
-        states = ["v_d", "v_q"]
-        outputs = ["v_d", "v_q"]
+        grid_side_inputs = ["i_bus_D", "i_bus_Q"]
+        i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
+        initial_grid_side_inputs = np.array([[i_bus_D], [i_bus_Q]])
+        
+        states = ["v_bus_D", "v_bus_Q"]
+        v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
+        initial_states = np.array([[v_bus_D], [v_bus_Q]])
 
-        self.ssm = State_space_model(A = A, B = B, C = C, D= D, grid_side_inputs=grid_side_inputs, states=states, outputs=outputs)
+        outputs = states
+        initial_outputs = initial_states
+
+        self.ssm = State_space_model(A = A, B = B, C = C, D= D, 
+                                     grid_side_inputs=grid_side_inputs, 
+                                     states=states, 
+                                     outputs=outputs,
+                                     initial_states=initial_states,
+                                     initial_grid_side_inputs=initial_grid_side_inputs,
+                                     initial_outputs=initial_outputs)

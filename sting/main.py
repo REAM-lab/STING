@@ -29,6 +29,6 @@ def run_ssm():
     linear_systems_tools.modal_analisis(sys_ssm.system.A,
                                         show=True)
     
-    return sys
+    return sys, sys_ssm
 
 

@@ -1,6 +1,7 @@
 import csv
 import pandas as pd
 import numpy as np
+from dataclasses import is_dataclass, asdict
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -53,3 +54,28 @@ def generate_unique_index_column_in_dataframe(dataframe: pd.DataFrame,
     dataframe.insert(0, column_name, col_to_move)
     
     return dataframe
+
+def convert_class_instance_to_dictionary(instance: object, excluded_attributes = None): 
+
+    if excluded_attributes is None:
+        excluded_attributes = []
+
+    # Create dictionary (attribute: value)
+    if is_dataclass(instance):
+        dicty = asdict(instance)
+    elif isinstance(instance, tuple):
+        dicty = instance._asdict()
+        
+    # Filter out some attributes inputted into the function.
+    dicty = {key: value for key, value in dicty.items() if not key in excluded_attributes}
+
+    # Filter out None values as matlab engine cannot handle None types
+    dicty = {key: value for key, value in dicty.items() if value is not None}
+
+    # If value is a NamedTuple (commonly used) then transform to dictionary
+    dicty = {key: (value._asdict() if isinstance(value, tuple) else value) for key, value in dicty.items() }
+
+    # If value is a dataclass (commonly used) then transform to dictionary
+    dicty = {key: (asdict(value) if is_dataclass(value) else value) for key, value in dicty.items() }
+
+    return dicty

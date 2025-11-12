@@ -513,27 +513,32 @@ class Power_flow:
 
         if os.path.isdir(outputfolder_directory):
 
-            print(f'> Creation of power flow data files: ')
+            print(f'> Creation of power flow data files in {outputfolder_directory}')
 
-            filepath = os.path.join(outputfolder_directory, 'pf_solver_summary.csv')
+            filename = 'pf_solver_summary.csv'
+            filepath = os.path.join(outputfolder_directory, filename)
             self.solver_summary.to_csv(filepath)
-            print(f'  - {filepath} ')
+            print(f'  - {filename} ')
 
-            filepath = os.path.join(outputfolder_directory, 'pf_buses.csv')
+            filename = 'pf_buses.csv'
+            filepath = os.path.join(outputfolder_directory, filename)
             self.buses.to_csv(filepath)
-            print(f'  - {filepath} ')
+            print(f'  - {filename} ')
 
-            filepath = os.path.join(outputfolder_directory, 'pf_generators.csv')
+            filename = 'pf_generators.csv'
+            filepath = os.path.join(outputfolder_directory, filename)
             self.generators.to_csv(filepath)
-            print(f'  - {filepath} ')
+            print(f'  - {filename} ')
 
-            filepath = os.path.join(outputfolder_directory, 'pf_branches.csv')
+            filename = 'pf_branches.csv'
+            filepath = os.path.join(outputfolder_directory, filename)
             self.branches.to_csv(filepath)
-            print(f'  - {filepath} ')
+            print(f'  - {filename} ')
 
-            filepath = os.path.join(outputfolder_directory, 'pf_shunts.csv')
+            filename = 'pf_shunts.csv'
+            filepath = os.path.join(outputfolder_directory, filename)
             self.shunts.to_csv(filepath)
-            print(f'  - {filepath} \n')
+            print(f'  - {filename} \n')
 
 
 

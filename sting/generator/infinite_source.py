@@ -1,30 +1,28 @@
-import pandas as pd
+# Import standard python packages and third-party packages
 import numpy as np
 from scipy.linalg import block_diag
-from collections import namedtuple
-
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
+
+# Import sting packages
 from sting.utils.linear_systems_tools import State_space_model
 
 class Power_flow_variables(NamedTuple):
-    p_bus: float = 0
-    q_bus: float = 0
-    vmag_bus: float = 0
-    vphase_bus: float = 0
+    p_bus: float
+    q_bus: float 
+    vmag_bus: float 
+    vphase_bus: float 
 
 class EMT_initial_conditions(NamedTuple):
-    vmag_bus: float = 0
-    vphase_bus: float = 0
-    p_bus: float = 0
-    q_bus: float = 0
-    v_bus_DQ: float = 0
-    i_bus_DQ: complex = 0
-    p_int: float = 0
-    q_int: float = 0
-    ref_angle: float = 0
-    x: np.ndarray = 0
-    y: np.ndarray = 0
+    v_bus_D: float
+    v_bus_Q: float
+    v_int_d: float
+    v_int_q: float
+    i_bus_d: float
+    i_bus_q: float
+    i_bus_D: float
+    i_bus_Q: float
+    ref_angle: float
 
 @dataclass(slots=True)
 class Infinite_source:
@@ -39,8 +37,8 @@ class Infinite_source:
     fbase: float
     r: float
     l: float
-    pf: Power_flow_variables = field(default_factory=Power_flow_variables)
-    emt_init_cond: EMT_initial_conditions = field(default_factory=EMT_initial_conditions)
+    pf: Optional[Power_flow_variables] = None
+    emt_init_cond: Optional[EMT_initial_conditions] = None
     ssm: Optional[State_space_model] = None
     name: str = field(default_factory=str)
     type: str = 'generator'
@@ -60,30 +58,23 @@ class Infinite_source:
         
         v_bus_DQ = vmag_bus*np.exp(vphase_bus*1j*np.pi/180)
         i_bus_DQ = ((p_bus + 1j*q_bus)/v_bus_DQ).conjugate()
-        i_bus_D, i_bus_Q = np.real(i_bus_DQ), np.imag(i_bus_DQ)
 
         v_int_DQ = v_bus_DQ + i_bus_DQ*(self.r + 1j*self.l)
-        v_int_DQ_angle = np.angle(v_int_DQ, deg=True)
-        ref_angle = v_int_DQ_angle
+        ref_angle = np.angle(v_int_DQ, deg=True)
 
-        p_int = np.real(v_int_DQ*np.conjugate(v_int_DQ_angle))
-        q_int = np.imag(v_int_DQ*np.conjugate(v_int_DQ_angle))
-
-        v_bus_dq = v_bus_DQ*np.exp(-ref_angle*np.pi/180*1j)
-        v_bus_d, v_bus_q = np.real(v_bus_dq), np.imag(v_bus_dq)
         v_int_dq =  v_int_DQ*np.exp(-ref_angle*np.pi/180*1j)
-        v_int_d, v_int_q  = np.real(v_int_dq), np.imag(v_int_dq)
-
         i_bus_dq =  i_bus_DQ*np.exp(-ref_angle*np.pi/180*1j)
-        i_bus_d, i_bus_q  = np.real(i_bus_dq), np.imag(i_bus_dq)
 
-        x = np.array([ i_bus_d, i_bus_q])
-        y = np.array([ i_bus_D, i_bus_Q])
-
-        local_vars = locals()
-        data = {field: local_vars[field] for field in EMT_initial_conditions._fields}
-
-        self.emt_init_cond = EMT_initial_conditions(**data)
+        self.emt_init_cond = EMT_initial_conditions(v_bus_D = v_bus_DQ.real,
+                                                    v_bus_Q = v_bus_DQ.imag,
+                                                    v_int_d = v_int_dq.real,
+                                                    v_int_q = v_int_dq.imag,
+                                                    i_bus_d = i_bus_dq.real,
+                                                    i_bus_q = i_bus_dq.imag,
+                                                    i_bus_D = i_bus_DQ.real,
+                                                    i_bus_Q = i_bus_DQ.imag,
+                                                    ref_angle=ref_angle
+                                                    )
 
     def _build_small_signal_model(self):
 
@@ -106,12 +97,34 @@ class Infinite_source:
 
         D = np.zeros((2,4))
 
+
+        grid_side_inputs = ["v_bus_D", "v_bus_Q"]
+        v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
+        initial_grid_side_inputs = np.array([[v_bus_D], [v_bus_Q]])
+
+        device_side_inputs = ["v_ref_d", "v_ref_q"]
+        v_int_d, v_int_q = self.emt_init_cond.v_int_d, self.emt_init_cond.v_int_q
+        initial_device_side_inputs = np.array([[v_int_d], [v_int_q]])
+        
+
+        states = ["i_bus_d", "i_bus_q"]
+        i_bus_d, i_bus_q = self.emt_init_cond.i_bus_d, self.emt_init_cond.i_bus_q
+        initial_states = np.array([[i_bus_d], [i_bus_q]])
+
+        outputs = ["i_bus_D", "i_bus_Q"]
+        i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
+        initial_outputs = np.array([[i_bus_D], [i_bus_Q]])
+
         self.ssm = State_space_model(A = A,
                                      B = B,
                                      C = C,
                                      D = D,
-                                     states= ["i2c_d", "i2c_q"],
-                                     grid_side_inputs= ["v2_d", "v2_q"],
-                                     device_side_inputs=["v1c_d", "v1c_q"],
-                                     outputs=["i2_d", "i2_q"])
+                                     states= states,
+                                     grid_side_inputs= grid_side_inputs,
+                                     device_side_inputs= device_side_inputs,
+                                     outputs=outputs,
+                                     initial_states=initial_states,
+                                     initial_grid_side_inputs=initial_grid_side_inputs,
+                                     initial_device_side_inputs=initial_device_side_inputs,
+                                     initial_outputs=initial_outputs)
 
