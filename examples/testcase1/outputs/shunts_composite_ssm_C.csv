@@ -1,5 +1,5 @@
-,"('line_ns1_frombus', 'v_d')","('line_ns1_frombus', 'v_q')","('line_ns1_tobus', 'v_d')","('line_ns1_tobus', 'v_q')"
-"('line_ns1_frombus', 'v_d')",1.0,0.0,0.0,0.0
-"('line_ns1_frombus', 'v_q')",0.0,1.0,0.0,0.0
-"('line_ns1_tobus', 'v_d')",0.0,0.0,1.0,0.0
-"('line_ns1_tobus', 'v_q')",0.0,0.0,0.0,1.0
+,"('line_ns1_frombus', 'v_bus_D')","('line_ns1_frombus', 'v_bus_Q')","('line_ns1_tobus', 'v_bus_D')","('line_ns1_tobus', 'v_bus_Q')"
+"('line_ns1_frombus', 'v_bus_D')",1.0,0.0,0.0,0.0
+"('line_ns1_frombus', 'v_bus_Q')",0.0,1.0,0.0,0.0
+"('line_ns1_tobus', 'v_bus_D')",0.0,0.0,1.0,0.0
+"('line_ns1_tobus', 'v_bus_Q')",0.0,0.0,0.0,1.0
