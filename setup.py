@@ -26,7 +26,6 @@ setup(
             "numpy",
             "scipy",
             "tabulate", 
-            "matlab",
-            "matplotlib"
+            "matplotlib",
         ],
     )
