@@ -107,7 +107,7 @@ class Power_flow:
     '''Settings applied to power flow calculations'''
     
     print_settings: dict=  field(default_factory= lambda:{'index' : True, 
-                            'tablefmt': "psql",
+                            'tablefmt': "grid",
                             'numalign': "right", 
                             'floatfmt': '.3f'})
     '''Settings applied to the tabulate package that is used to print dataframes nicely in Python shelf'''

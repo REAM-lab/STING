@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 import os
-#import matlab.engine
 from scipy.linalg import block_diag
+import matlab.engine
 
 # Import sting packages
 from sting.system.core import System
@@ -523,8 +523,7 @@ class Composite_small_signal_model:
 
 
     def export_components_data_as_matlab_file(self, matlab_session_name = None):
-        matlab=None
-
+                
         current_matlab_sessions = matlab.engine.find_matlab()
 
         if not matlab_session_name in current_matlab_sessions:

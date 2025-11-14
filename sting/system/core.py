@@ -3,8 +3,8 @@ import pandas as pd
 import importlib
 import os
 from typing import get_type_hints
-#import matlab.engine
-
+import matlab.engine
+        
 # Import src packages
 from sting.utils import data_tools
 from sting import data_files
@@ -185,14 +185,14 @@ class System:
                     c._build_small_signal_model()
 
     def export_components_data_as_matlab_file(self, matlab_session_name = None):
-
-        current_matlab_sessions = None #matlab.engine.find_matlab()
+        
+        current_matlab_sessions = matlab.engine.find_matlab()
 
         if not matlab_session_name in current_matlab_sessions:
             print('> Initiate Matlab session, as a session was not founded or entered.')
-            #eng = matlab.engine.start_matlab()
+            eng = matlab.engine.start_matlab()
         else:
-            #eng = matlab.engine.connect_matlab(matlab_session_name)
+            eng = matlab.engine.connect_matlab(matlab_session_name)
             print(f'> Connect to Matlab session: {matlab_session_name} ... ok.')
     
         components_types = self.component_types
@@ -201,6 +201,6 @@ class System:
 
             components_dict = [data_tools.convert_class_instance_to_dictionary(i) for i in components]
 
-            #eng.workspace[typ] = components_dict
+            eng.workspace[typ] = components_dict
 
-        #eng.quit()
+        eng.quit()

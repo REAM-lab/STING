@@ -235,6 +235,7 @@ class GFLI_b:
                                      C = ssm.C,
                                      D = ssm.D,
                                      states= ssm.states,
+                                     initial_states=ssm.initial_states,
                                      device_side_inputs=device_side_inputs,
                                      initial_device_side_inputs=initial_device_side_inputs,
                                      grid_side_inputs=grid_side_inputs,
