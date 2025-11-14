@@ -4,4 +4,4 @@ inf_src,generator,Infinite_source,sting.generator.infinite_source,infinite_sourc
 line_ns,line,Line_no_series_compensation,sting.line.pi_model,line_ns.csv
 se_rl,branch,Series_rl_branch,sting.branch.series_rl,series_rl.csv
 pa_rc,shunt,Parallel_rc_shunt,sting.shunt.parallel_rc,parallel_rc.csv
-bus,bus,Bus,sting.bus.bus,bus.csv
+bus,node,Bus,sting.bus.bus,bus.csv

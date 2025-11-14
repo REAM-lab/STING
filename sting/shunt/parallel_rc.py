@@ -2,6 +2,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
+import pandas as pd
 
 # Import sting packages
 from sting.utils.linear_systems_tools import State_space_model
@@ -94,3 +95,31 @@ class Parallel_rc_shunt:
                                      initial_states=initial_states,
                                      initial_grid_side_inputs=initial_grid_side_inputs,
                                      initial_outputs=initial_outputs)
+        
+        
+def combine_shunts(system):
+
+    print("> Reduce shunts to have one shunt per bus:")
+   
+    shs = system.components.pa_rc
+
+    bus_idx = [s.bus_idx for s in shs]
+    g = [s.g for s in shs]
+    b = [s.b for s in shs]
+
+    shunt_df = pd.DataFrame({'bus_idx': bus_idx, 'g': g, 'b': b})    
+    shunt_df = shunt_df.pivot_table(index='bus_idx', values=['g', 'b'], aggfunc ='sum')
+    shunt_df['r'] = 1/shunt_df['g']
+    shunt_df['c'] = 1/shunt_df['b']
+    shunt_df['idx'] = ['shred' + str(i) for i in range(len(shunt_df))] 
+    shunt_df.reset_index(inplace=True)
+
+    # Create new list of components "parallel rc shunts"
+    system.componets.pa_rc = [] 
+
+    # Add each effective/combined parallel RC shunt to the pa_rc components
+    for _, row in shunt_df.iterrows(): 
+        shunt = Parallel_rc_shunt(**row.to_dict())
+        system.components.pa_rc.append(shunt) 
+ 
+    print("\t- New list of parallel RC components created ... ok\n")

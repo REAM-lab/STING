@@ -86,37 +86,21 @@ def build_oriented_incidence_matrix( num_buses: int, branch_data: list):
     return or_inc
 
 
-def build_ccm_matrices(system, generators, branches, shunts):
+def get_ccm_matrices(system):
         """
         
         """
         # Get the number of buses of the full system
-        num_buses = len(system.bus)
+        num_buses = len(system.components.bus)
 
-        # List that will contain the connecting bus of all the generators 
-        # Note that the first item is the connecting bus of the first generator, 
-        # the second item is the connecting bus of the second generator.
-        # 'list_of_gens' is for example [inf_src[0], inf_src[1]]
-        # Note that the order is respected. The list 'generator_types_list' has been used in previous methods
-        gen_bus_connections = []
-        list_of_gentypes = system.generator_types_list
-        for typ in list_of_gentypes:
-            list_of_gens = getattr(system, typ)
-            gen_bus_connections.extend([g.bus_idx for g in list_of_gens])
-
+        # List containing the connecting bus of all the generators 
+        gen_bus_connections = [g.bus_idx for g in system.components.generator()]
         # Build generation connection matrix
         gen_cx = build_generation_connection_matrix(num_buses, gen_bus_connections)
         
         
-        # List that will contain the tuples (from_bus, to_bus) of the branches
-        # 'list_of_branches' is for example [se_rl[0], se_rl[1]]
-        # Note that the order is respected. The list 'branch_types_list' has been used in previous methods
-        branch_frombus_tobus = []
-        list_of_branchtypes = system.branch_types_list
-        for typ in list_of_branchtypes:
-            list_of_branches = getattr(system, typ)
-            branch_frombus_tobus.extend([(b.from_bus, b.to_bus) for b in list_of_branches])
-
+        # List containing the tuples (from_bus, to_bus) of the branches
+        branch_frombus_tobus =  [(b.from_bus, b.to_bus) for b in system.components.branch()]
         # Build oriented incidence matrix
         or_inc = build_oriented_incidence_matrix(num_buses, branch_frombus_tobus)
 
@@ -183,11 +167,9 @@ def build_ccm_permutations(system):
     # Create empty lists for transformations, list order follows that of generator_types_list
     Y1, Y2, T1 = [], [], []
 
-    # Iterate over the list of types: [inf_src, gfli_a, gfli_b, ...]
-    for typ in system.generator_types_list: 
-        # Get the list of generators, for example, list_of_gens = [inf_src[0], inf_src[1]]
-        # Each item in this list is a class instance
-        gens = getattr(system, typ) 
+    # Iterate over the list of list of all gens: [[inf_src0, inf_src1], [], [gfli_b], ...]
+    for gens in system.components.generator(flat=False): 
+
         if not gens: # Continue if the list is empty
             continue
         

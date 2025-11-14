@@ -83,7 +83,7 @@ def calc_power_flow_in_shunt(row: pd.Series):
     return p, q
                     
 @dataclass(slots=True)
-class Power_flow:
+class PowerFlow:
     '''Computes, validates, and prints power flow solution for a given system.'''
 
     system: System
@@ -149,18 +149,14 @@ class Power_flow:
         inf1           1   -2.0    2.0   -5.0    5.0
         ...'''
 
-        generator_types_list = self.system.generator_types_list  # get list of generator types
+        gens = self.system.components.generator()
         
-        idx, bus_idx, p_min, p_max, q_min, q_max  = [], [], [], [], [], [] # parameters to use in opf
-
-        for gentype in generator_types_list: # iterate over each generator type
-            gens = getattr(self.system, gentype)
-            idx.extend([g.idx for g in gens])
-            bus_idx.extend([g.bus_idx for g in gens])
-            p_min.extend([g.p_min for g in gens])
-            p_max.extend([g.p_max for g in gens])
-            q_min.extend([g.q_min for g in gens])
-            q_max.extend([g.q_max for g in gens])
+        idx = [g.idx for g in gens]
+        bus_idx = [g.bus_idx for g in gens]
+        p_min = [g.p_min for g in gens]
+        p_max = [g.p_max for g in gens]
+        q_min = [g.q_min for g in gens]
+        q_max = [g.q_max for g in gens]
         
         self.generators = pd.DataFrame({'idx': idx,'bus_idx': bus_idx, 'p_min': p_min, 'p_max': p_max, 'q_min': q_min, 'q_max': q_max}).set_index('idx')
 
@@ -170,14 +166,13 @@ class Power_flow:
         idx                              
         1        1.00    1.0  0.0  0.0'''
 
-        idx, v_min, v_max, p_load, q_load  = [], [], [], [], []
-
-        buses = getattr(self.system, 'bus')
-        idx.extend([n.idx for n in buses])
-        v_min.extend([n.v_min for n in buses])
-        v_max.extend([n.v_max for n in buses])
-        p_load.extend([n.p_load for n in buses])
-        q_load.extend([n.q_load for n in buses])
+        buses = self.system.components.node()
+        
+        idx    = [n.idx for n in buses]
+        v_min  = [n.v_min for n in buses]
+        v_max  = [n.v_max for n in buses]
+        p_load = [n.p_load for n in buses]
+        q_load = [n.q_load for n in buses]
 
         self.buses = pd.DataFrame({'idx': idx, 'v_min': v_min, 'v_max': v_max, 'p_load': p_load, 'q_load': q_load}).set_index('idx')
     
@@ -186,19 +181,15 @@ class Power_flow:
                  from_bus  to_bus     r     l
         idx                               
         txwose1         1       2  0.01  0.05'''
+        # Note: we assume that there is only one branch (whatever type) between two adjecent buses 
 
-        idx, from_bus, to_bus, r, l = [], [], [], [], []
-
-        branch_types_list = self.system.branch_types_list
-
-        # note: we assume that there is only one branch (whatever type) between two adjecent buses 
-        for branchtype in branch_types_list: # iterate over each branch type
-            brs = getattr(self.system, branchtype)
-            idx.extend([b.idx for b in brs])
-            from_bus.extend([b.from_bus for b in brs])
-            to_bus.extend([b.to_bus for b in brs])
-            r.extend([b.r for b in brs])
-            l.extend([b.l for b in brs]) # compute equivalent reactance 
+        brs = self.system.components.branch()
+        
+        idx = [b.idx for b in brs]
+        from_bus = [b.from_bus for b in brs]
+        to_bus   = [b.to_bus for b in brs]
+        r = [b.r for b in brs]
+        l = [b.l for b in brs] # compute equivalent reactance 
 
         self.branches = pd.DataFrame({'idx': idx, 'from_bus': from_bus, 'to_bus': to_bus, 'r': r, 'l': l}).set_index('idx')
 
@@ -208,16 +199,12 @@ class Power_flow:
         sh_idx                               
         sh_linebkdn1        1  0.05  0.066667'''
 
-        idx, bus_idx, g, b = [], [], [], []
-
-        shunt_types_list = self.system.shunt_types_list
-
-        for shuntype in shunt_types_list: # iterate over each branch type
-            shs = getattr(self.system, shuntype)
-            idx.extend([s.idx for s in shs])
-            bus_idx.extend([s.bus_idx for s in shs])
-            g.extend([s.g for s in shs])
-            b.extend([s.b for s in shs])
+        shs = self.system.components.shunt()
+        
+        idx = [s.idx for s in shs]
+        bus_idx = [s.bus_idx for s in shs]
+        g = [s.g for s in shs]
+        b = [s.b for s in shs]
 
         self.shunts = pd.DataFrame({'idx': idx, 'bus_idx': bus_idx, 'g': g, 'b': b}).set_index('idx')
 
@@ -227,7 +214,7 @@ class Power_flow:
         To run this ACOPF, one generator and one bus is at least required.
         '''
 
-        print("(*) Run power flow model:")
+        print("> Run power flow model:")
         # Inputs:
         generators = self.generators.copy()
         buses = self.buses.copy()

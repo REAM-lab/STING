@@ -1,9 +1,9 @@
 import numpy as np
 import os
-import Variables
+from sting.models.Variables import Variables
 from scipy.linalg import block_diag 
 from dataclasses import dataclass
-from data_tools import matrix_to_csv
+from sting.utils.data_tools import matrix_to_csv
 
 @dataclass(slots=True)
 class StateSpaceModel:
