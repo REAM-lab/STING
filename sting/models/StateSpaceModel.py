@@ -81,21 +81,10 @@ class StateSpaceModel:
         I_u = np.eye(F.shape[0])
 
         A = sys.A + sys.B @ F @ np.linalg.inv(I_y - sys.D @ F) @ sys.C
-        B = sys.B @ F @ np.linalg.inv(I_y - sys.D @ F) @ sys.D @ G + sys.B @ G
+        B = sys.B @ np.linalg.inv(I_u - F @ sys.D) @ G
         C = H @ np.linalg.inv(I_y - sys.D @ F ) @ sys.C
         D = H @ np.linalg.inv(I_y - sys.D @ F ) @ sys.D @ G + L
         sys.A, sys.B, sys.C, sys.D = A, B, C, D
-
-
-         # states = [state for c in components for state in c.states ]
-         # initial_state = [x0 for c in components for x0 in c.initial_states ]
-
-         # ny = F.shape[1]
-
-         # A = Astack + Bstack @ F @ np.linalg.inv(np.eye(ny) - Dstack @ F) @ Cstack
-         # B = Bstack @ F @ np.linalg.inv( np.eye(ny) - Dstack @ F ) @ Dstack @ G + Bstack @ G
-         # C = H @ np.linalg.inv( np.eye(ny) - Dstack @ F ) @ Cstack
-         # D = H @ np.linalg.inv( np.eye(ny) - Dstack @ F ) @ Dstack @ G + L
 
         return sys
     

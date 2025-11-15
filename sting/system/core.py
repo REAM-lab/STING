@@ -166,7 +166,14 @@ class System:
 
 
     def interconnect(self):
-        return StateSpaceModel.from_interconnected(self.components.all(), self.connections)
+        # Get components in order of generators, then shunts, then branches
+        models = (
+            self.components.generator() + 
+            self.components.shunt() + 
+            self.components.branch()
+        )
+        # Then interconnect models
+        return StateSpaceModel.from_interconnected(models, self.connections)
 
 
     def stack(self):
