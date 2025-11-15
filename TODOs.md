@@ -1,10 +1,11 @@
 # TODOs
 
 ## General
-- Do we need export to matlab in the system class? Or is it sufficient to use it just in the composite model class?
-    - Also this will need to be updated with the new implementation of `CompositeModel`
+- Update export to matlab in the system class? 
 - Should we replace `linalg.inv` with `linalg.solve`.
-- Option to run string from a given directory, not just cwd?
+- Dataclass for component connection matrices?
+- Variable/State descriptions
+    - Can we put this in the globally scoped atrrs of each class?
 
 ## Adam Subtasks
 1. Testing 
@@ -17,7 +18,6 @@
         - Save EMT output files
 
 2. Model reduction
-    - Finish composite model class
     - Finish SSM class
     - Add gramians
     - Add intraconnect

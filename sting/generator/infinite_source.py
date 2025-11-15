@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 
 # Import sting packages
-from sting.utils.linear_systems_tools import State_space_model
+from sting.models.StateSpaceModel import StateSpaceModel
+from sting.models.Variables import Variables
 
 class Power_flow_variables(NamedTuple):
     p_bus: float
@@ -39,7 +40,7 @@ class Infinite_source:
     l: float
     pf: Optional[Power_flow_variables] = None
     emt_init_cond: Optional[EMT_initial_conditions] = None
-    ssm: Optional[State_space_model] = None
+    ssm: Optional[StateSpaceModel] = None
     name: str = field(default_factory=str)
     type: str = 'generator'
 
@@ -87,6 +88,7 @@ class Infinite_source:
         Rotmat = np.array([[cosphi, -sinphi], 
                            [sinphi,  cosphi]])
     
+        # State-space matrices
         A = wb*np.array([   [-r/l, 1],
                             [-1, -r/l]  ])
     
@@ -98,33 +100,36 @@ class Infinite_source:
         D = np.zeros((2,4))
 
 
-        grid_side_inputs = ["v_bus_D", "v_bus_Q"]
+        # Inputs
         v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
-        initial_grid_side_inputs = np.array([[v_bus_D], [v_bus_Q]])
-
-        device_side_inputs = ["v_ref_d", "v_ref_q"]
         v_int_d, v_int_q = self.emt_init_cond.v_int_d, self.emt_init_cond.v_int_q
-        initial_device_side_inputs = np.array([[v_int_d], [v_int_q]])
         
-
-        states = ["i_bus_d", "i_bus_q"]
-        i_bus_d, i_bus_q = self.emt_init_cond.i_bus_d, self.emt_init_cond.i_bus_q
-        initial_states = np.array([[i_bus_d], [i_bus_q]])
-
-        outputs = ["i_bus_D", "i_bus_Q"]
+        u = Variables(
+            name=["v_bus_D", "v_bus_Q", "v_ref_d", "v_ref_q"],
+            component=[self.idx]*4,
+            v_type=["grid", "grid", "device", "device"],
+            init=[v_bus_D, v_bus_Q, v_int_d, v_int_q]
+        )
+        
+        # Outputs
         i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
-        initial_outputs = np.array([[i_bus_D], [i_bus_Q]])
-
-        self.ssm = State_space_model(A = A,
-                                     B = B,
-                                     C = C,
-                                     D = D,
-                                     states= states,
-                                     grid_side_inputs= grid_side_inputs,
-                                     device_side_inputs= device_side_inputs,
-                                     outputs=outputs,
-                                     initial_states=initial_states,
-                                     initial_grid_side_inputs=initial_grid_side_inputs,
-                                     initial_device_side_inputs=initial_device_side_inputs,
-                                     initial_outputs=initial_outputs)
+        
+        y = Variables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=[self.idx]*2,
+            v_type=["grid", "grid"],
+            init=[i_bus_D, i_bus_Q]
+        )
+        
+        # States
+        i_bus_d, i_bus_q = self.emt_init_cond.i_bus_d, self.emt_init_cond.i_bus_q
+        
+        x = Variables(
+            name=["i_bus_d", "i_bus_q"],
+            component=[self.idx]*2,
+            v_type=["device", "device"],
+            init=[i_bus_d, i_bus_q]
+        )
+        
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 

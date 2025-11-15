@@ -90,31 +90,35 @@ def get_ccm_matrices(system):
         """
         
         """
+        gens = system.components.generator()
+        branches = system.components.branch()
+        shunts = system.components.shunt()
+        
         # Get the number of buses of the full system
         num_buses = len(system.components.bus)
 
         # List containing the connecting bus of all the generators 
-        gen_bus_connections = [g.bus_idx for g in system.components.generator()]
+        gen_bus_connections = [g.bus_idx for g in gens]
         # Build generation connection matrix
         gen_cx = build_generation_connection_matrix(num_buses, gen_bus_connections)
         
         
         # List containing the tuples (from_bus, to_bus) of the branches
-        branch_frombus_tobus =  [(b.from_bus, b.to_bus) for b in system.components.branch()]
+        branch_frombus_tobus =  [(b.from_bus, b.to_bus) for b in branches]
         # Build oriented incidence matrix
         or_inc = build_oriented_incidence_matrix(num_buses, branch_frombus_tobus)
 
         # Build unoriented incidence matrix
         un_inc = abs(or_inc)
 
-        d_gen = sum(generators.u.v_type == 'device') # number of generator device-side inputs 
-        g_gen = sum(generators.u.v_type == 'grid')   # number of generator grid-side inputs 
-        y_gen = len(generators.y)                    # number of generator outputs
-        g_br = sum(branches.u.v_type == 'grid')      # number of branch grid-side inputs 
-        y_br = len(branches.y)                       # number of branch outputs
-        g_sh = sum(shunts.u.v_type == 'grid')        # number of shunt grid-side inputs 
-        y_sh = len(shunts.y)                         # number of shunt output
-        y = y_gen + y_sh + y_br                      # number of system outputs
+        d_gen = sum([g.ssm.u.n_device for g in gens])  # number of generator device-side inputs 
+        g_gen = sum([g.ssm.u.n_grid for g in gens])    # number of generator grid-side inputs 
+        y_gen = sum([len(g.ssm.y) for g in gens])      # number of generator outputs
+        g_br = sum([b.ssm.u.n_grid for b in branches]) # number of branch grid-side inputs 
+        y_br = sum([len(b.ssm.y) for b in branches])   # number of branch outputs
+        g_sh = sum([s.ssm.u.n_grid for s in shunts])   # number of shunt grid-side inputs 
+        y_sh = sum([len(s.ssm.y) for s in shunts])     # number of shunt outputs
+        y = y_gen + y_sh + y_br                        # number of system outputs
 
         # Construct matrix F. We first build its blocks.
         F11 = np.zeros( (d_gen, y_gen) )
@@ -154,13 +158,18 @@ def get_ccm_matrices(system):
         # Construct matrix H and L
         H = np.eye(y)
         L = np.zeros((y, d_gen))
+        
+        T = build_ccm_permutation(system)
+        T = block_diag(T, np.eye(F.shape[0] - T.shape[0]))
 
         # TODO: Add u and y grid/stack
+        F = T @ F
+        G = T @ G
 
         return F, G, H, L
 
 
-def build_ccm_permutations(system):
+def build_ccm_permutation(system):
     """
     Build the permutation matrices from Lemma 1 and 2. 
     """
@@ -175,17 +184,16 @@ def build_ccm_permutations(system):
         
         # Note: all generators in 'gens' of the same class and will have 
         # the same inputs and outputs. Thus, we only need to examine gen_0.
-        v_type = gens[0].ssm.u.v_type # input types either 'grid' or 'device'
-        n = len(gens)                 # number of generators
-        d = sum(v_type == 'device')   # number of device-side inputs 
-        g = sum(v_type == 'grid')     # number of grid-side inputs 
+        n = len(gens)              # number of generators
+        d = gens[0].ssm.u.n_device # number of device-side inputs 
+        g = gens[0].ssm.u.n_grid   # number of grid-side inputs 
 
         # Build transformation (permutation) matrices
         X1 = np.kron(np.eye(n), 
                             np.hstack( ( np.eye(d), np.zeros((d, g)) ) ) )
         X2 = np.kron(np.eye(n), 
                             np.hstack( ( np.zeros((g, d)), np.eye(g) ) ) )
-        T1.append(np.linalg.inv(np.vstack((X1, X2))) )
+        T1.append(np.linalg.inv(np.vstack((X1, X2))))
 
         # Also, append transformations that are used later
         Y1.append(np.hstack(( np.eye(n*d), np.zeros((n*d, n*g)) )) )
@@ -197,4 +205,4 @@ def build_ccm_permutations(system):
     Y2 = block_diag(*Y2)
     T2 = np.linalg.inv( np.vstack((Y1, Y2)) )
 
-    return T1, T2
+    return T1 @ T2

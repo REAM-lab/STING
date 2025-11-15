@@ -4,7 +4,8 @@ from typing import NamedTuple, Optional
 import numpy as np
 
 # Import sting packages
-from sting.utils.linear_systems_tools import State_space_model
+from sting.models.StateSpaceModel import StateSpaceModel
+from sting.models.Variables import Variables
 
 class Power_flow_variables(NamedTuple):
     vmag_from_bus: float 
@@ -38,7 +39,7 @@ class Series_rl_branch:
     type: str = 'branch'
     pf: Optional[Power_flow_variables] = None
     emt_init_cond: Optional[EMT_initial_conditions] = None
-    ssm: Optional[State_space_model] = None
+    ssm: Optional[StateSpaceModel] = None
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.branches.loc[self.idx]     
@@ -79,32 +80,29 @@ class Series_rl_branch:
     
         # Define state-space matrices
         A = wb*np.array([[-rse/lse, 1],
-                             [-1,      -rse/lse]])
+                         [-1,      -rse/lse]])
 
         B = wb*np.array([[1/lse,  0,  -1/lse,  0],
-                             [0,   1/lse,  0,  -1/lse]])
+                         [0,   1/lse,  0,  -1/lse]])
 
         C = np.eye(2)
 
         D = np.zeros((2,4))
+        
+        u = Variables(
+            name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_D"],
+            component=[self.idx]*4,
+            v_type=["grid"]*4,
+            init=[self.emt_init_cond.v_from_bus_D, self.emt_init_cond.v_from_bus_Q,
+                  self.emt_init_cond.v_to_bus_D,   self.emt_init_cond.v_to_bus_Q]
+        )
+        
+        x = Variables(
+            name=["i_br_D", "i_br_Q"],
+            component=[self.idx]*2,
+            v_type=["grid"]*2,
+            init=[self.emt_init_cond.i_br_D, self.emt_init_cond.i_br_Q]
+        )
+        
 
-        grid_side_inputs = ["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_D"]
-        initial_grid_side_inputs = np.array([[self.emt_init_cond.v_from_bus_D], 
-                                             [self.emt_init_cond.v_from_bus_Q], 
-                                             [self.emt_init_cond.v_to_bus_D], 
-                                             [self.emt_init_cond.v_to_bus_Q]])
-
-        states = ["i_br_D", "i_br_Q"]
-        initial_states =  np.array([[self.emt_init_cond.i_br_D], 
-                                    [self.emt_init_cond.i_br_Q]])
-
-        outputs = states
-        initial_outputs = initial_states
-
-        self.ssm = State_space_model(A = A, B = B, C = C, D = D, 
-                                     states=states, 
-                                     grid_side_inputs=grid_side_inputs, 
-                                     outputs=outputs,
-                                     initial_states=initial_states,
-                                     initial_grid_side_inputs= initial_grid_side_inputs,
-                                     initial_outputs=initial_outputs)
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=x, x=x)

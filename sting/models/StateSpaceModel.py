@@ -2,7 +2,7 @@ import numpy as np
 import os
 from sting.models.Variables import Variables
 from scipy.linalg import block_diag 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from sting.utils.data_tools import matrix_to_csv
 
 @dataclass(slots=True)
@@ -56,14 +56,16 @@ class StateSpaceModel:
         """
         Create a state space-model by stacking a collection of state-space models.
         """
-        stack = dict(zip(StateSpaceModel._fields, zip(*components)))
+        component_ssm = [c.ssm for c in components if hasattr(c, "ssm")]
+        stack = {f.name: [getattr(c, f.name) for c in component_ssm] for f in fields(component_ssm[0])}
+        #stack = dict(zip(fields(StateSpaceModel), zip(*components)))
         A = block_diag(*stack['A'])
         B = block_diag(*stack['B'])
         C = block_diag(*stack['C'])
         D = block_diag(*stack['D'])
-        u = sum(stack['u'])
-        y = sum(stack['y'])
-        x = sum(stack['x'])
+        u = sum(stack['u'], Variables(name=[]))
+        y = sum(stack['y'], Variables(name=[]))
+        x = sum(stack['x'], Variables(name=[]))
 
         return cls(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 
@@ -73,7 +75,7 @@ class StateSpaceModel:
         """
         Create a state space-model by interconnecting a collection of state-space models.
         """
-        F, G, H, L = connections.data
+        F, G, H, L = connections
         sys = cls.from_stacked(components)
         I_y = np.eye(F.shape[1])
         I_u = np.eye(F.shape[0])

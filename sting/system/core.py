@@ -13,7 +13,7 @@ from sting import data_files
 from sting.line.pi_model import decompose_lines 
 #from sting.shunt.paralle_rc import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices
-from sting.models import StateSpaceModel
+from sting.models.StateSpaceModel import StateSpaceModel
 
 # Need some kind of list tracking the global ordering of all components? Right,
 # now this is implicitly controlled by the grid_components dataframe but we need
@@ -54,7 +54,8 @@ class System:
         # Method to return all components
         c_all = meta_data['component'].to_list()
         namespace = {
-            "all": lambda s, flat=True, group=c_all.copy(): get(s, c_all, flat)
+            "all": lambda s, flat=True, group=c_all.copy(): get(s, c_all, flat),
+            "__repr__": lambda s: str([(c, len(getattr(s, c))) for c in c_all])
         }
 
         # Methods to return all components of a given type (e.g. shunts, branches, generators)

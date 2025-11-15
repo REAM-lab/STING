@@ -58,7 +58,7 @@ def connect_models_via_CCM(F, G, H, L,
 def modal_analisis(A : np.ndarray, 
                    show : bool = False, 
                    print_settings : dict = {'index' : True, 
-                                            'tablefmt': "psql",
+                                            'tablefmt': "grid",
                                             'numalign': "right", 
                                             'floatfmt': '.3f'}):
     '''Computes eigenvalues, natural frequency, damping ratio, time constant. It also has the option to display a

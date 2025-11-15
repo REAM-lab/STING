@@ -5,7 +5,9 @@ from typing import NamedTuple, Optional
 import pandas as pd
 
 # Import sting packages
-from sting.utils.linear_systems_tools import State_space_model
+
+from sting.models.StateSpaceModel import StateSpaceModel
+from sting.models.Variables import Variables
 
 class Power_flow_variables(NamedTuple):
     vmag_bus: float 
@@ -30,7 +32,7 @@ class Parallel_rc_shunt:
     c: float
     pf: Optional[Power_flow_variables] = None
     emt_init_cond: Optional[EMT_initial_conditions] = None
-    ssm: Optional[State_space_model] = None
+    ssm: Optional[StateSpaceModel] = None
     name: str = field(default_factory=str)
     type: str = 'shunt'
 
@@ -75,26 +77,23 @@ class Parallel_rc_shunt:
 
         C = np.eye(2)
 
-        D = np.zeros((2,2))
+        D = np.zeros((2,2))      
 
-        grid_side_inputs = ["i_bus_D", "i_bus_Q"]
-        i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
-        initial_grid_side_inputs = np.array([[i_bus_D], [i_bus_Q]])
+        u = Variables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=[self.idx]*2,
+            v_type=["grid"]*2,
+            init=[self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q]
+        )
         
-        states = ["v_bus_D", "v_bus_Q"]
-        v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
-        initial_states = np.array([[v_bus_D], [v_bus_Q]])
+        x = Variables(
+            name=["v_bus_D", "v_bus_Q"],
+            component=[self.idx]*2,
+            v_type=["grid"]*2,
+            init=[self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q]
+        )
 
-        outputs = states
-        initial_outputs = initial_states
-
-        self.ssm = State_space_model(A = A, B = B, C = C, D= D, 
-                                     grid_side_inputs=grid_side_inputs, 
-                                     states=states, 
-                                     outputs=outputs,
-                                     initial_states=initial_states,
-                                     initial_grid_side_inputs=initial_grid_side_inputs,
-                                     initial_outputs=initial_outputs)
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=x, x=x)
         
         
 def combine_shunts(system):
