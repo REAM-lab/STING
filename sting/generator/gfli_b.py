@@ -1,7 +1,8 @@
 # Import standard python packages
 import numpy as np
 from typing import NamedTuple, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import scipy.linalg 
 
 # Import sting packages
 from sting.utils import linear_systems_tools
@@ -18,7 +19,7 @@ class EMT_initial_conditions(NamedTuple):
     vphase_bus: float
     p_bus: float
     q_bus: float
-    ref_angle: float 
+    angle_ref: float 
     pi_cc_d: float
     pi_cc_q: float
     v_vsc_d: float
@@ -31,6 +32,10 @@ class EMT_initial_conditions(NamedTuple):
     i_bus_Q: float
     v_bus_D: float
     v_bus_Q: float
+    v_bus_d: float
+    v_bus_q: float
+    v_vsc_mag: float
+    v_vsc_DQ_phase: float
 
 @dataclass(slots=True)
 class GFLI_b:
@@ -61,6 +66,7 @@ class GFLI_b:
     c_dc: float 
     kp_dc:float
     ki_dc:float
+    x_pll_rescale: np.ndarray = field(default_factory=lambda: np.array([[100, 0], [0, 1]])) 
     name: Optional[str] = None
     pf: Optional[Power_flow_variables] = None
     emt_init_cond: Optional[EMT_initial_conditions] = None
@@ -92,10 +98,10 @@ class GFLI_b:
         pi_cc_d, pi_cc_q = self.emt_init_cond.pi_cc_d, self.emt_init_cond.pi_cc_q
 
         pi_controller = State_space_model( A = np.zeros((2,2)), 
-                                          B = np.hstack((np.eye(2), -np.eye(2))),
-                                          C = ki_cc*np.eye(2),
+                                          B = ki_cc*np.hstack((np.eye(2), -np.eye(2))),
+                                          C = np.eye(2),
                                           D = kp_cc*np.hstack((np.eye(2), -np.eye(2))),
-                                          inputs = ['i_bus_d_ref', 'i_bus_q_ref'], 
+                                          inputs = ['i_bus_d_ref', 'i_bus_q_ref', 'i_bus_d', 'i_bus_q'], 
                                           states= ['pi_cc_d', 'pi_cc_q'],
                                           outputs = ['e_d', 'e_q'],
                                           initial_states= np.array([[pi_cc_d], [pi_cc_q]]))
@@ -108,8 +114,8 @@ class GFLI_b:
 
         l_filter = State_space_model( A = wb*np.array([[-rf/lf,  1], 
                                                        [-1    ,  -rf/lf]]),
-                                      B = wb*np.array([[ 1/lf ,  0   ,-1/lf  ,0, -i_bus_q] ,
-                                                       [0, 1/lf, 0, -1/lf, i_bus_d]]),
+                                      B = wb*np.array([[ 1/lf ,  0   ,  -1/lf  ,  0,    -i_bus_q] ,
+                                                       [0,      1/lf,       0  , -1/lf,  i_bus_d]]),
                                       C = np.eye(2),
                                       D = np.zeros((2,5)),
                                       states= ['i_bus_d', 'i_bus_q'],
@@ -121,24 +127,29 @@ class GFLI_b:
         kp_pll, ki_pll = self.kp_pll, self.ki_pll
         beta = self.beta
         vmag_bus = self.emt_init_cond.vmag_bus
-        sinphi = np.sin(self.emt_init_cond.ref_angle*np.pi/180)
-        cosphi = np.cos(self.emt_init_cond.ref_angle*np.pi/180)
+        sinphi = np.sin(self.emt_init_cond.angle_ref*np.pi/180)
+        cosphi = np.cos(self.emt_init_cond.angle_ref*np.pi/180)
         int_pll = 0
-        phase_pll =  self.emt_init_cond.ref_angle*np.pi/180
+        phase_pll =  self.emt_init_cond.angle_ref*np.pi/180
+
 
         pll = State_space_model(
-                                A = np.array([  [  0         ,  -vmag_bus],
-                                                [wb*ki_pll ,  -wb*vmag_bus*kp_pll]]),
-                                B = np.array([[  -sinphi      ,        +cosphi],
+                                A = np.array([  [  0         ,  -vmag_bus*ki_pll],
+                                                [wb           , -wb*vmag_bus*kp_pll]]),
+                                B = np.array([[  -sinphi*ki_pll     ,        +cosphi*ki_pll],
                                               [-wb*kp_pll*sinphi,  wb*kp_pll*cosphi]]),
                                 C = np.array([  [  0  , 1],
-                                                [1*ki_pll , -1*vmag_bus*kp_pll]]),
+                                                [1 , -1*vmag_bus*kp_pll]]),
                                 D = np.array([  [0          ,           0],
                                                 [-1*kp_pll*sinphi ,  1*kp_pll*cosphi]]),
                                 inputs = ['v_bus_D', 'v_bus_Q'],
                                 outputs= ['phase', 'w'],
                                 states=["int_pll", "phase_pll"],
                                 initial_states=np.array([[int_pll], [phase_pll]])) 
+        
+        pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
+        pll.B = self.x_pll_rescale @ pll.B
+        pll.C = pll.C @ scipy.linalg.inv(self.x_pll_rescale)
 
         # DC voltage PI controller
         kp_dc, ki_dc = self.kp_dc, self.ki_dc
@@ -160,17 +171,17 @@ class GFLI_b:
                                        C = 1,
                                        D = np.array([0 , 0]),
                                        states = ['v_dc'],
-                                       inputs=['i_dc_src', 'i_out'],
+                                       inputs =['i_dc_src', 'i_out'],
                                        outputs=['v_dc'],
                                        initial_states = np.array([[v_dc]]))
         
         # Construction of CCM matrices
-        v_vsc_d = self.emt_init_cond.v_vsc_d
-        v_vsc_q = self.emt_init_cond.v_vsc_q
+        v_bus_d = self.emt_init_cond.v_bus_d
+        v_bus_q = self.emt_init_cond.v_bus_q
         i_out = self.emt_init_cond.i_out
 
-        a =  pi_cc_d + beta*v_vsc_d
-        b =  pi_cc_q + beta*v_vsc_q
+        a =  pi_cc_d + beta*v_bus_d
+        b =  pi_cc_q + beta*v_bus_q
         c =  beta*i_bus_d*cosphi + beta*i_bus_q*(-sinphi)
         d =  beta*i_bus_d*sinphi + beta*i_bus_q*cosphi
         
@@ -178,17 +189,17 @@ class GFLI_b:
         f = cosphi*i_bus_d - sinphi*i_bus_q
 
         Fccm = np.vstack( ( [0, 0, 0, 0, 0, 0, 1, 0],
-                             np.zeros((1,8)),
+                             np.zeros((8,)),
                              [0, 0, 1, 0, 0, 0, 0, 0],
                              [0, 0, 0, 1, 0, 0, 0, 0],
                              [1, 0, 0, -lf, 0, 0, 0, 0],
                              [0, 1, lf, 0, -beta*vmag_bus, 0, 0, 0],
-                             np.zeros((1,8)),
+                             np.zeros((8,)),
                              [0, 0, 0, 0, -vmag_bus, 0, 0, 0],
                              [0, 0, 0, 0, 0, 1, 0, 0],
                              np.zeros((3,8)),
                              [0, 0, 0, 0, 0, 0, 0, 1],
-                             np.zeros((1,8)),
+                             np.zeros((8,)),
                              1/v_dc*np.array([i_bus_d, i_bus_q, a, b, -beta*i_bus_q*vmag_bus, 0, 0, -i_out]) ) )
         
         Gccm = np.vstack(( [0, 0, 0, 0, 0],
@@ -198,11 +209,11 @@ class GFLI_b:
                            [0, 0, 0, -beta*sinphi, beta*cosphi],
                            [0, 0, 0, cosphi, sinphi],
                            [0, 0, 0, -sinphi, cosphi],
-                           np.zeros((1,5)),
+                           np.zeros((5,)),
                            [0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 1],
                            [1, 0, 0, 0, 0],
-                           np.zeros((1, 5)),
+                           np.zeros((5, )),
                            [0, 0, 1, 0, 0],
                            1/v_dc*np.array([0, 0, 0, c, d])))
         
@@ -256,7 +267,7 @@ class GFLI_b:
 
         # Voltage in the end of the filter
         v_bus_DQ = vmag_bus*np.exp(vphase_bus*np.pi/180*1j)
-        ref_angle = np.angle(v_bus_DQ, deg=True)
+        angle_ref = np.angle(v_bus_DQ, deg=True)
 
         # Current sent from the end of the filter
         i_bus_DQ = (p_bus - q_bus*1j)/np.conjugate(v_bus_DQ)
@@ -266,11 +277,11 @@ class GFLI_b:
 
         # We refer the voltage and currents to the synchronous frames of the
         # inverter 
-        v_vsc_dq = v_vsc_DQ*np.exp(-ref_angle*np.pi/180*1j) 
+        v_vsc_dq = v_vsc_DQ*np.exp(-angle_ref*np.pi/180*1j) 
 
-        v_bus_dq = v_bus_DQ*np.exp(-ref_angle*np.pi/180*1j) 
+        v_bus_dq = v_bus_DQ*np.exp(-angle_ref*np.pi/180*1j) 
 
-        i_bus_dq = i_bus_DQ*np.exp(-ref_angle*np.pi/180*1j) 
+        i_bus_dq = i_bus_DQ*np.exp(-angle_ref*np.pi/180*1j) 
 
         # Initial conditions for the integral controllers
         pi_cc_dq = v_vsc_dq - 1j*(self.lf + self.txr_l)*i_bus_dq - self.beta*v_bus_dq
@@ -280,16 +291,15 @@ class GFLI_b:
         v_dc = (i_dc_src + (i_dc_src**2 - 4*(1/r_dc)*p_vsc)**0.5)/(2/r_dc)
         i_out = p_vsc/v_dc
 
-        
         self.emt_init_cond = EMT_initial_conditions(    vmag_bus = vmag_bus,
                                                         vphase_bus = vphase_bus,
                                                         p_bus = p_bus,
                                                         q_bus = q_bus,
-                                                        ref_angle=ref_angle,
+                                                        angle_ref=angle_ref,
                                                         pi_cc_d= pi_cc_dq.real,
                                                         pi_cc_q= pi_cc_dq.imag,
-                                                        v_vsc_d = v_bus_dq.real,
-                                                        v_vsc_q = v_bus_dq.imag,
+                                                        v_vsc_d = v_vsc_dq.real,
+                                                        v_vsc_q = v_vsc_dq.imag,
                                                         i_bus_d = i_bus_dq.real,
                                                         i_bus_q = i_bus_dq.imag, 
                                                         v_dc= v_dc,
@@ -297,7 +307,11 @@ class GFLI_b:
                                                         i_bus_D = i_bus_DQ.real,
                                                         i_bus_Q = i_bus_DQ.imag,
                                                         v_bus_D = v_bus_DQ.real,
-                                                        v_bus_Q = v_bus_DQ.imag)
+                                                        v_bus_Q = v_bus_DQ.imag,
+                                                        v_bus_d = v_bus_dq.real,
+                                                        v_bus_q = v_bus_dq.imag,
+                                                        v_vsc_mag = abs(v_vsc_DQ),
+                                                        v_vsc_DQ_phase = np.angle(v_vsc_DQ, deg=True))
         
 
 
