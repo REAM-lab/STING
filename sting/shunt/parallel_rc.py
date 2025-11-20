@@ -6,7 +6,7 @@ import copy
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 
-class PowerFlowVarsiables(NamedTuple):
+class PowerFlowVariables(NamedTuple):
     vmag_bus: float
     vphase_bus: float
 
@@ -29,7 +29,7 @@ class ShuntParallelRC:
     fbase: float
     r: float
     c: float
-    pf: Optional[PowerFlowVarsiables] = None
+    pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
     ssm: Optional[StateSpaceModel] = None
     name: str = field(default_factory=str)
@@ -46,7 +46,7 @@ class ShuntParallelRC:
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.shunts.loc[f"{self.type}_{self.idx}"]
-        self.pf = PowerFlowVarsiables(
+        self.pf = PowerFlowVariables(
             vmag_bus=sol.bus_vmag.item(), vphase_bus=sol.bus_vphase.item()
         )
 

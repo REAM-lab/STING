@@ -6,7 +6,7 @@ import copy
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 
-class PowerFlowVarsiables(NamedTuple):
+class PowerFlowVariables(NamedTuple):
     vmag_from_bus: float
     vphase_from_bus: float
     vmag_to_bus: float
@@ -38,14 +38,14 @@ class BranchSeriesRL:
     l: float
     name: str = field(default_factory=str)
     type: str = "se_rl"
-    pf: Optional[PowerFlowVarsiables] = None
+    pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
     ssm: Optional[StateSpaceModel] = None
     tags: Optional[list] = field(default_factory=lambda : ["branches"])
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.branches.loc[f"{self.type}_{self.idx}"]
-        self.pf = PowerFlowVarsiables(
+        self.pf = PowerFlowVariables(
             vmag_from_bus=sol.from_bus_vmag.item(),
             vphase_from_bus=sol.from_bus_vphase.item(),
             vmag_to_bus=sol.to_bus_vmag.item(),
