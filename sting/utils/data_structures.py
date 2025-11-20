@@ -133,6 +133,15 @@ class ListMap:
             
         return self.values(self.views[name], attr=attrs)
 
+    
+    def length(self, group=None, view=None):
+        """Return the length of a group or view."""
+        if group:
+            return self._len[group]
+        if view:
+            return sum([self._len[g] for g in self.views[view]])
+            
+
     # ------------------------------------------------------------
     # Iteration and listing
     # ------------------------------------------------------------

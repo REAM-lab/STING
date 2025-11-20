@@ -2,12 +2,9 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
-import pandas as pd
+import copy
 
-# Import sting packages
-
-from sting.models.StateSpaceModel import StateSpaceModel
-from sting.models.Variables import Variables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 class Power_flow_variables(NamedTuple):
     vmag_bus: float 
@@ -23,8 +20,8 @@ class EMT_initial_conditions(NamedTuple):
 
 @dataclass
 class Parallel_rc_shunt:
-    idx: str
-    bus_idx: str
+    idx: int
+    bus_idx: int
     sbase: float	
     vbase: float
     fbase: float
@@ -45,7 +42,7 @@ class Parallel_rc_shunt:
         return 1/self.c
 
     def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.shunts.loc[self.idx]
+        sol = power_flow_instance.shunts.loc[f"{self.type}_{self.idx}"]
         self.pf  = Power_flow_variables(vmag_bus = sol.bus_vmag.item(),
                                         vphase_bus = sol.bus_vphase.item())
 
@@ -79,45 +76,20 @@ class Parallel_rc_shunt:
 
         D = np.zeros((2,2))      
 
-        u = Variables(
+        u = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
-            component=[self.idx]*2,
-            v_type=["grid"]*2,
+            component=[f"{self.type}_{self.idx}"]*2,
+            type=["grid"]*2,
             init=[self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q]
         )
         
-        x = Variables(
+        x = DynamicalVariables(
             name=["v_bus_D", "v_bus_Q"],
-            component=[self.idx]*2,
-            v_type=["grid"]*2,
+            component=[f"{self.type}_{self.idx}"]*2,
+            type=["grid"]*2,
             init=[self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q]
         )
+        y = copy.deepcopy(x)
 
-        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=x, x=x)
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
         
-        
-def combine_shunts(system):
-
-    print("> Reduce shunts to have one shunt per bus:")
-    
-    shunt_df = (
-        system
-        .view("shunts", attrs=["bus_idx", "g", "b"], dataframe=True)
-        .reset_index(drop=True)
-        .pivot_table(index='bus_idx', values=['g', 'b'], aggfunc='sum')
-    )
-
-    shunt_df['r'] = 1/shunt_df['g']
-    shunt_df['c'] = 1/shunt_df['b']
-    shunt_df['idx'] = range(len(shunt_df))
-    shunt_df.drop(columns=["b", "g"], inplace=True)
-
-    # Clear all existing parallel RC shunts
-    system.clear("pa_rc") 
-
-    # Add each effective/combined parallel RC shunt to the pa_rc components
-    for _, row in shunt_df.iterrows(): 
-        shunt = Parallel_rc_shunt(**row.to_dict())
-        system.add(shunt)
- 
-    print("\t- New list of parallel RC components created ... ok\n")

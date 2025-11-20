@@ -5,8 +5,7 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 
 # Import sting packages
-from sting.models.StateSpaceModel import StateSpaceModel
-from sting.models.Variables import Variables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 class Power_flow_variables(NamedTuple):
     p_bus: float
@@ -27,8 +26,8 @@ class EMT_initial_conditions(NamedTuple):
 
 @dataclass(slots=True)
 class Infinite_source:
-    idx: str
-    bus_idx: str 
+    idx: int
+    bus_idx: int 
     p_min: float
     p_max: float
     q_min: float
@@ -45,7 +44,7 @@ class Infinite_source:
     type: str = 'inf_src'
 
     def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.generators.loc[self.idx]
+        sol = power_flow_instance.generators.loc[f"{self.type}_{self.idx}"]
         self.pf  = Power_flow_variables(p_bus = sol.p.item(), 
                                         q_bus = sol.q.item(), 
                                         vmag_bus = sol.bus_vmag.item(),
@@ -104,30 +103,30 @@ class Infinite_source:
         v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
         v_int_d, v_int_q = self.emt_init_cond.v_int_d, self.emt_init_cond.v_int_q
         
-        u = Variables(
+        u = DynamicalVariables(
             name=["v_bus_D", "v_bus_Q", "v_ref_d", "v_ref_q"],
-            component=[self.idx]*4,
-            v_type=["grid", "grid", "device", "device"],
+            component=[f"{self.type}_{self.idx}"]*4,
+            type=["grid", "grid", "device", "device"],
             init=[v_bus_D, v_bus_Q, v_int_d, v_int_q]
         )
         
         # Outputs
         i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
         
-        y = Variables(
+        y = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
-            component=[self.idx]*2,
-            v_type=["grid", "grid"],
+            component=[f"{self.type}_{self.idx}"]*2,
+            type=["grid", "grid"],
             init=[i_bus_D, i_bus_Q]
         )
         
         # States
         i_bus_d, i_bus_q = self.emt_init_cond.i_bus_d, self.emt_init_cond.i_bus_q
         
-        x = Variables(
+        x = DynamicalVariables(
             name=["i_bus_d", "i_bus_q"],
-            component=[self.idx]*2,
-            v_type=["device", "device"],
+            component=[f"{self.type}_{self.idx}"]*2,
+            type=["device", "device"],
             init=[i_bus_d, i_bus_q]
         )
         

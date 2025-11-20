@@ -2,10 +2,10 @@
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 import numpy as np
+import copy
 
 # Import sting packages
-from sting.models.StateSpaceModel import StateSpaceModel
-from sting.models.Variables import Variables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 class Power_flow_variables(NamedTuple):
     vmag_from_bus: float 
@@ -27,9 +27,9 @@ class EMT_initial_conditions(NamedTuple):
 
 @dataclass(slots=True)
 class Series_rl_branch:
-    idx: str
-    from_bus: str
-    to_bus: str
+    idx: int
+    from_bus: int
+    to_bus: int
     sbase: float	
     vbase: float
     fbase: float
@@ -42,7 +42,7 @@ class Series_rl_branch:
     ssm: Optional[StateSpaceModel] = None
 
     def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.branches.loc[self.idx]     
+        sol = power_flow_instance.branches.loc[f"{self.type}_{self.idx}"]     
         self.pf  = Power_flow_variables(vmag_from_bus = sol.from_bus_vmag.item(),
                                         vphase_from_bus = sol.from_bus_vphase.item(),
                                         vmag_to_bus = sol.to_bus_vmag.item(),
@@ -89,20 +89,20 @@ class Series_rl_branch:
 
         D = np.zeros((2,4))
         
-        u = Variables(
+        u = DynamicalVariables(
             name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_D"],
-            component=[self.idx]*4,
-            v_type=["grid"]*4,
+            component=[f"{self.type}_{self.idx}"]*4,
+            type=["grid"]*4,
             init=[self.emt_init_cond.v_from_bus_D, self.emt_init_cond.v_from_bus_Q,
                   self.emt_init_cond.v_to_bus_D,   self.emt_init_cond.v_to_bus_Q]
         )
         
-        x = Variables(
+        x = DynamicalVariables(
             name=["i_br_D", "i_br_Q"],
-            component=[self.idx]*2,
-            v_type=["grid"]*2,
+            component=[f"{self.type}_{self.idx}"]*2,
+            type=["grid"]*2,
             init=[self.emt_init_cond.i_br_D, self.emt_init_cond.i_br_Q]
         )
-        
+        y = copy.deepcopy(x)
 
-        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=x, x=x)
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)

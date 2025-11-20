@@ -8,12 +8,12 @@ from typing import get_type_hints
 
 import sting
 from sting import data_files
-from sting.line.pi_model import decompose_lines 
-from sting.shunt.parallel_rc import combine_shunts
+from sting.line.core import decompose_lines 
+#from sting.shunt.core import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices
-from sting.models.StateSpaceModel import StateSpaceModel
+from sting.utils.dynamical_systems import StateSpaceModel
 
-from sting.utils.indices import ListMap
+from sting.utils.data_structures import ListMap
 
 
 class System(ListMap): 
@@ -120,11 +120,12 @@ class System(ListMap):
 
     def interconnect(self):
         # Get components in order of generators, then shunts, then branches
-        models = (
-            self.components.generator() + 
-            self.components.shunt() + 
-            self.components.branch()
-        )
+        generators = self.view("generators", "ssm")
+        shunts = self.view("shunts", "ssm")
+        branches = self.view("branches", "ssm")
+                
+        models = list(generators) + list(shunts)+ list(branches)
+        
         # Then interconnect models
         return StateSpaceModel.from_interconnected(models, self.connections)
 

@@ -130,14 +130,14 @@ class PowerFlow:
         Construct the following tables:
    
         * Generators * 
-                   | bus_idx  p_min  p_max  q_min  q_max
+        gen_idx    | bus_idx  p_min  p_max  q_min  q_max
         ------------------------------------------------
         inf_src_1 |  1       -2.0   2.0    -5.0    5.0
         
         * Buses * 
-              | v_min  v_max  p_load  q_load
+        idx   | v_min  v_max  p_load  q_load
         ------------------------------------------------
-        bus_1 | 1.00   1.00  0.00    0.00
+        1    | 1.00   1.00  0.00    0.00
         
         * Branches * 
                  | from_bus  to_bus  r    l
@@ -154,9 +154,13 @@ class PowerFlow:
         
         attrs = ["bus_idx", "p_min", "p_max", "q_min", "q_max"]
         self.generators = self.system.view("generators", attrs, dataframe=True)
+        self.generators.index.name = "gen_idx"
+        self.generators.bus_idx = self.generators.bus_idx.map(str)
         
-        attrs = ["v_min", "v_max", "p_load", "q_load"]
-        self.buses = self.system.view("buses", attrs, dataframe=True)
+        attrs = ["idx", "v_min", "v_max", "p_load", "q_load"]
+        self.buses = self.system.view("buses", attrs, dataframe=True).reset_index(drop=True).set_index("idx")
+        self.buses.index.name = "bus_idx"
+        self.buses.index =  self.buses.index.map(str)
         
         # Note: we assume only one branch between two adjecent buses
         attrs = ["from_bus", "to_bus", "r", "l"]
@@ -243,7 +247,7 @@ class PowerFlow:
         g = gsp.Set(m, name="gen_idx", records=generators.index)
 
         # Create link sets: (bus, gen). It is necessary to create bus power generation.
-        bus_gen_connections = generators.reset_index()[["bus_idx", "index"]].apply(
+        bus_gen_connections = generators.reset_index()[["bus_idx", "gen_idx"]].apply(
             tuple, axis=1
         )
         bus_gen = gsp.Set(m, domain=[n, g], records=list(bus_gen_connections))

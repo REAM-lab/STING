@@ -90,35 +90,47 @@ def get_ccm_matrices(system):
         """
         
         """
-        gens = system.components.generator()
-        branches = system.components.branch()
-        shunts = system.components.shunt()
+        attrs = ["bus_idx", "ssm"]
+        gen_buses, gen_ssm = system.view("generators", attrs=attrs)
+        
+        attrs = ["from_bus", "to_bus", "ssm"]
+        from_bus, to_bus, br_ssm = system.view("branches", attrs=attrs)
+        
+        sh_ssm = system.view("shunts", attrs="ssm")
         
         # Get the number of buses of the full system
-        num_buses = len(system.components.bus)
+        n_buses = system.length(view="buses")
 
-        # List containing the connecting bus of all the generators 
-        gen_bus_connections = [g.bus_idx for g in gens]
         # Build generation connection matrix
-        gen_cx = build_generation_connection_matrix(num_buses, gen_bus_connections)
+        gen_cx = build_generation_connection_matrix(n_buses, list(gen_buses))
         
         
         # List containing the tuples (from_bus, to_bus) of the branches
-        branch_frombus_tobus =  [(b.from_bus, b.to_bus) for b in branches]
+        br_from_to =   list(zip(from_bus, to_bus))
         # Build oriented incidence matrix
-        or_inc = build_oriented_incidence_matrix(num_buses, branch_frombus_tobus)
+        or_inc = build_oriented_incidence_matrix(n_buses, br_from_to)
 
         # Build unoriented incidence matrix
         un_inc = abs(or_inc)
-
-        d_gen = sum([g.ssm.u.n_device for g in gens])  # number of generator device-side inputs 
-        g_gen = sum([g.ssm.u.n_grid for g in gens])    # number of generator grid-side inputs 
-        y_gen = sum([len(g.ssm.y) for g in gens])      # number of generator outputs
-        g_br = sum([b.ssm.u.n_grid for b in branches]) # number of branch grid-side inputs 
-        y_br = sum([len(b.ssm.y) for b in branches])   # number of branch outputs
-        g_sh = sum([s.ssm.u.n_grid for s in shunts])   # number of shunt grid-side inputs 
-        y_sh = sum([len(s.ssm.y) for s in shunts])     # number of shunt outputs
-        y = y_gen + y_sh + y_br                        # number of system outputs
+        
+        
+        d_gen, g_gen, y_gen = 0, 0, 0
+        for ssm in gen_ssm:
+            d_gen += ssm.u.n_device # number of generator device-side inputs 
+            g_gen += ssm.u.n_grid   # number of generator grid-side inputs 
+            y_gen += len(ssm.y)     # number of generator outputs
+            
+        g_br, y_br = 0, 0
+        for ssm in br_ssm:
+            g_br += ssm.u.n_grid    # number of branch grid-side inputs 
+            y_br += len(ssm.y)      # number of branch outputs
+        
+        g_sh, y_sh = 0, 0
+        for ssm in sh_ssm:
+            g_sh += ssm.u.n_grid    # number of shunt grid-side inputs 
+            y_sh += len(ssm.y)      # number of shunt outputs
+        
+        y = y_gen + y_sh + y_br     # number of system outputs
 
         # Construct matrix F. We first build its blocks.
         F11 = np.zeros( (d_gen, y_gen) )
@@ -175,23 +187,27 @@ def build_ccm_permutation(system):
     # Create empty lists for transformations, list order follows that of generator_types_list
     Y1, Y2, T1 = [], [], []
 
-    # Iterate over the list of list of all gens: [[inf_src0, inf_src1], [], [gfli_b], ...]
-    for gens in system.components.generator(flat=False): 
+    # Iterate over the all generator types: [inf_src, gfmi_a, gfmi_b, ...]
+    for gen_type in system.views["generators"]:
+        # Number of generators of the given type
+        n = system.length(group=gen_type)
 
-        if not gens: # Continue if the list is empty
+        if n == 0:
             continue
         
         # Note: all generators in 'gens' of the same class and will have 
         # the same inputs and outputs. Thus, we only need to examine gen_0.
-        n = len(gens)              # number of generators
-        d = gens[0].ssm.u.n_device # number of device-side inputs 
-        g = gens[0].ssm.u.n_grid   # number of grid-side inputs 
+        gen_0 = next(system.values(gen_type))
+
+        d = gen_0.ssm.u.n_device # number of device-side inputs 
+        g = gen_0.ssm.u.n_grid   # number of grid-side inputs 
 
         # Build transformation (permutation) matrices
         X1 = np.kron(np.eye(n), 
                             np.hstack( ( np.eye(d), np.zeros((d, g)) ) ) )
         X2 = np.kron(np.eye(n), 
                             np.hstack( ( np.zeros((g, d)), np.eye(g) ) ) )
+        # Note: T1, and T2 are permutation matrices, thus inverse == transpose
         T1.append(np.linalg.inv(np.vstack((X1, X2))))
 
         # Also, append transformations that are used later

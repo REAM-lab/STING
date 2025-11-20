@@ -3,7 +3,7 @@ from typing import Optional
 
 @dataclass
 class Bus:
-    idx: str
+    idx: int
     v_min: float
     v_max: float
     p_load: float	
