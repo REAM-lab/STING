@@ -1,5 +1,5 @@
-from sting.branch.series_rl import Series_rl_branch
-from sting.shunt.parallel_rc import Parallel_rc_shunt
+from sting.branch.series_rl import BranchSeriesRL 
+from sting.shunt.parallel_rc import ShuntParallelRC
 
 def decompose_lines(system):
 
@@ -9,17 +9,17 @@ def decompose_lines(system):
     # Get the next open index for parallel RC shunts
     shunt_idx = system.next_open("pa_rc")
     
-    for line in system["line_ns"]:
+    for line in system["line_pi"]:
         
-        branch = Series_rl_branch(idx = line.idx, from_bus = line.from_bus, 
+        branch = BranchSeriesRL(idx = line.idx, from_bus = line.from_bus, 
             to_bus = line.to_bus, sbase = line.sbase, vbase = line.vbase, 
             fbase = line.fbase, r = line.r, l = line.l)
         
-        from_shunt = Parallel_rc_shunt(idx = shunt_idx, bus_idx = line.from_bus,
+        from_shunt = ShuntParallelRC(idx = shunt_idx, bus_idx = line.from_bus,
             sbase = line.sbase, vbase = line.vbase, fbase = line.fbase,
             r = 1/line.g, c = 1/line.b)
         
-        to_shunt = Parallel_rc_shunt(idx = shunt_idx+1, bus_idx = line.to_bus,
+        to_shunt = ShuntParallelRC(idx = shunt_idx+1, bus_idx = line.to_bus,
             sbase = line.sbase, vbase = line.vbase, fbase = line.fbase,
             r = 1/line.g, c = 1/line.b)
         
@@ -31,7 +31,7 @@ def decompose_lines(system):
         shunt_idx += 2
         
     # Delete all lines so they cannot be added to the system again
-    system.clear("line_ns")
+    system.clear("line_pi")
         
     print("... ok.\n")
     # TODO: Do the same for line with series compensation

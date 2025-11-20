@@ -1,10 +1,7 @@
-# Import standard python packages and third-party packages
 import numpy as np
 from scipy.linalg import block_diag
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
-
-# Import sting packages
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 
@@ -40,15 +37,16 @@ class InfiniteSource:
     fbase: float
     r: float
     l: float
-    pf: Optional[Power_flow_variables] = None
-    emt_init_cond: Optional[EMT_initial_conditions] = None
+    pf: Optional[PowerFlowVarsiables] = None
+    emt_init: Optional[InitialConditionsEMT] = None
     ssm: Optional[StateSpaceModel] = None
     name: str = field(default_factory=str)
     type: str = "inf_src"
+    tags: Optional[list] = field(default_factory=lambda : ["generators"])
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.generators.loc[f"{self.type}_{self.idx}"]
-        self.pf = Power_flow_variables(
+        self.pf = PowerFlowVarsiables(
             p_bus=sol.p.item(),
             q_bus=sol.q.item(),
             vmag_bus=sol.bus_vmag.item(),
@@ -70,7 +68,7 @@ class InfiniteSource:
         v_int_dq = v_int_DQ * np.exp(-ref_angle * np.pi / 180 * 1j)
         i_bus_dq = i_bus_DQ * np.exp(-ref_angle * np.pi / 180 * 1j)
 
-        self.emt_init_cond = EMT_initial_conditions(
+        self.emt_init = InitialConditionsEMT(
             v_bus_D=v_bus_DQ.real,
             v_bus_Q=v_bus_DQ.imag,
             v_int_d=v_int_dq.real,
@@ -87,25 +85,32 @@ class InfiniteSource:
         r = self.r
         l = self.l
         wb = 2 * np.pi * self.fbase
-        cosphi = np.cos(self.emt_init_cond.ref_angle * np.pi / 180)
-        sinphi = np.sin(self.emt_init_cond.ref_angle * np.pi / 180)
+        cosphi = np.cos(self.emt_init.ref_angle * np.pi / 180)
+        sinphi = np.sin(self.emt_init.ref_angle * np.pi / 180)
 
-        Rotmat = np.array([[cosphi, -sinphi], [sinphi, cosphi]])
+        # Roation matrix (turn off code formatters for matrices)
+        # fmt: off
+        R = np.array(
+            [[cosphi, -sinphi], 
+             [sinphi, cosphi]])
 
-        # State-space matrices
-        A = wb * np.array([[-r / l, 1], [-1, -r / l]])
+        # Define state-space matrices 
+        A = wb * np.array(
+            [[-r/l,    1], 
+             [   1, -r/l]])
 
-        B = (
-            wb * np.array([[1 / l, 0, -1 / l, 0], [0, 1 / l, 0, -1 / l]])
-        ) @ block_diag(np.eye(2), np.transpose(Rotmat))
-
-        C = Rotmat
+        B = wb * np.array(
+            [[  1/l,    0, -1/l,    0], 
+             [    0,  1/l,    0, -1/l]]) 
+        B = B @ block_diag(np.eye(2), R.T) 
+        # fmt: on
+        C = R
 
         D = np.zeros((2, 4))
 
         # Inputs
-        v_bus_D, v_bus_Q = self.emt_init_cond.v_bus_D, self.emt_init_cond.v_bus_Q
-        v_int_d, v_int_q = self.emt_init_cond.v_int_d, self.emt_init_cond.v_int_q
+        v_bus_D, v_bus_Q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        v_int_d, v_int_q = self.emt_init.v_int_d, self.emt_init.v_int_q
 
         u = DynamicalVariables(
             name=["v_bus_D", "v_bus_Q", "v_ref_d", "v_ref_q"],
@@ -115,7 +120,7 @@ class InfiniteSource:
         )
 
         # Outputs
-        i_bus_D, i_bus_Q = self.emt_init_cond.i_bus_D, self.emt_init_cond.i_bus_Q
+        i_bus_D, i_bus_Q = self.emt_init.i_bus_D, self.emt_init.i_bus_Q
 
         y = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
@@ -125,7 +130,7 @@ class InfiniteSource:
         )
 
         # States
-        i_bus_d, i_bus_q = self.emt_init_cond.i_bus_d, self.emt_init_cond.i_bus_q
+        i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
 
         x = DynamicalVariables(
             name=["i_bus_d", "i_bus_q"],

@@ -1,15 +1,13 @@
-# Import standard and third-party packages
 import pandas as pd
 import importlib
 import os
 from typing import get_type_hints
-#from dataclasses import make_dataclass, field
 #import matlab.engine
 
 import sting
 from sting import data_files
 from sting.line.core import decompose_lines 
-#from sting.shunt.core import combine_shunts
+# from sting.shunt.core import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices
 from sting.utils.dynamical_systems import StateSpaceModel
 
@@ -27,7 +25,7 @@ class System(ListMap):
         if not components:
             data_dir = os.path.dirname(data_files.__file__)
             filepath = os.path.join(data_dir, "components_metadata.csv")
-            components = pd.read_csv(filepath , usecols=["component"]).squeeze()
+            components = pd.read_csv(filepath , usecols=["type"]).squeeze()
         
         # Components are stored under their type and index ("inf_src", 1)
         super().__init__(groups=components, look_up=lambda c: (c.type, c.idx))
@@ -56,7 +54,7 @@ class System(ListMap):
         
         print("> Load components via CSV files from:")
 
-        for(_, c_name, c_type, c_class, c_module, filename) in meta_data:
+        for(_, c_name, c_class, c_module, filename) in meta_data:
             
             filepath = os.path.join(inputs_directory, filename)
             # If no such file exits, continue
@@ -107,14 +105,12 @@ class System(ListMap):
         # Construct the component connection matrices for the system model
         self.connections = get_ccm_matrices(self)
         
-            
         
     def create_zone(self, c_names):
         pass
                    
 
     def permute(self, index):
-        # assert len(set(index)) == len(self.components)
         pass
 
 

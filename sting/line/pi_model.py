@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 @dataclass
-class Line_no_series_compensation:
+class LinePiModel:
     idx: str
     from_bus: str
     to_bus: str
@@ -13,4 +13,5 @@ class Line_no_series_compensation:
     g: float
     b: float
     name: str = field(default_factory=str)
-    type: str = 'line_ns'
+    type: str = 'line_pi'
+    tags: list =  field(default_factory=lambda : list) 
