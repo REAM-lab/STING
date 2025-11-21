@@ -2,9 +2,11 @@ import pandas as pd
 import importlib
 import os
 from typing import get_type_hints
-#import matlab.engine
 
-import sting
+import matlab.engine
+        
+# Import src packages
+from sting import __logo__
 from sting import data_files
 from sting.line.core import decompose_lines 
 # from sting.shunt.core import combine_shunts
@@ -18,7 +20,7 @@ class System(ListMap):
 
     def __init__(self, components=None):
         
-        print(sting.__logo__)
+        print(__logo__)
         print("> System initialization", end=" ")
 
         # If no components are given, use all in the meta data files
@@ -129,29 +131,17 @@ class System(ListMap):
     def stack(self):
         return StateSpaceModel.from_stacked(self.components.all())
 
-    
-    def to_matlab_session(self, session_name = None):
-        pass
-    
-                
 
-    # def export_components_data_as_matlab_file(self, matlab_session_name = None):
+    def to_matlab_session(self, matlab_session_name = None):
+        
+        current_matlab_sessions = matlab.engine.find_matlab()
 
-    #     current_matlab_sessions = None #matlab.engine.find_matlab()
+        if not matlab_session_name in current_matlab_sessions:
+            print('> Initiate Matlab session, as a session was not founded or entered.')
+            eng = matlab.engine.start_matlab()
+        else:
+            eng = matlab.engine.connect_matlab(matlab_session_name)
+            print(f'> Connect to Matlab session: {matlab_session_name} ... ok.')
+            eng.workspace[typ] = components_dict
 
-    #     if not matlab_session_name in current_matlab_sessions:
-    #         print('> Initiate Matlab session, as a session was not founded or entered.')
-    #         eng = matlab.engine.start_matlab()
-    #     else:
-    #         eng = matlab.engine.connect_matlab(matlab_session_name)
-    #         print(f'> Connect to Matlab session: {matlab_session_name} ... ok.')
-    
-    #     components_types = self.component_types
-    #     for typ in components_types:
-    #         components = getattr(self, typ)
-
-    #         components_dict = [data_tools.convert_class_instance_to_dictionary(i) for i in components]
-
-    #         eng.workspace[typ] = components_dict
-
-    #     eng.quit()
+        eng.quit()

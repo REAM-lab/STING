@@ -26,7 +26,7 @@ setup(
             "numpy",
             "scipy",
             "tabulate", 
-            "matlab",
-            "matplotlib"
+            "matplotlib",
+	        "matlabengine==25.1.2",
         ],
     )

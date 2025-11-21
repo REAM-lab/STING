@@ -149,9 +149,7 @@ class PowerFlow:
         ------------------------------------------------
         pa_rc_1 |        1  0.05  0.066667
 
-        """
-        self.check_required_solvers()
-        
+        """        
         attrs = ["bus_idx", "p_min", "p_max", "q_min", "q_max"]
         self.generators = self.system.view("generators", attrs, dataframe=True)
         self.generators.index.name = "gen_idx"
@@ -168,28 +166,6 @@ class PowerFlow:
         
         attrs = ["bus_idx", "g", "b"]
         self.shunts = self.system.view("shunts", attrs, dataframe=True)
-
-
-    def check_required_solvers(self):
-        list_of_installed_solvers = gsp.utils.getInstalledSolvers(gamspy_base.directory)
-
-        if self.acopf_settings["solver"] not in list_of_installed_solvers:
-
-            command = ["gamspy install solver ipopt"]
-
-            try:
-                # Execute the command
-                # capture_output=True captures stdout and stderr
-                # text=True decodes the output as text
-                result = subprocess.run(
-                    command, shell=True, capture_output=True, text=True, check=True
-                )
-
-                # Print the output of the command
-                print(result.stdout)
-
-            except subprocess.CalledProcessError as e:
-                print(f"Error executing command: {e}. Power Flow may not be executed.")
 
 
     def run_acopf(self):

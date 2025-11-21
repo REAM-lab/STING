@@ -21,7 +21,7 @@ class InitialConditionsEMT(NamedTuple):
     i_bus_q: float
     i_bus_D: float
     i_bus_Q: float
-    ref_angle: float
+    angle_ref: float
 
 
 @dataclass(slots=True)
@@ -63,10 +63,10 @@ class InfiniteSource:
         i_bus_DQ = ((p_bus + 1j * q_bus) / v_bus_DQ).conjugate()
 
         v_int_DQ = v_bus_DQ + i_bus_DQ * (self.r + 1j * self.l)
-        ref_angle = np.angle(v_int_DQ, deg=True)
+        angle_ref = np.angle(v_int_DQ, deg=True)
 
-        v_int_dq = v_int_DQ * np.exp(-ref_angle * np.pi / 180 * 1j)
-        i_bus_dq = i_bus_DQ * np.exp(-ref_angle * np.pi / 180 * 1j)
+        v_int_dq = v_int_DQ * np.exp(-angle_ref * np.pi / 180 * 1j)
+        i_bus_dq = i_bus_DQ * np.exp(-angle_ref * np.pi / 180 * 1j)
 
         self.emt_init = InitialConditionsEMT(
             v_bus_D=v_bus_DQ.real,
@@ -77,16 +77,18 @@ class InfiniteSource:
             i_bus_q=i_bus_dq.imag,
             i_bus_D=i_bus_DQ.real,
             i_bus_Q=i_bus_DQ.imag,
-            ref_angle=ref_angle,
+            angle_ref=angle_ref,
         )
+
 
     def _build_small_signal_model(self):
 
         r = self.r
         l = self.l
+        
         wb = 2 * np.pi * self.fbase
-        cosphi = np.cos(self.emt_init.ref_angle * np.pi / 180)
-        sinphi = np.sin(self.emt_init.ref_angle * np.pi / 180)
+        cosphi = np.cos(self.emt_init.angle_ref * np.pi / 180)
+        sinphi = np.sin(self.emt_init.angle_ref * np.pi / 180)
 
         # Roation matrix (turn off code formatters for matrices)
         # fmt: off
