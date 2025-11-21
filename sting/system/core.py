@@ -2,18 +2,13 @@ import pandas as pd
 import importlib
 import os
 from typing import get_type_hints
-
-# import matlab.engine
-
-# Import src packages
 from sting import __logo__
 from sting import data_files
 from sting.line.core import decompose_lines
-
+from sting.utils import data_tools
 # from sting.shunt.core import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices
 from sting.utils.dynamical_systems import StateSpaceModel
-
 from sting.utils.data_structures import ListMap
 
 
@@ -145,15 +140,23 @@ class System(ListMap):
         return StateSpaceModel.from_stacked(self.components.all())
 
     def to_matlab_session(self, matlab_session_name=None):
-
+        import matlab.engine
+        
         current_matlab_sessions = matlab.engine.find_matlab()
 
         if not matlab_session_name in current_matlab_sessions:
-            print("> Initiate Matlab session, as a session was not founded or entered.")
+            print('> Initiate Matlab session, as a session was not founded or entered.')
             eng = matlab.engine.start_matlab()
         else:
             eng = matlab.engine.connect_matlab(matlab_session_name)
-            print(f"> Connect to Matlab session: {matlab_session_name} ... ok.")
+            print(f'> Connect to Matlab session: {matlab_session_name} ... ok.')
+    
+        components_types = self.component_types
+        for typ in components_types:
+            components = getattr(self, typ)
+
+            components_dict = [data_tools.convert_class_instance_to_dictionary(i) for i in components]
+
             eng.workspace[typ] = components_dict
 
         eng.quit()
