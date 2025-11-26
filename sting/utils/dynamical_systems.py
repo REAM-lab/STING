@@ -181,22 +181,21 @@ class StateSpaceModel:
 
     @classmethod
     def from_csv(cls, filepath):
-        A = csv_to_matrix(os.path.join(filepath, "A.csv"))
-        B = csv_to_matrix(os.path.join(filepath, "B.csv"))
-        C = csv_to_matrix(os.path.join(filepath, "C.csv"))
-        D = csv_to_matrix(os.path.join(filepath, "D.csv"))
-        
-        x = tuple(map(list, zip(*A.columns)))
+        A, x, _ = csv_to_matrix(os.path.join(filepath, "A.csv"))
+        B, _, _ = csv_to_matrix(os.path.join(filepath, "B.csv"))
+        C, _, _ = csv_to_matrix(os.path.join(filepath, "C.csv"))
+        D, y, u = csv_to_matrix(os.path.join(filepath, "D.csv"))
+
+        x = tuple(map(list, zip(*x)))
         x = DynamicalVariables(component=x[0], name=x[1])
-        
-        y = tuple(map(list, zip(*C.index.tolist())))
+
+        y = tuple(map(list, zip(*y)))
         y = DynamicalVariables(component=y[0], name=y[1])
-        
-        u = tuple(map(list, zip(*B.columns)))
+
+        u = tuple(map(list, zip(*u)))
         u = DynamicalVariables(component=u[0], name=u[1])
-        
-        return cls(A=A.to_numpy(), B=B.to_numpy(), C=C.to_numpy(), D=D.to_numpy(), x=x, y=y, u=u)
-        
+
+        return cls(A=A, B=B, C=C, D=D, x=x, y=y, u=u)
 
     def coordinate_transform(self, invT, T):
         pass

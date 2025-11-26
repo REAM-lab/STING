@@ -96,12 +96,16 @@ def convert_class_instance_to_dictionary(instance: object, excluded_attributes=N
 def matrix_to_csv(filepath, matrix, index, columns):
     df = pd.DataFrame(matrix, index=index, columns=columns)
     df.to_csv(filepath)
-    
-    
+
+
 def csv_to_matrix(filepath):
-    matrix = pd.read_csv(filepath)
-    matrix.set_index(matrix.columns[0], inplace=True)
-    return matrix
+    df = pd.read_csv(filepath)
+    df.set_index(df.columns[0], inplace=True)
+    # Unpack matrix, index, and columns
+    matrix = df.to_numpy()
+    index = df.index.tolist()
+    columns = list(df.columns)
+    return matrix, index, columns
 
 
 def mat2cell(A, m, n):

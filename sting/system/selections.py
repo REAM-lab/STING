@@ -3,6 +3,7 @@ from itertools import tee
 from typing import Iterable, Any
 import pandas as pd
 
+
 class Stream:
     def __init__(self, iterator: Iterable[Any]):
         self._iterable = iterator
@@ -42,16 +43,19 @@ class Stream:
         df = pd.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)})
         return df
 
+
 # ------------------------------------------------------------
 # Common selections
 # ------------------------------------------------------------
 
+
 def generators():
     pass
+
 
 def shunts():
     pass
 
+
 def branches():
     pass
-
