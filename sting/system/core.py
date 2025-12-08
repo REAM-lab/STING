@@ -1,177 +1,286 @@
+# Import Python packages
 import pandas as pd
 import importlib
 import os
+import itertools
 from typing import get_type_hints
+from dataclasses import fields
+
+# Import source packages
+from sting import __logo__
 from sting import data_files
+from sting.line.core import decompose_lines
+from sting.utils import data_tools
 
-class System: 
+# from sting.shunt.core import combine_shunts
+from sting.utils.graph_matrices import get_ccm_matrices
+from sting.utils.dynamical_systems import StateSpaceModel
+import sting.system.selections as sl
 
-    def __init__(self):
 
-        print('\n')
-        print("=" * 40)
-        print("\u26A1 STING 0.1.0 \u26A1")
-        print("=" * 40)
-        print('\n')
-        print("> System initialization: \n")
+class System:
+    """
+    A power system object comprised of multiple components. 
 
-        module_file_path = data_files.__file__
-        filepath = os.path.join(os.path.dirname(module_file_path), 'grid_components.csv')
-        self.grid_components_df = pd.read_csv(filepath) 
+    A list components of all possible are components within the system
+    can be supplied during initialization. If no such list is supplied, 
+    the power system will be initialized to accommodate all components 
+    in ./data_files/components_metadata.csv.
+    """
+    # ------------------------------------------------------------
+    # Construction + Read/Write
+    # ------------------------------------------------------------
+    def __init__(self, components=None):
+        """
+        Create attributes for the system that correspond to different types of components
+        For example: if we type sys = System(), then sys will have the attributes
+        sys.gfli_a, sys.gfmi_c, etc, and each of them initialized with empty lists []. 
+        Each of these component types are by default given in the file components_metadata.csv.
+
+        ### Inputs:
+        - self (System instance)
+        - components (list): Type of components, for example components=['gfli_a', 'gfmi_c'].
+
+        ### Outputs:
+        - self.components (dataframe): Stores the list of components, modules, classes and csv files.
+        - self.class_to_str (dict): Maps class with type for each component. For example, InfiniteSource => inf_src
+        """
+
+        print(__logo__) # print logo when a System instance is created
+        print("> System initialization", end=" ")
+
+        # Get components_metadata.csv as a dataframe.
+        # This file contains information of the lists of components that integrate the system
+        data_dir = os.path.dirname(data_files.__file__) # get directory of data_files
+        filepath = os.path.join(data_dir, "components_metadata.csv") # get directory 
+        self.components = pd.read_csv(filepath) # get list of components as dataframe
+
+        # If components are given, only use the relevant meta-data
+        if components:
+            active_components = self.components["type"].isin(components)
+            self.components = self.components[active_components]
+
+        # Mapping of a components class to its string representation
+        self.class_to_str = dict(zip(self.components["class"], self.components["type"]))
+
+        # Create a new attribute (an empty list) for each component type 
+        for component_name in self.components["type"]:
+            setattr(self, component_name, [])
+
+        print("... ok.")
+
+    @classmethod
+    def from_csv(cls, case_dir=os.getcwd(), components=None):
+        """
+        Add components from csv files. Each csv file has components of the same type.
+        For example: gfli_a.csv contains ten gflis, but from the same type gfli_a.
+        Each row of gfli_a.csv is a gfli_a that will be added to the system attribute gfli_a. 
         
-        df = self.grid_components_df.copy()
-        self.generator_types_list =  df.loc[df['type'] == 'generator', 'component'].to_list()
-        self.line_types_list =  df.loc[df['type'] == 'line', 'component'].to_list()
-        self.branch_types_list =  df.loc[df['type'] == 'branch', 'component'].to_list()
-        self.shunt_types_list =  df.loc[df['type'] == 'shunt', 'component'].to_list()
-        self.component_types = dict(zip(self.grid_components_df['component'], self.grid_components_df['class']))
+        ### Inputs:
+        - cls (System class)
+        - case_dir (str): Directory of the case study. 
+                        This directory has a folder "inputs" that has the csv files. 
+                        By default it is current directory where we execute sting.
+        - components (list): Type of components, for example components=['gfli_a', 'gfmi_c'].
+        
+        ### Outputs:
+        - self (System instance): it contains the components that have data from csv files.
+        """
 
-        print("    Empty lists created for the following components:")
-        for _, row1 in self.grid_components_df.iterrows():
+        # Get directory of the folder "inputs"
+        inputs_dir = os.path.join(case_dir, "inputs") 
 
-            component_name = row1['component'] # Name of component 
-            component_class = row1['class']
-            setattr(self, component_name, [])  # Add an empty list of components
+        # Create instance System.
+        self = cls(components=components) 
 
-            print(f"  - {component_name} : {component_class} ")
-        print(' ')
+        print("> Load components via CSV files from:")
 
-    def load_components_via_input_csv_files(self):
+        for _, c_name, c_class, c_module, filename in self.components.itertuples(
+            name=None
+        ):
+            # Expected file with components, for example: gfli_a.csv, or inf_src.csv
+            filepath = os.path.join(inputs_dir, filename)
 
-        print("> Load components via CSV files from: \n")
+            # If no such file exits, continue. For example, 
+            # if there is no gfli_a.csv, then the sys.gfli_a = []
+            if not os.path.exists(filepath):
+                continue
 
-        inputfolder_directory = os.path.join(os.getcwd(), 'inputs') 
-        for(_, component, type, clas, module, input_csv)  in self.grid_components_df.itertuples(name=None):
+            # Import module (.py file). For example import sting.generator.gfli_a
+            class_module = importlib.import_module(c_module) 
 
-            class_module = importlib.import_module(module)  # Import module
-            component_class = getattr(class_module, clas) # Import class
-            component_name = component # Name of component 
-            parameters_dtypes = get_type_hints(component_class)
-            parameters_dtypes = {key: value for key, value in parameters_dtypes.items() if value.__module__ == 'builtins'}
+            # Import class. For example, GFLI_a
+            component_class = getattr(class_module, c_class)
 
-            
-            components_list =  getattr(self, component_name) # Get list of components (empty or already created)
-            
-            filename = input_csv
-            filepath = os.path.join(inputfolder_directory, filename) 
+            # Get a dictionary that maps fields of class with their corresponding types
+            class_param_types = get_type_hints(component_class)
+            #parameters_dtypes = {
+            #    key: value
+            #    for key, value in parameters_dtypes.items()
+            #    if value.__module__ == "builtins"
+            #}
 
-            if os.path.exists(filepath):
-                print(f"  - '{filepath}'", end=' ')
-                df = pd.read_csv(filepath, dtype=parameters_dtypes) # Import dataframe as csv
-                n_components = len(df) # number of components 
+            # Read only 1 row, do not treat the first row as headers (header=None)
+            df = pd.read_csv(filepath, nrows=1, header=None)
+            csv_header = df.iloc[0].tolist()
 
-                if n_components>0: # check if there is at least one row aside from headers
-                    
-                    if 'idx' not in df.columns:
-                        df['idx'] = [component_name + str(i) for i in range(1, n_components+1)] # create index
+            # Filter out the pairs (key, value) from class_param_types 
+            # that are not in csv header
+            param_types = {
+                key: value
+                for key, value in class_param_types.items()
+                if key in csv_header
+            }
 
-                    for row2 in df.itertuples(index=False): # iterate over the row of each csv
-                        component_data = row2._asdict() # transform row into dict
-                        components_list.append(component_class(**component_data)) # create component and add to a list
-                    print("... ok.")
+            # Read components csv
+            print(f"\t- '{filepath}'", end=" ")
+            df = pd.read_csv(filepath, dtype=param_types)
 
-                else:
-                    print("... it is empty.")   
-        print(' ')
+            # Create a component for each row (i.e., component) in the csv
+            for row in df.itertuples(index=False):
+                component = component_class(**row._asdict())
+                # Add the component to the system
+                self.add(component)
 
-    def dissect_lines_into_branches_and_shunts(self):
+            print("... ok.")
 
-        from sting.branch.series_rl import Series_rl_branch
-        from sting.shunt.parallel_rc import Parallel_rc_shunt
+        return self
 
-        print("> Add branches and shunts from dissecting lines: \n")
+    def to_csv(self, output_dir=None):
+        # TODO: This is untested
+        for name in self.components["type"]:
+          lst = getattr(self, name)
+          if lst:
+              # Assumes each component is a dataclass with fields
+              cols = fields(lst[0])
+              df = self.query(name).to_table(cols)
+              df.to_csv(os.path.join(output_dir, self.components["input_csv"]))
 
-        print("  - Lines with no series compensation", end=' ')
-        for line in self.line_ns:
-            self.se_rl.append(Series_rl_branch( idx = 'from_' + line.idx, 
-                                                type = 'branch', 
-                                                from_bus = line.from_bus, 
-                                                to_bus = line.to_bus,
-                                                sbase = line.sbase,
-                                                vbase = line.vbase,
-                                                fbase = line.fbase,
-                                                r = line.r,
-                                                l = line.l ))
-                
-            self.pa_rc.append(Parallel_rc_shunt( idx = line.idx + '_frombus',
-                                                 type = 'shunt', 
-                                                 bus_idx = line.from_bus,
-                                                 sbase = line.sbase,
-                                                 vbase = line.vbase,
-                                                 fbase = line.fbase,
-                                                 r = 1/line.g,
-                                                 c = 1/line.b,
-                                                  ))
-            
-            self.pa_rc.append(Parallel_rc_shunt( idx = line.idx + '_tobus',
-                                                 type = 'shunt', 
-                                                 bus_idx = line.to_bus,
-                                                 sbase = line.sbase,
-                                                 vbase = line.vbase,
-                                                 fbase = line.fbase,
-                                                 r = 1/line.g,
-                                                 c = 1/line.b,
-                                                  ))
-        print("... ok")
-        print(" ")
-            
-        # TODO: Do the same for line with series compensation
+    def to_matlab(self, session_name=None, export=None, excluded_attributes=None):
+        # TODO: Not sure if this has been tested
+        import matlab.engine
 
-    def reduce_shunts_to_one_per_bus(self):
+        if export is None:
+            export = list(self.class_to_str.values())
 
-        print("> Reduce shunts to have one shunt per bus: \n")
+        current_matlab_sessions = matlab.engine.find_matlab()
 
-        from sting.shunt.parallel_rc import Parallel_rc_shunt
+        if not session_name in current_matlab_sessions:
+            print("> Initiate Matlab session, as a session was not founded or entered.")
+            eng = matlab.engine.start_matlab()
+        else:
+            eng = matlab.engine.connect_matlab(session_name)
+            print(f"> Connect to Matlab session: {session_name} ... ok.")
 
-        bus_idx, g, b = [], [], [], []
+        for typ in export :
+            components = getattr(self, typ)
 
-        for shuntype in ['pa_rc']: # iterate over each shunt type
-            shs = getattr(self, shuntype)
-            bus_idx.extend([s.bus_idx for s in shs])
-            g.extend([s.g for s in shs])
-            b.extend([s.b for s in shs])
+            components_dict = [
+                data_tools.convert_class_instance_to_dictionary(i, excluded_attributes=excluded_attributes) for i in components
+            ]
+            eng.workspace[typ] = components_dict
 
-        shunt_df = pd.DataFrame({'bus_idx': bus_idx, 'g': g, 'b': b})    
-        shunt_df = shunt_df.pivot_table(index='bus_idx', values=['g', 'b'], aggfunc ='sum')
-        shunt_df['r'] = 1/shunt_df['g']
-        shunt_df['c'] = 1/shunt_df['b']
-        shunt_df['idx'] = ['shred' + str(i) for i in range(len(shunt_df))] 
-        shunt_df.reset_index(inplace=True)
+        eng.quit()
 
-        pa_rc = [] # create new list of components "parallel rc shunts"
+    # ------------------------------------------------------------
+    # Component Management + Searching
+    # ------------------------------------------------------------
+    def add(self, component):
+        """Add a new component to the system."""
+        # Get the component string representation (InfiniteSource -> inf_src)
+        component_attr = self.class_to_str[type(component).__name__]
+        component_list = getattr(self, component_attr)
+        # Assign the component a 1-based index value
+        component.idx = len(component_list) + 1
+        # Add the component to the list
+        component_list.append(component)
+        
+    def _generator(self, names):
+        # Collect all lists of components in the component_types
+        all_components = [getattr(self, name) for name in names]
+         # Yield all components following the order in component_types
+        return itertools.chain(*all_components)
 
-        for _, row in shunt_df.iterrows(): # iterate over the row of shunt_df
-                component_data = row.to_dict() # transform row into dict
-                pa_rc.append(Parallel_rc_shunt(**component_data)) # create component and add to a lis
- 
-        self.pa_rc = pa_rc # assign new list of components. The previous list will be deleted.
-        print("  - New list of parallel rc components created ... ok \n")
+    def query(self, *args):
+        """
+        Return a Stream over a set of component types. Analogous to FROM in 
+        SQL, specifying which tables to access data from. For example, 
+        "FROM gfmi_a, inf_src SELECT idx" would be written as:
+        >>> power_sys.query("gfmi_a", "inf_src").select("idx")
+        
+        If no tables are provided runs a Stream over all components.
+        """
+        if not args:
+            return sl.Stream(self, index_map=self.class_to_str)
+        # Unpack all args calling on self if they are a function
+        names = [arg(self) if callable(arg) else [arg] for arg in args]
+        # Flatten the list of component types to query from
+        names = itertools.chain(*names)
 
-    def transfer_power_flow_solution_to_components(self, power_flow_instance):
+        return sl.Stream(self._generator(names), index_map=self.class_to_str)
 
-        for type in self.component_types:
-            list_of_components = getattr(self, type)
-            c0 = list_of_components[0] if list_of_components else None
-            if hasattr(c0, '_load_power_flow_solution'):
-                for c in list_of_components:
-                    c._load_power_flow_solution(power_flow_instance)
+    def __iter__(self):
+        return self._generator(self.components["type"])
+    
+    def apply(self, method, *args):
+        """Call a given method on all components with the method."""
+        for component in self:
+            if hasattr(component, method):
+                getattr(component, method)(*args)
 
-    def calculate_emt_initial_condition_of_components(self):
+    @property
+    def generators(self):
+        return self.query(sl.generators())
 
-        for type in self.component_types:
-            list_of_components = getattr(self, type)
-            c0 = list_of_components[0] if list_of_components else None
-            if hasattr(c0, '_calculate_emt_initial_conditions'):
-                for c in list_of_components:
-                    c._calculate_emt_initial_conditions()
+    @property
+    def shunts(self):
+        return self.query(sl.shunts())
 
-    def build_small_signal_model_of_components(self):
+    @property
+    def branches(self):
+        return self.query(sl.branches())
 
-        for type in self.component_types:
-            list_of_components = getattr(self, type)
-            c0 = list_of_components[0] if list_of_components else None
-            if hasattr(c0, '_build_small_signal_model'):
-                for c in list_of_components:
-                    c._build_small_signal_model()
+    # ------------------------------------------------------------
+    # Small-Signal Modeling
+    # ------------------------------------------------------------
+    def clean_up(self):
+        """
+        Apply any component clean up needed prior to methods like power flow.
+        """
+        decompose_lines(self)
+        #TODO: I think combine_shunts(self) is untested
 
+    def construct_ssm(self, pf_instance):
+        """
+        Create each components SSM given a power flow solution
+        """
+        # Build each components SSM
+        self.apply("_load_power_flow_solution", pf_instance)
+        self.apply("_calculate_emt_initial_conditions")
+        self.apply("_build_small_signal_model")
 
+        # Construct the component connection matrices for the system model
+        self.connections = get_ccm_matrices(self)
+
+    def interconnect(self):
+        """
+        Return a state-space model of all interconnected components
+        """
+        # Get components in order of generators, then shunts, then branches
+        generators, = self.generators.select("ssm")
+        shunts, = self.shunts.select("ssm")
+        branches, = self.branches.select("ssm")
+
+        models = itertools.chain(generators, shunts, branches)
+
+        # Then interconnect models
+        return StateSpaceModel.from_interconnected(models, self.connections)
+
+    # ------------------------------------------------------------
+    # Model Reduction (TBD?)
+    # ------------------------------------------------------------
+    def create_zone(self, c_names):
+        pass
+
+    def permute(self, index):
+        pass

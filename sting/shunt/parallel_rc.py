@@ -1,83 +1,102 @@
 import numpy as np
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional
-from sting.utils.linear_systems_tools import State_space_model
+from typing import NamedTuple, Optional, ClassVar
+import copy
 
-class Power_flow_variables(NamedTuple):
-    vmag_bus: float = 0
-    vphase_bus: float = 0
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
-class EMT_initial_conditions(NamedTuple):
-    vmag_bus: float = 0
-    vphase_bus: float = 0
-    v_bus_DQ: float = 0
-    i_bus_DQ: complex = 0
-    x: np.ndarray = 0
-    y: np.ndarray = 0
+
+class PowerFlowVariables(NamedTuple):
+    vmag_bus: float
+    vphase_bus: float
+
+
+class InitialConditionsEMT(NamedTuple):
+    vmag_bus: float
+    vphase_bus: float
+    v_bus_D: float
+    v_bus_Q: float
+    i_bus_D: float
+    i_bus_Q: float
+
 
 @dataclass
-class Parallel_rc_shunt:
-    idx: str
-    bus_idx: str
-    sbase: float	
+class ShuntParallelRC:
+    idx: int = field(default=-1, init=False)
+    bus_idx: int
+    sbase: float
     vbase: float
     fbase: float
     r: float
     c: float
-    pf: Power_flow_variables = field(default_factory=Power_flow_variables)
-    emt_init_cond: EMT_initial_conditions = field(default_factory=EMT_initial_conditions)
-    ssm: Optional[State_space_model] = None
+    pf: Optional[PowerFlowVariables] = None
+    emt_init: Optional[InitialConditionsEMT] = None
+    ssm: Optional[StateSpaceModel] = None
     name: str = field(default_factory=str)
-    type: str = 'shunt'
+    tags: ClassVar[list[str]] = ["shunt"]
 
     @property
     def g(self):
-        return 1/self.r
-    
+        return 1 / self.r
+
     @property
     def b(self):
-        return 1/self.c
+        return 1 / self.c
 
     def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.shunts.loc[self.idx]
-        self.pf  = Power_flow_variables(vmag_bus = sol.bus_vmag.item(),
-                                        vphase_bus = sol.bus_vphase.item())
+        sol = power_flow_instance.shunts.loc[f"pa_rc_{self.idx}"]
+        self.pf = PowerFlowVariables(
+            vmag_bus=sol.bus_vmag.item(), vphase_bus=sol.bus_vphase.item()
+        )
 
     def _calculate_emt_initial_conditions(self):
         vmag_bus = self.pf.vmag_bus
         vphase_bus = self.pf.vphase_bus
 
-        v_bus_DQ = vmag_bus*np.exp(vphase_bus*1j*np.pi/180); 
-        v_bus_D, vbus_Q =  np.real(v_bus_DQ), np.imag(v_bus_DQ) 
-        
-        i_bus_DQ =  v_bus_DQ*self.g +  v_bus_DQ*(1j*self.b)
+        v_bus_DQ = vmag_bus * np.exp(vphase_bus * 1j * np.pi / 180)
+        i_bus_DQ = v_bus_DQ * self.g + v_bus_DQ * (1j * self.b)
 
-        x = np.array([ v_bus_D, vbus_Q])
-
-        y = np.array([ v_bus_D, vbus_Q])
-
-        local_vars = locals()
-        data = {field: local_vars[field] for field in EMT_initial_conditions._fields}
-
-        self.emt_init_cond = EMT_initial_conditions(**data)
+        self.emt_init = InitialConditionsEMT(
+            vmag_bus=vmag_bus,
+            vphase_bus=vphase_bus,
+            v_bus_D=v_bus_DQ.real,
+            v_bus_Q=v_bus_DQ.imag,
+            i_bus_D=i_bus_DQ.real,
+            i_bus_Q=i_bus_DQ.imag,
+        )
 
     def _build_small_signal_model(self):
         g = self.g
         b = self.b
-        wb = 2*np.pi*self.fbase
-    
-        A = wb*np.array([[-g/b, 1],
-                         [-1, -g/b]])
+        wb = 2 * np.pi * self.fbase
 
-        B = wb*np.array([[1/b, 0],
-                         [0,    1/b]])
+        # Define state-space matrices (turn off code formatters for matrices)
+        # fmt: off
+        A = wb*np.array(
+            [[-g/b,    1],
+             [  -1, -g/b]])
 
+        B = wb*np.array(
+            [[1/b,   0],
+             [  0, 1/b]])
+        # fmt: on
         C = np.eye(2)
 
-        D = np.zeros((2,2))
+        D = np.zeros((2, 2))
 
-        grid_side_inputs = ["i_d", "i_q"]
-        states = ["v_d", "v_q"]
-        outputs = ["v_d", "v_q"]
+        u = DynamicalVariables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=f"pa_rc_{self.idx}",
+            type="grid",
+            init=[self.emt_init.i_bus_D, self.emt_init.i_bus_Q],
+        )
 
-        self.ssm = State_space_model(A = A, B = B, C = C, D= D, grid_side_inputs=grid_side_inputs, states=states, outputs=outputs)
+        x = DynamicalVariables(
+            name=["v_bus_D", "v_bus_Q"],
+            component=f"pa_rc_{self.idx}",
+            type="grid",
+            init=[self.emt_init.v_bus_D, self.emt_init.v_bus_Q],
+        )
+        y = copy.deepcopy(x)
+
+        self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)

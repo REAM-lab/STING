@@ -1,12 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import ClassVar
+
 
 @dataclass
 class Bus:
-    idx: str
+    idx: int = field(default=-1, init=False)
+    sbase: float
+    vbase: float
+    fbase: float
     v_min: float
     v_max: float
-    p_load: float	
+    p_load: float
     q_load: float
     name: str = field(default_factory=str)
-    type: str = 'bus'
+    tags: ClassVar[list[str]] = []
