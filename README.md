@@ -4,8 +4,7 @@ Welcome! This repository contains the STING—**S**pecialized **T**ool for **IN*
 
 ## Installation 
 
-
-1. **Download STING**: Make sure you have [python3.12](https://www.python.org/downloads/release/python-3129/) (or greater) installed on your computer. Start by cloning this repository and navigating into the STING directory.
+1. **Download STING**: Make sure you have [python3.12](https://www.python.org/downloads/release/python-3129/) installed on your computer. Start by cloning this repository and navigating into the STING directory.
     ```
     $ git clone https://github.com/REAM-lab/STING
     $ cd STING
@@ -25,15 +24,17 @@ Welcome! This repository contains the STING—**S**pecialized **T**ool for **IN*
     ```
     (.venv)$ gamspy show license
     ```
-    to verify the installation of the license. You may need to install some solvers to run power flow or other optimization models in STING. For example, to install ipopt in GAMSPy, you can execute this command in your terminal having your python environment activated.
+    to verify the installation of the license. You need to install some solvers to run power flow or other optimization models in STING. Install ipopt in GAMSPy, you can execute this command in your terminal having your python environment activated.
     ```
     (.venv)$ gamspy install solver ipopt
      ```
     
-4. **Run STING**: To ensure that STING was installed correctly navigate to the examples folder. Then, within your python virtual environment, launch python3.14 and execute `run_ssm()`.
-    ```
-    (.venv)$ cd ./examples/testcase1/
-    (.venv)$ python3.12
-    >>> from sting.main import run_ssm
-    >>> run_ssm()
-    ```
+4. **Run STING**: To ensure that STING was installed correctly navigate to the examples folder. You will see testcases. Execute the file run.py.
+
+## EMT simulation (Optional)
+
+Currently, we are offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. The idea is to replace these EMT models with pure Python scripts for EMT simulation.
+We are working on it. Make sure that you have MATLAB R2025a.
+
+1. **Open SPS library**: Go to the folder sps_library. Open the library, and make sure that it is open
+while you are running EMT simulation with our testcases.

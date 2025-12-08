@@ -1,5 +1,5 @@
 """
-Testcase2 simulates a GFLI connected to an infinite source
+Testcase3 simulates a GFLIa connected to an infinite source
 via a transmission line.
 
 First, we compute the system-wide small-signal model using STING. 
@@ -25,7 +25,7 @@ from matplotlib.lines import Line2D
 from sting import main
 
 # Specify path of the case study directory
-case_dir = os.path.join(os.getcwd(), "examples", "testcase2")
+case_dir = os.path.join(os.getcwd(), "examples", "testcase3")
 
 # Construct system and small-signal model
 sys, ssm = main.run_ssm(case_dir)
@@ -33,13 +33,11 @@ sys, ssm = main.run_ssm(case_dir)
 # Simulate step responses in the system-wide small-signal model
 tps = np.arange(0, 3.001, 0.001)
 def u_func(t):
-    v_dc_ref = 0.1 if t>= 0.3 else 0
+    i_d_ref = 0.1 if t>= 0.3 else 0
     i_q_ref = -0.1 if t>= 2 else 0
-    i_dc_src = 0
     v_int_d = 0 
     v_int_q = 0
-    
-    return np.array([v_dc_ref, i_q_ref, i_dc_src, v_int_d, v_int_q])
+    return np.array([i_d_ref, i_q_ref, v_int_d, v_int_q])
 
 # Simulate small-signal system
 dx = ssm.sim(tps, u_func)
@@ -56,7 +54,7 @@ np.savetxt(os.path.join(case_dir, 'outputs', 'small_signal_model', 'sim_ssm.csv'
 # The rest of this code can be commented. The purpose is to run 
 # EMT simulation in Simulink.
 
-# Send system information to MATLAB session (optional)
+# Send system information to a MATLAB session (optional)
 # First, in MATLAB, execute: matlab.engine.shareEngine('s1')
 matlab_session = 's1' 
 sys.to_matlab(session_name = matlab_session, excluded_attributes=['ssm'])
@@ -70,10 +68,9 @@ eng.quit()
 # execute: writematrix(out.simout.Data, 'sps_output.csv');
 # Upload csv file of the simulation
 filepath = os.path.join(case_dir, "emt", "sps_output.csv")
-
 x_emt = np.loadtxt(filepath, delimiter=',').T
 
-# Plot
+# Compare x_emt and x_ssm
 states = ssm.x.name
 dir = os.path.join(case_dir, "outputs", "small_signal_model")
 for (i, x) in enumerate(states):

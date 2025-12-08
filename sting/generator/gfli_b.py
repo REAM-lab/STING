@@ -1,3 +1,13 @@
+"""
+This module implements a GFLI that incorporates: 
+- L filter: a series RL branch and a transformer
+- current controller: A dq-based frame PI controller
+- PLL: A basic implementation
+- DC-side circuit: A resistance in parallel with two capacitors
+- DC-side voltage controller: PI controller for the DC-side voltage.
+"""
+
+
 # Import standard python packages
 import numpy as np
 from typing import NamedTuple, Optional, ClassVar
@@ -5,7 +15,6 @@ from dataclasses import dataclass, field
 import scipy.linalg 
 
 # Import sting packages
-from sting.utils import linear_systems_tools
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 class PowerFlowVariables(NamedTuple):
@@ -53,6 +62,8 @@ class GFLIb:
     rf: float	
     lf: float
     txr_sbase: float
+    txr_v1base: float
+    txr_v2base: float
     txr_r1: float
     txr_l1: float
     txr_r2: float
@@ -250,6 +261,8 @@ class GFLIb:
         
         
     def _calculate_emt_initial_conditions(self):
+        
+        # Extract power flow solution
         vmag_bus = self.pf.vmag_bus
         vphase_bus = self.pf.vphase_bus
         p_bus = self.pf.p_bus

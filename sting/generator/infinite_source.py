@@ -1,3 +1,9 @@
+"""
+This module implements an infinite source that incorporates:
+- Stiff voltage source: a voltage source with constant frequency and constant voltage.
+- Series RL branch: It is in series with the stiff voltage source.
+"""
+
 import numpy as np
 from scipy.linalg import block_diag
 from dataclasses import dataclass, field

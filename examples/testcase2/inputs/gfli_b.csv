@@ -1,2 +1,2 @@
-name,bus_idx,p_min,p_max,q_min,q_max,sbase,vbase,fbase,rf,lf,txr_sbase,txr_r1,txr_l1,txr_r2,txr_l2,beta,kp_pll,ki_pll,kp_cc,ki_cc,r_dc,c_dc,kp_dc,ki_dc,i_dc_src
-solar,2,0.8,0.8,0.5,0.5,1.00E+08,4.80E+02,60,0.02,0.1,1.00E+08,0.01,0.1,0.02,0.1,0.75,1,5,1,5,50,10,2,4,0.5
+name,bus_idx,p_min,p_max,q_min,q_max,sbase,vbase,fbase,rf,lf,txr_sbase,txr_v1base,txr_v2base,txr_r1,txr_l1,txr_r2,txr_l2,beta,kp_pll,ki_pll,kp_cc,ki_cc,r_dc,c_dc,kp_dc,ki_dc,i_dc_src
+solar,2,0.8,0.8,0.5,0.5,1.00E+08,4.80E+02,60,0.02,0.1,1.00E+08,4.80E+02,2.30E+05,0.01,0.1,0.02,0.1,0.75,1,5,1,5,50,10,2,4,0.5
