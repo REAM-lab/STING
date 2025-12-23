@@ -9,7 +9,7 @@ from scipy.linalg import block_diag
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, ClassVar
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-
+from sting.utils.transformations import dq02abc, abc2dq0
 
 class PowerFlowVariables(NamedTuple):
     p_bus: float
@@ -147,5 +147,63 @@ class InfiniteSource:
             i_bus_Q=i_bus_DQ.imag,
             angle_ref=angle_ref,
         )
+
+    def _EMT_variables(self):
+        # States
+        x = DynamicalVariables(
+            name=["i_bus_a", "i_bus_b", "i_bus_c"],
+            component=f"{self.type}_{self.idx}",
+            type="device",
+        )
+
+        # Inputs
+        u_d = DynamicalVariables(
+            name=["v_ref_d", "v_ref_q"],
+            component=f"{self.type}_{self.idx}",
+            type="device",
+        )
+
+        u_g = DynamicalVariables(
+            name=["v_bus_a", "v_bus_b", "v_bus_c"],
+            component=f"{self.type}_{self.idx}",
+            type="grid",
+        )
+
+        # Outputs
+        y = DynamicalVariables(
+            name=["i_bus_a", "i_bus_b", "i_bus_c"],
+            component=f"{self.type}_{self.idx}",
+            type="grid",
+        )
+
+        return x, (u_d, u_g), y
+    def _EMT_state_dynamics(self, t, x, ud, ug):
+
+        i_bus_a, i_bus_b, i_bus_c = x[0:3]
+
+        v_int_d, v_int_q = ud
+        v_bus_a, v_bus_b, v_bus_c = ug
+
+        v_int_a, v_int_b, v_int_c = dq02abc(v_ref, 0, 0)
+        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, sys_angle)
+
+        r = self.r
+        l = self.l
+        wb = 2 * np.pi * self.fbase
+
+        d_i_bus_a = wb / l * (v_int_a - v_bus_a - r * i_bus_a)
+        d_i_bus_b = wb / l * (v_int_b - v_bus_b - r * i_bus_b)
+        d_i_bus_c = wb / l * (v_int_c - v_bus_c - r * i_bus_c)
+
+        return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
+    
+    def _EMT_output_equations(self, t, x, ud, ug):
+        
+        i_bus_a, i_bus_b, i_bus_c = x[0:3]
+
+        return [i_bus_a, i_bus_b, i_bus_c]
+        
+
+
 
 

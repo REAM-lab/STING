@@ -275,6 +275,45 @@ class System:
 
         # Then interconnect models
         return StateSpaceModel.from_interconnected(models, self.connections)
+    
+    # ------------------------------------------------------------
+    # EMT simulation
+    # ------------------------------------------------------------
+
+    def sim_emt(self, t_stop: float, dt: float, solver: str = "RK45"):
+        """
+        Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
+        """
+        
+        # define states
+        
+        def system_ode(t, x, u):
+
+            # x
+
+            ystack = []
+
+            for component in self:
+                if hasattr(component, "_EMT_output_equations"):
+                    y = getattr(component, "_EMT_output_equations")(t, x, ud, ug)
+                    ystack.append(y)
+
+            # y_stack
+            # u
+
+            # ustack = F y_stack + G u_stack
+
+            for component in self:
+                if hasattr(component, "_EMT_state_dynamics"):            
+                    dx = getattr(component, "_EMT_state_dynamics")(t, x, ud, ug)
+                    
+
+                    # collect by type
+
+                    # 
+            return dx
+        
+        
 
     # ------------------------------------------------------------
     # Model Reduction (TBD?)
