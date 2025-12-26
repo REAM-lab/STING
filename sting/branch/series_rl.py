@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from sting.utils.transformations import dq02abc, abc2dq0
 from typing import NamedTuple, Optional, ClassVar
 import numpy as np
 import copy
@@ -125,11 +126,18 @@ class BranchSeriesRL:
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 
-    def _define_variables_emt(self):
+    def _define_variables_emt(self, **kwargs):
+
         # States
+        # ------
+        angle_init = kwargs.get("angle_init", 0.0)
+        i_br_D, i_br_Q = self.emt_init.i_br_D, self.emt_init.i_br_Q
+        i_br_a, i_br_b, i_br_c = dq02abc(i_br_D, i_br_Q, 0, angle_init)
+
         x = DynamicalVariables(
-            name=["i_bus_a", "i_bus_b", "i_bus_c"],
+            name=["i_br_a", "i_br_b", "i_br_c"],
             component=f"{self.type}_{self.idx}",
+            init=[i_br_a, i_br_b, i_br_c],
         )
 
         # Inputs
@@ -142,14 +150,32 @@ class BranchSeriesRL:
 
         # Outputs
         y = DynamicalVariables(
-            name=["i_bus_a", "i_bus_b", "i_bus_c"],
+            name=["i_br_a", "i_br_b", "i_br_c"],
             component=f"{self.type}_{self.idx}",
         )
 
         self.var_emt = VariablesEMT(x=x, u=u, y=y)
-    
-    def _get_output_emt(self, t, x_vals, u):
-        
-        i_bus_a, i_bus_b, i_bus_c = x_vals
 
-        return [i_bus_a, i_bus_b, i_bus_c]
+    def _get_derivative_state_emt(self, t, x, ud, ug, angle_sys):
+
+        i_br_a, i_br_b, i_br_c = x
+
+        v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = ug
+
+        r = self.r
+        l = self.l
+        wb = 2 * np.pi * self.fbase
+
+        d_i_br_a = wb / l * (v_from_bus_a - v_to_bus_a - r * i_br_a)
+        d_i_br_b = wb / l * (v_from_bus_b - v_to_bus_b - r * i_br_b)
+        d_i_br_c = wb / l * (v_from_bus_c - v_to_bus_c - r * i_br_c)
+
+        return [d_i_br_a, d_i_br_b, d_i_br_c]
+        
+
+    
+    def _get_output_emt(self, t, x_vals, ud):
+        
+        i_br_a, i_br_b, i_br_c = x_vals
+
+        return [i_br_a, i_br_b, i_br_c]

@@ -32,13 +32,12 @@ def run_ssm(case_dir=os.getcwd(), write_outputs=True, log=True):
 
     return sys, ssm
 
-def run_emt(case_dir=os.getcwd()):
+def run_emt(t_max, inputs, case_dir=os.getcwd()):
 
     sys, ssm = run_ssm(case_dir)
 
     sys.define_emt_variables()
     
-    sys.sim_emt()
+    solution = sys.sim_emt(t_max, inputs)
 
-    
-    return sys
+    return solution 

@@ -25,6 +25,22 @@ from sting import main
 case_dir = os.path.join(os.getcwd(), "examples", "testcase1")
 
 # Construct system and small-signal model
-main.run_emt(case_dir)
+def step1(t):
+    return 0.0
+
+inputs = {'inf_src_1': {'v_ref_d': step1}, 
+          'inf_src_2': {'v_ref_d': step1}}
+
+t_max = 1.0
+
+solution = main.run_emt(t_max, inputs, case_dir =case_dir)
+
+# Define timepoints that will be used to evaluate the solution of the ODEs
+tps = np.linspace(0, t_max, 500)
+n_tps = len(tps)
+
+# Extract solution of the ODEs and evaluate at the timepoints
+interp_sol = solution.sol(tps)
+angle_pc = interp_sol[0]
 
 print('ok')

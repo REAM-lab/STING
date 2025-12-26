@@ -1,6 +1,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, ClassVar
+from sting.utils.transformations import dq02abc, abc2dq0
 import copy
 
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
@@ -107,11 +108,18 @@ class ShuntParallelRC:
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 
-    def _define_variables_emt(self):
+    def _define_variables_emt(self, **kwargs):
+
         # States
+        # ------
+        angle_init = kwargs.get("angle_init", 0.0)
+        v_bus_D, v_bus_Q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_D, v_bus_Q, 0, angle_init)
+
         x = DynamicalVariables(
             name=["v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type}_{self.idx}",
+            init=[v_bus_a, v_bus_b, v_bus_c],
         )
 
         # Inputs
@@ -129,19 +137,21 @@ class ShuntParallelRC:
 
         self.var_emt = VariablesEMT(x=x, u=u, y=y)
 
-    def _get_state_emt(self, t, x, ud, ug, angle_sys):
+    def _get_derivative_state_emt(self, t, x, ud, ug, angle_sys):
 
         v_bus_a, v_bus_b, v_bus_c = x
 
-        r = self.r
-        c = self.c
+        g = self.g
+        b = self.b
         wb = 2 * np.pi * self.fbase
 
-        d_v_bus_a = wb / c * (v_ref_a - v_bus_a - r * i_bus_a)
-        d_v_bus_b = wb / c * (v_ref_b - v_bus_b - r * i_bus_b)
-        d_v_bus_c = wb / c * (v_ref_c - v_bus_c - r * i_bus_c)
+        i_bus_a, i_bus_b, i_bus_c = ug
 
-        return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
+        d_v_bus_a = wb / b * (- g * v_bus_a + i_bus_a)
+        d_v_bus_b = wb / b * (- g * v_bus_b + i_bus_b)
+        d_v_bus_c = wb / b * (- g * v_bus_c + i_bus_c)
+
+        return [d_v_bus_a, d_v_bus_b, d_v_bus_c]
     
     def _get_output_emt(self, t, x_vals, ud):
         v_bus_a, v_bus_b, v_bus_c = x_vals

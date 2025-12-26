@@ -155,17 +155,36 @@ class InfiniteSource:
         )
 
     def _define_variables_emt(self):
+        
         # States
+        # ------
+
+        # Initial conditions
+        i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
+        angle_ref = self.emt_init.angle_ref
+        i_bus_a, i_bus_b, i_bus_c = dq02abc(i_bus_d, i_bus_q, 0, angle_ref)
+
+        
         x = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c"],
             component=f"{self.type}_{self.idx}",
+            init=[i_bus_a, i_bus_b, i_bus_c],
+            
         )
 
         # Inputs
+        # ------
+
+        # Initial conditions
+        v_ref_d, v_ref_q = self.emt_init.v_int_d, self.emt_init.v_int_q
+        v_bus_D, v_bus_Q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_D, v_bus_Q, 0, angle_ref)
+
         u = DynamicalVariables(
             name=["v_ref_d", "v_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type}_{self.idx}",
             type=["device", "device", "grid", "grid", "grid"],
+            init=[v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c],
         )
 
         # Outputs
@@ -176,11 +195,14 @@ class InfiniteSource:
 
         self.var_emt = VariablesEMT(x=x, u=u, y=y)
     
-    def _get_state_emt(self, t, x, ud, ug, angle_sys):
+    def _get_derivative_state_emt(self, t, x, ud, ug, angle_sys):
 
         i_bus_a, i_bus_b, i_bus_c = x
 
-        v_ref_d, v_ref_q = ud
+        u_var = self.var_emt.u
+        v_ref_d = ud['v_ref_d'](t) + u_var[ u_var.name == 'v_ref_d' ].init[0]
+        v_ref_q = 0
+
         v_bus_a, v_bus_b, v_bus_c = ug
 
         v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_sys)
@@ -195,7 +217,7 @@ class InfiniteSource:
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
     
-    def _get_output_emt(self, t, x_vals, ud, ug, angle_sys):
+    def _get_output_emt(self, t, x_vals, ud):
         
         i_bus_a, i_bus_b, i_bus_c = x_vals
 

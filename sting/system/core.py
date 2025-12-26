@@ -8,6 +8,7 @@ from dataclasses import fields
 import numpy as np 
 from more_itertools import transpose
 from scipy.linalg import block_diag
+from scipy.integrate import solve_ivp
 
 # Import source packages
 from sting import __logo__
@@ -320,7 +321,7 @@ class System:
 
         for c in components_emt:
             c.append([i for i, var in enumerate(x) if var.component == f"{c[0]}_{c[1]}"])
-            c.append([(u.component == f"{c[0]}_{c[1]}") & (u.type == "grid")])
+            c.append((u.component == f"{c[0]}_{c[1]}") & (u.type == "grid"))
         # [['inf_src', '1', [...]], ['inf_src', '2', [...]], ['pa_rc', '1', [...]], ['pa_rc', '2', [...]], ['se_rl', '1', [...]]]
 
         self.components_emt = components_emt
@@ -331,7 +332,7 @@ class System:
         self.ccm_matrices = get_ccm_matrices(self, "var_emt", 3)
 
 
-    def sim_emt(self):
+    def sim_emt(self, t_max, inputs):
         """
         Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
         """
@@ -359,7 +360,7 @@ class System:
             for component_type, component_idx, x_idx, ug_idx in self.components_emt:
                 component = getattr(self, component_type)[int(component_idx)-1]
                 x_vals= x[x_idx]
-                ud_vals = ud[f"{component}_{component_idx}"](t)
+                ud_vals = ud.get(f"{component_type}_{component_idx}", 0)
                 ug_vals = ustack[ug_idx]
                 dx_comp = getattr(component, "_get_derivative_state_emt")(t, x_vals, ud_vals, ug_vals, angle_sys)
                 dx.extend(dx_comp)
@@ -367,36 +368,24 @@ class System:
             d_angle_sys = 2 * np.pi * 60 # rad/s
             dx.append(d_angle_sys)
 
-            return np.array(dx)
-        
-        """
-        def system_ode(t, x, u):
+            dx = np.array(dx).flatten()
 
-            # x
-
-            y_stack = []
-
-            for component in self:
-                if hasattr(component, "_EMT_output_equations"):
-                    y = getattr(component, "_EMT_output_equations")(t, x, x_var, u, u_var)
-                    y_stack.append(y)
-
-            y_stack = np.array(y_stack).flatten()
-            # y_stack
-            # u
-
-            # ustack = F y_stack + G u_stack
-
-            for component in self:
-                if hasattr(component, "_EMT_state_dynamics"):            
-                    dx = getattr(component, "_EMT_state_dynamics")(t, x, x_var, u, u_var)
-                    
-
-                    # collect by type
-
-                    # 
             return dx
-        """
+        
+        x_init = self.x_emt.init
+        x_init = np.append(x_init, [0.0])  # initial system angle
+
+        solution = solve_ivp(system_ode, 
+                        [0, t_max], # timeperiod 
+                        x_init, # initial conditions
+                        dense_output=True,  
+                        args=(inputs, ),
+                        method='Radau', 
+                        max_step=0.001)
+        
+        return solution
+        
+
         
 
     # ------------------------------------------------------------
