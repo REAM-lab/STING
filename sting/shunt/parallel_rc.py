@@ -41,6 +41,7 @@ class ShuntParallelRC:
     type: str = "pa_rc"
     tags: ClassVar[list[str]] = ["shunt"]
     var_emt: Optional[VariablesEMT] = None
+    idx_solve_ivp: Optional[dict] = None
 
     @property
     def g(self):

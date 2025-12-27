@@ -55,6 +55,7 @@ class InfiniteSource:
     type: str = "inf_src"
     tags: ClassVar[list[str]] = ["generator"]
     var_emt: Optional[VariablesEMT] = None
+    idx_solve_ivp: Optional[dict] = None
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.generators.loc[f"{self.type}_{self.idx}"]

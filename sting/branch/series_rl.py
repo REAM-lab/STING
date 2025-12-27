@@ -48,6 +48,7 @@ class BranchSeriesRL:
     type: str = "se_rl"
     ssm: Optional[StateSpaceModel] = None
     var_emt: Optional[VariablesEMT] = None
+    idx_solve_ivp: Optional[dict] = None
 
 
     def _load_power_flow_solution(self, power_flow_instance):
