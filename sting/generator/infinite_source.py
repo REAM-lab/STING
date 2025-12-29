@@ -8,6 +8,10 @@ import numpy as np
 from scipy.linalg import block_diag
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, ClassVar
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import os
+
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.utils.transformations import dq02abc, abc2dq0
 
@@ -223,8 +227,30 @@ class InfiniteSource:
         i_bus_a, i_bus_b, i_bus_c, angle_ref = self.variables_emt.x.value
 
         return [i_bus_a, i_bus_b, i_bus_c]
+    
+    def plot_results_emt(self, output_dir):
+        """
+        Plot EMT simulation results
+        """
+
+        i_bus_a, i_bus_b, i_bus_c, angle_ref = self.variables_emt.x.value
+        i_bus_d, i_bus_q, _ = zip(*map(abc2dq0, i_bus_a, i_bus_b, i_bus_c, angle_ref))
+        t = self.variables_emt.x.time
+
+        fig = make_subplots(rows=1, cols=2)
         
+        fig.add_trace(go.Scatter(x=t, y=i_bus_d), row=1, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
+        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=1, col=1)
 
+        fig.add_trace(go.Scatter(x=t, y=i_bus_q), row=1, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
+        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=1, col=2)
 
+        name = f"{self.type}_{self.idx}"
+        fig.update_layout(  title_text = name,
+                            title_x=0.5,
+                            showlegend = False,
+                            )
 
-
+        fig.write_html(os.path.join(output_dir, name + ".html"))

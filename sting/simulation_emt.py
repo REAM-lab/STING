@@ -1,30 +1,70 @@
+# ----------------------
 # Import python packages
+# ----------------------
 import numpy as np
 from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
 import itertools
 from more_itertools import transpose
 from typing import NamedTuple, Optional, ClassVar
+import os
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-
+# ------------------
 # Import sting code
+# ------------------
 from sting.system.core import System
 import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables
 from sting.utils.graph_matrices import get_ccm_matrices
 
+# -----------
+# Sub-classes
+# -----------
 class VariablesEMT(NamedTuple):
+    """
+    All variables used for simulation. 
+    """
     x: DynamicalVariables
     u: DynamicalVariables
     y: DynamicalVariables
 
 class ComponentEMT(NamedTuple):
+    """
+    A component of the system that participates in simulation.
+
+    #### Attributes:
+    - type: `str`
+            inf_src, se_rl, pa_rc, ... etc. 
+    - idx: `int`
+            Index of the component in its corresponding list in the system.
+    """
     type: str
     idx: int
 
+# ----------------
+# Main class
+# ----------------
 @dataclass(slots=True)
 class SimulationEMT:
+    """
+    Class to simulate the EMT dynamics of a power system.
+
+    #### Attributes:
+    - system: `System`
+            The system to be simulated.
+    - case_directory: `str`
+            Path to the case study directory.
+    - components: `list[ComponentEMT]`
+            List of components that participate in the EMT simulation.
+    - variables: `VariablesEMT`
+            All variables used for simulation.
+    - ccm_abc_matrices: `list[np.ndarray]`
+            List of CCM matrices in abc frame.
+    """
     system: System
+    case_directory: str
     components: list[ComponentEMT] = field(init=False)
     variables: VariablesEMT = field(init=False)
     ccm_abc_matrices: list[np.ndarray] = field(init=False)
@@ -36,6 +76,10 @@ class SimulationEMT:
         self.get_ccm_matrices()
 
     def get_components(self):
+        """
+        Get components that qualified for building the differential equations for EMT dynamics.
+        Not all components in system, e.g., bus, line_pi, etc., participate in EMT simulation.         
+        """
 
         components = []
         for component in self.system:
@@ -43,6 +87,7 @@ class SimulationEMT:
                 and hasattr(component, "define_variables_emt")
                 and hasattr(component, "get_derivative_state_emt")
                 and hasattr(component, "get_output_emt")
+                and hasattr(component, "plot_results_emt")
                 ):
                 components.append(ComponentEMT(type = component.type, idx = component.idx))
         
@@ -50,6 +95,9 @@ class SimulationEMT:
     
 
     def apply(self, method: str, *args):
+        """
+        Apply a method to the components for EMT simulation.
+        """
         for c in self.components:
                component = getattr(self.system, c.type)[c.idx-1]
                getattr(component, method)(*args)
@@ -81,6 +129,13 @@ class SimulationEMT:
         self.variables = VariablesEMT(x=x, u=u, y=y)
     
     def assign_idx(self):
+        """
+        Assign index, e.g., [False, True, False, ...], of the system-wide variables to each component.
+        For example, if the system state vector is [i_bus_a, i_bus_b, i_bus_c, v_bus_a, ...],
+        and a component is an infinite source connected to bus 1, then the index for that component
+        will be [True, True, True, False, ...], indicating that the first three variables in the system state
+        vector correspond to that component.
+        """
 
         x, u, y = self.variables
         for c in self.components:
@@ -91,6 +146,9 @@ class SimulationEMT:
                                                             "y": y.component == id  })
                                        
     def get_ccm_matrices(self):
+        """
+        Get the CCM matrices in abc frame for the EMT simulation.
+        """
         
         self.ccm_abc_matrices = get_ccm_matrices(self.system, "variables_emt", 3)
     
@@ -108,8 +166,23 @@ class SimulationEMT:
         u = np.hstack((ud, ug))
 
         return u, ud
+    
+    def set_value(self, time, numerical_vector, var_type: str):
+        """
+        Update the value of the EMT variables based on a numerical vector
+        """
 
-    def sim(self, t_max, inputs):
+        for c in self.components:
+            component = getattr(self.system, c.type)[c.idx-1]
+            variables = getattr(component, "variables_emt")
+            idx = getattr(component, "idx_variables_emt")
+            value = numerical_vector[idx[var_type]]
+
+            var_component = getattr(variables, var_type)
+            setattr(var_component, "value", value)
+            setattr(var_component, "time", time)
+
+    def sim(self, t_max, inputs, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
         """
         Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
         """
@@ -124,15 +197,13 @@ class SimulationEMT:
 
             y_stack = np.full(y_len, np.nan, dtype=float)
 
+            self.set_value(t, x, "x")
+
             for c in self.components:
                 component = getattr(self.system, c.type)[c.idx-1]
                 variables = getattr(component, "variables_emt")
                 idx = getattr(component, "idx_variables_emt")
                 
-                # Update state values
-                x_component = getattr(variables, "x")
-                setattr(x_component, "value", x[idx["x"]])
-
                 # Update input values
                 u_component = getattr(variables, "u")
                 setattr(u_component, "value", u[idx["u"]])
@@ -145,14 +216,12 @@ class SimulationEMT:
 
             dx_stack =  np.full(x_len, np.nan, dtype=float)
 
+            self.set_value(t, ustack, "u")
+
             for c in self.components:
                 component = getattr(self.system, c.type)[c.idx-1]
                 variables = getattr(component, "variables_emt")
                 idx = getattr(component, "idx_variables_emt")
-
-                # Update input values
-                u_component = getattr(variables, "u")
-                setattr(u_component, "value", ustack[idx["u"]])
 
                 # Get derivative of state
                 dx = getattr(component, "get_derivative_state_emt")()
@@ -163,9 +232,32 @@ class SimulationEMT:
         solution = solve_ivp(system_ode, 
                         [0, t_max], # timeperiod 
                         self.variables.x.init, # initial conditions
-                        dense_output=True,  
+                        dense_output=settings['dense_output'],  
                         args=(inputs, ),
-                        method='Radau', 
-                        max_step=0.001)
+                        method=settings['method'], 
+                        max_step=settings['max_step'])
         
-        return solution
+        # Define timepoints that will be used to evaluate the solution of the ODEs
+        if settings['dense_output']:
+            tps = np.linspace(0, t_max, 500)
+            solution = solution.sol(tps)
+
+        self.set_value(tps, solution, "x")
+
+        print("EMT Simulation completed.")
+
+
+    def plot_results(self, components = None):
+        """
+        Plot EMT simulation results
+        """
+
+        if components is None:
+            components = self.components
+
+        output_dir = os.path.join(self.case_directory, "outputs", "emt")
+        for c in components:
+            component = getattr(self.system, c.type)[c.idx-1]
+            getattr(component, "plot_results_emt")(output_dir)
+    
+        

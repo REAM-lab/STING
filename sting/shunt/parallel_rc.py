@@ -1,9 +1,14 @@
+# Import python packages
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, ClassVar
 from sting.utils.transformations import dq02abc, abc2dq0
 import copy
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import os
 
+# Import sting code
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 
@@ -162,3 +167,32 @@ class ShuntParallelRC:
         v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
 
         return [v_bus_a, v_bus_b, v_bus_c]
+    
+    def plot_results_emt(self, output_dir):
+
+        # Get state values
+        v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
+        time = self.variables_emt.x.time
+        angle_ref =  2 * np.pi * self.fbase * time
+
+        # Transform abc to dq0
+        v_bus_D, v_bus_Q, _ = zip(*map(abc2dq0, v_bus_a, v_bus_b, v_bus_c, angle_ref))
+        
+        # Plot results
+        fig = make_subplots(rows=1, cols=2)
+        
+        fig.add_trace(go.Scatter(x=time, y=v_bus_D), row=1, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
+        fig.update_yaxes(title_text='v_bus_D [p.u.]', row=1, col=1)
+
+        fig.add_trace(go.Scatter(x=time, y=v_bus_Q), row=1, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
+        fig.update_yaxes(title_text='v_bus_Q [p.u.]', row=1, col=2)
+
+        name = f"{self.type}_{self.idx}"
+        fig.update_layout(  title_text = name,
+                            title_x=0.5,
+                            showlegend = False,
+                            )
+
+        fig.write_html(os.path.join(output_dir, name + ".html"))

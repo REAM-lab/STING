@@ -25,6 +25,7 @@ class DynamicalVariables:
     type: any = None
     init: any = None
     value: any = None
+    time: any = None
 
     def __post_init__(self):
         # Convert fields to NumPy arrays if they aren't already
