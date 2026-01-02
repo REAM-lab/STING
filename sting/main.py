@@ -45,24 +45,20 @@ def run_ssm(case_directory = os.getcwd()):
 
     return sys, ssm
 
-def run_emt(t_max, inputs, case_dir=os.getcwd()):
+def run_emt(t_max, inputs, case_directory=os.getcwd()):
 
-    sys, ssm = run_ssm(case_dir)
+    # Load system from CSV files
+    sys = System.from_csv(case_directory=case_directory)
 
-    sys.define_emt_variables()
-    
-    solution = sys.sim_emt(t_max, inputs)
+    # Run power flow
+    pf = PowerFlow(system=sys)
+    pf.run_acopf()
 
-    return solution, sys
+    # Construct small-signal model
+    ssm = SmallSignalModel(system=sys)
+    ssm.construct_system_ssm()
 
-def run_emt2(t_max, inputs, case_dir=os.getcwd()):
+    emt_sc = SimulationEMT(system=sys)
+    emt_sc.sim(t_max, inputs)
 
-    sys, ssm = run_ssm(case_dir)
-
-    emt_sc = SimulationEMT(system=sys, case_directory=case_dir)
-
-    solution = emt_sc.sim(t_max, inputs)
-
-    emt_sc.plot_results()
-
-    return solution, sys
+    return sys

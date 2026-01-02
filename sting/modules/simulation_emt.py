@@ -54,8 +54,6 @@ class SimulationEMT:
     #### Attributes:
     - system: `System`
             The system to be simulated.
-    - case_directory: `str`
-            Path to the case study directory.
     - components: `list[ComponentEMT]`
             List of components that participate in the EMT simulation.
     - variables: `VariablesEMT`
@@ -64,7 +62,6 @@ class SimulationEMT:
             List of CCM matrices in abc frame.
     """
     system: System
-    case_directory: str
     components: list[ComponentEMT] = field(init=False)
     variables: VariablesEMT = field(init=False)
     ccm_abc_matrices: list[np.ndarray] = field(init=False)
@@ -182,7 +179,7 @@ class SimulationEMT:
             setattr(var_component, "value", value)
             setattr(var_component, "time", time)
 
-    def sim(self, t_max, inputs, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
+    def sim(self, t_max, inputs, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}, components_to_plot=None):
         """
         Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
         """
@@ -244,7 +241,9 @@ class SimulationEMT:
 
         self.set_value(tps, solution, "x")
 
-        print("EMT Simulation completed.")
+        print("> EMT Simulation completed.")
+
+        self.plot_results(components=components_to_plot)
 
 
     def plot_results(self, components = None):
@@ -252,12 +251,19 @@ class SimulationEMT:
         Plot EMT simulation results
         """
 
+        print("> Plotting EMT simulation results in ", end='')
+
         if components is None:
             components = self.components
 
-        output_dir = os.path.join(self.case_directory, "outputs", "emt")
+        output_dir = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
+        os.makedirs(output_dir, exist_ok=True)
+
+        print(output_dir, end='')
+
         for c in components:
             component = getattr(self.system, c.type)[c.idx-1]
             getattr(component, "plot_results_emt")(output_dir)
     
+        print("... ok.")
         

@@ -26,7 +26,7 @@ class DynamicalVariables:
         self._component = np.full(len(self._name), component if component is not None else '') 
         self._type = np.full(len(self._name), type if type is not None else '') 
         self._init =np.full(len(self._name), init if init is not None else np.nan) 
-        self._value = np.full((len(self._name),1), np.nan) if value is None else np.atleast_2d(value)
+        self._value = np.full(len(self._name), np.nan) if value is None else np.atleast_1d(value)
         self._time = np.atleast_1d(time) if time is not None else np.atleast_1d(np.nan)
     
     def __post_init__(self):
@@ -40,8 +40,8 @@ class DynamicalVariables:
     # --------------------------
     
     def check_shapes(self, new_value):
-        if len(new_value) != len(self._name):
-            raise ValueError(f"Length of attribute does not match length of 'name' ({len(self._name)}).")
+        if new_value.shape[0] != self._name.shape[0]:
+            raise ValueError(f"Length of attribute does not match length of 'name' ({self._name.shape[0]}).")
 
     def to_list(self):
         # Return unique a tuple uniquely identifying each variable
@@ -120,10 +120,7 @@ class DynamicalVariables:
     
     @value.setter
     def value(self, new_value):
-        #if isinstance(new_value, np.ndarray):
-        new_value = np.atleast_2d(new_value)
-        #else:
-        #    new_value = np.vstack(new_value)
+        new_value = np.atleast_1d(new_value).astype(float)
         self.check_shapes(new_value)
         self._value = new_value
     
