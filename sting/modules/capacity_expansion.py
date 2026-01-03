@@ -21,6 +21,8 @@ import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables
 import sting.bus.bus as bus
 import sting.timescales.core as timescales
+import sting.generator.generator as generator
+import sting.generator.storage as storage
 
 # -----------
 # Main class
@@ -42,6 +44,10 @@ class CapacityExpansion:
     """
     system: System 
     model: pyo.ConcreteModel = field(init=False, default=None)
+    model_settings: dict = field(default_factory=lambda: {
+                                                        "gen_costs": "quadratic",
+                                                        "consider_shedding": False,
+                                                        })
 
     def __post_init__(self):
         self.system.clean_up()
@@ -66,9 +72,21 @@ class CapacityExpansion:
         """
         self.model = pyo.ConcreteModel()
 
+        # Initialize Costs for a period
+        self.model.eCostPerPeriod = pyo.Expression()
         
-        timescales.construct_capacity_expansion_model(self.system, self.model, None)
-        bus.construct_capacity_expansion_model(self.system, self.model, None)
+        # Initialize Costs for a timepoint
+        self.model.eCostPerTp = pyo.Expression(self.system.tp)
+
+        timescales.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+
+        solver = pyo.SolverFactory('cbc')
+        results = solver.solve(self.model, tee=True)
+
+
         print('ok')
         # Define sets, parameters, variables, constraints, and objective function here
 

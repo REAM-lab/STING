@@ -4,6 +4,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar, Optional
 import pyomo.environ as pyo
+import numpy as np
 
 
 # -------------
@@ -55,9 +56,13 @@ class Load:
 
 def construct_capacity_expansion_model(system, model, model_settings):
 
-    model.N = pyo.Set(initialize=system.bus)
+    N = system.bus
+    T = system.tp
+    S = system.sc
+    L = system.line
+    load = system.load
 
-    model.vTHETA = pyo.Var(model.N, model.S, model.T, within=pyo.Reals)
+    model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
 
     slack_bus = next(n for n in system.bus if n.bus_type == 'slack')
 
@@ -66,7 +71,41 @@ def construct_capacity_expansion_model(system, model, model_settings):
 
     model.vTHETA[slack_bus.idx, :, :].fix(0.0)
 
-    model.eFlowAtBus = pyo.Expression(model.N, model.S, model.T, rule=lambda m, n, s, t: 100 * sum(B[n.idx-1, k.idx-1] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in model.N))
-
-
+    model.eFlowAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 100 * sum(B[n.idx-1, k.idx-1] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N))
     
+    def cMaxFlowPerLine_rule(m, l, s, t):
+        if l.rating_MVA <= 0:
+            return pyo.Constraint.Skip
+        else:
+            bus_from = next((n for n in N if n.idx == l.bus_from_idx))
+            bus_to = next((n for n in N if n.idx == l.bus_to_idx))
+        return (-l.rating_MVA,
+                100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * 
+                (m.vTHETA[bus_from, s, t] - m.vTHETA[bus_to, s, t]),
+                l.rating_MVA)
+    
+    model.cMaxFlowPerLine = pyo.Constraint(L, S, T, rule=cMaxFlowPerLine_rule)
+    
+    def cDiffAngle_rule(m, l, s, t):
+        if (l.angle_min_deg > -360) and (l.angle_max_deg < 360):
+            bus_from = next((n for n in N if n.idx == l.bus_from_idx))
+            bus_to = next((n for n in N if n.idx == l.bus_to_idx))
+            return (l.angle_min_deg * np.pi / 180, 
+                    m.vTHETA[bus_from, s, t] - m.vTHETA[bus_to, s, t],
+                    l.angle_max_deg * np.pi / 180)
+        else:
+            return pyo.Constraint.Skip
+        
+    model.cDiffAngle = pyo.Constraint(L, S, T, rule=cDiffAngle_rule)
+
+    # Power balance at each bus
+    model.cPowerBalance = pyo.Constraint(N, S, T,
+                                         rule=lambda m, n, s, t: 
+                            m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t] >= 
+                            next((ld.load_MW for ld in load 
+                                    if  ((ld.bus_idx == n.idx) and 
+                                        (ld.scenario_idx == s.idx) and 
+                                        (ld.timepoint_idx == t.idx))), 0.0) + m.eFlowAtBus[n, s, t]
+                            
+                            )
+

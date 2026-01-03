@@ -38,3 +38,6 @@ class Line:
     def assign_indices(self, buses: list):
         self.bus_from_idx = next((n for n in buses if n.bus == self.bus_from)).idx
         self.bus_to_idx = next((n for n in buses if n.bus == self.bus_to)).idx
+
+    def __hash__(self):
+        return hash(self.idx)
