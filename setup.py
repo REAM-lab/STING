@@ -31,6 +31,7 @@ setup(
         "matplotlib",
         "matlabengine==25.1.2",
         "plotly",
-        "jupyter"
+        "jupyter",
+        "pyomo"
     ],
 )

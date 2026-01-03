@@ -72,18 +72,18 @@ class CapacityExpansion:
         """
         self.model = pyo.ConcreteModel()
 
-        # Initialize Costs for a period
-        self.model.eCostPerPeriod = pyo.Expression()
-        
-        # Initialize Costs for a timepoint
-        self.model.eCostPerTp = pyo.Expression(self.system.tp)
-
         timescales.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
 
-        solver = pyo.SolverFactory('cbc')
+        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t])
+        self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod)
+        self.model.eTotalCost = pyo.Expression(expr=lambda m: sum(m.eCostPerTp[t] * t.weight for t in self.system.tp) + m.eCostPerPeriod)
+        
+        self.model.obj = pyo.Objective(expr=lambda m: m.eTotalCost, sense=pyo.minimize)
+
+        solver = pyo.SolverFactory('mosek_direct')
         results = solver.solve(self.model, tee=True)
 
 

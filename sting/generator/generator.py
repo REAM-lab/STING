@@ -110,10 +110,10 @@ def construct_capacity_expansion_model(system, model, model_settings):
                                        1/len(S) * sum( (s.probability * g.cost_fixed_power_USDperkW * m.vCAPV[g, s] * 1000) for g in GV for s in S )
                                 )
   
-    model.eCostPerPeriod += pyo.Expression(expr= lambda m: m.eGenCostPerPeriod)
+    #model.eCostPerPeriod = model.eCostPerPeriod +  model.eGenCostPerPeriod
 
-    for t in T:
-        model.eCostPerTp[t] = model.eCostPerTp[t] + model.eGenCostPerTp[t]
+    #for t in T:
+    #    model.eCostPerTp[t] = model.eCostPerTp[t] + model.eGenCostPerTp[t]
         
 
     model.eGenTotalCost = pyo.Expression(
