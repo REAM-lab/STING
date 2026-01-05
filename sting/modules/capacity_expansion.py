@@ -1,6 +1,7 @@
 # ----------------------
 # Import python packages
 # ----------------------
+from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
@@ -16,7 +17,6 @@ import pyomo.environ as pyo
 # Import sting code
 # ------------------
 from sting.system.core import System
-from sting.timescales.core import timescale_calculations
 import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables
 import sting.bus.bus as bus
@@ -29,66 +29,64 @@ import sting.generator.storage as storage
 # -----------
 @dataclass(slots=True)
 class CapacityExpansion:
-    """
-    Class to perform capacity expansion analysis of a power system.
-
-    #### Attributes:
-    - system: `System`
-            The system to be analyzed.
-    - planning_horizon: `int`
-            The planning horizon in years.
-    - investment_options: `list`
-            List of investment options available.
-    - results: `dict`
-            Dictionary to store the results of the analysis.
-    """
-    system: System 
-    model: pyo.ConcreteModel = field(init=False, default=None)
+    system: System
+    model: pyo.ConcreteModel = None
+    solver_settings: dict = field(default_factory=lambda: {
+                                                        "solver_name": "mosek_direct",
+                                                        "tee": True,
+                                                        })
     model_settings: dict = field(default_factory=lambda: {
                                                         "gen_costs": "quadratic",
                                                         "consider_shedding": False,
                                                         })
-
+    output_directory: str = None
+    
     def __post_init__(self):
-        self.system.clean_up()
-        self.extra_calculations()
         self.construct_model()
+        self.set_output_folder()
 
-    def extra_calculations(self):
+    def set_output_folder(self):
         """
-        Perform the capacity expansion analysis.
+        Set up the output folder for storing results.
         """
-        timescale_calculations(self.system.tp, self.system.ts)
-        
-        for load in self.system.load:
-            load.assign_indices(self.system.bus, self.system.sc, self.system.tp)
-
-        for line in self.system.line:
-            line.assign_indices(self.system.bus)
+        output_folder = os.path.join(self.system.case_directory, "outputs", "capacity_expansion")
+        os.makedirs(output_folder, exist_ok=True)
+        self.output_directory = output_folder
 
     def construct_model(self):
         """
         Construct the optimization model for capacity expansion.
         """
+        
+        # Create Pyomo model
         self.model = pyo.ConcreteModel()
 
-        timescales.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        # Construct modules
+        system = self.system
+        model = self.model
+        model_settings = self.model_settings
+        generator.construct_capacity_expansion_model(system, model, model_settings)
+        storage.construct_capacity_expansion_model(system, model, model_settings)
+        bus.construct_capacity_expansion_model(system, model, model_settings)
 
+        # Define objective function
         self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t])
         self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod)
         self.model.eTotalCost = pyo.Expression(expr=lambda m: sum(m.eCostPerTp[t] * t.weight for t in self.system.tp) + m.eCostPerPeriod)
         
         self.model.obj = pyo.Objective(expr=lambda m: m.eTotalCost, sense=pyo.minimize)
 
-        solver = pyo.SolverFactory('mosek_direct')
-        results = solver.solve(self.model, tee=True)
+    def solve_model(self):
 
+        solver = pyo.SolverFactory(self.solver_settings["solver_name"])
+        results = solver.solve(self.model, tee=self.solver_settings["tee"])
 
+        # Export results
+        system, model, output_directory = self.system, self.model, self.output_directory
+
+        bus.export_results_capacity_expansion(system, model, output_directory)
         print('ok')
-        # Define sets, parameters, variables, constraints, and objective function here
+
 
 
 

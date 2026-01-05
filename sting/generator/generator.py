@@ -25,6 +25,13 @@ class Generator:
     tags: ClassVar[list[str]] = ["generator"]
     bus_id: int = None
 
+    def assign_indices(self, system):
+        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
+
+    def __hash__(self):
+        """Hash based on id attribute, which must be unique for each instance."""
+        return hash(self.id)
+
 @dataclass(slots=True)
 class CapacityFactor:
     id: int = field(default=-1, init=False)
@@ -56,9 +63,9 @@ def construct_capacity_expansion_model(system, model, model_settings):
     """
     GN = [g for g in G if g.site == "no_capacity_factor"]
 
-    G_AT_BUS = [[g for g in G if g.bus == n.bus] for n in N]
-    GV_AT_BUS= [[g for g in GV if g.bus == n.bus] for n in N]
-    GN_AT_BUS = [[g for g in GN if g.bus == n.bus] for n in N]
+    G_AT_BUS = [[g for g in G if g.bus == n.name] for n in N]
+    GV_AT_BUS= [[g for g in GV if g.bus == n.name] for n in N]
+    GN_AT_BUS = [[g for g in GN if g.bus == n.name] for n in N]
 
     model.vGEN = pyo.Var(GN, T, within=pyo.NonNegativeReals)
     model.vCAP = pyo.Var(GN, within=pyo.NonNegativeReals)
@@ -80,13 +87,13 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.cMaxGenVar = pyo.Constraint(GV, S, T, rule=lambda m, g, s, t: 
                     m.vGENV[g, s, t] <= next(cf_inst.capacity_factor for cf_inst in cf 
                                             if (cf_inst.site == g.site) and 
-                                               (cf_inst.scenario == s.scenario) and 
-                                               (cf_inst.timepoint == t.timepoint)
+                                               (cf_inst.scenario == s.name) and 
+                                               (cf_inst.timepoint == t.name)
                                            ) * m.vCAPV[g, s])
     
     model.eGenAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
-                    sum(m.vGEN[g, t] for g in GN_AT_BUS[n.idx - 1]) + 
-                    sum(m.vGENV[g, s, t] for g in GV_AT_BUS[n.idx - 1]) + 
+                    sum(m.vGEN[g, t] for g in GN_AT_BUS[n.id]) + 
+                    sum(m.vGENV[g, s, t] for g in GV_AT_BUS[n.id]) + 
                     (m.vSHED[n, s, t] if model_settings["consider_shedding"] else 0)
                 )
 
@@ -108,12 +115,6 @@ def construct_capacity_expansion_model(system, model, model_settings):
                                 expr = lambda m: sum(g.cost_fixed_power_USDperkW * m.vCAP[g] * 1000 for g in GN) + 
                                        1/len(S) * sum( (s.probability * g.cost_fixed_power_USDperkW * m.vCAPV[g, s] * 1000) for g in GV for s in S )
                                 )
-  
-    #model.eCostPerPeriod = model.eCostPerPeriod +  model.eGenCostPerPeriod
-
-    #for t in T:
-    #    model.eCostPerTp[t] = model.eCostPerTp[t] + model.eGenCostPerTp[t]
-        
 
     model.eGenTotalCost = pyo.Expression(
                             expr = lambda m: m.eGenCostPerPeriod + sum(m.eGenCostPerTp[t] * t.weight for t in T)

@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.linalg import block_diag
 from sting.system.selections import find_tagged
-from sting.line.pi_model import Line
 from sting.branch.series_rl import BranchSeriesRL
 from sting.shunt.parallel_rc import ShuntParallelRC
 
@@ -63,30 +62,24 @@ def build_admittance_matrix(num_buses: int, branch_data=None, shunt_data=None):
 
     return Y
 
-def build_admittance_matrix2(num_buses: int, branches: list[BranchSeriesRL], shunts: list[ShuntParallelRC] = None):
+def build_admittance_matrix_from_lines(num_buses: int, lines: list):
 
     Y = np.zeros((num_buses, num_buses), dtype=complex)
 
-    for branch in branches:
-        i = branch.from_bus_id
-        j = branch.to_bus_id
+    for line in lines:
+        i = line.from_bus_id
+        j = line.to_bus_id
 
-        z = complex(branch.r_pu, branch.l_pu)
+        z = complex(line.r_pu, line.x_pu)
         y = 1.0 / z
+
+        y_shunt = complex(line.g_pu, line.b_pu)
 
         Y[i, j] -= y
         Y[j, i] -= y
 
-        Y[i, i] += y
-        Y[j, j] += y
-
-    if shunts is not None:
-        for shunt in shunts:
-            i = shunt.bus_id
-
-            y_shunt = complex(shunt.g_pu, shunt.b_pu)
-
-            Y[i, i] += y_shunt
+        Y[i, i] += y + y_shunt
+        Y[j, j] += y + y_shunt
 
     return Y
 

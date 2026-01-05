@@ -157,7 +157,7 @@ class System:
 
             print("... ok.")
 
-        self.apply("assign_bus_id", self.bus)
+        self.apply("assign_indices", self)
         
         return self
 

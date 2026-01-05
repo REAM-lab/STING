@@ -62,8 +62,8 @@ class InfiniteSource:
     variables_emt: Optional[VariablesEMT] = None
     id_variables_emt: Optional[dict] = None
 
-    def assign_bus_id(self, buses: list):
-        self.bus_id = next((n for n in buses if n.name == self.bus)).id
+    def assign_indices(self, system):
+        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]

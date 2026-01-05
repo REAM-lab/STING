@@ -7,11 +7,10 @@ line_pi,LinePiModel,sting.line.pi_model,line_pi.csv
 se_rl,BranchSeriesRL,sting.branch.series_rl,series_rl.csv
 pa_rc,ShuntParallelRC,sting.shunt.parallel_rc,parallel_rc.csv
 bus,Bus,sting.bus.bus,bus.csv
-tp,Timepoint,sting.timescales.core,timepoints.csv
 ts,Timeseries,sting.timescales.core,timeseries.csv
+tp,Timepoint,sting.timescales.core,timepoints.csv
 sc,Scenario,sting.timescales.core,scenarios.csv
 load,Load,sting.bus.bus,load.csv
 gen,Generator,sting.generator.generator,generator.csv
 cf,CapacityFactor,sting.generator.generator,capacity_factor.csv
 ess,Storage,sting.generator.storage,storage.csv
-line,Line,sting.line.pi_model,line.csv
