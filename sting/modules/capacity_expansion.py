@@ -25,7 +25,7 @@ class CapacityExpansion:
     system: System
     model: pyo.ConcreteModel = None
     solver_settings: dict = field(default_factory=lambda: {
-                                                        "solver_name": "gurobi",
+                                                        "solver_name": "mosek_direct",
                                                         "tee": True,
                                                         })
     model_settings: dict = field(default_factory=lambda: {

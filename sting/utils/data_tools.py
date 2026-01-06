@@ -175,6 +175,9 @@ def pyovariable_to_df(pyo_variable: pyo.Var, dfcol_to_field: dict, value_name: s
         Converts a dictionary item to a tuple.
         """
         k, v = dct_item
+        
+        if len(dfcol_to_field) == 1:
+            k = [k]
 
         l = [None] * (len(dfcol_to_field) + 1)
         for i, (col_name, field) in enumerate(dfcol_to_field.items()):

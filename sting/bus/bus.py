@@ -69,23 +69,41 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     model.vTHETA[slack_bus.id, :, :].fix(0.0)
 
-    BUS_NEIGHBORS = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
+    N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
 
-    model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in BUS_NEIGHBORS[n.id]) )
+    model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
+    
+    def cMinCapPerLine_rule(m, l):
+        if l.expand_capacity:
+            return m.vCAPL[l] >= l.cap_existing_power_MW
+        else:
+            if l.cap_existing_power_MW > 0:
+                return m.vCAPL[l] == l.cap_existing_power_MW
+            else:
+                return pyo.Constraint.Skip
+        
+    model.cMinCapPerLine = pyo.Constraint(L, rule=cMinCapPerLine_rule)
     
     def cMaxFlowPerLine_rule(m, l, s, t):
-        if l.cap_existing_power_MW > 0:
-            return (-m.vCAPL[l],
-                    100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * 
-                    (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]),
-                    m.vCAPL[l])
+        if (l.expand_capacity) or (l.cap_existing_power_MW > 0):
+            return  (100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * 
+                    (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t])
+                     <= m.vCAPL[l])
+        else:
+            return pyo.Constraint.Skip
+        
+    def cMinFlowPerLine_rule(m, l, s, t):
+        if (l.expand_capacity) or (l.cap_existing_power_MW > 0):
+            return  (100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * 
+                    (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t])
+                     >= -m.vCAPL[l])
         else:
             return pyo.Constraint.Skip
    
     model.cMaxFlowPerLine = pyo.Constraint(L, S, T, rule=cMaxFlowPerLine_rule)
+    model.cMinFlowPerLine = pyo.Constraint(L, S, T, rule=cMinFlowPerLine_rule)
     
-    model.cMinCapPerLine = pyo.Constraint(L, rule=lambda m, l: 
-                                         m.vCAPL[l] >= l.cap_existing_power_MW)
+
     def cDiffAngle_rule(m, l, s, t):
         if (l.angle_min_deg > -360) and (l.angle_max_deg < 360):
             return (l.angle_min_deg * np.pi / 180, 
@@ -96,23 +114,22 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         
     model.cDiffAngle = pyo.Constraint(L, S, T, rule=cDiffAngle_rule)
 
+    
     # Power balance at each bus
+    load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
     model.cPowerBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
                             m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t] >= 
-                            next((ld.load_MW for ld in load 
-                                    if  ((ld.bus == n.name) and 
-                                        (ld.scenario == s.name) and 
-                                        (ld.timepoint == t.name))), 0.0) + m.eFlowAtBus[n, s, t]
-                            
+                            load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]
                             )
 
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
 
     # Export line capacities 
     dfx = pyovariable_to_df(model.vCAPL, 
-                            dfcol_to_field={'line': 'name'}, 
-                            output_path=os.path.join(output_directory, 'line_capacities.csv'))
+                            dfcol_to_field={'line_pi': 'name'}, 
+                            value_name='Capacity_MW', 
+                            csv_filepath=os.path.join(output_directory, 'line_capacities.csv'))
     
     dct = model.vTHETA.extract_values()
 

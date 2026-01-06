@@ -2,11 +2,11 @@
 # Import python packages
 # --------------
 from dataclasses import dataclass, field
-from typing import ClassVar, Optional
+from typing import ClassVar
 import pyomo.environ as pyo
-import numpy as np
 import polars as pl
 import os
+from collections import defaultdict
 
 # -------------
 # Import sting code
@@ -61,19 +61,25 @@ def construct_capacity_expansion_model(system, model, model_settings):
     - GV is a vector of instances of generators with capacity factor profiles.
         Power generation and capacity of these generators are considered random variables 
         in the second-stage of the stochastic problem.
-    """
-    GV = [g for g in G if g.site != "no_capacity_factor"]
-
-    """
     - GN is a vector of instances of generators without capacity factor profiles.
       The power generation and capacity are considered as part of 
       first-stage of the stochastic problem.
     """
-    GN = [g for g in G if g.site == "no_capacity_factor"]
+    GV = []
+    GN = []
+    for g in G:
+        if g.site == "no_capacity_factor":
+            GN.append(g)
+        else:
+            GV.append(g)
 
-    G_AT_BUS = [[g for g in G if g.bus == n.name] for n in N]
-    GV_AT_BUS= [[g for g in GV if g.bus == n.name] for n in N]
-    GN_AT_BUS = [[g for g in GN if g.bus == n.name] for n in N]
+    GV_at_bus = defaultdict(list)
+    GN_at_bus = defaultdict(list)
+
+    for g in GV:
+        GV_at_bus[g.bus_id].append(g)
+    for g in GN:
+        GN_at_bus[g.bus_id].append(g)
 
     model.vGEN = pyo.Var(GN, T, within=pyo.NonNegativeReals)
     model.vCAP = pyo.Var(GN, within=pyo.NonNegativeReals)
@@ -92,16 +98,13 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.cMaxGenNonVar = pyo.Constraint(GN, T, rule=lambda m, g, t: 
                     m.vGEN[g, t] <= m.vCAP[g])
     
+    cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     model.cMaxGenVar = pyo.Constraint(GV, S, T, rule=lambda m, g, s, t: 
-                    m.vGENV[g, s, t] <= next(cf_inst.capacity_factor for cf_inst in cf 
-                                            if (cf_inst.site == g.site) and 
-                                               (cf_inst.scenario == s.name) and 
-                                               (cf_inst.timepoint == t.name)
-                                           ) * m.vCAPV[g, s])
+                    m.vGENV[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * m.vCAPV[g, s])
     
     model.eGenAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
-                    sum(m.vGEN[g, t] for g in GN_AT_BUS[n.id]) + 
-                    sum(m.vGENV[g, s, t] for g in GV_AT_BUS[n.id]) + 
+                    sum(m.vGEN[g, t] for g in GN_at_bus[n.id]) + 
+                    sum(m.vGENV[g, s, t] for g in GV_at_bus[n.id]) + 
                     (m.vSHED[n, s, t] if model_settings["consider_shedding"] else 0)
                 )
 
