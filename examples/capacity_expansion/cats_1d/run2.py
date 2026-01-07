@@ -12,6 +12,15 @@ from sting import main
 case_dir = Path(__file__).resolve().parent
 
 # Construct system and small-signal model
-sys= main.run_capex(case_dir)
+solver_settings = {
+                "solver_name": "mosek_direct",
+                "tee": True,
+            }
+model_settings = {
+                "gen_costs": "linear",
+                "consider_shedding": False,
+            }
+
+sys= main.run_capex(case_dir, model_settings=model_settings, solver_settings=solver_settings)
 
 print('ok')

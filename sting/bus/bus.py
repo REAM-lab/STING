@@ -73,13 +73,9 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
     
-    def cMinCapPerLine_rule(m, l):
-        if l.expand_capacity:
-            return pyo.Constraint.Skip
-        else:
-            return m.vCAPL[l] == 0
-        
-    model.cMinCapPerLine = pyo.Constraint(L, rule=cMinCapPerLine_rule)
+    for l in L:
+         if (not l.expand_capacity):
+            model.vCAPL[l].fix(0.0)
     
     def cMaxFlowPerLine_rule(m, l, s, t):
         if (l.expand_capacity) or (l.cap_existing_power_MW > 0):

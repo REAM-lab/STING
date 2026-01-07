@@ -13,7 +13,7 @@ case_dir = Path(__file__).resolve().parent
 
 # Construct system and small-signal model
 solver_settings = {
-                "solver_name": "gurobi",
+                "solver_name": "mosek_direct",
                 "tee": True,
             }
 model_settings = {
