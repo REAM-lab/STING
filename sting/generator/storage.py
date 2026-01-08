@@ -35,6 +35,9 @@ class Storage:
     c2_USDperMWh2: float
     expand_capacity: bool = True
 
+    def assign_indices(self, system):
+        self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
+
     def __repr__(self):
         return f"Storage(id={self.id})"
     
@@ -58,27 +61,43 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.vPCAP = pyo.Var(E, S, within=pyo.NonNegativeReals)
     model.vECAP = pyo.Var(E, S, within=pyo.NonNegativeReals)
 
-    model.cMinEnerCapStor = pyo.Constraint(E, S, rule=lambda m, e, s: 
-                                         m.vECAP[e, s] >= e.cap_existing_energy_MWh)
+    for ess in E:
+         if (not ess.expand_capacity):
+            model.vPCAP[ess, :].fix(0.0)
+            model.vECAP[ess, :].fix(0.0)
 
-    model.cPowerCapStor = pyo.Constraint(E, S, rule=lambda m, e, s: 
-                                         (e.cap_existing_power_MW, m.vPCAP[e, s], e.cap_max_power_MW))
+    def cEnerCapStor_rule(m, e, s):
+        if e.expand_capacity:
+            return  m.vECAP[e, s] <= e.cap_max_energy_MWh - e.cap_existing_energy_MWh
+        else:
+            return pyo.Constraint.Skip
+        
+    model.cEnerCapStor = pyo.Constraint(E, S, rule=cEnerCapStor_rule)
+
+
+    def cPowerCapStor_rule(m, e, s):
+        if e.expand_capacity:
+            return  m.vPCAP[e, s] <= e.cap_max_power_MW - e.cap_existing_power_MW
+        else:
+            return pyo.Constraint.Skip
+        
+    model.cPowerCapStor = pyo.Constraint(E, S, rule=cPowerCapStor_rule)
 
     # Define constraints for energy storage systems
     model.cMaxCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
-                        m.vCHARGE[e, s, t] <= m.vPCAP[e, s])
+                        m.vCHARGE[e, s, t] <= m.vPCAP[e, s] + e.cap_existing_power_MW)
     
     model.cMaxDischa = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
-                        m.vDISCHA[e, s, t] <= m.vPCAP[e, s])
+                        m.vDISCHA[e, s, t] <= m.vPCAP[e, s] + e.cap_existing_power_MW)
 
-    E_fixduration = [e for e in E if e.duration_hr > 0]
+    E_fixduration_expandable = [e for e in E if ((e.duration_hr > 0) and (e.expand_capacity))]
 
-    if E_fixduration:
-        model.cFixEnergyPowerRatio = pyo.Constraint(E_fixduration, S, rule=lambda m, e, s: 
-                        m.vECAP[e, s] ==  e.duration_hr * m.vPCAP[e, s])
+    if E_fixduration_expandable:
+        model.cFixEnergyPowerRatio = pyo.Constraint(E_fixduration_expandable, S, rule=lambda m, e, s: 
+                        (m.vECAP[e, s] + e.cap_existing_energy_MWh) ==  e.duration_hr * (m.vPCAP[e, s] + e.cap_existing_power_MW))
         
     model.cMaxSOC = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
-                        m.vSOC[e, s, t] <= m.vECAP[e, s])
+                        m.vSOC[e, s, t] <= (m.vECAP[e, s] + e.cap_existing_energy_MWh))
 
     # SOC in the next time is a function of SOC in the previous time
     # with circular wrapping for the first and last timepoints within a timeseries

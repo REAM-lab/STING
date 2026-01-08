@@ -12,6 +12,7 @@ from more_itertools import transpose
 from scipy.linalg import block_diag
 from scipy.integrate import solve_ivp
 import polars as pl
+import time
 
 # -----------------------
 # Import sting code
@@ -103,6 +104,7 @@ class System:
         - self: `System`
                     It contains the components that have data from csv files.
         """
+        start_time = time.time()
 
         # Get directory of the folder "inputs"
         inputs_dir = os.path.join(case_directory, "inputs") 
@@ -157,7 +159,7 @@ class System:
                 # Add the component to the system
                 self.add(component)
 
-            print("... ok.")
+            print(f"ok [{time.time() - start_time:.2f} seconds].")
 
         self.apply("assign_indices", self)
         

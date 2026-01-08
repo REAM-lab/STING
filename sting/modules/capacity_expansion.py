@@ -35,6 +35,7 @@ class CapacityExpansion:
             self.solver_settings = {
                 "solver_name": "gurobi",
                 "tee": True,
+                "solver_options": {},
             }
         if self.model_settings is None:
             self.model_settings = {
@@ -88,8 +89,11 @@ class CapacityExpansion:
         start_time = time.time()
         self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t])
         self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod + m.eLineCostPerPeriod)
-        self.model.eTotalCost = pyo.Expression(expr=lambda m: sum(m.eCostPerTp[t] * t.weight for t in self.system.tp) + m.eCostPerPeriod)
-        self.model.obj = pyo.Objective(expr=lambda m: m.eTotalCost, sense=pyo.minimize)
+        self.model.eTotalCost = pyo.Expression(expr= (sum(self.model.eCostPerTp[t] * t.weight for t in self.system.tp) + self.model.eCostPerPeriod))
+        
+        rescaling_factor = 1e-6  # To express the objective in million USD
+
+        self.model.obj = pyo.Objective(expr=rescaling_factor * self.model.eTotalCost, sense=pyo.minimize)
         print(f"ok [{time.time() - start_time:.2f} seconds].")
 
         full_end_time = time.time()
@@ -102,7 +106,7 @@ class CapacityExpansion:
 
         print("> Solving capacity expansion model...")
         solver = pyo.SolverFactory(self.solver_settings["solver_name"])
-        results = solver.solve(self.model, tee=self.solver_settings["tee"])
+        results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings["tee"])
 
         print(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
         print(f"> Objective value: {pyo.value(self.model.obj):.2f} USD.")

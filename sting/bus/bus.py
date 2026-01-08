@@ -26,9 +26,9 @@ class Bus:
     id: int = field(default=-1, init=False)
     name: str
     bus_type: str = None
-    sbase: float = None
-    vbase: float = None
-    fbase: float = None
+    base_power_MVA: float = None
+    base_voltage_kV: float = None
+    base_frequency_Hz: float = None
     v_min: float = None
     v_max: float = None
     p_load: float = None
@@ -108,7 +108,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
     model.cPowerBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
-                            m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t] >= 
+                            m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t] == 
                             load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]
                             )
     
@@ -120,9 +120,9 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
 
     # Export line capacities 
     dfx = pyovariable_to_df(model.vCAPL, 
-                            dfcol_to_field={'line_pi': 'name'}, 
-                            value_name='Capacity_MW', 
-                            csv_filepath=os.path.join(output_directory, 'line_capacities.csv'))
+                            dfcol_to_field={'line': 'name'}, 
+                            value_name='capacity_MW', 
+                            csv_filepath=os.path.join(output_directory, 'line_built_capacity.csv'))
     
     # Export costs
     costs = pl.DataFrame({'component' : ['CostPerPeriod_USD'],

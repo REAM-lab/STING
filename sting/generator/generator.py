@@ -36,6 +36,7 @@ class Generator:
 
     def assign_indices(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
+        self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
@@ -90,18 +91,36 @@ def construct_capacity_expansion_model(system, model, model_settings):
     if model_settings["consider_shedding"]:
         model.vSHED = pyo.Var(N, S, T, within=pyo.NonNegativeReals)
     
-    model.cCapGenVar = pyo.Constraint(GV, S, rule= lambda m, g, s: 
-                    (g.cap_existing_power_MW, m.vCAPV[g, s], g.cap_max_power_MW))
+    for g in GN:
+         if (not g.expand_capacity):
+            model.vCAP[g].fix(0.0)
     
-    model.cCapGenNonVar = pyo.Constraint(GN, rule= lambda m, g: 
-                    (g.cap_existing_power_MW, m.vCAP[g], g.cap_max_power_MW))
+    for g in GV:
+         if (not g.expand_capacity):
+            model.vCAPV[g, :].fix(0.0)
+
+    def cCapGenVar_rule(m, g, s):
+        if g.expand_capacity:
+            return  m.vCAPV[g, s] <= g.cap_max_power_MW - g.cap_existing_power_MW
+        else:
+            return pyo.Constraint.Skip
+        
+    model.cCapGenVar = pyo.Constraint(GV, S, rule=cCapGenVar_rule)
+
+    def cCapGenNonVar_rule(m, g):
+        if g.expand_capacity:
+            return  m.vCAP[g] <= g.cap_max_power_MW - g.cap_existing_power_MW
+        else:
+            return pyo.Constraint.Skip
+    
+    model.cCapGenNonVar = pyo.Constraint(GN, rule=cCapGenNonVar_rule)
     
     model.cMaxGenNonVar = pyo.Constraint(GN, T, rule=lambda m, g, t: 
-                    m.vGEN[g, t] <= m.vCAP[g])
+                    m.vGEN[g, t] <= m.vCAP[g] + g.cap_existing_power_MW)
     
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     model.cMaxGenVar = pyo.Constraint(GV, S, T, rule=lambda m, g, s, t: 
-                    m.vGENV[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * m.vCAPV[g, s])
+                    m.vGENV[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * (m.vCAPV[g, s] + g.cap_existing_power_MW))
     
     model.eGenAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
                     sum(m.vGEN[g, t] for g in GN_at_bus[n.id]) + 
