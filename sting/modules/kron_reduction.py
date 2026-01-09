@@ -47,7 +47,7 @@ class KronReduction():
         Y = np.diag(np.diag(Y))
 
         # Partition G and Y
-        G = mat2cell(G, [p, q], [p, q]) # THIS IS INCORRECT!!! 
+        G = mat2cell(G, [p, q], [p, q]) # THIS IS INCORRECT!!! Check dims
         Y = mat2cell(Y, [p, q], [p, q]) 
 
         
