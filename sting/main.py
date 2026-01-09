@@ -80,3 +80,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     capex.solve()
 
     return sys
+
+def run_capex_reduced(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+    pass
+
