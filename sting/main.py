@@ -3,7 +3,7 @@
 # ----------------------
 import os
 import logging
-
+import sys
 # ------------------
 # Import sting code
 # ------------------
@@ -12,6 +12,7 @@ from sting.modules.power_flow import PowerFlow
 from sting.modules.simulation_emt import SimulationEMT
 from sting.modules.small_signal_modeling import SmallSignalModel
 from sting.modules.capacity_expansion import CapacityExpansion
+from sting.utils.data_tools import StreamToLogger
 
 # ----------------
 # Main functions
@@ -67,20 +68,25 @@ def run_emt(t_max, inputs, case_directory=os.getcwd()):
 
     return sys
 
+
 def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
 
-    # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        filename=os.path.join(case_directory, 'sting.log'),
+                        filemode='w')
+    logger = logging.getLogger(__name__)
 
+    sys.stdout = StreamToLogger(logger, logging.INFO)
+           
+    # Load system from CSV files
+    system = System.from_csv(case_directory=case_directory)
+    
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    capex = CapacityExpansion(system=system , model_settings=model_settings, solver_settings=solver_settings)
     capex.solve()
 
-    return sys
-
-def run_capex_reduced(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
-    pass
-
+    return system

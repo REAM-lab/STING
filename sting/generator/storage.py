@@ -55,7 +55,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     # Filter energy storage units by bus
     E_AT_BUS = [[e for e in E if e.bus == n.name] for n in N]
     
-    if model_settings.get("consider_single_storage_injection", False):
+    if model_settings["consider_single_storage_injection"]:
             model.vDISCHA = pyo.Var(E, S, T, within=pyo.Reals)
     else:
             model.vDISCHA = pyo.Var(E, S, T, within=pyo.NonNegativeReals)
@@ -89,7 +89,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.cPowerCapStor = pyo.Constraint(E, S, rule=cPowerCapStor_rule)
 
     # Define constraints for energy storage systems
-    if model_settings.get("consider_single_storage_injection", False):
+    if model_settings["consider_single_storage_injection"]:
         model.cMaxCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                                           m.vDISCHA[e, s, t] >= - (m.vPCAP[e, s] + e.cap_existing_power_MW))
         model.cMaxDischa = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
@@ -112,7 +112,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
 
     # SOC in the next time is a function of SOC in the previous time
     # with circular wrapping for the first and last timepoints within a timeseries
-    if model_settings.get("consider_single_storage_injection", False):
+    if model_settings["consider_single_storage_injection"]:
         model.cStateOfCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                         m.vSOC[e, s, t] == m.vSOC[e, s, T[t.prev_timepoint_id]] +
                                         t.duration_hr*(- m.vDISCHA[e, s, t]) )
@@ -126,7 +126,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
                     + sum(m.vDISCHA[e, s, t] for e in E_AT_BUS[n.id]) )
 
     # Storage cost per timepoint
-    if model_settings.get("consider_single_storage_injection", False):
+    if model_settings["consider_single_storage_injection"]:
         model.eStorCostPerTp = pyo.Expression(T, rule=lambda m, t: 0.0 )
     else:
         model.eStorCostPerTp = pyo.Expression(T, rule=lambda m, t: 

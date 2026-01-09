@@ -165,7 +165,7 @@ class System:
 
         self.apply("assign_indices", self)
         
-        print(f"> Total: [{time.time() - full_start_time:.2f} seconds].")
+        print(f"    Total: {time.time() - full_start_time:.2f} seconds.")
 
         return self
 

@@ -4,6 +4,8 @@ import numpy as np
 from dataclasses import is_dataclass, asdict
 import pyomo.environ as pyo
 import polars as pl
+import logging
+import sys
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -148,7 +150,7 @@ def block_permute(X, rows, cols, index):
             Y[i, j] = X[n, m]
     return cell2mat(Y)
 
-def pyovariable_to_df(pyo_variable: pyo.Var, dfcol_to_field: dict, value_name: str, csv_filepath=None ) -> pl.DataFrame:
+def pyovariable_to_df(pyo_variable: pyo.Var, dfcol_to_field: dict, value_name: str, csv_filepath=None, given_dct = None ) -> pl.DataFrame:
     """
     Convert a Pyomo variable to a Polars DataFrame.
 
@@ -168,7 +170,7 @@ def pyovariable_to_df(pyo_variable: pyo.Var, dfcol_to_field: dict, value_name: s
     """
 
     # Convert Pyomo variable to dictionary
-    dct = pyo_variable.extract_values()
+    dct = pyo_variable.extract_values() if given_dct is None else given_dct
 
     def dct_to_tuple(dct_item):
         """
@@ -200,3 +202,34 @@ def pyovariable_to_df(pyo_variable: pyo.Var, dfcol_to_field: dict, value_name: s
         df.write_csv(csv_filepath)
 
     return df
+
+def pyodual_to_df(model_dual: pyo.Suffix, pyo_constraint: pyo.Constraint, dfcol_to_field: dict, value_name: str, csv_filepath=None ) -> pl.DataFrame:
+    """
+    Convert Pyomo duals to a Polars DataFrame.
+    """
+
+    dims = list(pyo_constraint)
+
+    dct = dict.fromkeys(dims, None)
+
+    for i in dims:
+        dct[i] = model_dual[pyo_constraint[i]]
+
+    df = pyovariable_to_df(pyo_variable=None, dfcol_to_field=dfcol_to_field, value_name=value_name, csv_filepath=csv_filepath, given_dct = dct )
+
+    return df
+
+class StreamToLogger(object):
+    """File-like object to redirect stdout/stderr to a logger."""
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
+
+    def flush(self):
+        pass 
+

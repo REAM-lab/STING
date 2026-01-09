@@ -15,7 +15,7 @@ from pyomo.environ import quicksum
 from sting.timescales.core import Timepoint, Scenario
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
 from sting.utils.dynamical_systems import DynamicalVariables
-from sting.utils.data_tools import pyovariable_to_df
+from sting.utils.data_tools import pyovariable_to_df, pyodual_to_df
 
 
 # ----------------
@@ -109,12 +109,14 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     model.cEnergyBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
                             (m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t]) * t.weight == 
-                            ( load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t] ) * t.weight
+                            (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) * t.weight
                             )
     
     # Fixed costs 
     model.eLineCostPerPeriod = pyo.Expression(
                                 expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L))
+
+    #model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
 
@@ -125,14 +127,14 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                             csv_filepath=os.path.join(output_directory, 'line_built_capacity.csv'))
     
     # Export LMPs
-    df = pyovariable_to_df(model.dual[model.cEnergyBalance], 
+    df = pyodual_to_df(model.dual, model.cEnergyBalance, 
                             dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
                             value_name='local_marginal_price_USDperMWh')
     
     df = df.with_columns(
         (pl.col('local_marginal_price_USDperMWh') / model.rescaling_factor_obj).alias('local_marginal_price_USDperMWh'))
     
-    df.write_csv(os.path.join(output_directory, 'local_marginal_prices_USDperMWh.csv'))
+    df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
     
     # Export costs
     costs = pl.DataFrame({'component' : ['CostPerPeriod_USD'],

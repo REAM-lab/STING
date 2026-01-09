@@ -136,11 +136,14 @@ def construct_capacity_expansion_model(system, model, model_settings):
     elif model_settings["gen_costs"] == "linear":
         model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
                         sum(g.cost_variable_USDperMWh * m.vGEN[g, t] for g in GN) + 
-                        1/len(S) * sum(s.probability * g.cost_variable_USDperMWh * m.vGENV[g, s, t] for g in GV for s in S) + 
-                        (sum(5000 * m.vSHED[n, s, t] for n in N for s in S) if model_settings["consider_shedding"] else 0) )
+                        1/len(S) * sum(s.probability * g.cost_variable_USDperMWh * m.vGENV[g, s, t] for g in GV for s in S) )
     else:
         raise ValueError("model_settings['gen_costs'] must be either 'quadratic' or 'linear'.")
     
+    if model_settings["consider_shedding"]:
+        model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N for s in S)) 
+        
+
     # Fixed costs 
     model.eGenCostPerPeriod = pyo.Expression(
                                 expr = lambda m: sum(g.cost_fixed_power_USDperkW * m.vCAP[g] * 1000 for g in GN) + 
@@ -150,6 +153,11 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.eGenTotalCost = pyo.Expression(
                             expr = lambda m: m.eGenCostPerPeriod + sum(m.eGenCostPerTp[t] * t.weight for t in T)
                             )
+    
+    if model_settings["consider_shedding"]:
+        model.eShedTotalCost = pyo.Expression(
+                                expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
+                                )
     
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
 
@@ -175,19 +183,24 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                       value_name='Capacity_MW', 
                       csv_filepath=os.path.join(output_directory, 'variable_generator_capacity.csv'))
 
-    # Export load shedding results if it is existing
-    if hasattr(model, 'vSHED'):
-        pyovariable_to_df(model.vSHED, 
-                          dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                          value_name='Load_Shed_MW', 
-                          csv_filepath=os.path.join(output_directory, 'load_shedding.csv'))
-
-    
     # Export summary of generator costs
     costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
                           'cost' : [  sum( pyo.value(model.eGenCostPerTp[t]) * t.weight for t in system.tp), 
                                             pyo.value(model.eGenCostPerPeriod), 
                                             pyo.value(model.eGenTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
+
+
+    # Export load shedding results if it is existing
+    if hasattr(model, 'vSHED'):
+        pyovariable_to_df(model.vSHED, 
+                          dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
+                          value_name='load_shedding_MW', 
+                          csv_filepath=os.path.join(output_directory, 'load_shedding.csv'))
+        
+        # Export summary of load shedding costs
+        costs = pl.DataFrame({'component' : ['TotalCost_USD'],
+                              'cost' : [  pyo.value(model.eShedTotalCost)]})
+        costs.write_csv(os.path.join(output_directory, 'load_shedding_costs_summary.csv'))
 
 

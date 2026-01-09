@@ -31,20 +31,33 @@ class CapacityExpansion:
     
     def __post_init__(self):
 
-        if self.solver_settings is None:
-            self.solver_settings = {
+        self.set_settings()
+        self.construct()
+        self.set_output_folder()
+
+    def set_settings(self):
+        default =  {
                 "solver_name": "gurobi",
                 "tee": True,
                 "solver_options": {},
             }
-        if self.model_settings is None:
-            self.model_settings = {
+        if self.solver_settings is not None:
+            for key, value in self.solver_settings.items():
+                default[key] = value
+        
+        self.solver_settings = default
+
+        default = {
                 "gen_costs": "quadratic",
                 "consider_shedding": False,
                 "consider_single_storage_injection": False,
             }
-        self.construct()
-        self.set_output_folder()
+        
+        if self.model_settings is not None:
+            for key, value in self.model_settings.items():
+                default[key] = value
+        
+        self.model_settings = default
 
     def set_output_folder(self):
         """
@@ -88,7 +101,7 @@ class CapacityExpansion:
         # Define objective function
         print("   - Objective function ...", end=' ')
         start_time = time.time()
-        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t])
+        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t] + (m.eShedCostPerTp[t] if model_settings["consider_shedding"] else 0))
         self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod + m.eLineCostPerPeriod)
         self.model.eTotalCost = pyo.Expression(expr= (sum(self.model.eCostPerTp[t] * t.weight for t in self.system.tp) + self.model.eCostPerPeriod))
         
@@ -105,12 +118,17 @@ class CapacityExpansion:
         Solve the capacity expansion optimization model.
         """
 
+        start_time = time.time()
         print("> Solving capacity expansion model...")
         solver = pyo.SolverFactory(self.solver_settings["solver_name"])
         results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings["tee"])
 
+        # Load the duals into the 'dual' suffix
+        solver.load_duals()
+
+        print(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
         print(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-        print(f"> Objective value: {pyo.value(self.model.obj):.2f} USD.")
+        print(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
 
         # Export costs summary
         costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
@@ -119,10 +137,9 @@ class CapacityExpansion:
                                             pyo.value(self.model.eTotalCost)]})
         costs.write_csv(os.path.join(self.output_directory, 'costs_summary.csv'))
 
-        print("> Exporting capacity expansion results:")
         start_full_time = time.time()
         system, model, output_directory = self.system, self.model, self.output_directory
-
+        print(f"> Exporting results in {output_directory} :")
         print("   - Generators results ...", end=' ')
         start_time = time.time()
         generator.export_results_capacity_expansion(system, model, output_directory)
