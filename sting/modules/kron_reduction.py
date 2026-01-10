@@ -14,17 +14,21 @@ from sting.line.pi_model import LinePiModel
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
 from sting.utils.data_tools import mat2cell
 
-
-
 # -----------
 # Main class
 # -----------
 @dataclass
 class KronReduction():
-    # g - d = Y * z
-    #   g: generation
-    #   d: demand
-    #   z: bus angle (relative to slack)
+    '''
+    Power flow can be described by the following equations
+
+    (1) g - d = Y_pp * θ_p + Y_pq * θ_q
+    (2)     0 = Y_qp * θ_p + Y_qq * θ_q
+
+    where θ_q are the set of buses with zero generation and load.
+    They can be eliminated by solving for θ_q in (2) and substituting
+    into (1). 
+    '''
     system: System
     remove_buses: set = None
     
@@ -32,23 +36,25 @@ class KronReduction():
         self.system = copy.deepcopy(self.system)
 
     def reduce(self):
-        
-        first, last = [], []
+        # Partition all bus objects into those that will   
+        # be kept and those that will be removed.
+        keep, remove = [], []
         for b in self.system.bus:
             if b.name in self.remove_buses:
-                last.append(b)
+                remove.append(b)
             else:
-                first.append(b)
+                keep.append(b)
         
-        
-        # Sort all system buses placing buses to remove last
+        # Reorder the buses in the system so that those to
+        # be removed will occur second
         self.system.bus = []
-        for b in (first + last):
+        for b in (keep + remove):
             self.system.add(b)
         
         # Update all line and generator indices
         self.system.apply("assign_indices", self.system)
-
+        self.create_bus_max_flow()
+        
         # Number of total, unused, and real buses
         n_bus = len(self.system.bus)
         q = len(self.remove_buses)
@@ -61,12 +67,13 @@ class KronReduction():
         invY_qq = solve(Y_qq, np.eye(q))
         Y_red = Y_pp - Y_pq @ (invY_qq) @ Y_qp
 
+        # Remove the reduced buses from the system
+        self.system.bus = self.system.bus[:p]
         # Build the new reduced lines
         self.system.line_pi = []
-        self.system.bus = self.system.bus[:p]
 
         for i, j in zip(*np.triu_indices(p)):
-            # Skip self loops and unconnected nodes
+            # Skip all unconnected nodes and the diagonal
             if (i == j) or (Y_red[i, j] == 0):
                 continue
             
@@ -80,9 +87,19 @@ class KronReduction():
                 to_bus=self.system.bus[j].name, to_bus_id=j,
                 # Line parameters
                 r_pu=z.real, x_pu=z.imag, # Z = R + jX
-                g_pu=y.real, b_pu=y.imag
+                g_pu=y.real, b_pu=y.imag, # Y = G + jB
             )
             self.system.add(line)
+
+    def create_bus_max_flow(self):
+
+        for bus in self.system.bus:
+            bus.max_flow_MW = 0
+
+        for line in self.system.line_pi:
+            i, j = line.from_bus_id, line.to_bus_id
+            self.system.bus[i].max_flow_MW += line.cap_existing_power_MW
+            self.system.bus[j].max_flow_MW += line.cap_existing_power_MW
 
 
     def line_cap():

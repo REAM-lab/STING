@@ -29,6 +29,7 @@ class Bus:
     base_power_MVA: float = None
     base_voltage_kV: float = None
     base_frequency_Hz: float = None
+    max_flow_MW: float = None
     v_min: float = None
     v_max: float = None
     p_load: float = None

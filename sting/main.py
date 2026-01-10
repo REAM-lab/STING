@@ -94,6 +94,9 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     return system
 
 def run_kron(case_directory=os.getcwd()):
+    # Set up logging to file
+    setup_logging_file(case_directory)
+    
     # Load system from CSV files
     system = System.from_csv(case_directory=case_directory)
     kr = KronReduction(system=system, remove_buses={"2"})
