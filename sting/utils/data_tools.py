@@ -5,7 +5,7 @@ from dataclasses import is_dataclass, asdict
 import pyomo.environ as pyo
 import polars as pl
 import logging
-import sys
+import os
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -219,17 +219,20 @@ def pyodual_to_df(model_dual: pyo.Suffix, pyo_constraint: pyo.Constraint, dfcol_
 
     return df
 
-class StreamToLogger(object):
-    """File-like object to redirect stdout/stderr to a logger."""
-    def __init__(self, logger, log_level=logging.INFO):
-        self.logger = logger
-        self.log_level = log_level
-        self.linebuf = ''
-
-    def write(self, buf):
-        for line in buf.rstrip().splitlines():
-            self.logger.log(self.log_level, line.rstrip())
-
-    def flush(self):
-        pass 
+def setup_logging_file(case_directory: str):
+    """Setup file logging to the specified case directory."""
+    file_handler = logging.FileHandler(os.path.join(case_directory, "sting_log.txt"))
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter('%(message)s'))
+    file_handler.terminator = ''  # Remove automatic newline
+    
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
+    
+    # Also set terminator for console handler (StreamHandler)
+    for handler in root_logger.handlers:
+        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+            handler.terminator = ''
+    
+    return file_handler
 

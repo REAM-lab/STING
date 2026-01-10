@@ -1,21 +1,27 @@
+# ----------------------
+# Import python packages
+# ----------------------
+from dataclasses import dataclass
+import copy
+import numpy as np
+
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
 from sting.utils.graph_matrices import build_oriented_incidence_matrix, build_admittance_matrix_from_lines
 from sting.utils.data_tools import mat2cell
-from dataclasses import dataclass
-
-import numpy as np
 import sting.system.selections as sl
-import copy
 
+# -----------
+# Main class
+# -----------
 @dataclass
 class KronReduction():
     system: System
     remove_buses: set = None
     
-    def __postinit__(self):
+    def __post_init__(self):
         self.system = copy.deepcopy(self.system)
 
     def reduce(self):

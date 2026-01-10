@@ -13,6 +13,8 @@ from scipy.linalg import block_diag
 from scipy.integrate import solve_ivp
 import polars as pl
 import time
+import logging
+import datetime
 
 # -----------------------
 # Import sting code
@@ -26,6 +28,7 @@ from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 import sting.system.selections as sl
 
+logger = logging.getLogger(__name__)
 
 class System:
     """
@@ -54,9 +57,15 @@ class System:
         - self.components (dataframe): Stores the list of components, modules, classes and csv files.
         - self.class_to_str (dict): Maps class with type for each component. For example, InfiniteSource => inf_src
         """
+        # Print datetime
+        logger.info(f"{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n")
 
-        print(__logo__) # print logo when a System instance is created
-        print("> System initialization", end=" ")
+        # Print logo
+        logo = __logo__.replace("\x1b[93m", "")  # For environments that do not support ANSI colors
+        logo = logo.replace("\x1b[0m", "")  # For environments that do not support ANSI colors
+        logger.info(logo) # print logo when a System instance is created
+
+        logger.info("> System initialization ...")
 
         # Get components_metadata.csv as a dataframe.
         # This file contains information of the lists of components that integrate the system
@@ -79,7 +88,7 @@ class System:
         # Store case directory
         self.case_directory = case_directory
 
-        print("... ok.")
+        logger.info("... ok. \n")
 
     def __post_init__(self):
         self.apply("assign_bus_id", self.bus)
@@ -112,7 +121,7 @@ class System:
         # Create instance System.
         self = cls(components=components, case_directory=case_directory) 
 
-        print("> Load components via CSV files from:")
+        logger.info(f"> Load components via CSV files from {inputs_dir} \n")
 
         for c_name, c_class, c_module, filename in self.components.iter_rows():
 
@@ -152,7 +161,7 @@ class System:
             }
 
             # Read components csv
-            print(f"\t- '{filepath}'", end=" ")
+            logger.info(f"\t- '{os.path.basename(filepath)}' ... ")
             df = pl.read_csv(filepath, dtypes=param_types)
 
             # Create a component for each row (i.e., component) in the csv
@@ -161,12 +170,11 @@ class System:
                 # Add the component to the system
                 self.add(component)
 
-            print(f"ok [{time.time() - start_time:.2f} seconds].")
+            logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         self.apply("assign_indices", self)
         
-        print(f"    Total: {time.time() - full_start_time:.2f} seconds.")
-
+        logger.info(f"    Total: {time.time() - full_start_time:.2f} seconds. \n")
         return self
 
     def to_csv(self, output_dir=None):
@@ -189,12 +197,11 @@ class System:
         current_matlab_sessions = matlab.engine.find_matlab()
 
         if not session_name in current_matlab_sessions:
-            print("> Initiate Matlab session, as a session was not founded or entered.")
+            logger.info("> Initiate Matlab session, as a session was not founded or entered.")
             eng = matlab.engine.start_matlab()
         else:
             eng = matlab.engine.connect_matlab(session_name)
-            print(f"> Connect to Matlab session: {session_name} ... ok.")
-
+            logger.info(f"> Connect to Matlab session: {session_name} ... ok.")
         for typ in export :
             components = getattr(self, typ)
 

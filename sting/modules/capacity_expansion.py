@@ -7,7 +7,9 @@ from dataclasses import dataclass, field
 import os
 import pyomo.environ as pyo
 import time
-
+import logging
+from pyomo.common.log import LogStream
+from pyomo.common.tee import capture_output
 # ------------------
 # Import sting code
 # ------------------
@@ -16,6 +18,8 @@ import sting.system.selections as sl
 import sting.bus.bus as bus
 import sting.generator.generator as generator
 import sting.generator.storage as storage
+
+logger = logging.getLogger(__name__)
 
 # -----------
 # Main class
@@ -71,7 +75,7 @@ class CapacityExpansion:
         Construct the optimization model for capacity expansion.
         """
         
-        print("> Constructing capacity expansion model:")
+        logger.info("> Constructing capacity expansion model: \n")
         full_start_time = time.time()
 
         # Create Pyomo model
@@ -82,23 +86,23 @@ class CapacityExpansion:
         model = self.model
         model_settings = self.model_settings
 
-        print("   - Generators variables and constraints ...", end=' ')
+        logger.info("   - Generators variables and constraints ...")
         start_time = time.time()
         generator.construct_capacity_expansion_model(system, model, model_settings)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
-        print("   - Storage variables and constraints ...", end=' ')
+        logger.info("   - Storage variables and constraints ...")
         start_time = time.time()
         storage.construct_capacity_expansion_model(system, model, model_settings)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
         
-        print("   - Bus variables and constraints ...", end=' ')
+        logger.info("   - Bus variables and constraints ...")
         start_time = time.time()
         bus.construct_capacity_expansion_model(system, model, model_settings)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         # Define objective function
-        print("   - Objective function ...", end=' ')
+        logger.info("   - Objective function ...")
         start_time = time.time()
         self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t] + (m.eShedCostPerTp[t] if model_settings["consider_shedding"] else 0))
         self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod + m.eLineCostPerPeriod)
@@ -107,27 +111,41 @@ class CapacityExpansion:
         self.model.rescaling_factor_obj = pyo.Param(initialize=1e-6)  # To express the objective in million USD
 
         self.model.obj = pyo.Objective(expr= self.model.rescaling_factor_obj * self.model.eTotalCost, sense=pyo.minimize)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         full_end_time = time.time()
-        print(f"        Total: {full_end_time - full_start_time:.2f} seconds.")
+        logger.info(f"        Total: {full_end_time - full_start_time:.2f} seconds. \n")
 
     def solve(self):
         """
         Solve the capacity expansion optimization model.
         """
-
+        # Use root logger so solver output also goes to the file handler attached there
         start_time = time.time()
-        print("> Solving capacity expansion model...")
+        logger.info("> Solving capacity expansion model... \n")
         solver = pyo.SolverFactory(self.solver_settings["solver_name"])
-        results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings["tee"])
+        
+        # Capture handlers
+        handler_std = logger.parent.handlers[0]
+        handler_std.terminator = '\n' 
+
+        handler_txt = logger.parent.handlers[1]
+        handler_txt.terminator = '\n' 
+        
+        # Write solver output to sting_log.txt
+        with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
+            results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings['tee'])
+
+
+        handler_std.terminator = ''  # Restore original terminator
+        handler_txt.terminator = ''  # Restore original terminator
 
         # Load the duals into the 'dual' suffix
         solver.load_duals()
 
-        print(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
-        print(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-        print(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
+        logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds. \n")
+        logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}. \n")
+        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD. \n")
 
         # Export costs summary
         costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
@@ -138,25 +156,25 @@ class CapacityExpansion:
 
         start_full_time = time.time()
         system, model, output_directory = self.system, self.model, self.output_directory
-        print(f"> Exporting results in {output_directory} :")
-        print("   - Generators results ...", end=' ')
+        logger.info(f"> Exporting results in {output_directory} : \n")
+
+        logger.info("   - Generators results ...")
         start_time = time.time()
         generator.export_results_capacity_expansion(system, model, output_directory)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
-
-        print("   - Storage results ...", end=' ')
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        
+        logger.info("   - Storage results ...")
         start_time = time.time()
         storage.export_results_capacity_expansion(system, model, output_directory)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
-        print("   - Bus results ...", end=' ')
+        logger.info("   - Bus results ...")
         start_time = time.time()
         bus.export_results_capacity_expansion(system, model, output_directory)
-        print(f"ok [{time.time() - start_time:.2f} seconds].")
+        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         full_end_time = time.time()
-        print(f"        Total: {full_end_time - start_full_time:.2f} seconds.")
-
+        logger.info(f"        Total: {full_end_time - start_full_time:.2f} seconds. \n")
 
 
 
