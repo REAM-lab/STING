@@ -1,0 +1,5 @@
+bus,scenario,timepoint,local_marginal_price_USDperMWh
+1,sc1,1,5000.0
+3,sc1,1,29.999999999999645
+4,sc1,1,5000.0
+5,sc1,1,9.999999999999593

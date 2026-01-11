@@ -1,0 +1,5 @@
+bus,scenario,timepoint,load_shedding_MW
+1,sc1,1,90.0
+3,sc1,1,0.0
+4,sc1,1,200.0
+5,sc1,1,0.0

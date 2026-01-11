@@ -35,6 +35,19 @@ class KronReduction():
     def __post_init__(self):
         self.system = copy.deepcopy(self.system)
 
+        if self.remove_buses is None:
+            self.get_remove_buses()
+
+    def get_remove_buses(self):
+        """
+        Identify the name of all buses with zero generation and zero load
+        to be removed via Kron reduction.
+        """
+        all_buses = set([bus.name for bus in self.system.bus])
+        generation_buses = set([gen.bus for gen in self.system.gen])
+        load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
+        self.remove_buses = all_buses - generation_buses.union(load_buses)
+         
     def reduce(self):
         # Partition all bus objects into those that will   
         # be kept and those that will be removed.
