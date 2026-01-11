@@ -13,7 +13,7 @@ class LinePiModel:
     g_pu: float
     b_pu: float
     expand_capacity: bool = False
-    cap_existing_power_MW: float = 0.0
+    cap_existing_power_MW: float = None
     cost_fixed_power_USDperkW: float = 0.0
     angle_max_deg: float = 360
     angle_min_deg: float = -360
