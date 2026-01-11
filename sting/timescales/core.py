@@ -35,7 +35,7 @@ class Timepoint:
     duration_hr: float = None   
     prev_timepoint_id: int = None
 
-    def assign_indices(self, system):
+    def post_system_init(self, system):
         timeseries = next((p for p in system.ts if p.name == self.timeseries))
         self.timeseries_id = timeseries.id
         self.duration_hr = timeseries.timepoint_duration_hr
@@ -64,9 +64,9 @@ class Timeseries:
     period : str = None
     timepoint_selection_method: str = None
     
-    def assign_indices(self, system):
+    def post_system_init(self, system):
         self.timepoint_ids = [t.id for t in system.tp if t.timeseries == self.name]
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
-        return hash(self.id)
+        return self.id

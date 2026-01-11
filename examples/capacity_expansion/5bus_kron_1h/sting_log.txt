@@ -867,3 +867,28 @@ ok [0.01 seconds].
 >> Run completed in 0.04 seconds.
 
 >> Run completed in 0.04 seconds.
+2026-01-11 12:45:21 
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+> System initialization ...... ok. 
+> Load components via CSV files from /Users/adamsedlak/Documents/Python/STING/examples/capacity_expansion/5bus_kron_1h/inputs 
+	- 'lines.csv' ... ok [0.00 seconds]. 
+	- 'buses.csv' ... ok [0.00 seconds]. 
+	- 'timeseries.csv' ... ok [0.00 seconds]. 
+	- 'timepoints.csv' ... ok [0.00 seconds]. 
+	- 'scenarios.csv' ... ok [0.00 seconds]. 
+	- 'loads.csv' ... ok [0.00 seconds]. 
+	- 'generators.csv' ... ok [0.00 seconds]. 
+	- 'capacity_factors.csv' ... ok [0.00 seconds]. 
+	- 'storage.csv' ... ok [0.00 seconds]. 
+    Total: 0.01 seconds. 
+> Constructing capacity expansion model: 
+   - Generators variables and constraints ...Rule failed for Expression 'eGenTotalCost' with index None:
+TypeError: unsupported operand type(s) for *: 'ExpressionData' and 'NoneType'Constructing component 'eGenTotalCost' from data=None failed:
+    TypeError: unsupported operand type(s) for *: 'ExpressionData' and 'NoneType'
