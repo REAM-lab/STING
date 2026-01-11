@@ -34,9 +34,6 @@ class KronReduction():
     
     def __post_init__(self):
         self.system = copy.deepcopy(self.system)
-        # Add max power flow constraints at the bus level
-        self.create_bus_max_flow()
-
         if self.remove_buses is None:
             self.get_remove_buses()
 
@@ -105,25 +102,9 @@ class KronReduction():
             )
             self.system.add(line)
 
-    def create_bus_max_flow(self):
-
-        for bus in self.system.bus:
-            bus.max_flow_MW = 0.0
-
-        for line in self.system.line_pi:
-            for id in [line.from_bus_id, line.to_bus_id]:
-
-                # There is no constraint on max power flow on the line,
-                # thus the bus should also inherit no constraint.
-                if (line.cap_existing_power_MW is None) or (self.system.bus[id].max_flow_MW is None):
-                    self.system.bus[id].max_flow_MW = None
-                    
-                else:
-                    self.system.bus[id].max_flow_MW += line.cap_existing_power_MW
-
-
     def line_cap():
         # Create graph object
+        #    - TODO: https://ieeexplore.ieee.org/abstract/document/6506059
 
         # for each bus to remove:
         #.  1. look up buses nearest neighbors

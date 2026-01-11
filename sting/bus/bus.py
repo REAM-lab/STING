@@ -42,6 +42,26 @@ class Bus:
 
     def __repr__(self):
         return f"Bus(id={self.id}, bus='{self.name}')"
+    
+    def post_system_init(self, system):
+        # Exit if the bus has not constraint on max power flow
+        if self.max_flow_MW is not None:
+            return
+        
+        # Otherwise, we deduce max power flow based on the lines
+        # the current bus is connected to.
+        self.max_flow_MW = 0.0
+        connected_lines = {line for line in system.line_pi if (self.name in [line.from_bus, line.to_bus])}
+
+        for line in connected_lines:
+            # There is no constraint on max power flow on the line,
+            # thus the bus should also inherit no constraint (and we can exit).
+            if (line.cap_existing_power_MW is None):
+                self.max_flow_MW = None
+                return
+            # Otherwise
+            else:
+                self.max_flow_MW += line.cap_existing_power_MW
 
 @dataclass(slots=True)
 class Load:

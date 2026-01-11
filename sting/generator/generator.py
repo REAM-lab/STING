@@ -34,7 +34,7 @@ class Generator:
     bus_id: int = None
     expand_capacity: bool = True
 
-    def assign_indices(self, system):
+    def post_system_init(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
         self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 

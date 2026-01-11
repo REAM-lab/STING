@@ -90,8 +90,6 @@ class System:
 
         logger.info("... ok. \n")
 
-    def __post_init__(self):
-        self.apply("assign_bus_id", self.bus)
 
     @classmethod
     def from_csv(cls, components=None, case_directory=os.getcwd()):
@@ -172,7 +170,7 @@ class System:
 
             logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
-        self.apply("assign_indices", self)
+        self.apply("post_system_init", self)
         
         logger.info(f"    Total: {time.time() - full_start_time:.2f} seconds. \n")
         return self
