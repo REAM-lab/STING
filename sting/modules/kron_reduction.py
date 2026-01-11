@@ -34,6 +34,8 @@ class KronReduction():
     
     def __post_init__(self):
         self.system = copy.deepcopy(self.system)
+        # Add max power flow constraints at the bus level
+        self.create_bus_max_flow()
 
         if self.remove_buses is None:
             self.get_remove_buses()
@@ -66,7 +68,6 @@ class KronReduction():
         
         # Update all line and generator indices
         self.system.apply("assign_indices", self.system)
-        self.create_bus_max_flow()
         
         # Number of total, unused, and real buses
         n_bus = len(self.system.bus)
@@ -107,12 +108,18 @@ class KronReduction():
     def create_bus_max_flow(self):
 
         for bus in self.system.bus:
-            bus.max_flow_MW = 0
+            bus.max_flow_MW = 0.0
 
         for line in self.system.line_pi:
-            i, j = line.from_bus_id, line.to_bus_id
-            self.system.bus[i].max_flow_MW += line.cap_existing_power_MW
-            self.system.bus[j].max_flow_MW += line.cap_existing_power_MW
+            for id in [line.from_bus_id, line.to_bus_id]:
+
+                # There is no constraint on max power flow on the line,
+                # thus the bus should also inherit no constraint.
+                if (line.cap_existing_power_MW is None) or (self.system.bus[id].max_flow_MW is None):
+                    self.system.bus[id].max_flow_MW = None
+                    
+                else:
+                    self.system.bus[id].max_flow_MW += line.cap_existing_power_MW
 
 
     def line_cap():
