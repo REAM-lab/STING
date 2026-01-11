@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import copy
 import numpy as np
 from scipy.linalg import solve
+import time
+import logging
 
 # ------------------
 # Import sting code
@@ -12,7 +14,9 @@ from scipy.linalg import solve
 from sting.system.core import System
 from sting.line.pi_model import LinePiModel
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
-from sting.utils.data_tools import mat2cell
+from sting.utils.data_tools import mat2cell, timeit
+
+logger = logging.getLogger(__name__)
 
 # -----------
 # Main class
@@ -37,16 +41,21 @@ class KronReduction():
         if self.remove_buses is None:
             self.get_remove_buses()
 
+    @timeit
     def get_remove_buses(self):
         """
         Identify the name of all buses with zero generation and zero load
         to be removed via Kron reduction.
         """
+
         all_buses = set([bus.name for bus in self.system.bus])
         generation_buses = set([gen.bus for gen in self.system.gen])
+        storage_buses = set([sto.bus for sto in self.system.ess])
         load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
-        self.remove_buses = all_buses - generation_buses.union(load_buses)
-         
+        self.remove_buses = all_buses - generation_buses.union(storage_buses).union(load_buses)
+        logger.info(f"> Kron reduction will remove {len(self.remove_buses)} buses out of {len(all_buses)} total buses. \n")
+        
+    @timeit 
     def reduce(self):
         # Partition all bus objects into those that will   
         # be kept and those that will be removed.
@@ -64,7 +73,7 @@ class KronReduction():
             self.system.add(b)
         
         # Update all line and generator indices
-        self.system.apply("assign_indices", self.system)
+        self.system.apply("post_system_init", self.system)
         
         # Number of total, unused, and real buses
         n_bus = len(self.system.bus)
@@ -101,6 +110,7 @@ class KronReduction():
                 g_pu=y.real, b_pu=y.imag, # Y = G + jB
             )
             self.system.add(line)
+        logging.info("> Kron reduction completed. \n")
 
     def line_cap():
         # Create graph object

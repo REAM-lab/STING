@@ -16,6 +16,8 @@ mosek_solver_settings = {
 model_settings = {
                 "gen_costs": "quadratic",
                 "consider_shedding": True,
+                "consider_line_capacity": False,
+                "consider_bus_max_flow": True,
             }
 
 gurobi_solver_settings = {
@@ -31,22 +33,11 @@ sys = main.run_capex(
     case_directory=case_dir, 
     solver_settings=mosek_solver_settings, 
     model_settings=model_settings)
-#reduced_system = main.run_kron(case_dir)
 
 capex, kr = main.run_kron_capex(
     case_directory=case_dir, 
     model_settings=model_settings, 
     solver_settings=mosek_solver_settings)
-# Perform capacity expansion with Kron reduced system
-#output_directory = os.path.join(case_dir, "outputs", "kron_reduction")
-#capex = CapacityExpansion(
-#    system=reduced_system, 
-#    output_directory=output_directory, 
-#    solver_settings=mosek_solver_settings, 
-#    model_settings=model_settings)
-#capex.solve()
 
-# Resolve capacity expansion with the base system
-#sys = main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
 
 print('ok')

@@ -98,28 +98,30 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
          if (not l.expand_capacity):
             model.vCAPL[l].fix(0.0)
     
-    def cMaxFlowPerLine_rule(m, l, s, t):
-        if (l.expand_capacity) or (l.cap_existing_power_MW is not None):
-            return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= m.vCAPL[l] + l.cap_existing_power_MW
-        else:
-            return pyo.Constraint.Skip
+    if model_settings["consider_line_capacity"] == True:
+        def cMaxFlowPerLine_rule(m, l, s, t):
+            if (l.expand_capacity) or (l.cap_existing_power_MW is not None):
+                return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= m.vCAPL[l] + l.cap_existing_power_MW
+            else:
+                return pyo.Constraint.Skip
         
-    def cMinFlowPerLine_rule(m, l, s, t):
-        if (l.expand_capacity) or (l.cap_existing_power_MW is not None):
-            return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) >= -(m.vCAPL[l] + l.cap_existing_power_MW)
-        else:
-            return pyo.Constraint.Skip
+        def cMinFlowPerLine_rule(m, l, s, t):
+            if (l.expand_capacity) or (l.cap_existing_power_MW is not None):
+                return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) >= -(m.vCAPL[l] + l.cap_existing_power_MW)
+            else:
+                return pyo.Constraint.Skip
    
-    model.cMaxFlowPerLine = pyo.Constraint(L, S, T, rule=cMaxFlowPerLine_rule)
-    model.cMinFlowPerLine = pyo.Constraint(L, S, T, rule=cMinFlowPerLine_rule)
+        model.cMaxFlowPerLine = pyo.Constraint(L, S, T, rule=cMaxFlowPerLine_rule)
+        model.cMinFlowPerLine = pyo.Constraint(L, S, T, rule=cMinFlowPerLine_rule)
 
-    def cFlowPerBus_rule(m, n, s, t):
-        if n.max_flow_MW is not None:
-            return (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW)
-        else:
-            return pyo.Constraint.Skip
+    if model_settings["consider_bus_max_flow"] == True:
+        def cFlowPerBus_rule(m, n, s, t):
+            if n.max_flow_MW is not None:
+                return (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW)
+            else:
+                return pyo.Constraint.Skip
     
-    model.cFlowPerBus = pyo.Constraint(N, S, T, rule=cFlowPerBus_rule)
+        model.cFlowPerBus = pyo.Constraint(N, S, T, rule=cFlowPerBus_rule)
 
     def cDiffAngle_rule(m, l, s, t):
         if (l.angle_min_deg > -360) and (l.angle_max_deg < 360):

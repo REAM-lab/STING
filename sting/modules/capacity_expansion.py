@@ -54,6 +54,8 @@ class CapacityExpansion:
                 "gen_costs": "quadratic",
                 "consider_shedding": False,
                 "consider_single_storage_injection": False,
+                "consider_line_capacity": True,
+                "consider_bus_max_flow": False,
             }
         
         if self.model_settings is not None:

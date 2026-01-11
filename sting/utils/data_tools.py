@@ -6,6 +6,9 @@ import pyomo.environ as pyo
 import polars as pl
 import logging
 import os
+import functools
+import time
+import logging
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -236,3 +239,16 @@ def setup_logging_file(case_directory: str):
     
     return file_handler
 
+def timeit(func):
+    """
+    A decorator that measures the execution time of the decorated function.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # Use perf_counter for more precise timing
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        elapsed_time = (end_time - start_time)
+        logging.info(f"   Completed in {elapsed_time:.2f} seconds. \n")
+        return result
+    return wrapper
