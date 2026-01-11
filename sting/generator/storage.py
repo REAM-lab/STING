@@ -166,11 +166,11 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     # Export storage capacity results
     df1 = pyovariable_to_df(model.vPCAP, 
                             dfcol_to_field={'storage': 'name', 'scenario': 'name'}, 
-                            value_name='Power_Capacity_MW')
+                            value_name='power_capacity_MW')
     
     df2 = pyovariable_to_df(model.vECAP, 
                             dfcol_to_field={'storage': 'name', 'scenario': 'name'}, 
-                            value_name='Energy_Capacity_MWh')
+                            value_name='energy_capacity_MWh')
     
     df = df1.join(df2, on=['storage', 'scenario'])
     df.write_csv(os.path.join(output_directory, 'storage_capacity.csv'))

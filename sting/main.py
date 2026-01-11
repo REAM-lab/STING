@@ -3,7 +3,7 @@
 # ----------------------
 import os
 import logging
-import sys
+import time
 
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
@@ -81,6 +81,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
+    start_time = time.time()
     # Set up logging to file
     setup_logging_file(case_directory)
 
@@ -90,7 +91,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=system , model_settings=model_settings, solver_settings=solver_settings)
     capex.solve()  
-
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return system
 
 def run_kron(case_directory=os.getcwd()):
