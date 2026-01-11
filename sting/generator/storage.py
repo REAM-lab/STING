@@ -35,7 +35,7 @@ class Storage:
     c2_USDperMWh2: float
     expand_capacity: bool = True
 
-    def assign_indices(self, system):
+    def post_system_init(self, system):
         self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 
     def __repr__(self):
