@@ -5,8 +5,9 @@ from dataclasses import dataclass
 import copy
 import numpy as np
 from scipy.linalg import solve
-import time
+import os
 import logging
+from typing import NamedTuple
 
 # ------------------
 # Import sting code
@@ -14,9 +15,18 @@ import logging
 from sting.system.core import System
 from sting.line.pi_model import LinePiModel
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
-from sting.utils.data_tools import mat2cell, timeit
+from sting.utils.data_tools import mat2cell, timeit, matrix_to_csv
 
+# Logger
 logger = logging.getLogger(__name__)
+
+# ----------
+# Sub-classes
+# ----------
+class KronReductionSettings(NamedTuple):
+    print_matrices: bool = True
+    tolerance: float = 1e-4
+    bus_neighbor_limit: int = None
 
 # -----------
 # Main class
@@ -34,43 +44,91 @@ class KronReduction():
     into (1). 
     '''
     system: System
-    remove_buses: set = None
+    output_directory: str = None
+    removable_buses: set[str] = None
+    Y: np.ndarray = None
+    Y_red: np.ndarray = None
+    settings: KronReductionSettings = None
     
     def __post_init__(self):
         self.system = copy.deepcopy(self.system)
-        if self.remove_buses is None:
-            self.get_remove_buses()
+        self.build_admittance_matrix()
+        if self.removable_buses is None:
+            self.get_removable_buses()
+        self.set_output_folder()
 
-    def get_remove_buses(self):
+        if self.settings is None:
+            self.settings = KronReductionSettings()
+
+    def set_output_folder(self):
+        """
+        Set up the output folder for storing results.
+        """
+        if self.output_directory is None:
+            self.output_directory = os.path.join(self.system.case_directory, "outputs", "kron_reduction")
+        os.makedirs(self.output_directory, exist_ok=True)
+
+    def build_admittance_matrix(self):
+        """
+        Build the admittance matrix of the system.
+        """
+        self.Y = build_admittance_matrix_from_lines(len(self.system.bus), self.system.line_pi)
+
+        if self.settings.print_matrices:
+            bus_names = [b.name for b in self.system.bus]
+            matrix_to_csv(
+                filepath=os.path.join(self.output_directory, "system_conductance_matrix.csv"), 
+                                  matrix=self.Y.real, 
+                                  index=bus_names, columns=bus_names
+            )
+            matrix_to_csv(
+            filepath=os.path.join(self.output_directory, "system_susceptance_matrix.csv"), 
+                                  matrix=self.Y.imag, 
+                                  index=bus_names, columns=bus_names
+            )
+
+    def get_removable_buses(self):
         """
         Identify the name of all buses with zero generation and zero load
         to be removed via Kron reduction.
         """
 
+        logger.info("> Identifying buses for Kron reduction...")
+
         all_buses = set([bus.name for bus in self.system.bus])
+        logger.info(f"> Total number of buses: {len(all_buses)}")
+
         generation_buses = set([gen.bus for gen in self.system.gen])
         storage_buses = set([sto.bus for sto in self.system.ess])
         load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
-        self.remove_buses = all_buses - generation_buses.union(storage_buses).union(load_buses)
+        non_removable_buses = generation_buses.union(storage_buses).union(load_buses)
+        logger.info(f"> Buses with either generation, load or storage: {len(non_removable_buses)}")
 
-        Y = build_admittance_matrix_from_lines(len(self.system.bus), self.system.line_pi)
-        B = Y.imag
-        N = self.system.bus
-        N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
-        N_at_bus ={k: v for k, v in N_at_bus.items() if len(v) <= 1000}
+        removable_buses = all_buses - non_removable_buses
 
-        self.remove_buses = self.remove_buses.intersection(set([N[k].name for k in N_at_bus.keys()]))
+        if self.settings.bus_neighbor_limit is not None:
+            Yabs = np.abs(self.Y)
+            non_zero_counts = ((~np.isclose(Yabs, 0, atol=self.settings.tolerance))).sum(axis=1)
+            ids = np.where( non_zero_counts <= (self.settings.bus_neighbor_limit + 1) )[0]
+            buses_with_neighbors = set([n.name for n in self.system.bus if n.id in ids])
 
+            logger.info(f"> Buses with at most {self.settings.bus_neighbor_limit} neighbors: {len(buses_with_neighbors)}")
 
-        logger.info(f"> Kron reduction will remove {len(self.remove_buses)} buses out of {len(all_buses)} total buses. \n")
+            removable_buses = removable_buses.intersection(buses_with_neighbors)
+        
+        self.removable_buses = removable_buses
+        logger.info(f"> Kron reduction will remove {len(removable_buses)} buses out of {len(all_buses)} total buses. \n")
         
     @timeit 
     def reduce(self):
         # Partition all bus objects into those that will   
         # be kept and those that will be removed.
+        logger.info("> Performing Kron reduction... \n")
+        logger.info(f"> Original system has {len(self.system.bus)} buses and {len(self.system.line_pi)} lines. \n")
+
         keep, remove = [], []
         for b in self.system.bus:
-            if b.name in self.remove_buses:
+            if b.name in self.removable_buses:
                 remove.append(b)
             else:
                 keep.append(b)
@@ -86,14 +144,14 @@ class KronReduction():
         
         # Number of total, unused, and real buses
         n_bus = len(self.system.bus)
-        q = len(self.remove_buses)
+        q = len(self.removable_buses)
         p = n_bus - q
 
         # Build & partition admittance matrix
-        Y = build_admittance_matrix_from_lines(n_bus, self.system.line_pi)
-        (Y_pp, Y_pq), (Y_qp, Y_qq) = mat2cell(Y, [p,q], [p,q])
+        (Y_pp, Y_pq), (Y_qp, Y_qq) = mat2cell(self.Y, [p,q], [p,q])
         # Back substitute to get reduced matrix
         invY_qq = solve(Y_qq, np.eye(q))
+        
         Y_red = Y_pp - Y_pq @ (invY_qq) @ Y_qp
 
         # Remove the reduced buses from the system
@@ -103,7 +161,7 @@ class KronReduction():
 
         for i, j in zip(*np.triu_indices(p)):
             # Skip all unconnected nodes and the diagonal
-            if (i == j) or (np.isclose(abs(Y_red[i, j]), 0,  atol=1e-4)):
+            if (i == j) or (np.isclose(abs(Y_red[i, j]), 0,  atol=self.settings.tolerance)):
                 continue
             
             y = -Y_red[i, j]
@@ -119,7 +177,33 @@ class KronReduction():
                 g_pu=y.real, b_pu=y.imag, # Y = G + jB
             )
             self.system.add(line)
-        logging.info("> Kron reduction completed. \n")
+        
+        self.Y_red = Y_red
+
+        if self.settings.print_matrices:
+            self.print_reduced_admittance_matrix()
+
+        logger.info(f"> Reduced system has {p} buses and {len(self.system.line_pi)} lines. \n")
+        logger.info("> Kron reduction completed. \n")
+
+    def print_reduced_admittance_matrix(self):
+        """
+        Print the reduced admittance matrix to CSV files.
+        """
+        if self.Y_red is None:
+            raise ValueError("Reduced admittance matrix not available. Please run the 'reduce' method first.")
+        
+        bus_names = [b.name for b in self.system.bus]
+        matrix_to_csv(
+            filepath=os.path.join(self.output_directory, "reduced_conductance_matrix.csv"), 
+                              matrix=self.Y_red.real, 
+                              index=bus_names, columns=bus_names
+        )
+        matrix_to_csv(
+        filepath=os.path.join(self.output_directory, "reduced_susceptance_matrix.csv"), 
+                              matrix=self.Y_red.imag, 
+                              index=bus_names, columns=bus_names
+        )
 
     def line_cap():
         # Create graph object

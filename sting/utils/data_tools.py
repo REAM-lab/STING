@@ -101,7 +101,12 @@ def convert_class_instance_to_dictionary(instance: object, excluded_attributes=N
 
 def matrix_to_csv(filepath, matrix, index, columns):
     df = pd.DataFrame(matrix, index=index, columns=columns)
-    df.to_csv(filepath)
+    df = df.with_columns(
+                        pl.Series(name="Index", values=index)).select(
+                        # Reorder columns to place the 'Index' first
+                        ["Index"] + columns
+        )
+    df.write_csv(filepath)
 
 
 def csv_to_matrix(filepath):
