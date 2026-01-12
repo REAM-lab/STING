@@ -171,6 +171,8 @@ class KronReduction():
         
         # Update all line and generator indices
         self.system.apply("post_system_init", self.system)
+        # [!] WARNING [!] Admittance matrix must be recomputed *after* permuting the buses
+        self.build_admittance_matrix()
         
         # Number of total, unused, and real buses
         n_bus = len(self.system.bus)
