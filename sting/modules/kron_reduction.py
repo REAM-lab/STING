@@ -8,6 +8,7 @@ from scipy.linalg import solve
 import os
 import logging
 from typing import NamedTuple
+import polars as pl
 
 # ------------------
 # Import sting code
@@ -118,7 +119,7 @@ class KronReduction():
             removable_buses_by_attribute = {bus.name for bus in self.system.bus if (bus.kron_removable_bus == True)}
             logger.info(f" - Buses with Kron removable attribute: {len(removable_buses_by_attribute)}")
             if len(removable_buses_by_attribute) == 0:
-                logger.warning(" - No buses have the 'kron_removable_bus' attribute set to True. No buses will be removed via this attribute.")
+                logger.info(" - No buses have the 'kron_removable_bus' attribute set to True. No buses will be removed via this attribute.")
             else:
                 removable_buses = removable_buses.intersection(removable_buses_by_attribute)
 
@@ -139,6 +140,11 @@ class KronReduction():
             removable_buses = removable_buses.intersection(buses_with_neighbors)
         
         self.removable_buses = removable_buses
+
+        # Export removable buses to CSV
+        df = pl.DataFrame({"bus": list(removable_buses)})
+        df.write_csv(os.path.join(self.output_directory, "kron_removable_buses.csv"))
+
         logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(self.system.bus)} total buses.")
         
     @timeit 
