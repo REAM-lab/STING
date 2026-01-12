@@ -132,10 +132,14 @@ def construct_capacity_expansion_model(system, model, model_settings):
         model.eStorCostPerTp = pyo.Expression(T, rule=lambda m, t: 
                 1/len(S)*(sum(s.probability * (sum(e.cost_variable_USDperMWh * (m.vCHARGE[e, s, t] + m.vDISCHA[e, s, t]) for e in E)) for s in S) ) )
     
+    model.cost_components_per_tp.append(model.eStorCostPerTp)
+
     # Storage cost per period
     model.eStorCostPerPeriod = pyo.Expression(expr = lambda m: 
                      1/len(S)*(sum( s.probability * (sum(e.cost_fixed_power_USDperkW * m.vPCAP[e, s] * 1000 
                                                 + e.cost_fixed_energy_USDperkWh * m.vECAP[e, s] * 1000 for e in E)) for s in S )) )
+    
+    model.cost_components_per_period.append(model.eStorCostPerPeriod)
 
     # Total storage cost
     model.eStorTotalCost = pyo.Expression(expr = lambda m: 

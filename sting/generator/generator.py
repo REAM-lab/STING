@@ -140,24 +140,28 @@ def construct_capacity_expansion_model(system, model, model_settings):
     else:
         raise ValueError("model_settings['gen_costs'] must be either 'quadratic' or 'linear'.")
     
+    model.cost_components_per_tp.append(model.eGenCostPerTp)
+    
     if model_settings["consider_shedding"]:
         model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N for s in S)) 
-        
+        model.cost_components_per_tp.append(model.eShedCostPerTp)
+        model.eShedTotalCost = pyo.Expression(
+                                expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
+                                )
 
     # Fixed costs 
     model.eGenCostPerPeriod = pyo.Expression(
                                 expr = lambda m: sum(g.cost_fixed_power_USDperkW * m.vCAP[g] * 1000 for g in GN) + 
                                        1/len(S) * sum( (s.probability * g.cost_fixed_power_USDperkW * m.vCAPV[g, s] * 1000) for g in GV for s in S )
                                 )
+    model.cost_components_per_period.append(model.eGenCostPerPeriod)
 
     model.eGenTotalCost = pyo.Expression(
                             expr = lambda m: m.eGenCostPerPeriod + sum(m.eGenCostPerTp[t] * t.weight for t in T)
                             )
     
-    if model_settings["consider_shedding"]:
-        model.eShedTotalCost = pyo.Expression(
-                                expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
-                                )
+
+        
     
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
 

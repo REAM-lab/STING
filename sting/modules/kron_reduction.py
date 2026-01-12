@@ -41,7 +41,6 @@ class KronReduction():
         if self.remove_buses is None:
             self.get_remove_buses()
 
-    @timeit
     def get_remove_buses(self):
         """
         Identify the name of all buses with zero generation and zero load
@@ -53,6 +52,16 @@ class KronReduction():
         storage_buses = set([sto.bus for sto in self.system.ess])
         load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
         self.remove_buses = all_buses - generation_buses.union(storage_buses).union(load_buses)
+
+        Y = build_admittance_matrix_from_lines(len(self.system.bus), self.system.line_pi)
+        B = Y.imag
+        N = self.system.bus
+        N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
+        N_at_bus ={k: v for k, v in N_at_bus.items() if len(v) <= 1000}
+
+        self.remove_buses = self.remove_buses.intersection(set([N[k].name for k in N_at_bus.keys()]))
+
+
         logger.info(f"> Kron reduction will remove {len(self.remove_buses)} buses out of {len(all_buses)} total buses. \n")
         
     @timeit 
@@ -94,7 +103,7 @@ class KronReduction():
 
         for i, j in zip(*np.triu_indices(p)):
             # Skip all unconnected nodes and the diagonal
-            if (i == j) or (Y_red[i, j] == 0):
+            if (i == j) or (np.isclose(abs(Y_red[i, j]), 0,  atol=1e-4)):
                 continue
             
             y = -Y_red[i, j]

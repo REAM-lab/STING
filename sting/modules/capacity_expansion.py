@@ -56,6 +56,7 @@ class CapacityExpansion:
                 "consider_single_storage_injection": False,
                 "consider_line_capacity": True,
                 "consider_bus_max_flow": False,
+                "consider_angle_limits": True,
             }
         
         if self.model_settings is not None:
@@ -82,32 +83,39 @@ class CapacityExpansion:
         # Create Pyomo model
         self.model = pyo.ConcreteModel()
 
-        # Construct modules
-        system = self.system
-        model = self.model
-        model_settings = self.model_settings
+        # Construct empty lists for costs
+        self.model.cost_components_per_tp = []
+        self.model.cost_components_per_period = []
 
+        # Construct modules
         logger.info("   - Generators variables and constraints ...")
         start_time = time.time()
-        generator.construct_capacity_expansion_model(system, model, model_settings)
+        generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         logger.info("   - Storage variables and constraints ...")
         start_time = time.time()
-        storage.construct_capacity_expansion_model(system, model, model_settings)
+        storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
         
         logger.info("   - Bus variables and constraints ...")
         start_time = time.time()
-        bus.construct_capacity_expansion_model(system, model, model_settings)
+        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
 
         # Define objective function
         logger.info("   - Objective function ...")
         start_time = time.time()
-        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=lambda m, t: m.eGenCostPerTp[t] + m.eStorCostPerTp[t] + (m.eShedCostPerTp[t] if model_settings["consider_shedding"] else 0))
-        self.model.eCostPerPeriod = pyo.Expression(expr=lambda m: m.eGenCostPerPeriod + m.eStorCostPerPeriod + m.eLineCostPerPeriod)
-        self.model.eTotalCost = pyo.Expression(expr= (sum(self.model.eCostPerTp[t] * t.weight for t in self.system.tp) + self.model.eCostPerPeriod))
+
+        def eCostPerTp_rule(m, t):
+            return sum( getattr(m, tp_cost.name)[t] * t.weight for tp_cost in m.cost_components_per_tp)
+        
+        def eCostPerPeriod_rule(m):
+            return sum( getattr(m, period_cost.name) for period_cost in m.cost_components_per_period)
+
+        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=eCostPerTp_rule)
+        self.model.eCostPerPeriod = pyo.Expression(expr=eCostPerPeriod_rule)
+        self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t] for t in self.system.tp))
         
         self.model.rescaling_factor_obj = pyo.Param(initialize=1e-6)  # To express the objective in million USD
 

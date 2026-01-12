@@ -3318,3 +3318,329 @@ ok [0.01 seconds].
 >> Run completed in 0.04 seconds.
 
 >> Run completed in 0.04 seconds.
+2026-01-11 16:13:06 
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+> System initialization ...... ok. 
+> Load components via CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/inputs 
+	- 'lines.csv' ... ok [0.00 seconds]. 
+	- 'buses.csv' ... ok [0.00 seconds]. 
+	- 'timeseries.csv' ... ok [0.00 seconds]. 
+	- 'timepoints.csv' ... ok [0.00 seconds]. 
+	- 'scenarios.csv' ... ok [0.00 seconds]. 
+	- 'loads.csv' ... ok [0.00 seconds]. 
+	- 'generators.csv' ... ok [0.00 seconds]. 
+	- 'capacity_factors.csv' ... ok [0.00 seconds]. 
+	- 'storage.csv' ... ok [0.00 seconds]. 
+    Total: 0.01 seconds. 
+> Constructing capacity expansion model: 
+   - Generators variables and constraints ...ok [0.00 seconds]. 
+   - Storage variables and constraints ...ok [0.00 seconds]. 
+   - Bus variables and constraints ...ok [0.00 seconds]. 
+   - Objective function ...Rule failed for Expression 'eCostPerTp' with index Timepoint(name='1', timeseries='winter', id=0, timeseries_id=0, weight=1.0, duration_hr=1.0, prev_timepoint_id=0):
+TypeError: attribute name must be string, not 'IndexedExpression'Constructing component 'eCostPerTp' from data=None failed:
+    TypeError: attribute name must be string, not 'IndexedExpression'2026-01-11 16:14:46 
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+> System initialization ...... ok. 
+> Load components via CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/inputs 
+	- 'lines.csv' ... ok [0.00 seconds]. 
+	- 'buses.csv' ... ok [0.00 seconds]. 
+	- 'timeseries.csv' ... ok [0.00 seconds]. 
+	- 'timepoints.csv' ... ok [0.00 seconds]. 
+	- 'scenarios.csv' ... ok [0.00 seconds]. 
+	- 'loads.csv' ... ok [0.00 seconds]. 
+	- 'generators.csv' ... ok [0.00 seconds]. 
+	- 'capacity_factors.csv' ... ok [0.00 seconds]. 
+	- 'storage.csv' ... ok [0.00 seconds]. 
+    Total: 0.01 seconds. 
+> Constructing capacity expansion model: 
+   - Generators variables and constraints ...ok [0.00 seconds]. 
+   - Storage variables and constraints ...ok [0.00 seconds]. 
+   - Bus variables and constraints ...ok [0.00 seconds]. 
+   - Objective function ...2026-01-11 16:17:12 
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+> System initialization ...... ok. 
+> Load components via CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/inputs 
+	- 'lines.csv' ... ok [0.00 seconds]. 
+	- 'buses.csv' ... ok [0.00 seconds]. 
+	- 'timeseries.csv' ... ok [0.00 seconds]. 
+	- 'timepoints.csv' ... ok [0.00 seconds]. 
+	- 'scenarios.csv' ... ok [0.00 seconds]. 
+	- 'loads.csv' ... ok [0.00 seconds]. 
+	- 'generators.csv' ... ok [0.00 seconds]. 
+	- 'capacity_factors.csv' ... ok [0.00 seconds]. 
+	- 'storage.csv' ... ok [0.00 seconds]. 
+    Total: 0.01 seconds. 
+> Constructing capacity expansion model: 
+   - Generators variables and constraints ...ok [0.00 seconds]. 
+   - Storage variables and constraints ...ok [0.00 seconds]. 
+   - Bus variables and constraints ...ok [0.00 seconds]. 
+   - Objective function ...ok [0.00 seconds]. 
+        Total: 0.01 seconds. 
+> Solving capacity expansion model... 
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 19              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 5
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 4               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 12                conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 9                 after factor           : 10              
+Factor     - dense dim.             : 0                 flops                  : 7.80e+01        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   2.5e+03  7.3e-01  1.8e+02  0.00e+00   1.193358064e+01   3.539378078e+01   2.0e+02  0.00  
+1   7.3e+02  2.1e-01  5.3e+01  3.91e+00   3.929896377e+00   4.896996964e+01   6.0e+01  0.00  
+2   1.1e+02  3.1e-02  7.7e+00  1.18e+00   2.695255073e+00   8.252283329e+00   8.7e+00  0.00  
+3   2.0e+01  5.9e-03  1.5e+00  8.34e-01   1.830968368e+00   1.543452199e+00   1.7e+00  0.00  
+4   7.1e+00  2.1e-03  5.1e-01  8.48e-01   5.726139383e-01   4.688788045e-01   5.8e-01  0.00  
+5   2.2e-01  6.4e-05  1.6e-02  9.96e-01   2.529525306e-02   2.204015439e-02   1.8e-02  0.00  
+6   3.1e-02  9.2e-06  2.3e-03  9.97e-01   2.324711836e-02   2.277874736e-02   2.6e-03  0.00  
+7   6.5e-03  1.9e-06  4.7e-04  9.28e-01   2.107184597e-02   2.097309075e-02   5.3e-04  0.00  
+8   1.1e-03  3.3e-07  8.2e-05  1.00e+00   2.089676477e-02   2.087966414e-02   9.2e-05  0.00  
+9   3.4e-07  1.0e-10  2.5e-08  1.00e+00   2.081002198e-02   2.081001674e-02   2.8e-08  0.00  
+10  3.4e-11  1.0e-14  2.5e-12  1.00e+00   2.081000000e-02   2.081000000e-02   2.8e-12  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0810000002e-02    nrm: 5e+02    Viol.  con: 1e-11    var: 0e+00  
+  Dual.    obj: 2.0810000000e-02    nrm: 5e-03    Viol.  con: 3e-15    var: 5e-16  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0810000000e-02    nrm: 5e+02    Viol.  con: 3e-14    var: 0e+00  
+  Dual.    obj: 2.0810000004e-02    nrm: 5e-03    Viol.  con: 3e-15    var: 6e-15  
+> Time spent by solver: 0.05 seconds. 
+> Solver finished with status: ok, termination condition: optimal. 
+> Objective value: 20810.00 USD. 
+> Exporting results in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/outputs/capacity_expansion : 
+   - Generators results ...ok [0.01 seconds]. 
+   - Storage results ...ok [0.01 seconds]. 
+   - Bus results ...ok [0.01 seconds]. 
+        Total: 0.02 seconds. 
+
+>> Run completed in 0.10 seconds.
+2026-01-11 16:17:12 
+2026-01-11 16:17:12 
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+> System initialization ...> System initialization ...... ok. 
+... ok. 
+> Load components via CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/inputs 
+> Load components via CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/inputs 
+	- 'lines.csv' ... 	- 'lines.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'buses.csv' ... 	- 'buses.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'timeseries.csv' ... 	- 'timeseries.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'timepoints.csv' ... 	- 'timepoints.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'scenarios.csv' ... 	- 'scenarios.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'loads.csv' ... 	- 'loads.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'generators.csv' ... 	- 'generators.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'capacity_factors.csv' ... 	- 'capacity_factors.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+	- 'storage.csv' ... 	- 'storage.csv' ... ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+    Total: 0.01 seconds. 
+    Total: 0.01 seconds. 
+> Kron reduction will remove 1 buses out of 5 total buses. 
+> Kron reduction will remove 1 buses out of 5 total buses. 
+   Completed in 0.00 seconds. 
+   Completed in 0.00 seconds. 
+> Kron reduction completed. 
+> Kron reduction completed. 
+   Completed in 0.00 seconds. 
+   Completed in 0.00 seconds. 
+> Constructing capacity expansion model: 
+> Constructing capacity expansion model: 
+   - Generators variables and constraints ...   - Generators variables and constraints ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+   - Storage variables and constraints ...   - Storage variables and constraints ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+   - Bus variables and constraints ...   - Bus variables and constraints ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+   - Objective function ...   - Objective function ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+        Total: 0.00 seconds. 
+        Total: 0.00 seconds. 
+> Solving capacity expansion model... 
+> Solving capacity expansion model... 
+Problem
+Problem  Name                   :                 
+  Name                   :                   Objective sense        : minimize        
+  Objective sense        : minimize          Type                   : LO (linear optimization problem)
+  Type                   : LO (linear optimization problem)  Constraints            : 17              
+  Constraints            : 17                Affine conic cons.     : 0               
+  Affine conic cons.     : 0                 Disjunctive cons.      : 0               
+  Disjunctive cons.      : 0                 Cones                  : 0               
+  Cones                  : 0                 Scalar variables       : 23              
+  Scalar variables       : 23                Matrix variables       : 0               
+  Matrix variables       : 0                 Integer variables      : 0               
+  Integer variables      : 0               
+Optimizer started.
+Optimizer started.Presolve started.
+Presolve started.Eliminator started.
+Eliminator started.Freed constraints in eliminator : 3
+Freed constraints in eliminator : 3Eliminator terminated.
+Eliminator terminated.Linear dependency checker started.
+Linear dependency checker started.Linear dependency checker terminated.
+Linear dependency checker terminated.Eliminator started.
+Eliminator started.Freed constraints in eliminator : 0
+Freed constraints in eliminator : 0Eliminator terminated.
+Eliminator terminated.Eliminator - tries                  : 2                 time                   : 0.00            
+Eliminator - tries                  : 2                 time                   : 0.00            Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - primal attempts        : 1                 successes              : 1               Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               Presolve terminated. Time: 0.00    
+Presolve terminated. Time: 0.00    Optimizer  - threads                : 24              
+Optimizer  - threads                : 24              Optimizer  - solved problem         : the primal      
+Optimizer  - solved problem         : the primal      Optimizer  - Constraints            : 4               
+Optimizer  - Constraints            : 4               Optimizer  - Cones                  : 0               
+Optimizer  - Cones                  : 0               Optimizer  - Scalar variables       : 11                conic                  : 0               
+Optimizer  - Scalar variables       : 11                conic                  : 0               Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               Factor     - setup time             : 0.00            
+Factor     - setup time             : 0.00            Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            Factor     - nonzeros before factor : 9                 after factor           : 10              
+Factor     - nonzeros before factor : 9                 after factor           : 10              Factor     - dense dim.             : 0                 flops                  : 7.60e+01        
+Factor     - dense dim.             : 0                 flops                  : 7.60e+01        ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  0   2.6e+03  7.0e-01  1.8e+02  0.00e+00   1.111971474e+01   3.508246490e+01   2.1e+02  0.00  
+0   2.6e+03  7.0e-01  1.8e+02  0.00e+00   1.111971474e+01   3.508246490e+01   2.1e+02  0.00  1   6.9e+02  1.9e-01  4.9e+01  3.74e+00   3.704302877e+00   4.049388415e+01   5.5e+01  0.00  
+1   6.9e+02  1.9e-01  4.9e+01  3.74e+00   3.704302877e+00   4.049388415e+01   5.5e+01  0.00  2   1.2e+02  3.1e-02  8.1e+00  1.16e+00   2.500682083e+00   8.078758838e+00   9.2e+00  0.00  
+2   1.2e+02  3.1e-02  8.1e+00  1.16e+00   2.500682083e+00   8.078758838e+00   9.2e+00  0.00  3   3.2e+01  8.6e-03  2.2e+00  7.35e-01   2.565248179e+00   2.231573501e+00   2.5e+00  0.00  
+3   3.2e+01  8.6e-03  2.2e+00  7.35e-01   2.565248179e+00   2.231573501e+00   2.5e+00  0.00  4   1.2e+01  3.1e-03  8.1e-01  7.88e-01   7.811436683e-01   6.626525438e-01   9.1e-01  0.00  
+4   1.2e+01  3.1e-03  8.1e-01  7.88e-01   7.811436683e-01   6.626525438e-01   9.1e-01  0.00  5   6.7e-01  1.8e-04  4.7e-02  9.78e-01   2.755231655e-02   2.047961290e-02   5.3e-02  0.00  
+5   6.7e-01  1.8e-04  4.7e-02  9.78e-01   2.755231655e-02   2.047961290e-02   5.3e-02  0.00  6   3.9e-02  1.1e-05  2.7e-03  1.00e+00   2.348630060e-02   2.307494886e-02   3.1e-03  0.00  
+6   3.9e-02  1.1e-05  2.7e-03  1.00e+00   2.348630060e-02   2.307494886e-02   3.1e-03  0.00  7   8.6e-03  2.3e-06  6.1e-04  9.13e-01   2.108880161e-02   2.099041007e-02   6.9e-04  0.00  
+7   8.6e-03  2.3e-06  6.1e-04  9.13e-01   2.108880161e-02   2.099041007e-02   6.9e-04  0.00  8   1.9e-03  5.1e-07  1.3e-04  1.00e+00   2.093213914e-02   2.090864546e-02   1.5e-04  0.00  
+8   1.9e-03  5.1e-07  1.3e-04  1.00e+00   2.093213914e-02   2.090864546e-02   1.5e-04  0.00  9   1.2e-06  3.2e-10  8.2e-08  9.99e-01   2.081007228e-02   2.081005676e-02   9.3e-08  0.00  
+9   1.2e-06  3.2e-10  8.2e-08  9.99e-01   2.081007228e-02   2.081005676e-02   9.3e-08  0.00  10  1.2e-10  3.2e-14  8.2e-12  1.00e+00   2.081000001e-02   2.081000001e-02   9.3e-12  0.00  
+10  1.2e-10  3.2e-14  8.2e-12  1.00e+00   2.081000001e-02   2.081000001e-02   9.3e-12  0.00  Basis identification started.
+Basis identification started.Basis identification initialization started.
+Basis identification initialization started.Basis identification initialization terminated. Time: 0.00
+Basis identification initialization terminated. Time: 0.00Primal basis identification phase started.
+Primal basis identification phase started.Primal basis identification phase terminated. Time: 0.00
+Primal basis identification phase terminated. Time: 0.00Dual basis identification phase started.
+Dual basis identification phase started.Dual basis identification phase terminated. Time: 0.00
+Dual basis identification phase terminated. Time: 0.00Initialization.                            Time: 0.00        
+Initialization.                            Time: 0.00        Primal.          Iterations: 0             Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        Dual.            Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        Optimization.    Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        Basis identification terminated. Time: 0.00
+Basis identification terminated. Time: 0.00Optimizer terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+Interior-point solution summary
+Interior-point solution summary  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE  Solution status : OPTIMAL
+  Solution status : OPTIMAL  Primal.  obj: 2.0810000007e-02    nrm: 5e+02    Viol.  con: 4e-11    var: 0e+00  
+  Primal.  obj: 2.0810000007e-02    nrm: 5e+02    Viol.  con: 4e-11    var: 0e+00    Dual.    obj: 2.0810000000e-02    nrm: 5e-03    Viol.  con: 1e-14    var: 2e-15  
+  Dual.    obj: 2.0810000000e-02    nrm: 5e-03    Viol.  con: 1e-14    var: 2e-15  
+Basic solution summary
+Basic solution summary  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE  Solution status : OPTIMAL
+  Solution status : OPTIMAL  Primal.  obj: 2.0810000000e-02    nrm: 5e+02    Viol.  con: 1e-14    var: 0e+00  
+  Primal.  obj: 2.0810000000e-02    nrm: 5e+02    Viol.  con: 1e-14    var: 0e+00    Dual.    obj: 2.0810000006e-02    nrm: 5e-03    Viol.  con: 8e-15    var: 5e-15  
+  Dual.    obj: 2.0810000006e-02    nrm: 5e-03    Viol.  con: 8e-15    var: 5e-15  > Time spent by solver: 0.01 seconds. 
+> Time spent by solver: 0.01 seconds. 
+> Solver finished with status: ok, termination condition: optimal. 
+> Solver finished with status: ok, termination condition: optimal. 
+> Objective value: 20810.00 USD. 
+> Objective value: 20810.00 USD. 
+> Exporting results in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/outputs/kron_capacity_expansion : 
+> Exporting results in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_kron_1h/outputs/kron_capacity_expansion : 
+   - Generators results ...   - Generators results ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+   - Storage results ...   - Storage results ...ok [0.01 seconds]. 
+ok [0.01 seconds]. 
+   - Bus results ...   - Bus results ...ok [0.00 seconds]. 
+ok [0.00 seconds]. 
+        Total: 0.01 seconds. 
+        Total: 0.01 seconds. 
+
+>> Run completed in 0.04 seconds.
+
+>> Run completed in 0.04 seconds.
