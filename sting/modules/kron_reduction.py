@@ -24,9 +24,14 @@ logger = logging.getLogger(__name__)
 # Sub-classes
 # ----------
 class KronReductionSettings(NamedTuple):
+    """
+    Settings for Kron reduction.
+    """
     print_matrices: bool = True
     tolerance: float = 1e-4
     bus_neighbor_limit: int = None
+    find_kron_removable_buses: bool = True
+    consider_kron_removable_bus_attribute: bool = False
 
 # -----------
 # Main class
@@ -106,35 +111,35 @@ class KronReduction():
         to be removed via Kron reduction.
         """
         
-        removable_buses = {bus.name for bus in self.buses if (bus.kron_removable_bus == True)}
-        logger.info(f" - Buses with Kron removable attribute: {len(removable_buses)}")
-        # If there are no buses to remove from the input data, analyze generation storage and loads
-        # to find buses with no generation or load at *all* timepoints.
-        if self.settings.find_kron_removable_buses:
-            all_buses = set([bus.name for bus in self.system.bus])
-            logger.info(f" - Total number of buses: {len(all_buses)}")
+        removable_buses = {bus.name for bus in self.system.bus}
+        logger.info(f" - Total number of buses: {len(removable_buses)}")
 
-            generation_buses = set([gen.bus for gen in self.system.gen])
-            storage_buses = set([sto.bus for sto in self.system.ess])
-            load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
+        if self.settings.consider_kron_removable_bus_attribute == True:
+            removable_buses_by_attribute = {bus.name for bus in self.system.bus if (bus.kron_removable_bus == True)}
+            logger.info(f" - Buses with Kron removable attribute: {len(removable_buses_by_attribute)}")
+            if len(removable_buses_by_attribute) == 0:
+                logger.warning(" - No buses have the 'kron_removable_bus' attribute set to True. No buses will be removed via this attribute.")
+            else:
+                removable_buses = removable_buses.intersection(removable_buses_by_attribute)
+
+        if self.settings.find_kron_removable_buses == True:
+            generation_buses = {gen.bus for gen in self.system.gen}
+            storage_buses = {sto.bus for sto in self.system.ess}
+            load_buses = {load.bus for load in self.system.load if load.load_MW > 0}
             non_removable_buses = generation_buses.union(storage_buses).union(load_buses)
             logger.info(f" - Buses with either generation, load or storage: {len(non_removable_buses)}")
-            
-            # TODO: Add robust logic?
-            removable_buses = (all_buses - non_removable_buses)
+            removable_buses = removable_buses - non_removable_buses
 
         if self.settings.bus_neighbor_limit is not None:
             Yabs = np.abs(self.Y)
             non_zero_counts = ((Yabs >= self.settings.tolerance)).sum(axis=1)
             ids = np.where( non_zero_counts <= (self.settings.bus_neighbor_limit + 1) )[0]
-            buses_with_neighbors = set([n.name for n in self.system.bus if n.id in ids])
-
+            buses_with_neighbors = {n.name for n in self.system.bus if n.id in ids}
             logger.info(f" - Buses with at most {self.settings.bus_neighbor_limit} neighbors: {len(buses_with_neighbors)}")
-
             removable_buses = removable_buses.intersection(buses_with_neighbors)
         
         self.removable_buses = removable_buses
-        logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(all_buses)} total buses.")
+        logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(self.system.bus)} total buses.")
         
     @timeit 
     def reduce(self):
