@@ -105,17 +105,23 @@ class KronReduction():
         Identify the name of all buses with zero generation and zero load
         to be removed via Kron reduction.
         """
+        
+        removable_buses = {bus.name for bus in self.buses if (bus.kron_removable_bus == True)}
+        logger.info(f" - Buses with Kron removable attribute: {len(removable_buses)}")
+        # If there are no buses to remove from the input data, analyze generation storage and loads
+        # to find buses with no generation or load at *all* timepoints.
+        if self.settings.find_kron_removable_buses:
+            all_buses = set([bus.name for bus in self.system.bus])
+            logger.info(f" - Total number of buses: {len(all_buses)}")
 
-        all_buses = set([bus.name for bus in self.system.bus])
-        logger.info(f" - Total number of buses: {len(all_buses)}")
-
-        generation_buses = set([gen.bus for gen in self.system.gen])
-        storage_buses = set([sto.bus for sto in self.system.ess])
-        load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
-        non_removable_buses = generation_buses.union(storage_buses).union(load_buses)
-        logger.info(f" - Buses with either generation, load or storage: {len(non_removable_buses)}")
-
-        removable_buses = all_buses - non_removable_buses
+            generation_buses = set([gen.bus for gen in self.system.gen])
+            storage_buses = set([sto.bus for sto in self.system.ess])
+            load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
+            non_removable_buses = generation_buses.union(storage_buses).union(load_buses)
+            logger.info(f" - Buses with either generation, load or storage: {len(non_removable_buses)}")
+            
+            # TODO: Add robust logic?
+            removable_buses = (all_buses - non_removable_buses)
 
         if self.settings.bus_neighbor_limit is not None:
             Yabs = np.abs(self.Y)
