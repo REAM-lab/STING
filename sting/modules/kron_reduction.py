@@ -34,6 +34,9 @@ class KronReductionSettings(NamedTuple):
 @dataclass
 class KronReduction():
     '''
+    Kron reduction of power system networks.
+
+    It performs Kron reduction on the admittance matrix.
     Power flow can be described by the following equations
 
     (1) g - d = Y_pp * θ_p + Y_pq * θ_q
@@ -51,14 +54,13 @@ class KronReduction():
     settings: KronReductionSettings = None
     
     def __post_init__(self):
+        if self.settings is None:
+            self.settings = KronReductionSettings()
+        self.set_output_folder()
         self.system = copy.deepcopy(self.system)
         self.build_admittance_matrix()
         if self.removable_buses is None:
             self.get_removable_buses()
-        self.set_output_folder()
-
-        if self.settings is None:
-            self.settings = KronReductionSettings()
 
     def set_output_folder(self):
         """
@@ -87,22 +89,23 @@ class KronReduction():
                                   index=bus_names, columns=bus_names
             )
 
+    @timeit
     def get_removable_buses(self):
         """
+        Identify removable buses for Kron reduction.
+
         Identify the name of all buses with zero generation and zero load
         to be removed via Kron reduction.
         """
 
-        logger.info("> Identifying buses for Kron reduction...")
-
         all_buses = set([bus.name for bus in self.system.bus])
-        logger.info(f"> Total number of buses: {len(all_buses)}")
+        logger.info(f" - Total number of buses: {len(all_buses)}")
 
         generation_buses = set([gen.bus for gen in self.system.gen])
         storage_buses = set([sto.bus for sto in self.system.ess])
         load_buses = set([load.bus for load in self.system.load if load.load_MW > 0])
         non_removable_buses = generation_buses.union(storage_buses).union(load_buses)
-        logger.info(f"> Buses with either generation, load or storage: {len(non_removable_buses)}")
+        logger.info(f" - Buses with either generation, load or storage: {len(non_removable_buses)}")
 
         removable_buses = all_buses - non_removable_buses
 
@@ -112,19 +115,21 @@ class KronReduction():
             ids = np.where( non_zero_counts <= (self.settings.bus_neighbor_limit + 1) )[0]
             buses_with_neighbors = set([n.name for n in self.system.bus if n.id in ids])
 
-            logger.info(f"> Buses with at most {self.settings.bus_neighbor_limit} neighbors: {len(buses_with_neighbors)}")
+            logger.info(f" - Buses with at most {self.settings.bus_neighbor_limit} neighbors: {len(buses_with_neighbors)}")
 
             removable_buses = removable_buses.intersection(buses_with_neighbors)
         
         self.removable_buses = removable_buses
-        logger.info(f"> Kron reduction will remove {len(removable_buses)} buses out of {len(all_buses)} total buses. \n")
+        logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(all_buses)} total buses.")
         
     @timeit 
     def reduce(self):
+        """
+        Reduction of the system via Kron reduction.
+        """
         # Partition all bus objects into those that will   
         # be kept and those that will be removed.
-        logger.info("> Performing Kron reduction... \n")
-        logger.info(f"> Original system has {len(self.system.bus)} buses and {len(self.system.line_pi)} lines. \n")
+        logger.info(f" - Original system has {len(self.system.bus)} buses and {len(self.system.line_pi)} lines.")
 
         keep, remove = [], []
         for b in self.system.bus:
@@ -183,8 +188,7 @@ class KronReduction():
         if self.settings.print_matrices:
             self.print_reduced_admittance_matrix()
 
-        logger.info(f"> Reduced system has {p} buses and {len(self.system.line_pi)} lines. \n")
-        logger.info("> Kron reduction completed. \n")
+        logger.info(f" - Reduced system has {p} buses and {len(self.system.line_pi)} lines.")
 
     def print_reduced_admittance_matrix(self):
         """

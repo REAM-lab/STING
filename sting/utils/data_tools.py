@@ -9,6 +9,7 @@ import os
 import functools
 import time
 import logging
+from typing import Callable
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -99,8 +100,8 @@ def convert_class_instance_to_dictionary(instance: object, excluded_attributes=N
     return dicty
 
 
-def matrix_to_csv(filepath, matrix, index, columns):
-    df = pd.DataFrame(matrix, index=index, columns=columns)
+def matrix_to_csv(filepath: str, matrix: np.ndarray, index: list, columns: list):
+    df = pl.DataFrame(matrix, schema=columns)
     df = df.with_columns(
                         pl.Series(name="Index", values=index)).select(
                         # Reorder columns to place the 'Index' first
@@ -232,28 +233,32 @@ def setup_logging_file(case_directory: str):
     file_handler = logging.FileHandler(os.path.join(case_directory, "sting_log.txt"))
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter('%(message)s'))
-    file_handler.terminator = ''  # Remove automatic newline
+    #file_handler.terminator = ''  # Remove automatic newline
     
     root_logger = logging.getLogger()
     root_logger.addHandler(file_handler)
     
     # Also set terminator for console handler (StreamHandler)
-    for handler in root_logger.handlers:
-        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
-            handler.terminator = ''
+    #for handler in root_logger.handlers:
+    #    if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+    #        handler.terminator = ''
     
     return file_handler
 
-def timeit(func):
+def timeit(func: Callable):
     """
     A decorator that measures the execution time of the decorated function.
     """
+    first_line = func.__doc__.strip().splitlines()[0].strip()
+    first_line = first_line.rstrip('.')
+    first_line = first_line[0].lower() + first_line[1:]
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        logging.info(f"> Initializing {first_line} ... ")
         start_time = time.perf_counter()  # Use perf_counter for more precise timing
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         elapsed_time = (end_time - start_time)
-        logging.info(f"   Completed in {elapsed_time:.2f} seconds. \n")
+        logging.info(f"> Completed {first_line} in {elapsed_time:.2f} seconds.")
         return result
     return wrapper

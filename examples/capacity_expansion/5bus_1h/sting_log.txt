@@ -1751,3 +1751,709 @@ Basic solution summary
         Total: 0.01 seconds. 
 
 >> Run completed in 0.04 seconds.
+2026-01-11 23:26:35
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+	- 'lines.csv' ... 
+	- Added 6 'line_pi' components. 
+	- Completed in 0.00 seconds.
+	- 'buses.csv' ... 
+	- Added 5 'bus' components. 
+	- Completed in 0.00 seconds.
+	- 'timeseries.csv' ... 
+	- Added 1 'ts' components. 
+	- Completed in 0.00 seconds.
+	- 'timepoints.csv' ... 
+	- Added 1 'tp' components. 
+	- Completed in 0.00 seconds.
+	- 'scenarios.csv' ... 
+	- Added 1 'sc' components. 
+	- Completed in 0.00 seconds.
+	- 'loads.csv' ... 
+	- Added 5 'load' components. 
+	- Completed in 0.00 seconds.
+	- 'generators.csv' ... 
+	- Added 5 'gen' components. 
+	- Completed in 0.00 seconds.
+	- 'capacity_factors.csv' ... 
+	- Added 1 'cf' components. 
+	- Completed in 0.00 seconds.
+	- 'storage.csv' ... 
+	- Added 1 'ess' components. 
+	- Completed in 0.00 seconds.
+> Post system initialization ... 
+> Read of component data from csv files and create a System instance. completed in 0.02 seconds.
+> Constructing capacity expansion model ...
+	- Generators variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Storage variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Bus variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Objective function ...
+	 Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+	- Generators results ...
+	 Completed in 0.00 seconds.
+	- Storage results ...
+	 Completed in 0.01 seconds.
+	- Bus results ...
+	 Completed in 0.02 seconds.
+> Export of results completed in 0.03 seconds.
+
+>> Run completed in 0.12 seconds.
+
+> Read of component data from csv files. initializing ... 
+2026-01-11 23:40:21
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+	- 'lines.csv' ... 
+ - Added 6 'line_pi' components. 
+ - Completed in 0.00 seconds.
+	- 'buses.csv' ... 
+ - Added 5 'bus' components. 
+ - Completed in 0.00 seconds.
+	- 'timeseries.csv' ... 
+ - Added 1 'ts' components. 
+ - Completed in 0.00 seconds.
+	- 'timepoints.csv' ... 
+ - Added 1 'tp' components. 
+ - Completed in 0.00 seconds.
+	- 'scenarios.csv' ... 
+ - Added 1 'sc' components. 
+ - Completed in 0.00 seconds.
+	- 'loads.csv' ... 
+ - Added 5 'load' components. 
+ - Completed in 0.00 seconds.
+	- 'generators.csv' ... 
+ - Added 5 'gen' components. 
+ - Completed in 0.00 seconds.
+	- 'capacity_factors.csv' ... 
+ - Added 1 'cf' components. 
+ - Completed in 0.00 seconds.
+	- 'storage.csv' ... 
+ - Added 1 'ess' components. 
+ - Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.02 seconds.
+> Constructing capacity expansion model ...
+	- Generators variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Storage variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Bus variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Objective function ...
+	 Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.06 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.01 seconds.
+ - Bus results ...
+  Completed in 0.02 seconds.
+> Export of results completed in 0.03 seconds.
+
+>> Run completed in 0.13 seconds.
+
+> Read of component data from csv files. initializing ... 
+2026-01-11 23:40:59
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+ - 'lines.csv' ... 
+ - Added 6 'line_pi' components. 
+ - Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+ - Added 5 'bus' components. 
+ - Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+ - Added 1 'ts' components. 
+ - Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+ - Added 1 'tp' components. 
+ - Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+ - Added 1 'sc' components. 
+ - Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+ - Added 5 'load' components. 
+ - Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+ - Added 5 'gen' components. 
+ - Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+ - Added 1 'cf' components. 
+ - Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+ - Added 1 'ess' components. 
+ - Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.02 seconds.
+> Constructing capacity expansion model ...
+	- Generators variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Storage variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Bus variables and constraints ...
+	 Completed in 0.00 seconds.
+	- Objective function ...
+	 Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.03 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.01 seconds.
+ - Bus results ...
+  Completed in 0.02 seconds.
+> Export of results completed in 0.03 seconds.
+
+>> Run completed in 0.10 seconds.
+
+> Read of component data from csv files. initializing ... 
+2026-01-11 23:45:02
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+ - 'lines.csv' ... 
+ Added 6 'line_pi' components. 
+ Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+ Added 5 'bus' components. 
+ Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+ Added 1 'ts' components. 
+ Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+ Added 1 'tp' components. 
+ Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+ Added 1 'sc' components. 
+ Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+ Added 5 'load' components. 
+ Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+ Added 5 'gen' components. 
+ Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+ Added 1 'cf' components. 
+ Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+ Added 1 'ess' components. 
+ Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.02 seconds.
+> Constructing capacity expansion model ...
+ - Generators variables and constraints ...
+ Completed in 0.00 seconds.
+ - Storage variables and constraints ...
+ Completed in 0.00 seconds.
+ - Bus variables and constraints ...
+ Completed in 0.00 seconds.
+ - Objective function ...
+ Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.01 seconds.
+ - Bus results ...
+  Completed in 0.00 seconds.
+> Export of results completed in 0.02 seconds.
+
+>> Run completed in 0.09 seconds.
+
+> Read of component data from csv files. initializing ... 
+2026-01-11 23:45:49
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.02 seconds.
+> Constructing capacity expansion model ...
+ - Generators variables and constraints ...
+ Completed in 0.00 seconds.
+ - Storage variables and constraints ...
+ Completed in 0.00 seconds.
+ - Bus variables and constraints ...
+ Completed in 0.00 seconds.
+ - Objective function ...
+ Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.01 seconds.
+ - Bus results ...
+  Completed in 0.02 seconds.
+> Export of results completed in 0.03 seconds.
+
+>> Run completed in 0.11 seconds.
+
+2026-01-11 23:47:54
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.00 seconds.
+> Constructing capacity expansion model ...
+ - Generators variables and constraints ...
+ Completed in 0.00 seconds.
+ - Storage variables and constraints ...
+ Completed in 0.00 seconds.
+ - Bus variables and constraints ...
+ Completed in 0.00 seconds.
+ - Objective function ...
+ Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.00 seconds.
+ - Bus results ...
+  Completed in 0.00 seconds.
+> Export of results completed in 0.01 seconds.
+
+>> Run completed in 0.03 seconds.
+
+> Read of component data from csv files. initializing ... 
+2026-01-11 23:52:11
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading components via CSV files from /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/inputs:
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Read of component data from csv files. completed in 0.00 seconds.
+> Constructing capacity expansion model ...
+ - Generators variables and constraints ...
+ Completed in 0.00 seconds.
+ - Storage variables and constraints ...
+ Completed in 0.00 seconds.
+ - Bus variables and constraints ...
+ Completed in 0.00 seconds.
+ - Objective function ...
+ Completed in 0.00 seconds.
+> Construction completed in 0.00 seconds.
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Exporting results in /Users/paul/Documents/STING/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion : 
+ - Generators results ...
+  Completed in 0.00 seconds.
+ - Storage results ...
+  Completed in 0.00 seconds.
+ - Bus results ...
+  Completed in 0.00 seconds.
+> Export of results completed in 0.01 seconds.
+
+>> Run completed in 0.04 seconds.
+

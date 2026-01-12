@@ -22,7 +22,7 @@ import datetime
 from sting import __logo__
 from sting import data_files
 from sting.line.core import decompose_lines
-from sting.utils import data_tools
+from sting.utils.data_tools import timeit, convert_class_instance_to_dictionary
 # from sting.shunt.core import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
@@ -58,14 +58,14 @@ class System:
         - self.class_to_str (dict): Maps class with type for each component. For example, InfiniteSource => inf_src
         """
         # Print datetime
-        logger.info(f"{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n")
+        logger.info(f"{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
 
         # Print logo
         logo = __logo__.replace("\x1b[93m", "")  # For environments that do not support ANSI colors
         logo = logo.replace("\x1b[0m", "")  # For environments that do not support ANSI colors
         logger.info(logo) # print logo when a System instance is created
 
-        logger.info("> System initialization ...")
+        logger.info("> Initializing system ...")
 
         # Get components_metadata.csv as a dataframe.
         # This file contains information of the lists of components that integrate the system
@@ -88,12 +88,15 @@ class System:
         # Store case directory
         self.case_directory = case_directory
 
-        logger.info("... ok. \n")
+        logger.info("   Completed")
 
-
+    
     @classmethod
+    @timeit
     def from_csv(cls, components=None, case_directory=os.getcwd()):
         """
+        Read of component data from csv files.
+
         Add components from csv files. Each csv file has components of the same type.
         For example: gfli_a.csv contains ten gflis, but from the same type gfli_a.
         Each row of gfli_a.csv is a gfli_a that will be added to the system attribute gfli_a. 
@@ -111,15 +114,13 @@ class System:
         - self: `System`
                     It contains the components that have data from csv files.
         """
-        full_start_time = time.time()
-
         # Get directory of the folder "inputs"
         inputs_dir = os.path.join(case_directory, "inputs") 
 
         # Create instance System.
         self = cls(components=components, case_directory=case_directory) 
 
-        logger.info(f"> Load components via CSV files from {inputs_dir} \n")
+        logger.info(f"> Loading components via CSV files from {inputs_dir}:")
 
         for c_name, c_class, c_module, filename in self.components.iter_rows():
 
@@ -159,7 +160,7 @@ class System:
             }
 
             # Read components csv
-            logger.info(f"\t- '{os.path.basename(filepath)}' ... ")
+            logger.info(f" - '{os.path.basename(filepath)}' ... ")
             df = pl.read_csv(filepath, dtypes=param_types)
 
             # Create a component for each row (i.e., component) in the csv
@@ -168,11 +169,11 @@ class System:
                 # Add the component to the system
                 self.add(component)
 
-            logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+            logger.info(f"   Added {df.height} '{c_name}' components. ")
+            logger.info(f"   Completed in {time.time() - start_time:.2f} seconds.")
 
         self.apply("post_system_init", self)
-        
-        logger.info(f"    Total: {time.time() - full_start_time:.2f} seconds. \n")
+
         return self
 
     def to_csv(self, output_dir=None):
@@ -204,7 +205,7 @@ class System:
             components = getattr(self, typ)
 
             components_dict = [
-                data_tools.convert_class_instance_to_dictionary(i, excluded_attributes=excluded_attributes) for i in components
+                convert_class_instance_to_dictionary(i, excluded_attributes=excluded_attributes) for i in components
             ]
             eng.workspace[typ] = components_dict
 

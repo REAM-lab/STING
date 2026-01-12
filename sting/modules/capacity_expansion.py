@@ -77,7 +77,7 @@ class CapacityExpansion:
         Construct the optimization model for capacity expansion.
         """
         
-        logger.info("> Constructing capacity expansion model: \n")
+        logger.info("> Constructing capacity expansion model ...")
         full_start_time = time.time()
 
         # Create Pyomo model
@@ -88,23 +88,23 @@ class CapacityExpansion:
         self.model.cost_components_per_period = []
 
         # Construct modules
-        logger.info("   - Generators variables and constraints ...")
+        logger.info(" - Generators variables and constraints ...")
         start_time = time.time()
         generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f" Completed in {time.time() - start_time:.2f} seconds.")
 
-        logger.info("   - Storage variables and constraints ...")
+        logger.info(" - Storage variables and constraints ...")
         start_time = time.time()
         storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f" Completed in {time.time() - start_time:.2f} seconds.")
         
-        logger.info("   - Bus variables and constraints ...")
+        logger.info(" - Bus variables and constraints ...")
         start_time = time.time()
         bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f" Completed in {time.time() - start_time:.2f} seconds.")
 
         # Define objective function
-        logger.info("   - Objective function ...")
+        logger.info(" - Objective function ...")
         start_time = time.time()
 
         def eCostPerTp_rule(m, t):
@@ -120,10 +120,10 @@ class CapacityExpansion:
         self.model.rescaling_factor_obj = pyo.Param(initialize=1e-6)  # To express the objective in million USD
 
         self.model.obj = pyo.Objective(expr= self.model.rescaling_factor_obj * self.model.eTotalCost, sense=pyo.minimize)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f" Completed in {time.time() - start_time:.2f} seconds.")
 
         full_end_time = time.time()
-        logger.info(f"        Total: {full_end_time - full_start_time:.2f} seconds. \n")
+        logger.info(f"> Construction completed in {full_end_time - full_start_time:.2f} seconds.")
 
     def solve(self):
         """
@@ -131,30 +131,19 @@ class CapacityExpansion:
         """
         # Use root logger so solver output also goes to the file handler attached there
         start_time = time.time()
-        logger.info("> Solving capacity expansion model... \n")
+        logger.info("> Solving capacity expansion model...")
         solver = pyo.SolverFactory(self.solver_settings["solver_name"])
-        
-        # Capture handlers
-        handler_std = logger.parent.handlers[0]
-        handler_std.terminator = '\n' 
-
-        handler_txt = logger.parent.handlers[1]
-        handler_txt.terminator = '\n' 
         
         # Write solver output to sting_log.txt
         with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
             results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings['tee'])
 
-
-        handler_std.terminator = ''  # Restore original terminator
-        handler_txt.terminator = ''  # Restore original terminator
-
         # Load the duals into the 'dual' suffix
         solver.load_duals()
 
-        logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds. \n")
-        logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}. \n")
-        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD. \n")
+        logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
+        logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
+        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
 
         # Export costs summary
         costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
@@ -165,25 +154,25 @@ class CapacityExpansion:
 
         start_full_time = time.time()
         system, model, output_directory = self.system, self.model, self.output_directory
-        logger.info(f"> Exporting results in {output_directory} : \n")
+        logger.info(f"> Exporting results in {output_directory} : ")
 
-        logger.info("   - Generators results ...")
+        logger.info(" - Generators results ...")
         start_time = time.time()
         generator.export_results_capacity_expansion(system, model, output_directory)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
         
-        logger.info("   - Storage results ...")
+        logger.info(" - Storage results ...")
         start_time = time.time()
         storage.export_results_capacity_expansion(system, model, output_directory)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
 
-        logger.info("   - Bus results ...")
+        logger.info(" - Bus results ...")
         start_time = time.time()
         bus.export_results_capacity_expansion(system, model, output_directory)
-        logger.info(f"ok [{time.time() - start_time:.2f} seconds]. \n")
+        logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
 
         full_end_time = time.time()
-        logger.info(f"        Total: {full_end_time - start_full_time:.2f} seconds. \n")
+        logger.info(f"> Export of results completed in {full_end_time - start_full_time:.2f} seconds.")
 
 
 

@@ -95,7 +95,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
 
     return system
 
-def run_kron(case_directory=os.getcwd()):
+def run_kron(case_directory=os.getcwd(), kron_settings=None):
     """
     Routine to perform Kron reduction from a case study directory.
     """
@@ -108,13 +108,13 @@ def run_kron(case_directory=os.getcwd()):
     system = System.from_csv(case_directory=case_directory)
 
     # Perform Kron reduction
-    kr = KronReduction(system=system)
+    kr = KronReduction(system=system, settings=kron_settings)
     kr.reduce()
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return kr
 
-def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, kron_settings=None):
     """
     Routine to perform capacity expansion analysis with Kron reduction from a case study directory.
     """
@@ -127,11 +127,11 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
     system = System.from_csv(case_directory=case_directory)
     
     # Perform Kron reduction
-    kr = KronReduction(system=system)
+    kr = KronReduction(system=system, settings=kron_settings)
     kr.reduce()
     
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=kr.system , model_settings=model_settings, solver_settings=solver_settings, output_directory=os.path.join(case_directory, "outputs", "kron_capacity_expansion"))
+    capex = CapacityExpansion(system=kr.system, model_settings=model_settings, solver_settings=solver_settings, output_directory=os.path.join(case_directory, "outputs", "kron_capacity_expansion"))
     capex.solve()  
 
 
