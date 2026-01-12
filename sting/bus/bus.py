@@ -117,6 +117,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         
         model.eLineCostPerPeriod = pyo.Expression(expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L_expandable))
 
+        model.cost_components_per_period.append(model.eLineCostPerPeriod)
+
     if model_settings["consider_bus_max_flow"] == True:
 
         buses_with_max_flow = set([n for n in N if n.max_flow_MW is not None])

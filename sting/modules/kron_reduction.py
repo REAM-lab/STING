@@ -56,6 +56,9 @@ class KronReduction():
     def __post_init__(self):
         if self.settings is None:
             self.settings = KronReductionSettings()
+        else:
+            self.settings = KronReductionSettings(**self.settings)
+
         self.set_output_folder()
         self.system = copy.deepcopy(self.system)
         self.build_admittance_matrix()
@@ -88,6 +91,11 @@ class KronReduction():
                                   matrix=self.Y.imag, 
                                   index=bus_names, columns=bus_names
             )
+            matrix_to_csv(
+            filepath=os.path.join(self.output_directory, "system_absolute_admittance_matrix.csv"), 
+                                  matrix=abs(self.Y), 
+                                  index=bus_names, columns=bus_names
+            )
 
     @timeit
     def get_removable_buses(self):
@@ -111,7 +119,7 @@ class KronReduction():
 
         if self.settings.bus_neighbor_limit is not None:
             Yabs = np.abs(self.Y)
-            non_zero_counts = ((~np.isclose(Yabs, 0, atol=self.settings.tolerance))).sum(axis=1)
+            non_zero_counts = ((Yabs >= self.settings.tolerance)).sum(axis=1)
             ids = np.where( non_zero_counts <= (self.settings.bus_neighbor_limit + 1) )[0]
             buses_with_neighbors = set([n.name for n in self.system.bus if n.id in ids])
 
@@ -158,6 +166,8 @@ class KronReduction():
         invY_qq = solve(Y_qq, np.eye(q))
         
         Y_red = Y_pp - Y_pq @ (invY_qq) @ Y_qp
+        # Setting zero connectivity between buses below the tolerance
+        Y_red[abs(Y_red) < self.settings.tolerance] = 0
 
         # Remove the reduced buses from the system
         self.system.bus = self.system.bus[:p]
@@ -166,7 +176,7 @@ class KronReduction():
 
         for i, j in zip(*np.triu_indices(p)):
             # Skip all unconnected nodes and the diagonal
-            if (i == j) or (np.isclose(abs(Y_red[i, j]), 0,  atol=self.settings.tolerance)):
+            if (i == j) or (abs(Y_red[i, j]) < self.settings.tolerance):
                 continue
             
             y = -Y_red[i, j]
@@ -206,6 +216,11 @@ class KronReduction():
         matrix_to_csv(
         filepath=os.path.join(self.output_directory, "reduced_susceptance_matrix.csv"), 
                               matrix=self.Y_red.imag, 
+                              index=bus_names, columns=bus_names
+        )
+        matrix_to_csv(
+        filepath=os.path.join(self.output_directory, "reduced_absolute_admittance_matrix.csv"), 
+                              matrix=abs(self.Y_red), 
                               index=bus_names, columns=bus_names
         )
 
