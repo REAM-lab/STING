@@ -116,6 +116,9 @@ def construct_capacity_expansion_model(system, model, model_settings):
         model.cStateOfCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                         m.vSOC[e, s, t] == m.vSOC[e, s, T[t.prev_timepoint_id]] +
                                         t.duration_hr*(- m.vDISCHA[e, s, t]) )
+        model.eNetDischargeAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
+                    + sum(m.vDISCHA[e, s, t] for e in E_AT_BUS[n.id]) )
+        
     else:
         model.cStateOfCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                         m.vSOC[e, s, t] == m.vSOC[e, s, T[t.prev_timepoint_id]] +
