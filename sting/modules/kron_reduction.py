@@ -1,21 +1,23 @@
 # ----------------------
 # Import python packages
 # ----------------------
-from dataclasses import dataclass
-import copy
+import polars as pl
 import numpy as np
-from scipy.linalg import solve
 import os
 import logging
+import copy
+
+from dataclasses import dataclass
 from typing import NamedTuple
-import polars as pl
+from itertools import combinations
+from scipy.linalg import solve
 
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
 from sting.line.pi_model import LinePiModel
-from sting.utils.graph_matrices import build_admittance_matrix_from_lines
+from sting.utils.graph_matrices import build_admittance_matrix_from_lines, build_network_graph_from_lines
 from sting.utils.data_tools import mat2cell, timeit, matrix_to_csv
 
 # Logger
@@ -33,6 +35,10 @@ class KronReductionSettings(NamedTuple):
     bus_neighbor_limit: int = None
     find_kron_removable_buses: bool = True
     consider_kron_removable_bus_attribute: bool = False
+    # Should lines created by Kron reduction be expandable?
+    # If so what is the fixed cost of upgrading a line?
+    expand_line_capacity: bool = False
+    cost_fixed_power_USDperkW: float = None
 
 # -----------
 # Main class
@@ -174,7 +180,7 @@ class KronReduction():
         # [!] WARNING [!] Admittance matrix must be recomputed *after* permuting the buses
         self.build_admittance_matrix()
         
-        # Number of total, unused, and real buses
+        # Number of total, unused (q), and real buses (p)
         n_bus = len(self.system.bus)
         q = len(self.removable_buses)
         p = n_bus - q
@@ -183,32 +189,43 @@ class KronReduction():
         (Y_pp, Y_pq), (Y_qp, Y_qq) = mat2cell(self.Y, [p,q], [p,q])
         # Back substitute to get reduced matrix
         invY_qq = solve(Y_qq, np.eye(q))
-        
         Y_red = Y_pp - Y_pq @ (invY_qq) @ Y_qp
         # Setting zero connectivity between buses below the tolerance
         Y_red[abs(Y_red) < self.settings.tolerance] = 0
+
+        # Estimate max line capacity for the new system
+        G = self.get_reduced_line_capacities()
 
         # Remove the reduced buses from the system
         self.system.bus = self.system.bus[:p]
         # Build the new reduced lines
         self.system.line_pi = []
 
+        # Examine non-zero/non-diagonal entries in the upper triangle of Y
         for i, j in zip(*np.triu_indices(p)):
-            # Skip all unconnected nodes and the diagonal
-            if (i == j) or (abs(Y_red[i, j]) < self.settings.tolerance):
+            
+            if (i == j) or (Y_red[i, j] == 0):
                 continue
             
             y = -Y_red[i, j]
             z = 1/y
 
+            bus_f = self.system.bus[i].name
+            bus_t = self.system.bus[j].name
+            cap_existing_power_MW = G[bus_f][bus_t]["cap_existing_power_MW"]
+
             line = LinePiModel(
-                name=f"Y_kron_{i}{j}",
+                name=f"Y_kron_f{i}-t{j}",
                 # Line connectivity
-                from_bus=self.system.bus[i].name, from_bus_id=i,
-                to_bus=self.system.bus[j].name, to_bus_id=j,
-                # Line parameters
+                from_bus=bus_f, from_bus_id=i,
+                to_bus=bus_t, to_bus_id=j,
+                # Branch & shunt parameters
                 r_pu=z.real, x_pu=z.imag, # Z = R + jX
                 g_pu=y.real, b_pu=y.imag, # Y = G + jB
+                # Line capacity
+                cap_existing_power_MW=cap_existing_power_MW,
+                cost_fixed_power_USDperkW=self.settings.cost_fixed_power_USDperkW,
+                expand_capacity=self.settings.expand_line_capacity
             )
             self.system.add(line)
         
@@ -243,12 +260,53 @@ class KronReduction():
                               index=bus_names, columns=bus_names
         )
 
-    def line_cap():
-        # Create graph object
-        #    - TODO: https://ieeexplore.ieee.org/abstract/document/6506059
+    def get_reduced_line_capacities(self):
+        """
+        Estimate the maximum power flow that can be transferred between 
+        two buses in the Kron reduced system. 
 
-        # for each bus to remove:
-        #.  1. look up buses nearest neighbors
-        #.  3. Create new edges between *all* neighbors with a weight given by min of both edges
-        #.  4. Delete the bus.
-        pass
+        Nodes are eliminated iteratively through the following steps
+            1.  Get the node's neighbors. 
+            2a. For each unique pair of neighbors, add a new edge to the 
+                graph between node_i and node_j with an edge weight of 
+                min(weight_i, weight_j). 
+            2b. If an edge between node_i and node_j already exists 
+                combine the new edge and existing edge (which are in 
+                parallel) by taking the max of their edge weights. 
+            3.  After iterating over all pairs of neighbors, delete the 
+                current node and process the next node to remove.
+
+        Warning: The following algorithm is not guaranteed to be deterministic. 
+            The order of node elimination *may* impact results.
+                
+        Note: This is a heuristic method for getting line capacities
+            and is most accurate when the degree of nodes being removed is 
+            less than or equal to 3. A more precise method can be found in 
+            https://ieeexplore.ieee.org/abstract/document/6506059.
+        """
+        # A graph network of buses and lines, where edge weights are
+        # the existing line capacity limits 
+        G = build_network_graph_from_lines(self.system.bus, self.system.line_pi)
+        w = "cap_existing_power_MW" # Name of edge weight
+
+        for v in self.removable_buses:
+            if v not in G:
+                raise KeyError("Cannot remove a bus that does not exist in the system.")
+            
+            # Step 1. Get neighbors their incident edge weights
+            neighbors = list(G.neighbors(v))
+            edge_weights = {u: G[v][u][w] for u in neighbors}
+
+            # Step 2. Add new lines to the system
+            for i, j in combinations(neighbors, 2):
+                new_weight = min(edge_weights[i], edge_weights[j])
+
+                if G.has_edge(i, j):
+                    G[i][j][w] = max(new_weight, G[i][j][w])
+                    
+                else:
+                    G.add_edge(i, j, cap_existing_power_MW=new_weight)
+            
+            # Step 3. Remove the current node from the graph
+            G.remove_node(v)
+        return G

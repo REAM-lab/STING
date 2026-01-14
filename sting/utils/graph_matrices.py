@@ -1,8 +1,8 @@
 import numpy as np
+import networkx as nx
 from scipy.linalg import block_diag
+
 from sting.system.selections import find_tagged
-from sting.branch.series_rl import BranchSeriesRL
-from sting.shunt.parallel_rc import ShuntParallelRC
 
 # from sting.models import ComponentConnections
 
@@ -82,6 +82,36 @@ def build_admittance_matrix_from_lines(num_buses: int, lines: list):
         Y[j, j] += y + y_shunt
 
     return Y
+
+def build_network_graph_from_lines(buses:list, lines: list):
+    """
+    Create a graph of the system. 
+
+    TODO: This should probably be an attribute in the system.
+          We will need to use a MultiGraph to support parallel edges.
+          This could probably be the basis for a new class with methods like
+            - build admittance matrix
+            - build incidence matrix 
+            - etc. 
+
+          We should probably only save (type, id, name) to keep the
+          graph lightweight (avoid redundant info). 
+
+    DEPENDENCIES: Kron reduction module.
+    """
+    G = nx.Graph()
+    G.add_nodes_from([bus.name for bus in buses])
+
+    for line in lines:
+        u, v = line.from_bus, line.to_bus
+        w = line.cap_existing_power_MW
+        if G.has_edge(u, v):
+            # Combine parallel edges by summing weights
+            G[u][v]["cap_existing_power_MW"] += w
+        else:
+            G.add_edge(u, v, cap_existing_power_MW=w)
+
+    return G
 
 def build_generation_connection_matrix(num_buses: int, gen_bus: list):
 
