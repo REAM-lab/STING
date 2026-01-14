@@ -10,6 +10,8 @@ import time
 import logging
 from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
+import importlib
+
 # ------------------
 # Import sting code
 # ------------------
@@ -57,6 +59,7 @@ class CapacityExpansion:
                 "consider_line_capacity": True,
                 "consider_bus_max_flow": False,
                 "consider_angle_limits": True,
+                "policies": []
             }
         
         if self.model_settings is not None:
@@ -102,6 +105,12 @@ class CapacityExpansion:
         start_time = time.time()
         bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         logger.info(f" Completed in {time.time() - start_time:.2f} seconds.")
+
+        if len(self.model_settings["policies"]) > 0:
+            logger.info(" - Policies variables and constraints ...")
+            for policy in self.model_settings["policies"]:
+                class_module = importlib.import_module(policy) 
+                getattr(class_module, "construct_capacity_expansion_model")(self.system, self.model, self.model_settings)
 
         # Define objective function
         logger.info(" - Objective function ...")
