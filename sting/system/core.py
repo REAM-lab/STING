@@ -90,12 +90,10 @@ class System:
 
         logger.info("   Completed")
 
-    
     @classmethod
-    @timeit
     def from_csv(cls, components=None, case_directory=os.getcwd()):
         """
-        Read of component data from csv files.
+        Read of component data from csv files and post system initialization.
 
         Add components from csv files. Each csv file has components of the same type.
         For example: gfli_a.csv contains ten gflis, but from the same type gfli_a.
@@ -114,13 +112,15 @@ class System:
         - self: `System`
                     It contains the components that have data from csv files.
         """
+        full_start_time = time.time()
+
         # Get directory of the folder "inputs"
-        inputs_dir = os.path.join(case_directory, "inputs") 
+        inputs_dir = os.path.join(case_directory, "inputs")
 
         # Create instance System.
-        self = cls(components=components, case_directory=case_directory) 
-
-        logger.info(f"> Loading components via CSV files from {inputs_dir}:")
+        self = cls(components=components, case_directory=case_directory)
+        
+        logger.info(f"> Loading system from CSV files from {inputs_dir} ...") 
 
         for c_name, c_class, c_module, filename in self.components.iter_rows():
 
@@ -172,7 +172,11 @@ class System:
             logger.info(f"   Added {df.height} '{c_name}' components. ")
             logger.info(f"   Completed in {time.time() - start_time:.2f} seconds.")
 
+        start_time = time.time()
         self.apply("post_system_init", self)
+        logger.info(f"> Post system initialization completed in {time.time() - start_time:.2f} seconds.")
+
+        logger.info(f"> Completed in: {time.time() - full_start_time:.2f} seconds. \n")
 
         return self
 

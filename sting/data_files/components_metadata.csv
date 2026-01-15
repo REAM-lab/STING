@@ -14,4 +14,4 @@ load,Load,sting.bus.bus,loads.csv
 gen,Generator,sting.generator.generator,generators.csv
 cf,CapacityFactor,sting.generator.generator,capacity_factors.csv
 ess,Storage,sting.generator.storage,storage.csv
-energy_budget,EnergyBudget,sting.policies.energy_budgets,energy_budgets.csv
+energy_budget,EnergyBudget,sting.policies.energy_budgets,energy_budget_constraints.csv

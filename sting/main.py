@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO,
 
 logger = logging.getLogger(__name__)
 
+
 # ------------------
 # Import sting code
 # ------------------
@@ -20,6 +21,7 @@ from sting.modules.small_signal_modeling import SmallSignalModel
 from sting.modules.capacity_expansion import CapacityExpansion
 from sting.modules.kron_reduction import KronReduction
 from sting.utils.data_tools import setup_logging_file
+
 
 # ----------------
 # Main functions
@@ -116,13 +118,13 @@ def run_kron(case_directory=os.getcwd(), kron_settings=None):
 
 def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, kron_settings=None):
     """
-    Routine to perform capacity expansion analysis with Kron reduction from a case study directory.
+    Perform capacity expansion analysis with Kron reduction from a case study directory.
     """
-    start_time = time.time()
-
+    
     # Set up logging to file
     setup_logging_file(case_directory)
 
+    start_time = time.time()
     # Load system from CSV files
     system = System.from_csv(case_directory=case_directory)
     
@@ -133,7 +135,6 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=kr.system, model_settings=model_settings, solver_settings=solver_settings, output_directory=os.path.join(case_directory, "outputs", "kron_capacity_expansion"))
     capex.solve()  
-
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return capex, kr

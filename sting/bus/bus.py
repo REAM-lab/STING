@@ -8,6 +8,7 @@ import numpy as np
 import polars as pl
 import os
 from pyomo.environ import quicksum
+import logging
 
 # -------------
 # Import sting code
@@ -15,8 +16,9 @@ from pyomo.environ import quicksum
 from sting.timescales.core import Timepoint, Scenario
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
 from sting.utils.dynamical_systems import DynamicalVariables
-from sting.utils.data_tools import pyovariable_to_df, pyodual_to_df
+from sting.utils.data_tools import pyovariable_to_df, pyodual_to_df, timeit
 
+logger = logging.getLogger(__name__)
 
 # ----------------
 # Main classes     
@@ -72,8 +74,9 @@ class Load:
     timepoint: str
     load_MW: float
 
-    
+@timeit    
 def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict):
+    """Construction of transmission variables, constraints, and costs for capacity expansion model."""
 
     N = system.bus
     T = system.tp
@@ -81,27 +84,32 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     L = system.line_pi
     load = system.load
 
+    logger.info(" - Decision variables")
     model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
+    logger.info(f"   Size: {len(model.vTHETA)} variables")
     
     slack_bus = next(n for n in N if n.bus_type == 'slack')
+    model.vTHETA[slack_bus, :, :].fix(0.0)
 
+    logger.info(" - Power flow per bus expressions")
     Y = build_admittance_matrix_from_lines(len(N), L)
     B = Y.imag
-
-    model.vTHETA[slack_bus, :, :].fix(0.0)
 
     N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
 
     model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
 
-    
     if model_settings["consider_line_capacity"] == True:
 
+        logger.info(" - Set of expandable and non-expandable lines")
         L_expandable = set([l for l in L if (l.expand_capacity == True and l.cap_existing_power_MW is not None)])
         L_nonexpandable = set([l for l in L if (l.expand_capacity == False and l.cap_existing_power_MW is not None)])
         
+        logger.info(" - Decision variables of line capacity expansion")
         model.vCAPL = pyo.Var(L_expandable, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vCAPL)} variables")
 
+        logger.info(" - Maximum and minimum flow constraints per line")
         def cMaxFlowPerExpLine_rule(m, l, s, t):
                 return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= m.vCAPL[l] + l.cap_existing_power_MW
         
@@ -115,34 +123,43 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
                 return  (-l.cap_existing_power_MW,  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), l.cap_existing_power_MW)
         
         model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=cFlowPerNonExpLine_rule)
+        logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine) + len(model.cFlowPerNonExpLine)} constraints")
         
+        logger.info(" - Line cost per period expression")
         model.eLineCostPerPeriod = pyo.Expression(expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L_expandable))
 
         model.cost_components_per_period.append(model.eLineCostPerPeriod)
 
     if model_settings["consider_bus_max_flow"] == True:
 
+        logger.info(" - Maximum flow constraints per bus")
         buses_with_max_flow = set([n for n in N if n.max_flow_MW is not None])
         model.cFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW))
+        logger.info(f"   Size: {len(model.cFlowPerBus)} constraints")
 
     if model_settings["consider_angle_limits"] == True:
 
+        logger.info(" - Angle difference limit constraints per line")
         lines_with_angle_limits = set([l for l in L if (l.angle_min_deg > -360) and (l.angle_max_deg < 360)])
         model.cDiffAngle = pyo.Constraint(lines_with_angle_limits, S, T, rule= lambda m, l, s, t: 
                                                                                 (l.angle_min_deg * np.pi / 180, 
                                                                                 m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t],
                                                                                 l.angle_max_deg * np.pi / 180))
+        logger.info(f"   Size: {len(model.cDiffAngle)} constraints")
 
-    # Power balance at each bus
+    logger.info(" - Power balance at each bus")
     load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
     model.cEnergyBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
                             (m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t]) * t.weight == 
                             (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) * t.weight
                             )
+    logger.info(f"   Size: {len(model.cEnergyBalance)} constraints")
     
 
+@timeit
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
+    """Transmission results to CSV files."""
 
     # Export line capacities 
     if hasattr(model, 'vCAPL'):

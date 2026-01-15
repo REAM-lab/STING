@@ -7,11 +7,15 @@ import pyomo.environ as pyo
 import polars as pl
 import os
 from collections import defaultdict
+import logging
 
 # -------------
 # Import sting code
 # --------------
-from sting.utils.data_tools import pyovariable_to_df
+from sting.utils.data_tools import pyovariable_to_df, timeit
+
+
+logger = logging.getLogger(__name__)
 
 # ----------------
 # Main classes     
@@ -51,7 +55,9 @@ class CapacityFactor:
     capacity_factor: float
     technology: str = None
 
+@timeit
 def construct_capacity_expansion_model(system, model, model_settings):
+    """Construction of generator variables, constraints, and costs."""
 
     S = system.sc
     T = system.tp
@@ -59,6 +65,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     cf = system.cf
     N = system.bus
 
+    logger.info(" - Sets of generators for first-stage and second-stage decisions")
     """
     - GV is a vector of instances of generators with capacity factor profiles.
         Power generation and capacity of these generators are considered random variables 
@@ -83,13 +90,17 @@ def construct_capacity_expansion_model(system, model, model_settings):
     for g in GN:
         GN_at_bus[g.bus_id].append(g)
 
+    logger.info(" - Decision variables of dispatch and capacity")
     model.vGEN = pyo.Var(GN, T, within=pyo.NonNegativeReals)
     model.vCAP = pyo.Var(GN, within=pyo.NonNegativeReals)
     model.vGENV = pyo.Var(GV, S, T, within=pyo.NonNegativeReals)
     model.vCAPV = pyo.Var(GV, S, within=pyo.NonNegativeReals)
-
+    logger.info(f"   Size: {len(model.vGEN) + len(model.vCAP) + len(model.vGENV) + len(model.vCAPV)} variables")
+    
     if model_settings["consider_shedding"]:
+        logger.info(" - Decision variables of load shedding")
         model.vSHED = pyo.Var(N, S, T, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vSHED)} variables")
     
     for g in GN:
          if (not g.expand_capacity):
@@ -99,12 +110,13 @@ def construct_capacity_expansion_model(system, model, model_settings):
          if (not g.expand_capacity):
             model.vCAPV[g, :].fix(0.0)
 
+    logger.info(" - Maximum built capacity constraints")    
     def cCapGenVar_rule(m, g, s):
         if g.expand_capacity:
             return  m.vCAPV[g, s] <= g.cap_max_power_MW - g.cap_existing_power_MW
         else:
             return pyo.Constraint.Skip
-        
+
     model.cCapGenVar = pyo.Constraint(GV, S, rule=cCapGenVar_rule)
 
     def cCapGenNonVar_rule(m, g):
@@ -114,21 +126,28 @@ def construct_capacity_expansion_model(system, model, model_settings):
             return pyo.Constraint.Skip
     
     model.cCapGenNonVar = pyo.Constraint(GN, rule=cCapGenNonVar_rule)
-    
+    logger.info(f"   Size: {len(model.cCapGenNonVar) + len(model.cCapGenVar)} constraints")
+
+    logger.info(" - Maximum dispatch constraints")    
     model.cMaxGenNonVar = pyo.Constraint(GN, T, rule=lambda m, g, t: 
                     m.vGEN[g, t] <= m.vCAP[g] + g.cap_existing_power_MW)
+    logger.info(f"   Size: {len(model.cMaxGenNonVar)} constraints")
     
+    logger.info(" - Capacity factor constraints")
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     model.cMaxGenVar = pyo.Constraint(GV, S, T, rule=lambda m, g, s, t: 
                     m.vGENV[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * (m.vCAPV[g, s] + g.cap_existing_power_MW))
+    logger.info(f"   Size: {len(model.cMaxGenVar)} constraints")
     
+    logger.info(" - Dispatch at bus expressions")
     model.eGenAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
                     sum(m.vGEN[g, t] for g in GN_at_bus[n.id]) + 
                     sum(m.vGENV[g, s, t] for g in GV_at_bus[n.id]) + 
                     (m.vSHED[n, s, t] if model_settings["consider_shedding"] else 0)
                 )
+    logger.info(f"   Size: {len(model.eGenAtBus)} expressions")
 
-    # The weighted operational costs of running each generator
+    logger.info(" - Generation cost per timepoint expressions")
     if model_settings["gen_costs"] == "quadratic":
         model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
                         sum(g.c2_USDperMWh2 * m.vGEN[g, t]* m.vGEN[g, t] + g.c1_USDperMWh * m.vGEN[g, t] + g.c0_USD for g in GN) + 
@@ -139,17 +158,21 @@ def construct_capacity_expansion_model(system, model, model_settings):
                         1/len(S) * sum(s.probability * g.cost_variable_USDperMWh * m.vGENV[g, s, t] for g in GV for s in S) )
     else:
         raise ValueError("model_settings['gen_costs'] must be either 'quadratic' or 'linear'.")
-    
+    logger.info(f"   Size: {len(model.eGenCostPerTp)} expressions")
+
     model.cost_components_per_tp.append(model.eGenCostPerTp)
     
     if model_settings["consider_shedding"]:
+        logger.info(" - Load shedding cost expressions")
         model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N for s in S)) 
         model.cost_components_per_tp.append(model.eShedCostPerTp)
+        logger.info(f"   Size: {len(model.eShedCostPerTp)} expressions")
+
         model.eShedTotalCost = pyo.Expression(
                                 expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
                                 )
 
-    # Fixed costs 
+    logger.info(" - Generation cost per period expression")
     model.eGenCostPerPeriod = pyo.Expression(
                                 expr = lambda m: sum(g.cost_fixed_power_USDperkW * m.vCAP[g] * 1000 for g in GN) + 
                                        1/len(S) * sum( (s.probability * g.cost_fixed_power_USDperkW * m.vCAPV[g, s] * 1000) for g in GV for s in S )
@@ -162,8 +185,9 @@ def construct_capacity_expansion_model(system, model, model_settings):
     
 
         
-    
+@timeit    
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
+    """Generator results to CSV files."""
 
     # Export generator dispatch results
     pyovariable_to_df(model.vGEN, 

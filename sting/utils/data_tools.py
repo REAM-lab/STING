@@ -275,6 +275,6 @@ def timeit(func: Callable):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         elapsed_time = (end_time - start_time)
-        logging.info(f"> Completed {first_line} in {elapsed_time:.2f} seconds.")
+        logging.info(f"> Completed in {elapsed_time:.2f} seconds. \n")
         return result
     return wrapper
