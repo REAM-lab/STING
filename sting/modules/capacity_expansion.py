@@ -162,23 +162,28 @@ class CapacityExpansion:
         costs.write_csv(os.path.join(self.output_directory, 'costs_summary.csv'))
 
         start_full_time = time.time()
-        system, model, output_directory = self.system, self.model, self.output_directory
-        logger.info(f"> Exporting results in {output_directory} : ")
+        logger.info(f"> Exporting results in {self.output_directory} : ")
 
         logger.info(" - Generators results ...")
         start_time = time.time()
-        generator.export_results_capacity_expansion(system, model, output_directory)
+        generator.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
         
         logger.info(" - Storage results ...")
         start_time = time.time()
-        storage.export_results_capacity_expansion(system, model, output_directory)
+        storage.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
 
         logger.info(" - Bus results ...")
         start_time = time.time()
-        bus.export_results_capacity_expansion(system, model, output_directory)
+        bus.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         logger.info(f"  Completed in {time.time() - start_time:.2f} seconds.")
+
+        if len(self.model_settings["policies"]) > 0:
+            logger.info(" - Policies results ...")
+            for policy in self.model_settings["policies"]:
+                class_module = importlib.import_module(policy) 
+                getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 
         full_end_time = time.time()
         logger.info(f"> Export of results completed in {full_end_time - start_full_time:.2f} seconds.")

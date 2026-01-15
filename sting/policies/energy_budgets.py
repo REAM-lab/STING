@@ -2,6 +2,7 @@
 # Import python packages
 # --------------
 from dataclasses import dataclass, field
+from typing import ClassVar
 import pyomo.environ as pyo
 import os
 import polars as pl
@@ -9,55 +10,66 @@ import polars as pl
 # -------------
 # Import sting code
 # --------------
+from sting.generator.generator import Generator
+from sting.timescales.core import Timepoint
 
 # ----------------
 # Main classes     
 # ----------------
 @dataclass(slots=True)
-class EnergyBudgetTimeGroup:
-    id: int = field(default=-1, init=False)
-    name: str
-    timepoint: str
-
-@dataclass(slots=True)
 class EnergyBudget:
+    """Class representing an energy budget constraint over a set of generators and timepoints."""
+    
     id: int = field(default=-1, init=False)
-    generator: str
-    time_group: str
-    energy_budget_MWh: float
-    generator_id: int = None
-    timepoint_ids: list[str] = None
-    scenario: str = None
-    scenario_id: int = None
+    budget_region: str
+    budget_term: str
+    budget_energy_GWh: float
+    generators: list[Generator] = None
+    timepoints: list[Timepoint] = None
 
-    def post_system_init(self, system):
-         
-        # Get timepoints within the time group
-        time_groups = list(filter(lambda tg: tg.name == self.time_group, system.tg_bud))
-        tps_name = list(map(lambda tg: tg.timepoint, time_groups))
-        self.timepoint_ids = [ tp.id for tp in system.tp if tp.name in tps_name]
-
-        # Get generator id
-        self.generator_id = next((g.id for g in system.gen if g.name == self.generator))
-
-        # Get scenario id
-        if self.scenario is not None:
-            self.scenario_id = next((sc for sc in system.sc if sc.name == self.scenario)).id
+    # attributes shared across all instances
+    _cache_initialized: ClassVar[bool] = False
+    _cached_regions: ClassVar[dict] = None
+    _cached_terms: ClassVar[dict] = None
+    
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
+    
+    def post_system_init(self, system):
+        
+        if EnergyBudget._cache_initialized is False:
+            # Load timepoint to term mapping
+            timepoint_to_term_df = pl.read_csv(os.path.join(system.case_directory, "inputs", "timepoint_to_term_budgets.csv"))
+            terms_df = timepoint_to_term_df.group_by("budget_term").agg(pl.col("timepoint").alias("timepoints"))
+            EnergyBudget._cached_terms = dict(zip(terms_df["budget_term"], terms_df["timepoints"]))
 
-def construct_capacity_expansion_model(system, model, model_settings):
+            # Load generator to region mapping
+            generator_to_region_df = pl.read_csv(os.path.join(system.case_directory, "inputs", "generator_to_region_budgets.csv"))
+            regions_df = generator_to_region_df.group_by("budget_region").agg(pl.col("generator").alias("generators"))
+            EnergyBudget._cached_regions = dict(zip(regions_df["budget_region"], regions_df["generators"]))
+            
+            EnergyBudget._cache_initialized = True
+    
+        # Use cached data for this instance
+        self.generators = [g for g in system.gen if g.name in EnergyBudget._cached_regions[self.budget_region]]
+        self.timepoints = [t for t in system.tp if t.name in EnergyBudget._cached_terms[self.budget_term]]
+
+
+def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict):
 
     def cEnergyBudget_rule(m, eb):
-            tps = [system.tp[id] for id in eb.timepoint_ids]
-            gen = system.gen[eb.generator_id]
-            if eb.scenario_id is not None:
-                sc = system.sc[eb.scenario_id]
-                return  sum(m.vGENV[gen, sc, t] * t.weight for t in tps) <= eb.energy_budget_MWh
-            else:
-                return  sum(m.vGEN[gen, t] * t.weight for t in tps) <= eb.energy_budget_MWh
+        return  sum(m.vGEN[g, t] * t.weight for g in eb.generators for t in eb.timepoints) * 1e-3 <= eb.budget_energy_GWh
         
-    model.cEnergyBudget = pyo.Constraint(system.e_bud, rule=cEnergyBudget_rule)
+    model.cEnergyBudget = pyo.Constraint(system.energy_budget, rule=cEnergyBudget_rule)
 
+
+def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
+    """Export energy budget results to CSV file."""
+
+    df = pl.DataFrame( schema=['budget_region', 'budget_term', 'budget_energy_GWh', "used_energy_GWh"],
+                        data=map(lambda tuple: (tuple[0].budget_region, tuple[0].budget_term, tuple[0].budget_energy_GWh, tuple[1]), 
+                                                zip(model.cEnergyBudget, pyo.value(model.cEnergyBudget[:]))) )
+
+    df.write_csv(os.path.join(output_directory, "energy_budget_constraint.csv"))  

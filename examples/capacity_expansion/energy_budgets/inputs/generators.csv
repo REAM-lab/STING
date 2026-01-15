@@ -1,0 +1,1509 @@
+name,bus,site,technology,expand_capacity,c0_USD,c1_USDperMWh,c2_USDperMWh2,cap_existing_power_MW,cap_max_power_MW,cost_fixed_power_USDperkW,cost_variable_USDperMWh
+cats_1,1793,no_capacity_factor,all other,FALSE,102.705607,15.604003,0.058760544,4,4,0,0
+cats_2,2117,no_capacity_factor,all other,FALSE,102.705607,15.604003,0.058760544,8,8,0,0
+cats_3,714,no_capacity_factor,all other,FALSE,554.685123,22.409643,0.094703922,1,1,0,0
+cats_4,8774,no_capacity_factor,all other,FALSE,110.850758,15.5533405,0.046668863,31.9,31.9,0,0
+cats_5,1005,no_capacity_factor,conventional hydroelectric,FALSE,66.7386997,14.8788144,0.041,276.2,276.2,0,0
+cats_6,103,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,12.7,12.7,0,0
+cats_7,1045,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.4,1.4,0,0
+cats_8,1046,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,5.9,5.9,0,0
+cats_9,105,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,10,10,0,0
+cats_10,106,no_capacity_factor,conventional hydroelectric,FALSE,22.3377955,14.8788144,0.120339515,10,10,0,0
+cats_11,125,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,37.5,37.5,0,0
+cats_12,1286,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,10,10,0,0
+cats_13,1292,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,4.2,4.2,0,0
+cats_14,1294,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,10,10,0,0
+cats_15,1296,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.6,3.6,0,0
+cats_16,1299,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,5,5,0,0
+cats_17,1350,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,4.4,4.4,0,0
+cats_18,1360,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1,1,0,0
+cats_19,1381,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,5.3,5.3,0,0
+cats_20,1408,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,5,5,0,0
+cats_21,1409,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,2,2,0,0
+cats_22,141,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,1.3,1.3,0,0
+cats_23,1425,no_capacity_factor,conventional hydroelectric,FALSE,23.3042834,14.8788144,0.116141127,20.1,20.1,0,0
+cats_24,1438,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,1.8,1.8,0,0
+cats_25,1446,no_capacity_factor,conventional hydroelectric,FALSE,86.1224701,14.8788144,0.031561893,156.8,156.8,0,0
+cats_26,1446,no_capacity_factor,conventional hydroelectric,FALSE,43.9716516,14.8788144,0.0622,115.5,115.5,0,0
+cats_27,1448,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,1.6,1.6,0,0
+cats_28,1457,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.2,1.2,0,0
+cats_29,1458,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1,1,0,0
+cats_30,1487,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,11.5,11.5,0,0
+cats_31,1489,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,41.9,41.9,0,0
+cats_32,1489,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,67.2,67.2,0,0
+cats_33,1498,no_capacity_factor,conventional hydroelectric,FALSE,161.930945,14.8788141,0.017017665,714,714,0,0
+cats_34,1500,no_capacity_factor,conventional hydroelectric,FALSE,73.1903316,14.8788144,0.037223309,15.3,15.3,0,0
+cats_35,1502,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,6,6,0,0
+cats_36,1528,no_capacity_factor,conventional hydroelectric,FALSE,37.2572181,14.8788144,0.073726559,33,33,0,0
+cats_37,1572,no_capacity_factor,conventional hydroelectric,FALSE,32.2246755,14.8788144,0.084603464,29.9,29.9,0,0
+cats_38,158,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,5,5,0,0
+cats_39,1580,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,6.1,6.1,0,0
+cats_40,1582,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,12.1,12.1,0,0
+cats_41,1584,no_capacity_factor,conventional hydroelectric,FALSE,82.9372199,14.8788144,0.032880744,74.1,74.1,0,0
+cats_42,1585,no_capacity_factor,conventional hydroelectric,FALSE,28.5667366,14.8788144,0.098441376,25.5,25.5,0,0
+cats_43,1586,no_capacity_factor,conventional hydroelectric,FALSE,87.6069929,14.8788144,0.03131569,157.8,157.8,0,0
+cats_44,1586,no_capacity_factor,conventional hydroelectric,FALSE,90.9183037,14.8788144,0.029785941,161.6,161.6,0,0
+cats_45,1587,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.4,1.4,0,0
+cats_46,1593,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,29.9,29.9,0,0
+cats_47,1602,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,11.3,11.3,0,0
+cats_48,1606,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,37.5,37.5,0,0
+cats_49,1606,no_capacity_factor,conventional hydroelectric,FALSE,42.0372347,14.8788144,0.065976133,37.5,37.5,0,0
+cats_50,1606,no_capacity_factor,conventional hydroelectric,FALSE,42.121352,14.8788144,0.065687132,37.5,37.5,0,0
+cats_51,1629,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,8.2,8.2,0,0
+cats_52,1631,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,7.3,7.3,0,0
+cats_53,1632,no_capacity_factor,conventional hydroelectric,FALSE,73.1903316,14.8788144,0.037223309,66.6,66.6,0,0
+cats_54,1633,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,88.4,88.4,0,0
+cats_55,1633,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,10.8,10.8,0,0
+cats_56,1634,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,31,31,0,0
+cats_57,1634,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,97.2,97.2,0,0
+cats_58,1634,no_capacity_factor,conventional hydroelectric,FALSE,75.8585367,14.8788144,0.036962208,135,135,0,0
+cats_59,1634,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,48.6,48.6,0,0
+cats_60,1635,no_capacity_factor,conventional hydroelectric,FALSE,32.3543419,14.8788144,0.084180748,30,30,0,0
+cats_61,1636,no_capacity_factor,conventional hydroelectric,FALSE,105.8405,14.8788144,0.025798991,190,190,0,0
+cats_62,1639,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,3.2,3.2,0,0
+cats_63,164,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.5,1.5,0,0
+cats_64,1643,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,12.8,12.8,0,0
+cats_65,1643,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,100,100,0,0
+cats_66,1644,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,2.8,2.8,0,0
+cats_67,1644,no_capacity_factor,conventional hydroelectric,FALSE,37.8341532,14.8788144,0.071691417,140.5,140.5,0,0
+cats_68,1645,no_capacity_factor,conventional hydroelectric,FALSE,155.128416,14.878814,0.017626567,139.5,139.5,0,0
+cats_69,1646,no_capacity_factor,conventional hydroelectric,FALSE,62.8694967,14.8788144,0.04471446,165,165,0,0
+cats_70,166,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.3,1.3,0,0
+cats_71,1662,no_capacity_factor,conventional hydroelectric,FALSE,29.1025112,14.8788144,0.092849808,26.4,26.4,0,0
+cats_72,1663,no_capacity_factor,conventional hydroelectric,FALSE,23.7075931,14.8788144,0.114946484,40.3,40.3,0,0
+cats_73,1718,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,19.6,19.6,0,0
+cats_74,1719,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,9.2,9.2,0,0
+cats_75,1720,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,4.4,4.4,0,0
+cats_76,1722,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,4,4,0,0
+cats_77,1723,no_capacity_factor,conventional hydroelectric,FALSE,23.3042834,14.8788144,0.116141127,18,18,0,0
+cats_78,1724,no_capacity_factor,conventional hydroelectric,FALSE,22.8253546,14.8788144,0.116989623,20,20,0,0
+cats_79,1727,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,80.1,80.1,0,0
+cats_80,1727,no_capacity_factor,conventional hydroelectric,FALSE,58.4255407,14.8788144,0.046889973,103.4,103.4,0,0
+cats_81,1727,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.2,1.2,0,0
+cats_82,1728,no_capacity_factor,conventional hydroelectric,FALSE,93.6100229,14.8788144,0.028656809,168.6,168.6,0,0
+cats_83,1729,no_capacity_factor,conventional hydroelectric,FALSE,44.2065545,14.8788144,0.061662881,79.2,79.2,0,0
+cats_84,1729,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,2,2,0,0
+cats_85,1730,no_capacity_factor,conventional hydroelectric,FALSE,42.9634433,14.8788144,0.064820939,141.6,141.6,0,0
+cats_86,1731,no_capacity_factor,conventional hydroelectric,FALSE,78.1222241,14.8788144,0.035001326,140,140,0,0
+cats_87,1732,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.5,3.5,0,0
+cats_88,1733,no_capacity_factor,conventional hydroelectric,FALSE,85.3716495,14.8788144,0.03204634,154.4,154.4,0,0
+cats_89,1734,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,5,5,0,0
+cats_90,1735,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.4,1.4,0,0
+cats_91,1735,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.2,3.2,0,0
+cats_92,1742,no_capacity_factor,conventional hydroelectric,FALSE,100.442859,14.8788144,0.027223253,180,180,0,0
+cats_93,1743,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,12.1,12.1,0,0
+cats_94,1745,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1,1,0,0
+cats_95,1745,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,6.7,6.7,0,0
+cats_96,1745,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.1,1.1,0,0
+cats_97,1748,no_capacity_factor,conventional hydroelectric,FALSE,44.2781598,14.8788144,0.061429747,40,40,0,0
+cats_98,1755,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,16.4,16.4,0,0
+cats_99,1786,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,10.8,10.8,0,0
+cats_100,1841,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,32.7,32.7,0,0
+cats_101,1843,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3.1,3.1,0,0
+cats_102,1845,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,3,3,0,0
+cats_103,1863,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,4.9,4.9,0,0
+cats_104,1875,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,29.7,29.7,0,0
+cats_105,1884,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,7.2,7.2,0,0
+cats_106,1887,no_capacity_factor,conventional hydroelectric,FALSE,81.3561358,14.8788144,0.033307845,72,72,0,0
+cats_107,1887,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,5.9,5.9,0,0
+cats_108,1888,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,10,10,0,0
+cats_109,1889,no_capacity_factor,conventional hydroelectric,FALSE,37.2572181,14.8788144,0.073726559,16.2,16.2,0,0
+cats_110,1890,no_capacity_factor,conventional hydroelectric,FALSE,92.597236,14.8788144,0.029100238,81.9,81.9,0,0
+cats_111,1890,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,253,253,0,0
+cats_112,1891,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,100,100,0,0
+cats_113,1891,no_capacity_factor,conventional hydroelectric,FALSE,51.301513,14.8788144,0.053280064,170.8,170.8,0,0
+cats_114,1891,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,4.5,4.5,0,0
+cats_115,194,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,10,10,0,0
+cats_116,195,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,5.7,5.7,0,0
+cats_117,1955,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,2.9,2.9,0,0
+cats_118,1958,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,13.6,13.6,0,0
+cats_119,2056,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,1.9,1.9,0,0
+cats_120,206,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,2.4,2.4,0,0
+cats_121,212,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3.2,3.2,0,0
+cats_122,2220,no_capacity_factor,conventional hydroelectric,FALSE,36.8238805,14.8788144,0.073985797,33,33,0,0
+cats_123,2220,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,73.8,73.8,0,0
+cats_124,2220,no_capacity_factor,conventional hydroelectric,FALSE,70.2258381,14.8788144,0.038074342,126,126,0,0
+cats_125,2221,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,6.1,6.1,0,0
+cats_126,2221,no_capacity_factor,conventional hydroelectric,FALSE,88.8056399,14.8788144,0.030784033,79.2,79.2,0,0
+cats_127,2237,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,23.6,23.6,0,0
+cats_128,2247,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.6,1.6,0,0
+cats_129,2248,no_capacity_factor,conventional hydroelectric,FALSE,155.128416,14.878814,0.017626567,300,300,0,0
+cats_130,2312,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,4.5,4.5,0,0
+cats_131,2313,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,2.3,2.3,0,0
+cats_132,2339,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,13.4,13.4,0,0
+cats_133,2361,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,13.1,13.1,0,0
+cats_134,284,no_capacity_factor,conventional hydroelectric,FALSE,23.3042834,14.8788144,0.116141127,19.6,19.6,0,0
+cats_135,300,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,11.8,11.8,0,0
+cats_136,32,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,42,42,0,0
+cats_137,333,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1.1,1.1,0,0
+cats_138,333,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,1.8,1.8,0,0
+cats_139,367,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,5,5,0,0
+cats_140,420,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,18,18,0,0
+cats_141,49,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.4,3.4,0,0
+cats_142,50,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,18.4,18.4,0,0
+cats_143,50,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,142.8,142.8,0,0
+cats_144,50,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,1.8,1.8,0,0
+cats_145,50,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,14.5,14.5,0,0
+cats_146,526,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,65.5,65.5,0,0
+cats_147,529,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,9.9,9.9,0,0
+cats_148,557,no_capacity_factor,conventional hydroelectric,FALSE,41.9311323,14.8788144,0.066690076,74.2,74.2,0,0
+cats_149,577,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,2.1,2.1,0,0
+cats_150,597,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3.5,3.5,0,0
+cats_151,60,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.6,3.6,0,0
+cats_152,615,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.4,3.4,0,0
+cats_153,615,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,94.5,94.5,0,0
+cats_154,615,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,9,9,0,0
+cats_155,615,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,2.7,2.7,0,0
+cats_156,629,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3,3,0,0
+cats_157,653,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,4.4,4.4,0,0
+cats_158,662,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1,1,0,0
+cats_159,664,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,10.2,10.2,0,0
+cats_160,664,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,46.7,46.7,0,0
+cats_161,707,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,4.1,4.1,0,0
+cats_162,707,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,5.1,5.1,0,0
+cats_163,744,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,1,1,0,0
+cats_164,744,no_capacity_factor,conventional hydroelectric,FALSE,24.5526988,14.8788144,0.111,22,22,0,0
+cats_165,744,no_capacity_factor,conventional hydroelectric,FALSE,29.5543926,14.8788144,0.090757177,27.3,27.3,0,0
+cats_166,745,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,12.1,12.1,0,0
+cats_167,745,no_capacity_factor,conventional hydroelectric,FALSE,49.0465723,14.8788144,0.056991158,44,44,0,0
+cats_168,746,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,7,7,0,0
+cats_169,746,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,3.7,3.7,0,0
+cats_170,746,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,6.6,6.6,0,0
+cats_171,746,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3.6,3.6,0,0
+cats_172,749,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,13.6,13.6,0,0
+cats_173,749,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,1.5,1.5,0,0
+cats_174,7778,no_capacity_factor,conventional hydroelectric,FALSE,36.1349397,14.8788144,0.075886016,102.5,102.5,0,0
+cats_175,799,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,2.9,2.9,0,0
+cats_176,8022,no_capacity_factor,conventional hydroelectric,FALSE,138.645776,14.8788144,0.019693715,117.9,117.9,0,0
+cats_177,8028,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3,3,0,0
+cats_178,8064,no_capacity_factor,conventional hydroelectric,FALSE,29.439354,14.8788144,0.091189607,27,27,0,0
+cats_179,8064,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,2.1,2.1,0,0
+cats_180,8169,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3,3,0,0
+cats_181,8215,no_capacity_factor,conventional hydroelectric,FALSE,43.3743652,14.8788144,0.063784217,38.6,38.6,0,0
+cats_182,8381,no_capacity_factor,conventional hydroelectric,FALSE,26.2074855,14.8788144,0.104841048,8.4,8.4,0,0
+cats_183,8400,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,10,10,0,0
+cats_184,8400,no_capacity_factor,conventional hydroelectric,FALSE,138.607558,14.8788144,0.019728908,351,351,0,0
+cats_185,8414,no_capacity_factor,conventional hydroelectric,FALSE,43.6847716,14.8788144,0.062660025,117,117,0,0
+cats_186,8427,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,10,10,0,0
+cats_187,8505,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,32.6,32.6,0,0
+cats_188,8542,no_capacity_factor,conventional hydroelectric,FALSE,26.4292728,14.8788144,0.102178348,73.8,73.8,0,0
+cats_189,8542,no_capacity_factor,conventional hydroelectric,FALSE,68.1855659,14.8788144,0.04009894,117.9,117.9,0,0
+cats_190,8553,no_capacity_factor,conventional hydroelectric,FALSE,38.3182174,14.8788144,0.071284546,69.2,69.2,0,0
+cats_191,8565,no_capacity_factor,conventional hydroelectric,FALSE,68.564689,14.8788144,0.039773988,122.4,122.4,0,0
+cats_192,8578,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,5.5,5.5,0,0
+cats_193,8578,no_capacity_factor,conventional hydroelectric,FALSE,55.0498039,14.8788144,0.049901925,49.2,49.2,0,0
+cats_194,8578,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,53.1,53.1,0,0
+cats_195,8623,no_capacity_factor,conventional hydroelectric,FALSE,28.3536743,14.8788144,0.099944554,52.2,52.2,0,0
+cats_196,8671,no_capacity_factor,conventional hydroelectric,FALSE,175.969304,14.8788144,0.015244051,315,315,0,0
+cats_197,8684,no_capacity_factor,conventional hydroelectric,FALSE,72.9724513,14.8788144,0.037296381,198.6,198.6,0,0
+cats_198,8703,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,109.8,109.8,0,0
+cats_199,8703,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,5,5,0,0
+cats_200,8703,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,6.8,6.8,0,0
+cats_201,8703,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,2.6,2.6,0,0
+cats_202,8724,no_capacity_factor,conventional hydroelectric,FALSE,32.4200547,14.8788144,0.084144494,120,120,0,0
+cats_203,8832,no_capacity_factor,conventional hydroelectric,FALSE,36.540858,14.8788144,0.074347899,8.8,8.8,0,0
+cats_204,8832,no_capacity_factor,conventional hydroelectric,FALSE,32.0494007,14.8788144,0.085772205,2.8,2.8,0,0
+cats_205,99,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,8.3,8.3,0,0
+cats_206,99,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,268.7,268.7,0,0
+cats_207,99,no_capacity_factor,conventional hydroelectric,FALSE,46.4995731,14.8788144,0.059172355,3,3,0,0
+cats_208,990,no_capacity_factor,conventional hydroelectric,FALSE,34.6467874,14.8788144,0.078724432,3,3,0,0
+cats_209,1019,no_capacity_factor,conventional steam coal,FALSE,79.9977839,16.01,0.03994707,55,55,0,133.83816
+cats_210,1620,no_capacity_factor,geothermal,FALSE,0,0,0,15,15,0,0
+cats_211,1620,no_capacity_factor,geothermal,FALSE,0,0,0,15,15,0,0
+cats_212,1621,no_capacity_factor,geothermal,FALSE,0,0,0,10,10,0,0
+cats_213,1621,no_capacity_factor,geothermal,FALSE,0,0,0,44.4,44.4,0,0
+cats_214,1656,no_capacity_factor,geothermal,FALSE,0,0,0,92.2,92.2,0,0
+cats_215,1657,no_capacity_factor,geothermal,FALSE,0,0,0,90,90,0,0
+cats_216,1659,no_capacity_factor,geothermal,FALSE,0,0,0,90,90,0,0
+cats_217,1706,no_capacity_factor,geothermal,FALSE,0,0,0,10,10,0,0
+cats_218,1706,no_capacity_factor,geothermal,FALSE,0,0,0,20,20,0,0
+cats_219,1707,no_capacity_factor,geothermal,FALSE,0,0,0,47.5,47.5,0,0
+cats_220,1708,no_capacity_factor,geothermal,FALSE,0,0,0,53.9,53.9,0,0
+cats_221,1709,no_capacity_factor,geothermal,FALSE,0,0,0,39.6,39.6,0,0
+cats_222,1710,no_capacity_factor,geothermal,FALSE,0,0,0,45.5,45.5,0,0
+cats_223,1711,no_capacity_factor,geothermal,FALSE,0,0,0,45.5,45.5,0,0
+cats_224,1712,no_capacity_factor,geothermal,FALSE,0,0,0,45.5,45.5,0,0
+cats_225,1721,no_capacity_factor,geothermal,FALSE,0,0,0,81.5,81.5,0,0
+cats_226,1760,no_capacity_factor,geothermal,FALSE,0,0,0,1163,1163,0,0
+cats_227,1760,no_capacity_factor,geothermal,FALSE,0,0,0,78,78,0,0
+cats_228,1760,no_capacity_factor,geothermal,FALSE,0,0,0,176.4,176.4,0,0
+cats_229,1762,no_capacity_factor,geothermal,FALSE,0,0,0,110,110,0,0
+cats_230,1762,no_capacity_factor,geothermal,FALSE,0,0,0,55,55,0,0
+cats_231,181,no_capacity_factor,geothermal,FALSE,0,0,0,80,80,0,0
+cats_232,2044,no_capacity_factor,geothermal,FALSE,0,0,0,58.3,58.3,0,0
+cats_233,2332,no_capacity_factor,geothermal,FALSE,0,0,0,11.5,11.5,0,0
+cats_234,2405,no_capacity_factor,geothermal,FALSE,0,0,0,55,55,0,0
+cats_235,8303,no_capacity_factor,geothermal,FALSE,0,0,0,74.5,74.5,0,0
+cats_236,8376,no_capacity_factor,geothermal,FALSE,0,0,0,25,25,0,0
+cats_237,1293,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_238,1898,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_239,2734,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_240,2740,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_241,2756,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_242,2758,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_243,2760,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_244,6690,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_245,8191,no_capacity_factor,import nw,FALSE,0,31.4,0,200,200,0,31.4
+cats_246,2261,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_247,2733,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_248,2776,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_249,4707,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_250,4715,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_251,4787,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_252,6676,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_253,6761,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_254,6774,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_255,6775,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_256,6780,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_257,6996,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_258,7562,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_259,7583,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_260,7604,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_261,8031,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_262,8179,no_capacity_factor,import sw,FALSE,0,31.4,0,200,200,0,31.4
+cats_263,1057,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,5.4,5.4,0,5.24664
+cats_264,1086,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,6.4,6.4,0,5.24664
+cats_265,1199,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,11.4,11.4,0,5.24664
+cats_266,1213,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.4,1.4,0,5.24664
+cats_267,1264,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4,4,0,5.24664
+cats_268,1269,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.6,1.6,0,5.24664
+cats_269,1333,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,8,8,0,5.24664
+cats_270,1336,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3.2,3.2,0,5.24664
+cats_271,1336,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3.2,3.2,0,5.24664
+cats_272,1600,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3,3,0,5.24664
+cats_273,1607,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4.4,4.4,0,5.24664
+cats_274,1822,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3,3,0,5.24664
+cats_275,1832,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.1,1.1,0,5.24664
+cats_276,1884,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3.5,3.5,0,5.24664
+cats_277,1904,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.6,1.6,0,5.24664
+cats_278,1942,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.1,1.1,0,5.24664
+cats_279,2212,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,9.2,9.2,0,5.24664
+cats_280,46,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,2.3,2.3,0,5.24664
+cats_281,461,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,9.2,9.2,0,5.24664
+cats_282,465,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,6.8,6.8,0,5.24664
+cats_283,468,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,2.2,2.2,0,5.24664
+cats_284,582,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4,4,0,5.24664
+cats_285,638,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.4,1.4,0,5.24664
+cats_286,692,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,23.8,23.8,0,5.24664
+cats_287,698,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,35.7,35.7,0,5.24664
+cats_288,761,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4.8,4.8,0,5.24664
+cats_289,7649,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3,3,0,5.24664
+cats_290,7850,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4.4,4.4,0,5.24664
+cats_291,8018,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3,3,0,5.24664
+cats_292,8148,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,3.8,3.8,0,5.24664
+cats_293,8196,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,5.1,5.1,0,5.24664
+cats_294,8830,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,4.4,4.4,0,5.24664
+cats_295,8832,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,23,23,0,5.24664
+cats_296,8843,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,1.5,1.5,0,5.24664
+cats_297,910,no_capacity_factor,landfill gas,FALSE,173.53,58.907,0.25325,9,9,0,5.24664
+cats_298,1384,no_capacity_factor,municipal solid waste,FALSE,173.53,58.907,0.25325,24,24,0,5.24664
+cats_299,388,no_capacity_factor,municipal solid waste,FALSE,173.53,58.907,0.25325,35.6,35.6,0,5.24664
+cats_300,1118,no_capacity_factor,natural gas fired combined cycle,FALSE,1547.8861,15.236961,0.016096182,14.3,14.3,0,122.638285
+cats_301,1239,no_capacity_factor,natural gas fired combined cycle,FALSE,985.970697,9.4610491,0.023999937,154,154,0,81.875185
+cats_302,1389,no_capacity_factor,natural gas fired combined cycle,FALSE,800.556711,13.918461,0.027579692,636,636,0,76.42201
+cats_303,1455,no_capacity_factor,natural gas fired combined cycle,FALSE,247.166078,8.51894613,0.169468784,31.1,31.1,0,89.011195
+cats_304,1499,no_capacity_factor,natural gas fired combined cycle,FALSE,273.739392,16.3717118,0.09454125,109.3,109.3,0,89.6754131
+cats_305,1519,no_capacity_factor,natural gas fired combined cycle,FALSE,572.947107,8.86336251,0.095998499,51.4,51.4,0,88.448605
+cats_306,1533,no_capacity_factor,natural gas fired combined cycle,FALSE,365.028494,9.17539209,0.057836312,32,32,0,89.6754131
+cats_307,1589,no_capacity_factor,natural gas fired combined cycle,FALSE,2323.40845,12.4652175,0.028192924,678.3,678.3,0,74.33944
+cats_308,1592,no_capacity_factor,natural gas fired combined cycle,FALSE,460.953869,7.95071277,0.12511162,80,80,0,89.6754131
+cats_309,1595,no_capacity_factor,natural gas fired combined cycle,FALSE,1512.3587,10.9562175,0.027419538,619.7,619.7,0,73.268545
+cats_310,1599,no_capacity_factor,natural gas fired combined cycle,FALSE,1110.30224,9.34812416,0.014862244,155.6,155.6,0,155.505385
+cats_311,1653,no_capacity_factor,natural gas fired combined cycle,FALSE,222.512216,8.40984319,0.195165562,36.2,36.2,0,103.964245
+cats_312,1660,no_capacity_factor,natural gas fired combined cycle,FALSE,1565.83201,9.79517349,0.025323319,133.2,133.2,0,86.839795
+cats_313,1671,no_capacity_factor,natural gas fired combined cycle,FALSE,2499.46439,12.5488628,0.027655331,623,623,0,72.409855
+cats_314,1693,no_capacity_factor,natural gas fired combined cycle,FALSE,230.144388,16.3717119,0.11955343,120.5,120.5,0,135.92824
+cats_315,1694,no_capacity_factor,natural gas fired combined cycle,FALSE,2412.81753,12.5075294,0.027768316,387.6,387.6,0,89.6754131
+cats_316,1699,no_capacity_factor,natural gas fired combined cycle,FALSE,772.625301,8.94241382,0.087384278,180.1,180.1,0,115.295005
+cats_317,1775,no_capacity_factor,natural gas fired combined cycle,FALSE,968.448887,9.40230679,0.047207877,149.4,149.4,0,89.889625
+cats_318,1778,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,556.8,556.8,0,70.92442
+cats_319,1787,no_capacity_factor,natural gas fired combined cycle,FALSE,708.274969,13.5748531,0.028668281,288.9,288.9,0,73.04647
+cats_320,1797,no_capacity_factor,natural gas fired combined cycle,FALSE,2334.13617,9.86947683,0.009868153,336.1,336.1,0,85.65046
+cats_321,1801,no_capacity_factor,natural gas fired combined cycle,FALSE,438.904604,16.3717118,0.061066146,98.2,98.2,0,89.96365
+cats_322,1806,no_capacity_factor,natural gas fired combined cycle,FALSE,1214.01557,9.36133114,0.05419084,300.6,300.6,0,79.36327
+cats_323,1820,no_capacity_factor,natural gas fired combined cycle,FALSE,2297.80403,12.4436279,0.027652759,635,635,0,75.57319
+cats_324,1821,no_capacity_factor,natural gas fired combined cycle,FALSE,1683.4498,9.8240635,0.007277085,130,130,0,90.79273
+cats_325,1834,no_capacity_factor,natural gas fired combined cycle,FALSE,1941.15289,9.89195883,0.016403498,852,852,0,74.87242
+cats_326,1847,no_capacity_factor,natural gas fired combined cycle,FALSE,240.823874,8.45575669,0.191234446,30.8,30.8,0,90.087025
+cats_327,1879,no_capacity_factor,natural gas fired combined cycle,FALSE,401.19412,16.3717118,0.067573963,33,33,0,89.6754131
+cats_328,1937,no_capacity_factor,natural gas fired combined cycle,FALSE,1006.75797,13.5099476,0.019216809,685.2,685.2,0,89.6754131
+cats_329,2022,no_capacity_factor,natural gas fired combined cycle,FALSE,563.76042,8.56486783,0.102797947,49,49,0,88.971715
+cats_330,2107,no_capacity_factor,natural gas fired combined cycle,FALSE,1269.56348,10.0233692,0.030706901,712.4,712.4,0,73.26361
+cats_331,2117,no_capacity_factor,natural gas fired combined cycle,FALSE,572.658144,13.3147797,0.007556471,247.4,247.4,0,91.379995
+cats_332,2121,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,943.5,943.5,0,74.46775
+cats_333,2136,no_capacity_factor,natural gas fired combined cycle,FALSE,167.188707,7.93857786,0.229011049,28.5,28.5,0,120.989995
+cats_334,220,no_capacity_factor,natural gas fired combined cycle,FALSE,2334.13617,9.86947683,0.009868153,779,779,0,71.669605
+cats_335,2223,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,165,165,0,80.80429
+cats_336,2300,no_capacity_factor,natural gas fired combined cycle,FALSE,874.243191,13.471932,0.023001417,306.1,306.1,0,88.685485
+cats_337,2324,no_capacity_factor,natural gas fired combined cycle,FALSE,1547.8861,15.236961,0.016096182,13.4,13.4,0,89.6754131
+cats_338,2384,no_capacity_factor,natural gas fired combined cycle,FALSE,966.27283,9.22003628,0.051003293,61.5,61.5,0,85.448125
+cats_339,2401,no_capacity_factor,natural gas fired combined cycle,FALSE,1415.75836,10.4367429,0.030006828,629.9,629.9,0,82.793095
+cats_340,2401,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,678,678,0,89.6754131
+cats_341,282,no_capacity_factor,natural gas fired combined cycle,FALSE,749.289673,13.8353416,0.000678007,1156,1156,0,73.75711
+cats_342,346,no_capacity_factor,natural gas fired combined cycle,FALSE,1399.03018,8.49648297,0.045648313,245.6,245.6,0,89.6754131
+cats_343,363,no_capacity_factor,natural gas fired combined cycle,FALSE,340.343109,7.67744915,0.091411024,405,405,0,119.845075
+cats_344,384,no_capacity_factor,natural gas fired combined cycle,FALSE,907.718723,8.16964701,0.070011402,107.4,107.4,0,89.6754131
+cats_345,426,no_capacity_factor,natural gas fired combined cycle,FALSE,848.043789,15.9947772,0.032401462,87,87,0,116.67187
+cats_346,426,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,13,13,0,89.6754131
+cats_347,519,no_capacity_factor,natural gas fired combined cycle,FALSE,479.744314,16.3717118,0.052303032,43,43,0,89.6754131
+cats_348,552,no_capacity_factor,natural gas fired combined cycle,FALSE,476.575454,8.15261569,0.112432947,130,130,0,130.91428
+cats_349,7751,no_capacity_factor,natural gas fired combined cycle,FALSE,411.887105,16.3717118,0.066698734,276.7,276.7,0,98.328475
+cats_350,7773,no_capacity_factor,natural gas fired combined cycle,FALSE,874.243191,13.471932,0.023001417,335.8,335.8,0,100.243255
+cats_351,7808,no_capacity_factor,natural gas fired combined cycle,FALSE,2635.89483,9.85465117,0.007460776,1036.8,1036.8,0,73.771915
+cats_352,7823,no_capacity_factor,natural gas fired combined cycle,FALSE,1512.3587,10.9562175,0.027419538,655,655,0,73.910095
+cats_353,7882,no_capacity_factor,natural gas fired combined cycle,FALSE,2124.26732,9.82406357,0.005912852,173.9,173.9,0,83.967625
+cats_354,7971,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,1398,1398,0,75.775525
+cats_355,8003,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,688.5,688.5,0,89.6754131
+cats_356,8018,no_capacity_factor,natural gas fired combined cycle,FALSE,1481.47126,10.4426725,0.029857916,630,630,0,74.581255
+cats_357,8094,no_capacity_factor,natural gas fired combined cycle,FALSE,2412.81753,12.5075294,0.027768316,537.4,537.4,0,87.204985
+cats_358,8185,no_capacity_factor,natural gas fired combined cycle,FALSE,1377.47488,10.3999001,0.030319165,591,591,0,74.50723
+cats_359,8343,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,699.2,699.2,0,89.6754131
+cats_360,8576,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,113.5,113.5,0,89.6754131
+cats_361,8752,no_capacity_factor,natural gas fired combined cycle,FALSE,2421.88088,9.85547484,0.008057377,559,559,0,71.67454
+cats_362,957,no_capacity_factor,natural gas fired combined cycle,FALSE,878.874372,13.4742144,0.022715841,71.5,71.5,0,97.825105
+cats_363,1016,no_capacity_factor,natural gas fired combustion turbine,FALSE,135.454897,17.2716389,0.151710181,33,33,0,140.56993
+cats_364,1050,no_capacity_factor,natural gas fired combustion turbine,FALSE,300.533608,14.2689682,0.063590107,60.5,60.5,0,114.83884
+cats_365,1056,no_capacity_factor,natural gas fired combustion turbine,FALSE,428.748492,15.1584724,0.035004509,659,659,0,127.6073894
+cats_366,1087,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.6,4.6,0,109.33138
+cats_367,1098,no_capacity_factor,natural gas fired combustion turbine,FALSE,297.332701,14.4848701,0.060402558,118,118,0,113.75314
+cats_368,1123,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,5.3,5.3,0,144.78442
+cats_369,1222,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,58,58,0,146.8966
+cats_370,1251,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6,6,0,157.126855
+cats_371,1268,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,4.4,4.4,0,127.339195
+cats_372,1326,no_capacity_factor,natural gas fired combustion turbine,FALSE,284.095812,14.5098437,0.056610378,49.9,49.9,0,127.6073894
+cats_373,1330,no_capacity_factor,natural gas fired combustion turbine,FALSE,284.310681,14.2690889,0.051498059,47,47,0,113.935735
+cats_374,1389,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,69.8,69.8,0,81.19201
+cats_375,1418,no_capacity_factor,natural gas fired combustion turbine,FALSE,278.09026,15.0260079,0.046209611,60.5,60.5,0,119.91202
+cats_376,1443,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,3.5,3.5,0,127.6073894
+cats_377,1481,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.415806,14.5121503,0.05553775,49.8,49.8,0,110.49604
+cats_378,1494,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,47,47,0,115.830775
+cats_379,1499,no_capacity_factor,natural gas fired combustion turbine,FALSE,135.454897,17.2716389,0.151710181,73.8,73.8,0,127.6073894
+cats_380,1557,no_capacity_factor,natural gas fired combustion turbine,FALSE,241.314681,11.6879263,0.134825912,19.2,19.2,0,127.6073894
+cats_381,1595,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.573452,14.5116537,0.055551504,828,828,0,123.86002
+cats_382,1596,no_capacity_factor,natural gas fired combustion turbine,FALSE,284.202107,14.4849898,0.04789175,47,47,0,113.30899
+cats_383,1617,no_capacity_factor,natural gas fired combustion turbine,FALSE,228.006765,13.9248083,0.184893025,54.8,54.8,0,156.80608
+cats_384,1652,no_capacity_factor,natural gas fired combustion turbine,FALSE,300.93146,14.2003257,0.0645544,121,121,0,127.6073894
+cats_385,1660,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,47.3,47.3,0,109.01554
+cats_386,1665,no_capacity_factor,natural gas fired combustion turbine,FALSE,439.07926,14.6687276,0.036019142,300,300,0,127.9462
+cats_387,1665,no_capacity_factor,natural gas fired combustion turbine,FALSE,434.063826,15.1229214,0.03564953,300,300,0,127.9462
+cats_388,1666,no_capacity_factor,natural gas fired combustion turbine,FALSE,144.635755,15.235242,0.223003485,49.8,49.8,0,109.731115
+cats_389,1668,no_capacity_factor,natural gas fired combustion turbine,FALSE,238.944546,12.0279444,0.198443557,27.7,27.7,0,96.258565
+cats_390,1674,no_capacity_factor,natural gas fired combustion turbine,FALSE,259.979857,12.2346869,0.102541866,94.2,94.2,0,127.6073894
+cats_391,1675,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6.8,6.8,0,127.6073894
+cats_392,1675,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,12.4,12.4,0,127.6073894
+cats_393,1675,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,5,5,0,165.5509
+cats_394,1685,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,234,234,0,123.667555
+cats_395,1690,no_capacity_factor,natural gas fired combustion turbine,FALSE,241.314681,11.6879263,0.134825912,17.6,17.6,0,136.88842
+cats_396,1692,no_capacity_factor,natural gas fired combustion turbine,FALSE,279.439595,14.9064255,0.047509495,48.2,48.2,0,127.6073894
+cats_397,1693,no_capacity_factor,natural gas fired combustion turbine,FALSE,290.065816,14.495962,0.059122552,57.4,57.4,0,140.69824
+cats_398,1753,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.135082,14.5989327,0.052607649,49.5,49.5,0,102.920815
+cats_399,1753,no_capacity_factor,natural gas fired combustion turbine,FALSE,281.665712,14.6476945,0.052403255,49.9,49.9,0,102.920815
+cats_400,1753,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,47.3,47.3,0,114.537805
+cats_401,1775,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.65224,12.9312538,0.076801027,44,44,0,94.659625
+cats_402,1784,no_capacity_factor,natural gas fired combustion turbine,FALSE,289.246081,13.8372471,0.06908418,47,47,0,113.7334
+cats_403,1785,no_capacity_factor,natural gas fired combustion turbine,FALSE,288.666409,14.024371,0.056235806,47,47,0,113.254705
+cats_404,1787,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.091952,14.5133198,0.055051166,50,50,0,98.153605
+cats_405,179,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,49.5,49.5,0,127.6073894
+cats_406,179,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,121,121,0,103.720285
+cats_407,1801,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.573452,14.5116537,0.055551504,50.4,50.4,0,94.73365
+cats_408,1804,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,71.2,71.2,0,184.45195
+cats_409,1807,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6,6,0,161.982895
+cats_410,1821,no_capacity_factor,natural gas fired combustion turbine,FALSE,314.719718,13.5866207,0.031200435,135,135,0,117.63205
+cats_411,1844,no_capacity_factor,natural gas fired combustion turbine,FALSE,300.659481,14.2331099,0.064041704,60.5,60.5,0,107.19946
+cats_412,1855,no_capacity_factor,natural gas fired combustion turbine,FALSE,428.748492,15.1584724,0.035004509,800,800,0,127.6073894
+cats_413,1858,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.759749,14.5490693,0.054250157,149.7,149.7,0,111.50278
+cats_414,1859,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,40,40,0,141.10291
+cats_415,1861,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.415806,14.5121503,0.05553775,196,196,0,103.31068
+cats_416,1872,no_capacity_factor,natural gas fired combustion turbine,FALSE,139.009799,16.2591415,0.176444024,92.4,92.4,0,167.490355
+cats_417,1878,no_capacity_factor,natural gas fired combustion turbine,FALSE,284.095812,14.5098437,0.056610378,106,106,0,127.6073894
+cats_418,1881,no_capacity_factor,natural gas fired combustion turbine,FALSE,312.991306,12.4163432,0.089544429,37.2,37.2,0,172.68691
+cats_419,1882,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.853676,14.5487374,0.054457261,99.8,99.8,0,109.04515
+cats_420,1893,no_capacity_factor,natural gas fired combustion turbine,FALSE,278.475437,14.9655005,0.047345694,48.5,48.5,0,97.748935
+cats_421,1893,no_capacity_factor,natural gas fired combustion turbine,FALSE,135.454897,17.2716389,0.151710181,68.7,68.7,0,97.748935
+cats_422,1895,no_capacity_factor,natural gas fired combustion turbine,FALSE,252.039838,11.9204156,0.11372107,29,29,0,116.028175
+cats_423,1920,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6.8,6.8,0,127.6073894
+cats_424,1920,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,13.6,13.6,0,127.6073894
+cats_425,1924,no_capacity_factor,natural gas fired combustion turbine,FALSE,141.739131,16.0912893,0.196394076,48.8,48.8,0,120.834865
+cats_426,1937,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6,6,0,235.692055
+cats_427,1975,no_capacity_factor,natural gas fired combustion turbine,FALSE,301.625885,13.6908428,0.06221884,92.2,92.2,0,115.82584
+cats_428,198,no_capacity_factor,natural gas fired combustion turbine,FALSE,301.04705,14.1903896,0.064737135,121,121,0,127.6073894
+cats_429,1997,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.657965,14.5884532,0.053668806,49.8,49.8,0,123.74158
+cats_430,2017,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,16.4,16.4,0,127.6073894
+cats_431,2030,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.6,4.6,0,127.6073894
+cats_432,2039,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,9.2,9.2,0,127.6073894
+cats_433,2039,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.6,4.6,0,127.6073894
+cats_434,2185,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,7,7,0,161.72134
+cats_435,2196,no_capacity_factor,natural gas fired combustion turbine,FALSE,141.739131,16.0912893,0.196394076,24,24,0,127.6073894
+cats_436,2217,no_capacity_factor,natural gas fired combustion turbine,FALSE,290.844586,14.4953196,0.059153298,57.4,57.4,0,108.033475
+cats_437,2245,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.573452,14.5116537,0.055551504,199.6,199.6,0,113.47678
+cats_438,2246,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.5,4.5,0,188.51839
+cats_439,2246,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,48.7,48.7,0,114.50326
+cats_440,2246,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,60.5,60.5,0,114.50326
+cats_441,227,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.5,4.5,0,141.41875
+cats_442,229,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,7,7,0,167.83087
+cats_443,2328,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,223.5,223.5,0,112.7464
+cats_444,233,no_capacity_factor,natural gas fired combustion turbine,FALSE,306.536508,13.6632204,0.046815387,46,46,0,97.6453
+cats_445,236,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,9.6,9.6,0,127.6073894
+cats_446,2365,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.573452,14.5116537,0.055551504,200,200,0,111.665635
+cats_447,239,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,46,46,0,99.39229
+cats_448,239,no_capacity_factor,natural gas fired combustion turbine,FALSE,142.358645,15.2973842,0.216252547,49.8,49.8,0,109.21294
+cats_449,2401,no_capacity_factor,natural gas fired combustion turbine,FALSE,372.365163,16.8059313,0.011923608,649.2,649.2,0,87.563095
+cats_450,2409,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,7.8,7.8,0,162.18523
+cats_451,248,no_capacity_factor,natural gas fired combustion turbine,FALSE,144.713646,15.0063715,0.224043824,49.8,49.8,0,109.92358
+cats_452,253,no_capacity_factor,natural gas fired combustion turbine,FALSE,303.385894,13.6886988,0.061585448,46,46,0,97.344265
+cats_453,253,no_capacity_factor,natural gas fired combustion turbine,FALSE,241.314681,11.6879263,0.134825912,12,12,0,183.92884
+cats_454,253,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6.8,6.8,0,127.6073894
+cats_455,270,no_capacity_factor,natural gas fired combustion turbine,FALSE,279.525684,12.996741,0.075282688,38.7,38.7,0,135.629995
+cats_456,344,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,5.6,5.6,0,180.5533
+cats_457,346,no_capacity_factor,natural gas fired combustion turbine,FALSE,299.144996,14.4479757,0.061704604,302.5,302.5,0,127.6073894
+cats_458,351,no_capacity_factor,natural gas fired combustion turbine,FALSE,299.758091,14.293201,0.062834015,60.5,60.5,0,114.11833
+cats_459,361,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,46,46,0,99.39229
+cats_460,394,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,1.2,1.2,0,127.6073894
+cats_461,426,no_capacity_factor,natural gas fired combustion turbine,FALSE,243.988901,11.8081357,0.127647427,178.6,178.6,0,121.44187
+cats_462,43,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,2,2,0,105.35377
+cats_463,458,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,9.2,9.2,0,148.19944
+cats_464,539,no_capacity_factor,natural gas fired combustion turbine,FALSE,136.821325,16.8488019,0.162064325,42.8,42.8,0,118.80658
+cats_465,552,no_capacity_factor,natural gas fired combustion turbine,FALSE,241.314681,11.6879263,0.134825912,5.9,5.9,0,135.68428
+cats_466,631,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,3.2,3.2,0,226.661005
+cats_467,653,no_capacity_factor,natural gas fired combustion turbine,FALSE,299.732541,13.0832516,0.063515954,38.9,38.9,0,137.28322
+cats_468,668,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.72057,14.5813722,0.053763426,49.8,49.8,0,110.787205
+cats_469,668,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,141,141,0,127.6073894
+cats_470,686,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,6.1,6.1,0,161.37589
+cats_471,698,no_capacity_factor,natural gas fired combustion turbine,FALSE,243.095114,16.3717119,0.109264827,8,8,0,159.86578
+cats_472,7698,no_capacity_factor,natural gas fired combustion turbine,FALSE,318.861829,13.5372642,0.025931614,44.8,44.8,0,154.313905
+cats_473,7698,no_capacity_factor,natural gas fired combustion turbine,FALSE,318.861829,13.5372642,0.025931614,44.8,44.8,0,154.313905
+cats_474,7707,no_capacity_factor,natural gas fired combustion turbine,FALSE,281.807954,14.6257853,0.052471072,98,98,0,112.21342
+cats_475,7773,no_capacity_factor,natural gas fired combustion turbine,FALSE,252.039838,11.9204156,0.11372107,213.8,213.8,0,105.013255
+cats_476,7989,no_capacity_factor,natural gas fired combustion turbine,FALSE,428.748492,15.1584724,0.035004509,500,500,0,102.861595
+cats_477,8003,no_capacity_factor,natural gas fired combustion turbine,FALSE,428.748492,15.1584724,0.035004509,395.4,395.4,0,105.27481
+cats_478,8018,no_capacity_factor,natural gas fired combustion turbine,FALSE,299.16754,14.4193436,0.062009558,60.5,60.5,0,79.351255
+cats_479,8032,no_capacity_factor,natural gas fired combustion turbine,FALSE,288.671124,13.9470129,0.062670627,47,47,0,114.57235
+cats_480,8082,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.690078,14.5864247,0.053752238,49.8,49.8,0,111.103045
+cats_481,8199,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,4.8,4.8,0,163.15249
+cats_482,8239,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,12.4,12.4,0,127.6073894
+cats_483,8292,no_capacity_factor,natural gas fired combustion turbine,FALSE,141.922833,15.6387635,0.201878706,49.8,49.8,0,176.442445
+cats_484,8300,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,46,46,0,96.939595
+cats_485,8347,no_capacity_factor,natural gas fired combustion turbine,FALSE,301.435141,14.1545215,0.065960886,252,252,0,170.16019
+cats_486,8461,no_capacity_factor,natural gas fired combustion turbine,FALSE,300.276944,14.2855789,0.063222106,60.5,60.5,0,115.357015
+cats_487,8461,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.862974,14.5339309,0.054704926,56.7,56.7,0,115.2139
+cats_488,8461,no_capacity_factor,natural gas fired combustion turbine,FALSE,362.867376,11.7931008,0.055375259,139.8,139.8,0,157.93126
+cats_489,8461,no_capacity_factor,natural gas fired combustion turbine,FALSE,372.365163,16.8059313,0.011923608,432,432,0,99.25411
+cats_490,8495,no_capacity_factor,natural gas fired combustion turbine,FALSE,546.49488,48.2276671,0.897330169,24.9,24.9,0,127.6073894
+cats_491,8569,no_capacity_factor,natural gas fired combustion turbine,FALSE,282.734891,14.5549427,0.054009403,49.8,49.8,0,118.327885
+cats_492,8704,no_capacity_factor,natural gas fired combustion turbine,FALSE,300.146233,14.2909326,0.063204578,60.5,60.5,0,113.78275
+cats_493,8752,no_capacity_factor,natural gas fired combustion turbine,FALSE,297.176706,14.4862688,0.060386711,58.9,58.9,0,114.53287
+cats_494,8774,no_capacity_factor,natural gas fired combustion turbine,FALSE,278.09026,15.0260079,0.046209611,33.5,33.5,0,127.6073894
+cats_495,8813,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,64.6,64.6,0,150.316555
+cats_496,8838,no_capacity_factor,natural gas fired combustion turbine,FALSE,283.415806,14.5121503,0.05553775,54,54,0,127.6073894
+cats_497,90,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,3.5,3.5,0,127.6073894
+cats_498,927,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,77,77,0,136.00012
+cats_499,957,no_capacity_factor,natural gas fired combustion turbine,FALSE,1427.41303,44.9151794,0.082991653,54,54,0,102.595105
+cats_500,989,no_capacity_factor,natural gas fired combustion turbine,FALSE,315.964182,13.5022417,0.051140815,10.4,10.4,0,127.6073894
+cats_501,1072,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,3.8,3.8,0,119.67514
+cats_502,1128,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,1.5,1.5,0,146.095485
+cats_503,1236,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,14,14,0,146.095485
+cats_504,1333,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,2.8,2.8,0,146.095485
+cats_505,1399,no_capacity_factor,natural gas internal combustion engine,FALSE,23.06084,6.603144,0.0606654,46.4,46.4,0,108.369055
+cats_506,1458,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,13.2,13.2,0,146.095485
+cats_507,1801,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,50.4,50.4,0,94.73365
+cats_508,1810,no_capacity_factor,natural gas internal combustion engine,FALSE,173.53,58.907,0.25325,1.6,1.6,0,146.095485
+cats_509,2036,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,4.5,4.5,0,146.095485
+cats_510,2234,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,1.2,1.2,0,146.095485
+cats_511,2323,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,1,1,0,146.095485
+cats_512,2396,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,8.4,8.4,0,146.095485
+cats_513,269,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,6.6,6.6,0,146.095485
+cats_514,335,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,6,6,0,146.095485
+cats_515,446,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,2.5,2.5,0,118.633855
+cats_516,613,no_capacity_factor,natural gas internal combustion engine,FALSE,74.6992503,6.603145,0.018728377,49.6,49.6,0,209.81785
+cats_517,8790,no_capacity_factor,natural gas internal combustion engine,FALSE,22.7651352,7.3428025,0.052644909,2,2,0,146.095485
+cats_518,1483,no_capacity_factor,natural gas steam turbine,FALSE,2076.3,19.79,0.0028305,1612,1612,0,109.5372059
+cats_519,1693,no_capacity_factor,natural gas steam turbine,FALSE,164.808375,25.1702183,0.063206218,100,100,0,135.92824
+cats_520,192,no_capacity_factor,natural gas steam turbine,FALSE,248.251086,24.5037276,0.030580892,8.9,8.9,0,109.5372059
+cats_521,2401,no_capacity_factor,natural gas steam turbine,FALSE,632.873059,21.8534111,0.00927701,460,460,0,82.793095
+cats_522,7747,no_capacity_factor,natural gas steam turbine,FALSE,469.549327,22.6772275,0.013315533,821.4,821.4,0,109.5372059
+cats_523,7751,no_capacity_factor,natural gas steam turbine,FALSE,248.251086,24.5037276,0.030580892,81.6,81.6,0,98.328475
+cats_524,7773,no_capacity_factor,natural gas steam turbine,FALSE,470.5849,22.6734243,0.013281799,326.4,326.4,0,100.243255
+cats_525,8113,no_capacity_factor,natural gas steam turbine,FALSE,796.7,21.363,0.0069886,1115,1115,0,118.838335
+cats_526,8343,no_capacity_factor,natural gas steam turbine,FALSE,600.51,21.909,0.0097412,218,218,0,112.136605
+cats_527,1951,no_capacity_factor,nuclear,FALSE,0,7.02752861,0,2323,2323,0,4.844051633
+cats_528,1053,wto1053,onshore wind turbine,FALSE,0,0,0,143,143,0,0
+cats_529,1133,wto1133,onshore wind turbine,FALSE,0,0,0,2,2,0,0
+cats_530,1329,wto1329,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_531,1330,wto1330,onshore wind turbine,FALSE,0,0,0,1.5,1.5,0,0
+cats_532,1330,wto1330,onshore wind turbine,FALSE,0,0,0,1.6,1.6,0,0
+cats_533,1376,wto1376,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_534,1402,wto1402,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_535,1486,wto1486,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_536,1542,wto1542,onshore wind turbine,FALSE,0,0,0,50,50,0,0
+cats_537,1542,wto1542,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_538,1607,wto1607,onshore wind turbine,FALSE,0,0,0,78.2,78.2,0,0
+cats_539,1619,wto1619,onshore wind turbine,FALSE,0,0,0,57.5,57.5,0,0
+cats_540,1625,wto1625,onshore wind turbine,FALSE,0,0,0,85.9,85.9,0,0
+cats_541,1641,wto1641,onshore wind turbine,FALSE,0,0,0,17.4,17.4,0,0
+cats_542,1680,wto1680,onshore wind turbine,FALSE,0,0,0,75,75,0,0
+cats_543,1680,wto1680,onshore wind turbine,FALSE,0,0,0,28.7,28.7,0,0
+cats_544,1680,wto1680,onshore wind turbine,FALSE,0,0,0,99,99,0,0
+cats_545,1680,wto1680,onshore wind turbine,FALSE,0,0,0,128.7,128.7,0,0
+cats_546,1680,wto1680,onshore wind turbine,FALSE,0,0,0,43.2,43.2,0,0
+cats_547,1680,wto1680,onshore wind turbine,FALSE,0,0,0,21.6,21.6,0,0
+cats_548,1681,wto1681,onshore wind turbine,FALSE,0,0,0,88.5,88.5,0,0
+cats_549,1682,wto1682,onshore wind turbine,FALSE,0,0,0,60.3,60.3,0,0
+cats_550,1682,wto1682,onshore wind turbine,FALSE,0,0,0,131.1,131.1,0,0
+cats_551,1682,wto1682,onshore wind turbine,FALSE,0,0,0,14.4,14.4,0,0
+cats_552,1683,wto1683,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_553,1783,wto1783,onshore wind turbine,FALSE,0,0,0,228.2,228.2,0,0
+cats_554,1783,wto1783,onshore wind turbine,FALSE,0,0,0,15.5,15.5,0,0
+cats_555,1783,wto1783,onshore wind turbine,FALSE,0,0,0,78.2,78.2,0,0
+cats_556,1838,wto1838,onshore wind turbine,FALSE,0,0,0,3.2,3.2,0,0
+cats_557,1849,wto1849,onshore wind turbine,FALSE,0,0,0,38.9,38.9,0,0
+cats_558,1851,wto1851,onshore wind turbine,FALSE,0,0,0,46.8,46.8,0,0
+cats_559,1852,wto1852,onshore wind turbine,FALSE,0,0,0,31,31,0,0
+cats_560,1852,wto1852,onshore wind turbine,FALSE,0,0,0,61.5,61.5,0,0
+cats_561,1853,wto1853,onshore wind turbine,FALSE,0,0,0,22.4,22.4,0,0
+cats_562,1854,wto1854,onshore wind turbine,FALSE,0,0,0,49.5,49.5,0,0
+cats_563,1855,wto1855,onshore wind turbine,FALSE,0,0,0,11.7,11.7,0,0
+cats_564,1855,wto1855,onshore wind turbine,FALSE,0,0,0,45,45,0,0
+cats_565,1856,wto1856,onshore wind turbine,FALSE,0,0,0,6.5,6.5,0,0
+cats_566,1856,wto1856,onshore wind turbine,FALSE,0,0,0,61.2,61.2,0,0
+cats_567,1858,wto1858,onshore wind turbine,FALSE,0,0,0,6,6,0,0
+cats_568,1860,wto1860,onshore wind turbine,FALSE,0,0,0,20,20,0,0
+cats_569,1864,wto1864,onshore wind turbine,FALSE,0,0,0,41,41,0,0
+cats_570,1864,wto1864,onshore wind turbine,FALSE,0,0,0,5.1,5.1,0,0
+cats_571,1918,wto1918,onshore wind turbine,FALSE,0,0,0,18,18,0,0
+cats_572,1927,wto1927,onshore wind turbine,FALSE,0,0,0,21.9,21.9,0,0
+cats_573,1928,wto1928,onshore wind turbine,FALSE,0,0,0,64.5,64.5,0,0
+cats_574,1929,wto1929,onshore wind turbine,FALSE,0,0,0,1.6,1.6,0,0
+cats_575,1931,wto1931,onshore wind turbine,FALSE,0,0,0,21.3,21.3,0,0
+cats_576,1931,wto1931,onshore wind turbine,FALSE,0,0,0,25.2,25.2,0,0
+cats_577,1932,wto1932,onshore wind turbine,FALSE,0,0,0,7.5,7.5,0,0
+cats_578,1932,wto1932,onshore wind turbine,FALSE,0,0,0,6.5,6.5,0,0
+cats_579,1932,wto1932,onshore wind turbine,FALSE,0,0,0,120,120,0,0
+cats_580,1933,wto1933,onshore wind turbine,FALSE,0,0,0,59.6,59.6,0,0
+cats_581,1933,wto1933,onshore wind turbine,FALSE,0,0,0,29,29,0,0
+cats_582,1933,wto1933,onshore wind turbine,FALSE,0,0,0,3,3,0,0
+cats_583,1933,wto1933,onshore wind turbine,FALSE,0,0,0,46.8,46.8,0,0
+cats_584,1993,wto1993,onshore wind turbine,FALSE,0,0,0,3,3,0,0
+cats_585,200,wto200,onshore wind turbine,FALSE,0,0,0,265.4,265.4,0,0
+cats_586,2203,wto2203,onshore wind turbine,FALSE,0,0,0,8.7,8.7,0,0
+cats_587,2203,wto2203,onshore wind turbine,FALSE,0,0,0,26.1,26.1,0,0
+cats_588,2203,wto2203,onshore wind turbine,FALSE,0,0,0,90,90,0,0
+cats_589,2204,wto2204,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_590,2208,wto2208,onshore wind turbine,FALSE,0,0,0,101.2,101.2,0,0
+cats_591,2264,wto2264,onshore wind turbine,FALSE,0,0,0,102,102,0,0
+cats_592,2264,wto2264,onshore wind turbine,FALSE,0,0,0,168,168,0,0
+cats_593,2264,wto2264,onshore wind turbine,FALSE,0,0,0,102,102,0,0
+cats_594,2305,wto2305,onshore wind turbine,FALSE,0,0,0,46,46,0,0
+cats_595,2314,wto2314,onshore wind turbine,FALSE,0,0,0,189,189,0,0
+cats_596,2314,wto2314,onshore wind turbine,FALSE,0,0,0,151.7,151.7,0,0
+cats_597,2399,wto2399,onshore wind turbine,FALSE,0,0,0,60.2,60.2,0,0
+cats_598,2399,wto2399,onshore wind turbine,FALSE,0,0,0,135,135,0,0
+cats_599,2399,wto2399,onshore wind turbine,FALSE,0,0,0,162,162,0,0
+cats_600,2406,wto2406,onshore wind turbine,FALSE,0,0,0,16.5,16.5,0,0
+cats_601,2407,wto2407,onshore wind turbine,FALSE,0,0,0,49,49,0,0
+cats_602,288,wto288,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_603,288,wto288,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_604,295,wto295,onshore wind turbine,FALSE,0,0,0,27.1,27.1,0,0
+cats_605,295,wto295,onshore wind turbine,FALSE,0,0,0,79.2,79.2,0,0
+cats_606,295,wto295,onshore wind turbine,FALSE,0,0,0,168,168,0,0
+cats_607,295,wto295,onshore wind turbine,FALSE,0,0,0,132,132,0,0
+cats_608,295,wto295,onshore wind turbine,FALSE,0,0,0,138,138,0,0
+cats_609,295,wto295,onshore wind turbine,FALSE,0,0,0,19.8,19.8,0,0
+cats_610,302,wto302,onshore wind turbine,FALSE,0,0,0,7.4,7.4,0,0
+cats_611,303,wto303,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_612,449,wto449,onshore wind turbine,FALSE,0,0,0,1.9,1.9,0,0
+cats_613,634,wto634,onshore wind turbine,FALSE,0,0,0,1.8,1.8,0,0
+cats_614,634,wto634,onshore wind turbine,FALSE,0,0,0,1.8,1.8,0,0
+cats_615,638,wto638,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_616,638,wto638,onshore wind turbine,FALSE,0,0,0,1.8,1.8,0,0
+cats_617,7830,wto7830,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_618,7938,wto7938,onshore wind turbine,FALSE,0,0,0,1.9,1.9,0,0
+cats_619,796,wto796,onshore wind turbine,FALSE,0,0,0,3,3,0,0
+cats_620,8403,wto8403,onshore wind turbine,FALSE,0,0,0,43.4,43.4,0,0
+cats_621,8456,wto8456,onshore wind turbine,FALSE,0,0,0,2,2,0,0
+cats_622,8507,wto8507,onshore wind turbine,FALSE,0,0,0,38,38,0,0
+cats_623,8534,wto8534,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_624,8534,wto8534,onshore wind turbine,FALSE,0,0,0,102.5,102.5,0,0
+cats_625,8535,wto8535,onshore wind turbine,FALSE,0,0,0,162,162,0,0
+cats_626,8535,wto8535,onshore wind turbine,FALSE,0,0,0,36.8,36.8,0,0
+cats_627,8535,wto8535,onshore wind turbine,FALSE,0,0,0,102.5,102.5,0,0
+cats_628,8593,wto8593,onshore wind turbine,FALSE,0,0,0,2.4,2.4,0,0
+cats_629,8680,wto8680,onshore wind turbine,FALSE,0,0,0,34.5,34.5,0,0
+cats_630,8680,wto8680,onshore wind turbine,FALSE,0,0,0,150,150,0,0
+cats_631,8712,wto8712,onshore wind turbine,FALSE,0,0,0,1,1,0,0
+cats_632,8712,wto8712,onshore wind turbine,FALSE,0,0,0,5.6,5.6,0,0
+cats_633,1702,no_capacity_factor,other gases,FALSE,241.314681,11.6879263,0.134825912,83,83,0,0
+cats_634,1703,no_capacity_factor,other gases,FALSE,297.332701,14.4848701,0.060402558,58.5,58.5,0,0
+cats_635,8434,no_capacity_factor,other gases,FALSE,291.232287,14.0763425,0.0636566,54.9,54.9,0,0
+cats_636,1060,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_637,1133,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.6,2.6,0,146.095485
+cats_638,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_639,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4.5,4.5,0,146.095485
+cats_640,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_641,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.2,1.2,0,146.095485
+cats_642,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.4,2.4,0,146.095485
+cats_643,1244,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4,4,0,146.095485
+cats_644,1250,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_645,1253,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_646,1253,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_647,1254,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,3.8,3.8,0,146.095485
+cats_648,1254,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.2,1.2,0,146.095485
+cats_649,1258,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_650,1262,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2,2,0,146.095485
+cats_651,1330,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2,2,0,146.095485
+cats_652,1330,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.6,2.6,0,146.095485
+cats_653,1421,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.8,2.8,0,146.095485
+cats_654,1512,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_655,1537,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_656,16,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.4,1.4,0,146.095485
+cats_657,1603,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.4,1.4,0,146.095485
+cats_658,1608,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_659,1696,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4.5,4.5,0,146.095485
+cats_660,17,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_661,1809,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_662,1810,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_663,1810,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_664,1811,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4.8,4.8,0,146.095485
+cats_665,1866,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.2,2.2,0,146.095485
+cats_666,1867,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.3,1.3,0,146.095485
+cats_667,1878,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_668,1907,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_669,1945,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.6,1.6,0,146.095485
+cats_670,1945,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.1,2.1,0,146.095485
+cats_671,2039,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,3.5,3.5,0,146.095485
+cats_672,2039,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_673,2091,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.2,1.2,0,146.095485
+cats_674,2113,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4.5,4.5,0,146.095485
+cats_675,2154,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2,2,0,146.095485
+cats_676,2158,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_677,2215,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_678,2283,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_679,229,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_680,2300,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.3,1.3,0,146.095485
+cats_681,2367,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4,4,0,146.095485
+cats_682,2367,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.2,2.2,0,146.095485
+cats_683,2370,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,5.2,5.2,0,146.095485
+cats_684,2373,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_685,2373,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,5,5,0,146.095485
+cats_686,2376,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_687,304,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.6,1.6,0,146.095485
+cats_688,304,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.2,1.2,0,146.095485
+cats_689,347,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_690,347,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_691,348,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,3.1,3.1,0,146.095485
+cats_692,354,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_693,371,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_694,400,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_695,426,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_696,426,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_697,426,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_698,44,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.7,1.7,0,146.095485
+cats_699,476,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_700,492,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2,2,0,146.095485
+cats_701,535,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.4,2.4,0,146.095485
+cats_702,535,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_703,545,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2,2,0,146.095485
+cats_704,551,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_705,633,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_706,633,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,3,3,0,146.095485
+cats_707,633,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_708,686,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_709,7808,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_710,7897,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.5,1.5,0,146.095485
+cats_711,8314,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_712,8572,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_713,8588,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.1,1.1,0,146.095485
+cats_714,8589,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,2.5,2.5,0,146.095485
+cats_715,8591,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_716,8659,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,4.8,4.8,0,146.095485
+cats_717,8810,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1,1,0,146.095485
+cats_718,9,no_capacity_factor,other natural gas,FALSE,248.251086,24.5037276,0.030580892,1.3,1.3,0,146.095485
+cats_719,1056,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,3.2,3.2,0,5.24664
+cats_720,1223,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,2.2,2.2,0,5.24664
+cats_721,1348,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,4.4,4.4,0,5.24664
+cats_722,1522,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,4.6,4.6,0,5.24664
+cats_723,1535,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.6,1.6,0,5.24664
+cats_724,1703,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,38.4,38.4,0,5.24664
+cats_725,1791,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,3,3,0,5.24664
+cats_726,1799,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,2.1,2.1,0,5.24664
+cats_727,1861,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.4,1.4,0,5.24664
+cats_728,1895,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.5,1.5,0,5.24664
+cats_729,2140,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,6.6,6.6,0,5.24664
+cats_730,2140,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,4.6,4.6,0,5.24664
+cats_731,2151,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.2,1.2,0,5.24664
+cats_732,2260,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_733,2287,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,2.8,2.8,0,5.24664
+cats_734,245,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_735,258,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,2,2,0,5.24664
+cats_736,258,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_737,258,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_738,319,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_739,319,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_740,319,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1,1,0,5.24664
+cats_741,570,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,2,2,0,5.24664
+cats_742,636,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.8,1.8,0,5.24664
+cats_743,68,no_capacity_factor,other waste biomass,FALSE,127.93,34.988,0.11593,29.1,29.1,0,5.24664
+cats_744,68,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,4,4,0,5.24664
+cats_745,713,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,7.5,7.5,0,5.24664
+cats_746,714,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,15,15,0,5.24664
+cats_747,7823,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.1,1.1,0,5.24664
+cats_748,8000,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.5,1.5,0,5.24664
+cats_749,8730,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,33,33,0,5.24664
+cats_750,8856,no_capacity_factor,other waste biomass,FALSE,554.685123,22.409643,0.094703922,1.4,1.4,0,5.24664
+cats_751,1804,no_capacity_factor,petroleum liquids,FALSE,1427.41303,44.9151794,0.082991653,71.2,71.2,0,421.38855
+cats_752,463,no_capacity_factor,petroleum liquids,FALSE,1427.41303,44.9151794,0.082991653,11.3,11.3,0,252.66912
+cats_753,8199,no_capacity_factor,petroleum liquids,FALSE,57.6,25.05,0.298333333,4.5,4.5,0,370.82661
+cats_754,8495,no_capacity_factor,petroleum liquids,FALSE,546.49488,48.2276671,0.897330169,24.9,24.9,0,270.71022
+cats_755,1000,pvu1000,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_756,1000,pvu1000,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_757,1002,pvu1002,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_758,1006,pvu1006,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_759,101,pvu101,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_760,1013,pvu1013,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_761,1013,pvu1013,solar photovoltaic,FALSE,0,0,0,12,12,0,0
+cats_762,1013,pvu1013,solar photovoltaic,FALSE,0,0,0,18.5,18.5,0,0
+cats_763,1016,pvu1016,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_764,1023,pvu1023,solar photovoltaic,FALSE,0,0,0,0.9,0.9,0,0
+cats_765,1025,pvu1025,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_766,1025,pvu1025,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_767,1025,pvu1025,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_768,1025,pvu1025,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_769,1025,pvu1025,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_770,1031,pvu1031,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_771,1033,pvu1033,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_772,1035,pvu1035,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_773,1037,pvu1037,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_774,1038,pvu1038,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_775,1041,pvu1041,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_776,1051,pvu1051,solar photovoltaic,FALSE,0,0,0,26,26,0,0
+cats_777,1051,pvu1051,solar photovoltaic,FALSE,0,0,0,6.3,6.3,0,0
+cats_778,1053,pvu1053,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_779,1059,pvu1059,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_780,1061,pvu1061,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_781,1061,pvu1061,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_782,1061,pvu1061,solar photovoltaic,FALSE,0,0,0,4.3,4.3,0,0
+cats_783,108,pvu108,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_784,108,pvu108,solar photovoltaic,FALSE,0,0,0,2.4,2.4,0,0
+cats_785,108,pvu108,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_786,1080,pvu1080,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_787,1084,pvu1084,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_788,1085,pvu1085,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_789,1085,pvu1085,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_790,1085,pvu1085,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_791,109,pvu109,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_792,1090,pvu1090,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_793,1096,pvu1096,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_794,111,pvu111,solar photovoltaic,FALSE,0,0,0,140,140,0,0
+cats_795,1110,pvu1110,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_796,1114,pvu1114,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_797,1118,pvu1118,solar photovoltaic,FALSE,0,0,0,0.8,0.8,0,0
+cats_798,113,pvu113,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_799,114,pvu114,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_800,114,pvu114,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_801,1143,pvu1143,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_802,1146,pvu1146,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_803,116,pvu116,solar photovoltaic,FALSE,0,0,0,19,19,0,0
+cats_804,116,pvu116,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_805,116,pvu116,solar photovoltaic,FALSE,0,0,0,9,9,0,0
+cats_806,116,pvu116,solar photovoltaic,FALSE,0,0,0,205.3,205.3,0,0
+cats_807,116,pvu116,solar photovoltaic,FALSE,0,0,0,202.5,202.5,0,0
+cats_808,1168,pvu1168,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_809,1172,pvu1172,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_810,1176,pvu1176,solar photovoltaic,FALSE,0,0,0,249.8,249.8,0,0
+cats_811,1176,pvu1176,solar photovoltaic,FALSE,0,0,0,585.9,585.9,0,0
+cats_812,1178,pvu1178,solar photovoltaic,FALSE,0,0,0,130,130,0,0
+cats_813,1178,pvu1178,solar photovoltaic,FALSE,0,0,0,150,150,0,0
+cats_814,1180,pvu1180,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_815,1183,pvu1183,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_816,1183,pvu1183,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_817,1188,pvu1188,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_818,1194,pvu1194,solar photovoltaic,FALSE,0,0,0,3.4,3.4,0,0
+cats_819,1206,pvu1206,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_820,121,pvu121,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_821,121,pvu121,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_822,1241,pvu1241,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_823,1247,pvu1247,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_824,1251,pvu1251,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_825,1264,pvu1264,solar photovoltaic,FALSE,0,0,0,14.4,14.4,0,0
+cats_826,1268,pvu1268,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_827,127,pvu127,solar photovoltaic,FALSE,0,0,0,2.6,2.6,0,0
+cats_828,127,pvu127,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_829,127,pvu127,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_830,1284,pvu1284,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_831,131,pvu131,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_832,131,pvu131,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_833,1320,pvu1320,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_834,1326,pvu1326,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_835,1330,pvu1330,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_836,1336,pvu1336,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_837,1338,pvu1338,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_838,1338,pvu1338,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_839,1344,pvu1344,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_840,1354,pvu1354,solar photovoltaic,FALSE,0,0,0,25,25,0,0
+cats_841,137,pvu137,solar photovoltaic,FALSE,0,0,0,61.6,61.6,0,0
+cats_842,137,pvu137,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_843,137,pvu137,solar photovoltaic,FALSE,0,0,0,40,40,0,0
+cats_844,137,pvu137,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_845,137,pvu137,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_846,137,pvu137,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_847,138,pvu138,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_848,1382,pvu1382,solar photovoltaic,FALSE,0,0,0,40,40,0,0
+cats_849,1384,pvu1384,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_850,1391,pvu1391,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_851,1402,pvu1402,solar photovoltaic,FALSE,0,0,0,8.4,8.4,0,0
+cats_852,1412,pvu1412,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_853,1412,pvu1412,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_854,1412,pvu1412,solar photovoltaic,FALSE,0,0,0,20.2,20.2,0,0
+cats_855,1412,pvu1412,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_856,1413,pvu1413,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_857,1418,pvu1418,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_858,1418,pvu1418,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_859,1419,pvu1419,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_860,1421,pvu1421,solar photovoltaic,FALSE,0,0,0,3.4,3.4,0,0
+cats_861,1423,pvu1423,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_862,1426,pvu1426,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_863,1429,pvu1429,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_864,1429,pvu1429,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_865,143,pvu143,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_866,1431,pvu1431,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_867,1435,pvu1435,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_868,1435,pvu1435,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_869,1435,pvu1435,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_870,144,pvu144,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_871,144,pvu144,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_872,1442,pvu1442,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_873,1447,pvu1447,solar photovoltaic,FALSE,0,0,0,3.6,3.6,0,0
+cats_874,145,pvu145,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_875,145,pvu145,solar photovoltaic,FALSE,0,0,0,2.4,2.4,0,0
+cats_876,1451,pvu1451,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_877,1455,pvu1455,solar photovoltaic,FALSE,0,0,0,3.7,3.7,0,0
+cats_878,1461,pvu1461,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_879,1464,pvu1464,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_880,147,pvu147,solar photovoltaic,FALSE,0,0,0,2.8,2.8,0,0
+cats_881,1470,pvu1470,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_882,1487,pvu1487,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_883,1487,pvu1487,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_884,149,pvu149,solar photovoltaic,FALSE,0,0,0,60,60,0,0
+cats_885,1505,pvu1505,solar photovoltaic,FALSE,0,0,0,19.2,19.2,0,0
+cats_886,1506,pvu1506,solar photovoltaic,FALSE,0,0,0,40,40,0,0
+cats_887,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,6.8,6.8,0,0
+cats_888,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_889,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_890,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_891,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_892,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_893,1508,pvu1508,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_894,1521,pvu1521,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_895,1521,pvu1521,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_896,1523,pvu1523,solar photovoltaic,FALSE,0,0,0,6,6,0,0
+cats_897,1541,pvu1541,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_898,1541,pvu1541,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_899,1541,pvu1541,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_900,155,pvu155,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_901,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,37.8,37.8,0,0
+cats_902,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,47.3,47.3,0,0
+cats_903,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,56,56,0,0
+cats_904,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,56,56,0,0
+cats_905,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_906,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,105,105,0,0
+cats_907,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,155,155,0,0
+cats_908,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,60,60,0,0
+cats_909,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,90,90,0,0
+cats_910,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_911,1553,pvu1553,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_912,1567,pvu1567,solar photovoltaic,FALSE,0,0,0,7.6,7.6,0,0
+cats_913,1577,pvu1577,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_914,1578,pvu1578,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_915,16,pvu16,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_916,1601,pvu1601,solar photovoltaic,FALSE,0,0,0,10.5,10.5,0,0
+cats_917,1603,pvu1603,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_918,1623,pvu1623,solar photovoltaic,FALSE,0,0,0,3.3,3.3,0,0
+cats_919,1640,pvu1640,solar photovoltaic,FALSE,0,0,0,200,200,0,0
+cats_920,1650,pvu1650,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_921,1661,pvu1661,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_922,1666,pvu1666,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_923,1674,pvu1674,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_924,1676,pvu1676,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_925,17,pvu17,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_926,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_927,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_928,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_929,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_930,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_931,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_932,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_933,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_934,1703,pvu1703,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_935,171,pvu171,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_936,1712,pvu1712,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_937,1712,pvu1712,solar photovoltaic,FALSE,0,0,0,30,30,0,0
+cats_938,1712,pvu1712,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_939,1712,pvu1712,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_940,1713,pvu1713,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_941,1763,pvu1763,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_942,1776,pvu1776,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_943,1776,pvu1776,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_944,1778,pvu1778,solar photovoltaic,FALSE,0,0,0,10.8,10.8,0,0
+cats_945,1778,pvu1778,solar photovoltaic,FALSE,0,0,0,160,160,0,0
+cats_946,1796,pvu1796,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_947,1809,pvu1809,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_948,181,pvu181,solar photovoltaic,FALSE,0,0,0,5.7,5.7,0,0
+cats_949,181,pvu181,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_950,1813,pvu1813,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_951,182,pvu182,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_952,182,pvu182,solar photovoltaic,FALSE,0,0,0,30,30,0,0
+cats_953,182,pvu182,solar photovoltaic,FALSE,0,0,0,70,70,0,0
+cats_954,1833,pvu1833,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_955,1833,pvu1833,solar photovoltaic,FALSE,0,0,0,13.8,13.8,0,0
+cats_956,1834,pvu1834,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_957,1835,pvu1835,solar photovoltaic,FALSE,0,0,0,25.3,25.3,0,0
+cats_958,1844,pvu1844,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_959,1844,pvu1844,solar photovoltaic,FALSE,0,0,0,2.6,2.6,0,0
+cats_960,1846,pvu1846,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_961,1846,pvu1846,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_962,1846,pvu1846,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_963,1846,pvu1846,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_964,1853,pvu1853,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_965,1858,pvu1858,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_966,1858,pvu1858,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_967,1875,pvu1875,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_968,1876,pvu1876,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_969,1879,pvu1879,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_970,1885,pvu1885,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_971,1885,pvu1885,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_972,1885,pvu1885,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_973,19,pvu19,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_974,1902,pvu1902,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_975,1910,pvu1910,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_976,1923,pvu1923,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_977,1923,pvu1923,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_978,1923,pvu1923,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_979,1926,pvu1926,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_980,1945,pvu1945,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_981,1952,pvu1952,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_982,1952,pvu1952,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_983,1952,pvu1952,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_984,1953,pvu1953,solar photovoltaic,FALSE,0,0,0,7,7,0,0
+cats_985,1953,pvu1953,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_986,1955,pvu1955,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_987,1960,pvu1960,solar photovoltaic,FALSE,0,0,0,4.4,4.4,0,0
+cats_988,1969,pvu1969,solar photovoltaic,FALSE,0,0,0,21.3,21.3,0,0
+cats_989,1970,pvu1970,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_990,1970,pvu1970,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_991,1973,pvu1973,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_992,1979,pvu1979,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_993,1985,pvu1985,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_994,1993,pvu1993,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_995,1993,pvu1993,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_996,1993,pvu1993,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_997,1993,pvu1993,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_998,1993,pvu1993,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_999,1998,pvu1998,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1000,200,pvu200,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1001,200,pvu200,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1002,2000,pvu2000,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1003,2001,pvu2001,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1004,2004,pvu2004,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1005,2009,pvu2009,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1006,2017,pvu2017,solar photovoltaic,FALSE,0,0,0,9,9,0,0
+cats_1007,2020,pvu2020,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1008,2020,pvu2020,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1009,2030,pvu2030,solar photovoltaic,FALSE,0,0,0,4.3,4.3,0,0
+cats_1010,2030,pvu2030,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1011,2030,pvu2030,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_1012,2032,pvu2032,solar photovoltaic,FALSE,0,0,0,2.1,2.1,0,0
+cats_1013,204,pvu204,solar photovoltaic,FALSE,0,0,0,153.5,153.5,0,0
+cats_1014,204,pvu204,solar photovoltaic,FALSE,0,0,0,106.7,106.7,0,0
+cats_1015,2042,pvu2042,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1016,2063,pvu2063,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1017,2063,pvu2063,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_1018,2065,pvu2065,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1019,2068,pvu2068,solar photovoltaic,FALSE,0,0,0,7.4,7.4,0,0
+cats_1020,207,pvu207,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1021,2077,pvu2077,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_1022,2080,pvu2080,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_1023,2084,pvu2084,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1024,209,pvu209,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1025,209,pvu209,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1026,2091,pvu2091,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_1027,2110,pvu2110,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1028,2113,pvu2113,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1029,2116,pvu2116,solar photovoltaic,FALSE,0,0,0,6.3,6.3,0,0
+cats_1030,2116,pvu2116,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1031,2118,pvu2118,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1032,2118,pvu2118,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1033,2118,pvu2118,solar photovoltaic,FALSE,0,0,0,6.1,6.1,0,0
+cats_1034,2126,pvu2126,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_1035,2169,pvu2169,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1036,217,pvu217,solar photovoltaic,FALSE,0,0,0,5.2,5.2,0,0
+cats_1037,217,pvu217,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1038,2185,pvu2185,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1039,2185,pvu2185,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1040,2186,pvu2186,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1041,2186,pvu2186,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1042,2188,pvu2188,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_1043,219,pvu219,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1044,2196,pvu2196,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1045,2199,pvu2199,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1046,2202,pvu2202,solar photovoltaic,FALSE,0,0,0,60,60,0,0
+cats_1047,2202,pvu2202,solar photovoltaic,FALSE,0,0,0,16.6,16.6,0,0
+cats_1048,2202,pvu2202,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1049,2202,pvu2202,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1050,2210,pvu2210,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_1051,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,313.7,313.7,0,0
+cats_1052,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,249.7,249.7,0,0
+cats_1053,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,80,80,0,0
+cats_1054,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,125,125,0,0
+cats_1055,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,250,250,0,0
+cats_1056,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,70,70,0,0
+cats_1057,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1058,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1059,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,132,132,0,0
+cats_1060,2235,pvu2235,solar photovoltaic,FALSE,0,0,0,200,200,0,0
+cats_1061,2246,pvu2246,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_1062,2252,pvu2252,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1063,2253,pvu2253,solar photovoltaic,FALSE,0,0,0,0.9,0.9,0,0
+cats_1064,2254,pvu2254,solar photovoltaic,FALSE,0,0,0,108,108,0,0
+cats_1065,226,pvu226,solar photovoltaic,FALSE,0,0,0,12,12,0,0
+cats_1066,226,pvu226,solar photovoltaic,FALSE,0,0,0,8,8,0,0
+cats_1067,2264,pvu2264,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1068,2264,pvu2264,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1069,2267,pvu2267,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1070,2268,pvu2268,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1071,2268,pvu2268,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1072,227,pvu227,solar photovoltaic,FALSE,0,0,0,27,27,0,0
+cats_1073,2275,pvu2275,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1074,2276,pvu2276,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1075,2276,pvu2276,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1076,2276,pvu2276,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1077,2277,pvu2277,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1078,2280,pvu2280,solar photovoltaic,FALSE,0,0,0,11.1,11.1,0,0
+cats_1079,2283,pvu2283,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_1080,2283,pvu2283,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1081,229,pvu229,solar photovoltaic,FALSE,0,0,0,32,32,0,0
+cats_1082,229,pvu229,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1083,229,pvu229,solar photovoltaic,FALSE,0,0,0,17.1,17.1,0,0
+cats_1084,2304,pvu2304,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1085,2304,pvu2304,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1086,2304,pvu2304,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1087,231,pvu231,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1088,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,318,318,0,0
+cats_1089,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,279,279,0,0
+cats_1090,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,18,18,0,0
+cats_1091,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1092,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,151.1,151.1,0,0
+cats_1093,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1094,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,75,75,0,0
+cats_1095,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1096,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,107.9,107.9,0,0
+cats_1097,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,54,54,0,0
+cats_1098,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,54,54,0,0
+cats_1099,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,111.2,111.2,0,0
+cats_1100,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,192,192,0,0
+cats_1101,2314,pvu2314,solar photovoltaic,FALSE,0,0,0,128,128,0,0
+cats_1102,2315,pvu2315,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1103,2324,pvu2324,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_1104,2325,pvu2325,solar photovoltaic,FALSE,0,0,0,23,23,0,0
+cats_1105,2325,pvu2325,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1106,2325,pvu2325,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1107,2329,pvu2329,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1108,2332,pvu2332,solar photovoltaic,FALSE,0,0,0,6,6,0,0
+cats_1109,2334,pvu2334,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1110,2334,pvu2334,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1111,235,pvu235,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1112,235,pvu235,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1113,2351,pvu2351,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1114,2351,pvu2351,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1115,2351,pvu2351,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1116,2353,pvu2353,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1117,2356,pvu2356,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1118,2360,pvu2360,solar photovoltaic,FALSE,0,0,0,3.4,3.4,0,0
+cats_1119,2380,pvu2380,solar photovoltaic,FALSE,0,0,0,0.9,0.9,0,0
+cats_1120,2385,pvu2385,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1121,2399,pvu2399,solar photovoltaic,FALSE,0,0,0,8.5,8.5,0,0
+cats_1122,240,pvu240,solar photovoltaic,FALSE,0,0,0,5.3,5.3,0,0
+cats_1123,240,pvu240,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1124,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1125,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,12,12,0,0
+cats_1126,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1127,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,19.8,19.8,0,0
+cats_1128,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1129,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1130,2402,pvu2402,solar photovoltaic,FALSE,0,0,0,4.1,4.1,0,0
+cats_1131,241,pvu241,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1132,241,pvu241,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1133,250,pvu250,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_1134,258,pvu258,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1135,259,pvu259,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_1136,260,pvu260,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1137,260,pvu260,solar photovoltaic,FALSE,0,0,0,30,30,0,0
+cats_1138,260,pvu260,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1139,268,pvu268,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1140,273,pvu273,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1141,273,pvu273,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1142,276,pvu276,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1143,276,pvu276,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1144,276,pvu276,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1145,288,pvu288,solar photovoltaic,FALSE,0,0,0,110,110,0,0
+cats_1146,289,pvu289,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1147,289,pvu289,solar photovoltaic,FALSE,0,0,0,68,68,0,0
+cats_1148,295,pvu295,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1149,295,pvu295,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1150,295,pvu295,solar photovoltaic,FALSE,0,0,0,45,45,0,0
+cats_1151,295,pvu295,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1152,295,pvu295,solar photovoltaic,FALSE,0,0,0,149.3,149.3,0,0
+cats_1153,295,pvu295,solar photovoltaic,FALSE,0,0,0,37.7,37.7,0,0
+cats_1154,295,pvu295,solar photovoltaic,FALSE,0,0,0,44.6,44.6,0,0
+cats_1155,295,pvu295,solar photovoltaic,FALSE,0,0,0,154.4,154.4,0,0
+cats_1156,295,pvu295,solar photovoltaic,FALSE,0,0,0,41.2,41.2,0,0
+cats_1157,296,pvu296,solar photovoltaic,FALSE,0,0,0,27.1,27.1,0,0
+cats_1158,296,pvu296,solar photovoltaic,FALSE,0,0,0,137.8,137.8,0,0
+cats_1159,296,pvu296,solar photovoltaic,FALSE,0,0,0,148.9,148.9,0,0
+cats_1160,308,pvu308,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1161,308,pvu308,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1162,308,pvu308,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1163,309,pvu309,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1164,316,pvu316,solar photovoltaic,FALSE,0,0,0,2.6,2.6,0,0
+cats_1165,317,pvu317,solar photovoltaic,FALSE,0,0,0,6,6,0,0
+cats_1166,317,pvu317,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1167,317,pvu317,solar photovoltaic,FALSE,0,0,0,19,19,0,0
+cats_1168,317,pvu317,solar photovoltaic,FALSE,0,0,0,15.8,15.8,0,0
+cats_1169,318,pvu318,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1170,319,pvu319,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1171,322,pvu322,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1172,322,pvu322,solar photovoltaic,FALSE,0,0,0,102,102,0,0
+cats_1173,322,pvu322,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1174,322,pvu322,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1175,326,pvu326,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1176,342,pvu342,solar photovoltaic,FALSE,0,0,0,4.4,4.4,0,0
+cats_1177,342,pvu342,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_1178,344,pvu344,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1179,347,pvu347,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1180,348,pvu348,solar photovoltaic,FALSE,0,0,0,1.9,1.9,0,0
+cats_1181,348,pvu348,solar photovoltaic,FALSE,0,0,0,0.9,0.9,0,0
+cats_1182,348,pvu348,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_1183,348,pvu348,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1184,377,pvu377,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1185,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1186,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1187,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_1188,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1189,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1190,385,pvu385,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1191,385,pvu385,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1192,385,pvu385,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1193,393,pvu393,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_1194,401,pvu401,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1195,401,pvu401,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1196,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1197,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1198,407,pvu407,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1199,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1200,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1201,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1202,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1203,407,pvu407,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1204,407,pvu407,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1205,407,pvu407,solar photovoltaic,FALSE,0,0,0,6.5,6.5,0,0
+cats_1206,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1207,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1208,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1209,407,pvu407,solar photovoltaic,FALSE,0,0,0,40,40,0,0
+cats_1210,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1211,407,pvu407,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1212,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1213,407,pvu407,solar photovoltaic,FALSE,0,0,0,11.4,11.4,0,0
+cats_1214,407,pvu407,solar photovoltaic,FALSE,0,0,0,105,105,0,0
+cats_1215,407,pvu407,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1216,407,pvu407,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1217,407,pvu407,solar photovoltaic,FALSE,0,0,0,17,17,0,0
+cats_1218,407,pvu407,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1219,407,pvu407,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1220,43,pvu43,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_1221,444,pvu444,solar photovoltaic,FALSE,0,0,0,5.5,5.5,0,0
+cats_1222,446,pvu446,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1223,446,pvu446,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1224,448,pvu448,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1225,448,pvu448,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1226,448,pvu448,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1227,448,pvu448,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1228,448,pvu448,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1229,448,pvu448,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1230,448,pvu448,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1231,449,pvu449,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_1232,452,pvu452,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1233,452,pvu452,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_1234,456,pvu456,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1235,456,pvu456,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1236,456,pvu456,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1237,456,pvu456,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1238,456,pvu456,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1239,456,pvu456,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1240,456,pvu456,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1241,471,pvu471,solar photovoltaic,FALSE,0,0,0,66,66,0,0
+cats_1242,471,pvu471,solar photovoltaic,FALSE,0,0,0,253,253,0,0
+cats_1243,471,pvu471,solar photovoltaic,FALSE,0,0,0,185.1,185.1,0,0
+cats_1244,471,pvu471,solar photovoltaic,FALSE,0,0,0,20.2,20.2,0,0
+cats_1245,471,pvu471,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1246,475,pvu475,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1247,478,pvu478,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1248,478,pvu478,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1249,478,pvu478,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1250,481,pvu481,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1251,487,pvu487,solar photovoltaic,FALSE,0,0,0,9.5,9.5,0,0
+cats_1252,491,pvu491,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1253,491,pvu491,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1254,491,pvu491,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1255,503,pvu503,solar photovoltaic,FALSE,0,0,0,3.7,3.7,0,0
+cats_1256,503,pvu503,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1257,51,pvu51,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1258,51,pvu51,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1259,523,pvu523,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1260,528,pvu528,solar photovoltaic,FALSE,0,0,0,1.8,1.8,0,0
+cats_1261,543,pvu543,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1262,543,pvu543,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1263,543,pvu543,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1264,543,pvu543,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1265,543,pvu543,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1266,543,pvu543,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1267,543,pvu543,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1268,562,pvu562,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1269,562,pvu562,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1270,562,pvu562,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1271,565,pvu565,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1272,567,pvu567,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1273,567,pvu567,solar photovoltaic,FALSE,0,0,0,5.4,5.4,0,0
+cats_1274,57,pvu57,solar photovoltaic,FALSE,0,0,0,3.6,3.6,0,0
+cats_1275,570,pvu570,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1276,573,pvu573,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1277,573,pvu573,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1278,576,pvu576,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1279,576,pvu576,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1280,576,pvu576,solar photovoltaic,FALSE,0,0,0,2.3,2.3,0,0
+cats_1281,577,pvu577,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_1282,577,pvu577,solar photovoltaic,FALSE,0,0,0,4.3,4.3,0,0
+cats_1283,582,pvu582,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1284,582,pvu582,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1285,603,pvu603,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1286,610,pvu610,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1287,611,pvu611,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1288,613,pvu613,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1289,618,pvu618,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1290,618,pvu618,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1291,619,pvu619,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_1292,619,pvu619,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1293,649,pvu649,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_1294,694,pvu694,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1295,71,pvu71,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1296,7649,pvu7649,solar photovoltaic,FALSE,0,0,0,13,13,0,0
+cats_1297,7652,pvu7652,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1298,7659,pvu7659,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1299,7659,pvu7659,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1300,7659,pvu7659,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1301,7659,pvu7659,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1302,7679,pvu7679,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1303,7707,pvu7707,solar photovoltaic,FALSE,0,0,0,128,128,0,0
+cats_1304,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1305,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1306,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1307,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,150,150,0,0
+cats_1308,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,250,250,0,0
+cats_1309,7708,pvu7708,solar photovoltaic,FALSE,0,0,0,300,300,0,0
+cats_1310,775,pvu775,solar photovoltaic,FALSE,0,0,0,74.8,74.8,0,0
+cats_1311,7751,pvu7751,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1312,779,pvu779,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1313,78,pvu78,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1314,7808,pvu7808,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_1315,781,pvu781,solar photovoltaic,FALSE,0,0,0,7.3,7.3,0,0
+cats_1316,781,pvu781,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1317,782,pvu782,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1318,782,pvu782,solar photovoltaic,FALSE,0,0,0,2.4,2.4,0,0
+cats_1319,7823,pvu7823,solar photovoltaic,FALSE,0,0,0,1.6,1.6,0,0
+cats_1320,7882,pvu7882,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1321,7888,pvu7888,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1322,7889,pvu7889,solar photovoltaic,FALSE,0,0,0,128.9,128.9,0,0
+cats_1323,7889,pvu7889,solar photovoltaic,FALSE,0,0,0,174.8,174.8,0,0
+cats_1324,7889,pvu7889,solar photovoltaic,FALSE,0,0,0,147.4,147.4,0,0
+cats_1325,7892,pvu7892,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1326,7893,pvu7893,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1327,7913,pvu7913,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1328,7914,pvu7914,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1329,7914,pvu7914,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1330,7917,pvu7917,solar photovoltaic,FALSE,0,0,0,2.7,2.7,0,0
+cats_1331,7920,pvu7920,solar photovoltaic,FALSE,0,0,0,299.5,299.5,0,0
+cats_1332,7939,pvu7939,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1333,796,pvu796,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1334,8006,pvu8006,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1335,8006,pvu8006,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1336,8009,pvu8009,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_1337,801,pvu801,solar photovoltaic,FALSE,0,0,0,3.8,3.8,0,0
+cats_1338,8014,pvu8014,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1339,803,pvu803,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1340,8045,pvu8045,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_1341,806,pvu806,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1342,806,pvu806,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1343,806,pvu806,solar photovoltaic,FALSE,0,0,0,4.2,4.2,0,0
+cats_1344,8082,pvu8082,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1345,8102,pvu8102,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1346,811,pvu811,solar photovoltaic,FALSE,0,0,0,4.1,4.1,0,0
+cats_1347,812,pvu812,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1348,812,pvu812,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1349,814,pvu814,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1350,8142,pvu8142,solar photovoltaic,FALSE,0,0,0,148.7,148.7,0,0
+cats_1351,8142,pvu8142,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1352,8142,pvu8142,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1353,816,pvu816,solar photovoltaic,FALSE,0,0,0,3.4,3.4,0,0
+cats_1354,818,pvu818,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1355,818,pvu818,solar photovoltaic,FALSE,0,0,0,2.2,2.2,0,0
+cats_1356,8185,pvu8185,solar photovoltaic,FALSE,0,0,0,21,21,0,0
+cats_1357,8185,pvu8185,solar photovoltaic,FALSE,0,0,0,270.6,270.6,0,0
+cats_1358,8185,pvu8185,solar photovoltaic,FALSE,0,0,0,131.2,131.2,0,0
+cats_1359,8185,pvu8185,solar photovoltaic,FALSE,0,0,0,109.8,109.8,0,0
+cats_1360,8185,pvu8185,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1361,8186,pvu8186,solar photovoltaic,FALSE,0,0,0,136.8,136.8,0,0
+cats_1362,8186,pvu8186,solar photovoltaic,FALSE,0,0,0,137.4,137.4,0,0
+cats_1363,8186,pvu8186,solar photovoltaic,FALSE,0,0,0,100,100,0,0
+cats_1364,8186,pvu8186,solar photovoltaic,FALSE,0,0,0,131,131,0,0
+cats_1365,8186,pvu8186,solar photovoltaic,FALSE,0,0,0,223.6,223.6,0,0
+cats_1366,8196,pvu8196,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1367,822,pvu822,solar photovoltaic,FALSE,0,0,0,2.4,2.4,0,0
+cats_1368,8231,pvu8231,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1369,8231,pvu8231,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1370,8231,pvu8231,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1371,8231,pvu8231,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1372,8244,pvu8244,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1373,8269,pvu8269,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1374,8269,pvu8269,solar photovoltaic,FALSE,0,0,0,18,18,0,0
+cats_1375,8302,pvu8302,solar photovoltaic,FALSE,0,0,0,3.7,3.7,0,0
+cats_1376,8302,pvu8302,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1377,8303,pvu8303,solar photovoltaic,FALSE,0,0,0,10.9,10.9,0,0
+cats_1378,8304,pvu8304,solar photovoltaic,FALSE,0,0,0,199.9,199.9,0,0
+cats_1379,8304,pvu8304,solar photovoltaic,FALSE,0,0,0,252.3,252.3,0,0
+cats_1380,8315,pvu8315,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1381,8315,pvu8315,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1382,8315,pvu8315,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1383,8315,pvu8315,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1384,8315,pvu8315,solar photovoltaic,FALSE,0,0,0,4.3,4.3,0,0
+cats_1385,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1386,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1387,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1388,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,10,10,0,0
+cats_1389,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1390,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1391,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,85,85,0,0
+cats_1392,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,50,50,0,0
+cats_1393,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1394,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1395,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1396,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1397,8340,pvu8340,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1398,8355,pvu8355,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1399,8355,pvu8355,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1400,8357,pvu8357,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1401,8357,pvu8357,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1402,8357,pvu8357,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1403,8357,pvu8357,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1404,838,pvu838,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1405,8387,pvu8387,solar photovoltaic,FALSE,0,0,0,163.2,163.2,0,0
+cats_1406,839,pvu839,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1407,8398,pvu8398,solar photovoltaic,FALSE,0,0,0,13,13,0,0
+cats_1408,8405,pvu8405,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1409,8472,pvu8472,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1410,8486,pvu8486,solar photovoltaic,FALSE,0,0,0,30,30,0,0
+cats_1411,8572,pvu8572,solar photovoltaic,FALSE,0,0,0,1.2,1.2,0,0
+cats_1412,8572,pvu8572,solar photovoltaic,FALSE,0,0,0,2.6,2.6,0,0
+cats_1413,8573,pvu8573,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_1414,8587,pvu8587,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1415,8589,pvu8589,solar photovoltaic,FALSE,0,0,0,4.5,4.5,0,0
+cats_1416,8589,pvu8589,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1417,859,pvu859,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1418,859,pvu859,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1419,859,pvu859,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1420,859,pvu859,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1421,859,pvu859,solar photovoltaic,FALSE,0,0,0,0.4,0.4,0,0
+cats_1422,8600,pvu8600,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1423,8660,pvu8660,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1424,8673,pvu8673,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1425,8673,pvu8673,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1426,8690,pvu8690,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1427,8690,pvu8690,solar photovoltaic,FALSE,0,0,0,19.5,19.5,0,0
+cats_1428,8691,pvu8691,solar photovoltaic,FALSE,0,0,0,12,12,0,0
+cats_1429,8704,pvu8704,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1430,8739,pvu8739,solar photovoltaic,FALSE,0,0,0,3.1,3.1,0,0
+cats_1431,8766,pvu8766,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1432,877,pvu877,solar photovoltaic,FALSE,0,0,0,17,17,0,0
+cats_1433,877,pvu877,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1434,877,pvu877,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1435,877,pvu877,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1436,8775,pvu8775,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1437,879,pvu879,solar photovoltaic,FALSE,0,0,0,1.3,1.3,0,0
+cats_1438,88,pvu88,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1439,883,pvu883,solar photovoltaic,FALSE,0,0,0,2.7,2.7,0,0
+cats_1440,8830,pvu8830,solar photovoltaic,FALSE,0,0,0,1.1,1.1,0,0
+cats_1441,8833,pvu8833,solar photovoltaic,FALSE,0,0,0,0.6,0.6,0,0
+cats_1442,8833,pvu8833,solar photovoltaic,FALSE,0,0,0,3.2,3.2,0,0
+cats_1443,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,19.8,19.8,0,0
+cats_1444,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,14,14,0,0
+cats_1445,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1446,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1447,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1448,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,15,15,0,0
+cats_1449,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,20,20,0,0
+cats_1450,8865,pvu8865,solar photovoltaic,FALSE,0,0,0,55.8,55.8,0,0
+cats_1451,8866,pvu8866,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1452,893,pvu893,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_1453,893,pvu893,solar photovoltaic,FALSE,0,0,0,2.9,2.9,0,0
+cats_1454,898,pvu898,solar photovoltaic,FALSE,0,0,0,1.7,1.7,0,0
+cats_1455,9,pvu9,solar photovoltaic,FALSE,0,0,0,0.3,0.3,0,0
+cats_1456,9,pvu9,solar photovoltaic,FALSE,0,0,0,1.4,1.4,0,0
+cats_1457,909,pvu909,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1458,909,pvu909,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1459,909,pvu909,solar photovoltaic,FALSE,0,0,0,5.2,5.2,0,0
+cats_1460,915,pvu915,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1461,917,pvu917,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1462,917,pvu917,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1463,945,pvu945,solar photovoltaic,FALSE,0,0,0,7,7,0,0
+cats_1464,957,pvu957,solar photovoltaic,FALSE,0,0,0,3.5,3.5,0,0
+cats_1465,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1466,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1467,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1468,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1469,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1470,974,pvu974,solar photovoltaic,FALSE,0,0,0,5,5,0,0
+cats_1471,975,pvu975,solar photovoltaic,FALSE,0,0,0,3,3,0,0
+cats_1472,984,pvu984,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1473,987,pvu987,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1474,987,pvu987,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1475,99,pvu99,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1476,990,pvu990,solar photovoltaic,FALSE,0,0,0,6,6,0,0
+cats_1477,990,pvu990,solar photovoltaic,FALSE,0,0,0,2,2,0,0
+cats_1478,990,pvu990,solar photovoltaic,FALSE,0,0,0,4.2,4.2,0,0
+cats_1479,993,pvu993,solar photovoltaic,FALSE,0,0,0,1.5,1.5,0,0
+cats_1480,995,pvu995,solar photovoltaic,FALSE,0,0,0,4,4,0,0
+cats_1481,998,pvu998,solar photovoltaic,FALSE,0,0,0,2.5,2.5,0,0
+cats_1482,999,pvu999,solar photovoltaic,FALSE,0,0,0,1,1,0,0
+cats_1483,7911,pvu7911,solar thermal without energy storage,FALSE,0,0,0,92,92,0,3.95766
+cats_1484,7911,pvu7911,solar thermal without energy storage,FALSE,0,0,0,280,280,0,3.95766
+cats_1485,7919,pvu7919,solar thermal without energy storage,FALSE,0,0,0,133.4,133.4,0,3.95766
+cats_1486,7919,pvu7919,solar thermal without energy storage,FALSE,0,0,0,133.4,133.4,0,3.95766
+cats_1487,7920,pvu7920,solar thermal without energy storage,FALSE,0,0,0,126,126,0,3.95766
+cats_1488,8357,pvu8357,solar thermal without energy storage,FALSE,0,0,0,250,250,0,3.95766
+cats_1489,1163,no_capacity_factor,wood/wood waste biomass,FALSE,244.513587,34.4881771,0.060731098,54,54,0,48.14138
+cats_1490,1278,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,30.2,30.2,0,59.623645
+cats_1491,1285,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,54.9,54.9,0,55.271225
+cats_1492,1298,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,13.4,13.4,0,60.46371618
+cats_1493,1447,no_capacity_factor,wood/wood waste biomass,FALSE,118.435395,34.8713767,0.12967323,25,25,0,59.45014
+cats_1494,1449,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,7.5,7.5,0,105.84457
+cats_1495,1567,no_capacity_factor,wood/wood waste biomass,FALSE,215.939817,34.6403013,0.082425425,36.2,36.2,0,45.143375
+cats_1496,1651,no_capacity_factor,wood/wood waste biomass,FALSE,154.337543,34.8148876,0.115770289,28,28,0,46.695505
+cats_1497,175,no_capacity_factor,wood/wood waste biomass,FALSE,205.867441,34.6938271,0.085566985,25,25,0,60.46371618
+cats_1498,1885,no_capacity_factor,wood/wood waste biomass,FALSE,154.558828,34.7982258,0.109697296,28,28,0,50.28531
+cats_1499,2110,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,27.9,27.9,0,49.460825
+cats_1500,2338,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,5,5,0,60.46371618
+cats_1501,607,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,12.5,12.5,0,63.25649
+cats_1502,613,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,12.5,12.5,0,60.53959
+cats_1503,751,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,19.2,19.2,0,73.348025
+cats_1504,768,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,35.2,35.2,0,71.596835
+cats_1505,774,no_capacity_factor,wood/wood waste biomass,FALSE,256.811264,34.4586717,0.057427858,55.5,55.5,0,60.46371618
+cats_1506,8169,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,31,31,0,56.726515
+cats_1507,8169,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,20,20,0,71.957295
+cats_1508,8669,no_capacity_factor,wood/wood waste biomass,FALSE,111.511326,34.9374205,0.140223245,62,62,0,60.46371618

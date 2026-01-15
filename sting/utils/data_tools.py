@@ -228,6 +228,22 @@ def pyodual_to_df(model_dual: pyo.Suffix, pyo_constraint: pyo.Constraint, dfcol_
 
     return df
 
+def pyoconstraint_to_df(pyo_constraint: pyo.Constraint, dfcol_to_field: dict, value_name: str, csv_filepath=None ) -> pl.DataFrame:
+    """
+    Convert Pyomo constraints to a Polars DataFrame.
+    """
+
+    dims = list(pyo_constraint)
+
+    dct = dict.fromkeys(dims, None)
+
+    for i in dims:
+        dct[i] = pyo.value(pyo_constraint[i].body)
+
+    df = pyovariable_to_df(pyo_variable=None, dfcol_to_field=dfcol_to_field, value_name=value_name, csv_filepath=csv_filepath, given_dct = dct )
+
+    return df
+
 def setup_logging_file(case_directory: str):
     """Setup file logging to the specified case directory."""
     file_handler = logging.FileHandler(os.path.join(case_directory, "sting_log.txt"))

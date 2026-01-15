@@ -32,6 +32,7 @@ setup(
         "matlabengine==25.1.2",
         "plotly",
         "jupyter",
-        "pyomo"
+        "pyomo",
+        "networkx",
     ],
 )
