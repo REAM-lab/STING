@@ -2622,3 +2622,572 @@ Basic solution summary
 
 >> Run completed in 0.14 seconds.
 
+2026-01-14 18:34:14
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Solver settings: {'solver_name': 'mosek_direct', 'tee': True, 'solver_options': {}}
+Model settings: {'gen_costs': 'quadratic', 'consider_shedding': True, 'consider_single_storage_injection': False, 'consider_line_capacity': True, 'consider_bus_max_flow': False, 'consider_angle_limits': True, 'policies': []} 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Sets of generators for first-stage and second-stage decisions
+ - Decision variables of dispatch and capacity
+   Size: 10 variables
+ - Decision variables of load shedding
+   Size: 5 variables
+ - Maximum built capacity constraints
+   Size: 0 constraints
+ - Maximum dispatch constraints
+   Size: 0 constraints
+ - Capacity factor constraints
+   Size: 5 constraints
+ - Dispatch at bus expressions
+   Size: 5 expressions
+ - Generation cost per timepoint expressions
+   Size: 1 expressions
+ - Load shedding cost expressions
+   Size: 1 expressions
+ - Generation cost per period expression
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables
+   Size: 5 variables
+ - Energy capacity constraints
+   Size: 0 constraints
+ - Power capacity constraints
+   Size: 0 constraints
+ - Maximum charge and discharge constraints
+   Size: 2 constraints
+ - Maximum state of charge constraints
+   Size: 1 constraints
+ - State of charge constraints
+   Size: 6 constraints
+ - Storage cost per timepoint expressions
+   Size: 1 expressions
+ - Storage cost per period expression
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Decision variables
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Set of expandable and non-expandable lines
+ - Decision variables of line capacity expansion
+   Size: 0 variables
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Line cost per period expression
+ - Angle difference limit constraints per line
+   Size: 0 constraints
+ - Power balance at each bus
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.5170000000e+00    nrm: 4e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.5170000000e+00    nrm: 2e-02    Viol.  con: 0e+00    var: 1e-14  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 2517000.00 USD.
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.04 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.06 seconds. 
+
+
+>> Run completed in 0.14 seconds.
+
+2026-01-14 18:35:21
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Solver settings: {'solver_name': 'mosek_direct', 'tee': True, 'solver_options': {}}
+Model settings: {'gen_costs': 'quadratic', 'consider_shedding': True, 'consider_single_storage_injection': False, 'consider_line_capacity': False, 'consider_bus_max_flow': True, 'consider_angle_limits': True, 'policies': []} 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Sets of generators for first-stage and second-stage decisions
+ - Decision variables of dispatch and capacity
+   Size: 10 variables
+ - Decision variables of load shedding
+   Size: 5 variables
+ - Maximum built capacity constraints
+   Size: 0 constraints
+ - Maximum dispatch constraints
+   Size: 0 constraints
+ - Capacity factor constraints
+   Size: 5 constraints
+ - Dispatch at bus expressions
+   Size: 5 expressions
+ - Generation cost per timepoint expressions
+   Size: 1 expressions
+ - Load shedding cost expressions
+   Size: 1 expressions
+ - Generation cost per period expression
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables
+   Size: 5 variables
+ - Energy capacity constraints
+   Size: 0 constraints
+ - Power capacity constraints
+   Size: 0 constraints
+ - Maximum charge and discharge constraints
+   Size: 2 constraints
+ - Maximum state of charge constraints
+   Size: 1 constraints
+ - State of charge constraints
+   Size: 6 constraints
+ - Storage cost per timepoint expressions
+   Size: 1 expressions
+ - Storage cost per period expression
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Decision variables
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum flow constraints per bus
+   Size: 5 constraints
+ - Angle difference limit constraints per line
+   Size: 0 constraints
+ - Power balance at each bus
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 19              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 6
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 3               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 9                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 6                 after factor           : 6               
+Factor     - dense dim.             : 0                 flops                  : 4.60e+01        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   1.7e+03  7.9e-01  1.2e+02  0.00e+00   8.231701975e+00   2.664415383e+01   1.4e+02  0.00  
+1   3.3e+02  1.5e-01  2.3e+01  3.63e+00   2.439697093e+00   1.868584411e+01   2.6e+01  0.00  
+2   7.0e+01  3.3e-02  4.9e+00  1.09e+00   1.622338355e+00   4.969024448e+00   5.7e+00  0.00  
+3   2.9e+01  1.3e-02  2.0e+00  6.82e-01   1.888969082e+00   1.862739568e+00   2.3e+00  0.00  
+4   2.7e+01  1.3e-02  1.9e+00  1.05e+00   1.840401923e+00   1.815679045e+00   2.2e+00  0.00  
+5   1.3e+01  6.1e-03  9.1e-01  7.50e-01   5.468205982e-01   5.362937712e-01   1.1e+00  0.00  
+6   4.0e+00  1.9e-03  2.8e-01  1.04e+00   3.296404015e-01   3.242470718e-01   3.2e-01  0.00  
+7   7.3e-02  3.4e-05  5.1e-03  1.01e+00   2.739214570e-01   2.736513836e-01   5.9e-03  0.00  
+8   8.4e-06  3.9e-09  5.9e-07  1.00e+00   2.725101473e-01   2.725101153e-01   6.8e-07  0.00  
+9   8.4e-10  3.9e-13  5.9e-11  1.00e+00   2.725100000e-01   2.725100000e-01   6.8e-11  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 2             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.7251000001e-01    nrm: 4e+02    Viol.  con: 2e-10    var: 0e+00  
+  Dual.    obj: 2.7250999999e-01    nrm: 5e-03    Viol.  con: 1e-13    var: 5e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.7251000000e-01    nrm: 4e+02    Viol.  con: 6e-14    var: 0e+00  
+  Dual.    obj: 2.7250999999e-01    nrm: 5e-03    Viol.  con: 8e-14    var: 3e-13  
+> Time spent by solver: 0.06 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 272510.00 USD.
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.04 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.06 seconds. 
+
+
+>> Run completed in 0.13 seconds.
+
+2026-01-14 18:36:17
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Solver settings: {'solver_name': 'mosek_direct', 'tee': True, 'solver_options': {}}
+Model settings: {'gen_costs': 'quadratic', 'consider_shedding': True, 'consider_single_storage_injection': False, 'consider_line_capacity': False, 'consider_bus_max_flow': True, 'consider_angle_limits': True, 'policies': []} 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Sets of generators for first-stage and second-stage decisions
+ - Decision variables of dispatch and capacity
+   Size: 10 variables
+ - Decision variables of load shedding
+   Size: 5 variables
+ - Maximum built capacity constraints
+   Size: 0 constraints
+ - Maximum dispatch constraints
+   Size: 0 constraints
+ - Capacity factor constraints
+   Size: 5 constraints
+ - Dispatch at bus expressions
+   Size: 5 expressions
+ - Generation cost per timepoint expressions
+   Size: 1 expressions
+ - Load shedding cost expressions
+   Size: 1 expressions
+ - Generation cost per period expression
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables
+   Size: 5 variables
+ - Energy capacity constraints
+   Size: 0 constraints
+ - Power capacity constraints
+   Size: 0 constraints
+ - Maximum charge and discharge constraints
+   Size: 2 constraints
+ - Maximum state of charge constraints
+   Size: 1 constraints
+ - State of charge constraints
+   Size: 6 constraints
+ - Storage cost per timepoint expressions
+   Size: 1 expressions
+ - Storage cost per period expression
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Decision variables
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum flow constraints per bus
+   Size: 5 constraints
+ - Angle difference limit constraints per line
+   Size: 0 constraints
+ - Power balance at each bus
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 19              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 25              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 6
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 3               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 9                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 6                 after factor           : 6               
+Factor     - dense dim.             : 0                 flops                  : 4.60e+01        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   1.7e+03  7.9e-01  1.2e+02  0.00e+00   8.231701975e+00   2.664415383e+01   1.4e+02  0.00  
+1   3.3e+02  1.5e-01  2.3e+01  3.63e+00   2.439697093e+00   1.868584411e+01   2.6e+01  0.00  
+2   7.0e+01  3.3e-02  4.9e+00  1.09e+00   1.622338355e+00   4.969024448e+00   5.7e+00  0.00  
+3   2.9e+01  1.3e-02  2.0e+00  6.82e-01   1.888969082e+00   1.862739568e+00   2.3e+00  0.00  
+4   2.7e+01  1.3e-02  1.9e+00  1.05e+00   1.840401923e+00   1.815679045e+00   2.2e+00  0.00  
+5   1.3e+01  6.1e-03  9.1e-01  7.50e-01   5.468205982e-01   5.362937712e-01   1.1e+00  0.00  
+6   4.0e+00  1.9e-03  2.8e-01  1.04e+00   3.296404015e-01   3.242470718e-01   3.2e-01  0.00  
+7   7.3e-02  3.4e-05  5.1e-03  1.01e+00   2.739214570e-01   2.736513836e-01   5.9e-03  0.00  
+8   8.4e-06  3.9e-09  5.9e-07  1.00e+00   2.725101473e-01   2.725101153e-01   6.8e-07  0.00  
+9   8.4e-10  3.9e-13  5.9e-11  1.00e+00   2.725100000e-01   2.725100000e-01   6.8e-11  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 2             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.7251000001e-01    nrm: 4e+02    Viol.  con: 2e-10    var: 0e+00  
+  Dual.    obj: 2.7250999999e-01    nrm: 5e-03    Viol.  con: 1e-13    var: 5e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.7251000000e-01    nrm: 4e+02    Viol.  con: 6e-14    var: 0e+00  
+  Dual.    obj: 2.7250999999e-01    nrm: 5e-03    Viol.  con: 8e-14    var: 3e-13  
+> Time spent by solver: 0.03 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 272510.00 USD.
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+

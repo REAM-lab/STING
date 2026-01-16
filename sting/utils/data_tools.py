@@ -10,6 +10,7 @@ import functools
 import time
 import logging
 from typing import Callable
+import pathlib as Path
 
 def read_specific_csv_row(file_path, row_index):
     """
@@ -246,7 +247,10 @@ def pyoconstraint_to_df(pyo_constraint: pyo.Constraint, dfcol_to_field: dict, va
 
 def setup_logging_file(case_directory: str):
     """Setup file logging to the specified case directory."""
-    file_handler = logging.FileHandler(os.path.join(case_directory, "sting_log.txt"))
+
+    file_path = os.path.join(case_directory, "sting_log.txt")
+    Path.Path(file_path).touch(exist_ok=True) 
+    file_handler = logging.FileHandler(file_path)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter('%(message)s'))
     #file_handler.terminator = ''  # Remove automatic newline

@@ -15,11 +15,14 @@ case_dir = Path(__file__).resolve().parent
 mosek_solver_settings = {
                 "solver_name": "mosek_direct",
                 "tee": True,
-                "solver_options": {'MSK_DPAR_INTPNT_TOL_PFEAS':'1e-5'},
+                "solver_options": {},
             }
 model_settings = {
                 "gen_costs": "quadratic",
                 "consider_shedding": True,
+                "consider_line_capacity": False,
+                "consider_bus_max_flow": True,
+                "consider_angle_limits": True,
             }
 
 gurobi_solver_settings = {
