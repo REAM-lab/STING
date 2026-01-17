@@ -30,8 +30,8 @@ gurobi_solver_settings = {
 }
 
 kron_settings = {
-                "bus_neighbor_limit": 2,
-                "tolerance": 0.1,
+                "bus_neighbor_limit": None,
+                "tolerance": 0.0,
                 "find_kron_removable_buses": True,
                 "consider_kron_removable_bus_attribute": False,
                 "expand_line_capacity": False,

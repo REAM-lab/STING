@@ -218,7 +218,7 @@ class KronReduction():
         invY_qq = solve(Y_qq, np.eye(q))
         Y_kron = Y_pp - Y_pq @ (invY_qq) @ Y_qp
         # Setting zero connectivity between buses below the tolerance
-        Y_kron[abs(Y_kron) < self.settings.tolerance] = 0
+        Y_kron[abs(Y_kron) <= self.settings.tolerance] = 0
 
         # Rebuild the Kron system
         self.kron_system = copy.deepcopy(self.original_system)
@@ -246,7 +246,7 @@ class KronReduction():
                 to_bus=bus_t, to_bus_id=j,
                 # Branch & shunt parameters
                 r_pu=z.real, x_pu=z.imag, # Z = R + jX
-                g_pu=y.real, b_pu=y.imag, # Y = G + jB
+                g_pu=0, b_pu=0, # Y = G + jB
                 cost_fixed_power_USDperkW=self.settings.cost_fixed_power_USDperkW,
                 expand_capacity=self.settings.expand_line_capacity
             )
@@ -377,6 +377,7 @@ class KronReduction():
         N = self.original_system.bus
         L = self.original_system.line_pi
         
+        G_original = build_network_graph_from_lines(self.original_system.bus, self.original_system.line_pi, include_weights=False)
         G_kron = build_network_graph_from_lines(self.kron_system.bus, self.kron_system.line_pi, include_weights=False)
 
         edges = list(G_kron.edges())
@@ -384,7 +385,7 @@ class KronReduction():
         model_solution = {'from_bus': [], 'to_bus': [], 'calculated_capacity_MW': []}
 
         for i,j in edges:
-            logger.info(f" - Estimating capacity for line from bus {i} to bus {j}.")
+            logger.info(f"> Estimating capacity for line from bus {i} to bus {j}.")
             logger.info(" - Building optimization model ...")
 
             Ni = next((bus for bus in N if bus.name == i))
@@ -409,12 +410,25 @@ class KronReduction():
             logger.info(f"   Size: {len(model.cFlowPerExpLine)} constraints.")
 
             logger.info(" - Constraint of angle difference for a line in the Kron system.")
-            model.cUpperDiffKronLine = pyo.Constraint(rule= lambda m: 
-                                    (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA
-            )
-            #model.cLowerDiffKronLine = pyo.Constraint(rule= lambda m: 
-            #                        (m.vTHETA[Ni] - m.vTHETA[Nj]) == -m.vBOUND)
-            logger.info(f"   Size: {2} constraints.")
+            def cDiffKronLine_rule(m):
+                from_bus_id = next((n for n in self.kron_system.bus if n.name == i)).id
+                to_bus_id = next((n for n in self.kron_system.bus if n.name == j)).id
+                y = abs(self.Y_kron[from_bus_id, to_bus_id].imag)
+                return 100 * y * (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA
+            
+            model.cUpperDiffKronLine = pyo.Constraint(rule= cDiffKronLine_rule)
+
+            B_original = self.Y_original.imag
+
+            # Neighbors at any bus
+            N_at_bus = {n.id: [N[k] for k in np.nonzero(B_original[n.id, :])[0] if k != n.id] for n in N}
+            Nremovable = {n for n in self.original_system.bus if n.name in self.removable_buses}
+
+            # Net flow constraints at removable buses
+            model.cNetFlowAtBus = pyo.Constraint(Nremovable, expr=lambda m, n: 
+                                    100 * pyo.quicksum(B_original[n.id, k.id] * (m.vTHETA[n] - m.vTHETA[k]) for k in N_at_bus[n.id]) == 0 )
+
+            logger.info(f"   Size: {len(model.cNetFlowAtBus)} constraints.")
 
             logger.info(" - Objective function to maximize the angle difference bound.")
             model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vALPHA - m.vBETA, sense=pyo.maximize)
@@ -435,13 +449,11 @@ class KronReduction():
             
             model_solution['from_bus'].append(i)
             model_solution['to_bus'].append(j)
-            id_from = [n for n in self.kron_system.bus if n.name == i][0].id
-            id_to = [n for n in self.kron_system.bus if n.name == j][0].id
-            y = abs(self.Y_kron[id_from, id_to].imag)
-            model_solution['calculated_capacity_MW'].append(pyo.value(model.vALPHA - model.vBETA) * 100 * y )
+            model_solution['calculated_capacity_MW'].append(pyo.value(model.oMaximizeAngleDiff))
 
         df_solution = pl.DataFrame(model_solution)
         df_solution.write_csv(os.path.join(self.output_directory, "kron_line_capacity_via_optimization.csv"))
+        print(df_solution)
         logger.info(" - Exported line capacities calculated via optimization as CSV.")
 
 
