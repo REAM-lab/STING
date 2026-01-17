@@ -32,3 +32,6 @@ class LinePiModel:
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
+    
+    def __repr__(self):
+        return f"LinePiModel(id={self.id}, from_bus='{self.from_bus}', to_bus='{self.to_bus}')"

@@ -1,6 +1,7 @@
 # ----------------------
 # Import python packages
 # ----------------------
+from pyexpat import model
 import time
 import polars as pl
 import numpy as np
@@ -8,11 +9,11 @@ import os
 import logging
 import copy
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import NamedTuple
 from itertools import combinations
 from scipy.linalg import solve
-import pyomo as pyo
+import pyomo.environ as pyo
 from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
 
@@ -43,6 +44,15 @@ class KronReductionSettings(NamedTuple):
     # If so what is the fixed cost of upgrading a line?
     expand_line_capacity: bool = False
     cost_fixed_power_USDperkW: float = None
+    line_capacity_method: str = None
+
+class SolverSettings(NamedTuple):
+    """
+    Solver settings for optimization problems.
+    """
+    solver_name: str = "mosek_direct"
+    tee: bool = True
+    solver_options: dict = field(default_factory=dict)
 
 # -----------
 # Main class
@@ -69,8 +79,12 @@ class KronReduction():
     Y_original: np.ndarray = None
     Y_kron: np.ndarray = None
     settings: KronReductionSettings = None
+    solver_settings: SolverSettings = None
     
     def __post_init__(self):
+        logger.info("\n>> Starting Kron reduction ...\n")
+
+        logger.info(f"{self.settings}")
         if self.settings is None:
             self.settings = KronReductionSettings()
         else:
@@ -156,7 +170,7 @@ class KronReduction():
         df = pl.DataFrame({"bus": list(removable_buses)})
         df.write_csv(os.path.join(self.output_directory, "kron_removable_buses.csv"))
 
-        logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(self.original_system)} total buses.")
+        logger.info(f" - Kron reduction will remove {len(removable_buses)} buses out of {len(self.original_system.bus)} total buses.")
 
     def reorder_indices_in_original_system(self):
         """
@@ -250,6 +264,9 @@ class KronReduction():
                 self.assign_line_capacities_via_algorithm()
             case "optimization":
                 self.assign_line_capacities_via_optimization()
+            case "all":
+                self.assign_line_capacities_via_algorithm()
+                self.assign_line_capacities_via_optimization()
             case _:
                 logger.info(" - No line capacity assignment method selected. Skipping line capacity assignment.")
 
@@ -340,15 +357,22 @@ class KronReduction():
             model_solution['to_bus'].append(j)
             model_solution['calculated_capacity_MW'].append(line.cap_existing_power_MW)
 
-        logger.info(" - Exporting line capacities calculated via algorithm ...")
         df_solution = pl.DataFrame(model_solution)
         df_solution.write_csv(os.path.join(self.output_directory, "kron_line_capacity_via_algorithm.csv"))
+        logger.info(" - Exported line capacities calculated via algorithm as CSV.")
     
     @timeit
     def assign_line_capacities_via_optimization(self):
         """
         Estimation of line capacities for the Kron system via optimization.
         """
+
+        if self.solver_settings is None:
+            self.solver_settings = SolverSettings()
+        else:
+            self.solver_settings = SolverSettings(**self.solver_settings)
+
+        logger.info(f"{self.solver_settings}")
 
         N = self.original_system.bus
         L = self.original_system.line_pi
@@ -369,33 +393,40 @@ class KronReduction():
             model = pyo.ConcreteModel()
             logger.info(" - Decision variables of bus angles.")
             model.vTHETA = pyo.Var(N, within=pyo.Reals)
-            model.vBOUND = pyo.Var(within=pyo.NonNegativeReals)
+
+            slack_bus = next(n for n in N if n.bus_type == 'slack')
+            model.vTHETA[slack_bus].fix(0.0)
+
+            model.vALPHA = pyo.Var(within=pyo.NonNegativeReals)
+            model.vBETA = pyo.Var(within=pyo.NonNegativeReals)
             logger.info(f"   Size: {len(model.vTHETA) + 1} variables.")
 
             logger.info(" - Constraints of angle differences for original system.")
             model.cFlowPerExpLine = pyo.Constraint(L, rule=lambda m, l: 
-             (-l.cap_existing_power_MW ,100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[l.from_bus] - m.vTHETA[l.to_bus]), l.cap_existing_power_MW)
+             (-l.cap_existing_power_MW ,100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id]] - m.vTHETA[N[l.to_bus_id]]), 
+              l.cap_existing_power_MW)
             )
             logger.info(f"   Size: {len(model.cFlowPerExpLine)} constraints.")
 
             logger.info(" - Constraint of angle difference for a line in the Kron system.")
             model.cUpperDiffKronLine = pyo.Constraint(rule= lambda m: 
-                                    (m.vTHETA[Ni] - m.vTHETA[Nj]) <= m.vBOUND)
-            model.cLowerDiffKronLine = pyo.Constraint(rule= lambda m: 
-                                    (m.vTHETA[Nj] - m.vTHETA[Ni]) >= -m.vBOUND)
+                                    (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA
+            )
+            #model.cLowerDiffKronLine = pyo.Constraint(rule= lambda m: 
+            #                        (m.vTHETA[Ni] - m.vTHETA[Nj]) == -m.vBOUND)
             logger.info(f"   Size: {2} constraints.")
 
             logger.info(" - Objective function to maximize the angle difference bound.")
-            model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vBOUND, sense=pyo.maximize)
+            model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vALPHA - m.vBETA, sense=pyo.maximize)
 
 
             start_time = time.time()
-            logger.info("> Solving capacity expansion model...")
-            solver = pyo.SolverFactory(self.solver_settings["solver_name"])
+            logger.info("> Solving optimization model to find maximum angle difference bound...")
+            solver = pyo.SolverFactory(self.solver_settings.solver_name)
         
             # Write solver output to sting_log.txt
             with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
-                results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings['tee'])
+                results = solver.solve(model, options=self.solver_settings.solver_options, tee=self.solver_settings.tee)
 
             logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
             logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
@@ -404,10 +435,13 @@ class KronReduction():
             
             model_solution['from_bus'].append(i)
             model_solution['to_bus'].append(j)
-            model_solution['calculated_capacity_MW'].append(pyo.value(model.vBOUND))
+            id_from = [n for n in self.kron_system.bus if n.name == i][0].id
+            id_to = [n for n in self.kron_system.bus if n.name == j][0].id
+            y = abs(self.Y_kron[id_from, id_to].imag)
+            model_solution['calculated_capacity_MW'].append(pyo.value(model.vALPHA - model.vBETA) * 100 * y )
 
-        logger.info(" - Exporting line capacities calculated via algorithm ...")
         df_solution = pl.DataFrame(model_solution)
         df_solution.write_csv(os.path.join(self.output_directory, "kron_line_capacity_via_optimization.csv"))
+        logger.info(" - Exported line capacities calculated via optimization as CSV.")
 
 

@@ -16,7 +16,7 @@ mosek_solver_settings = {
 model_settings = {
                 "gen_costs": "quadratic",
                 "consider_shedding": True,
-                "consider_line_capacity": False,
+                "consider_line_capacity": True,
                 "consider_bus_max_flow": True,
             }
 
@@ -29,15 +29,27 @@ gurobi_solver_settings = {
 			           'Method': 2},
 }
 
-sys = main.run_capex(
-    case_directory=case_dir, 
-    solver_settings=mosek_solver_settings, 
-    model_settings=model_settings)
+kron_settings = {
+                "bus_neighbor_limit": 2,
+                "tolerance": 0.1,
+                "find_kron_removable_buses": True,
+                "consider_kron_removable_bus_attribute": False,
+                "expand_line_capacity": False,
+                "cost_fixed_power_USDperkW": 1,
+                "line_capacity_method": "optimization"
+}
+
+#sys = main.run_capex(
+#    case_directory=case_dir, 
+#    solver_settings=mosek_solver_settings, 
+#    model_settings=model_settings)
 
 capex, kr = main.run_kron_capex(
     case_directory=case_dir, 
     model_settings=model_settings, 
-    solver_settings=mosek_solver_settings)
+    solver_settings=mosek_solver_settings,
+    kron_settings=kron_settings
+    )
 
 
 print('ok')
