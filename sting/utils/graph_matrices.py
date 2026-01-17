@@ -83,7 +83,7 @@ def build_admittance_matrix_from_lines(num_buses: int, lines: list):
 
     return Y
 
-def build_network_graph_from_lines(buses:list, lines: list):
+def build_network_graph_from_lines(buses:list, lines: list, include_weights: bool = True):
     """
     Create a graph of the system. 
 
@@ -101,15 +101,16 @@ def build_network_graph_from_lines(buses:list, lines: list):
     """
     G = nx.Graph()
     G.add_nodes_from([bus.name for bus in buses])
+    G.add_edges_from([(line.from_bus, line.to_bus) for line in lines])
 
-    for line in lines:
-        u, v = line.from_bus, line.to_bus
-        w = line.cap_existing_power_MW
-        if G.has_edge(u, v):
+    if include_weights == True:
+        nx.set_edge_attributes(G, 0, "cap_existing_power_MW")
+        for line in lines:
+            u, v = line.from_bus, line.to_bus
+            w = line.cap_existing_power_MW
+
             # Combine parallel edges by summing weights
             G[u][v]["cap_existing_power_MW"] += w
-        else:
-            G.add_edge(u, v, cap_existing_power_MW=w)
 
     return G
 
