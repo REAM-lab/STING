@@ -1,0 +1,1714 @@
+2026-01-17 22:14:38
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 3 buses and 3 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 6               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 200.00.
+> Time spent by solver: 0.02 seconds.
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 6               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 3
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 100.00.
+> Time spent by solver: 0.01 seconds.
+> Estimating capacity for line from bus 3 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 6               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 100.00.
+> Time spent by solver: 0.01 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.04 seconds. 
+
+> Completed in 0.04 seconds. 
+
+
+>> Run completed in 0.04 seconds.
+
+2026-01-17 22:15:14
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:16:38
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:18:20
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:22:00
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:23:19
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:27:16
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:29:30
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:29:47
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 0.0000000000e+00    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 0.0000000000e+00    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 0.0000000000e+00    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 0.0000000000e+00    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 0.00.
+> Time spent by solver: 0.04 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.05 seconds. 
+
+> Completed in 0.05 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+
+2026-01-17 22:31:05
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+2026-01-17 22:32:50
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 200.00.
+> Time spent by solver: 0.04 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.05 seconds. 
+
+> Completed in 0.05 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+
+2026-01-17 22:45:54
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 200.00.
+> Time spent by solver: 0.04 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.05 seconds. 
+
+> Completed in 0.05 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+
+2026-01-17 22:50:31
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via algorithm ... 
+ - Exported line capacities calculated via algorithm as CSV.
+> Completed in 0.00 seconds. 
+
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 2.0000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 200.00.
+> Time spent by solver: 0.04 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.05 seconds. 
+
+> Completed in 0.05 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+
+2026-01-17 23:00:27
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via algorithm ... 
+ - Exported line capacities calculated via algorithm as CSV.
+> Completed in 0.00 seconds. 
+
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.5000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.5000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.5000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.5000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 150.00.
+> Time spent by solver: 0.02 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.02 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.03 seconds.
+
+2026-01-17 23:00:33
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus/inputs ...
+ - 'lines.csv' ... 
+   Added 4 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 2 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 4 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via algorithm ... 
+ - Exported line capacities calculated via algorithm as CSV.
+> Completed in 0.00 seconds. 
+
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 4 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 2 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.5000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.5000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.5000000000e+02    nrm: 2e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 1.5000000000e+02    nrm: 2e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 150.00.
+> Time spent by solver: 0.02 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.02 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.03 seconds.
+
+2026-01-17 23:07:39
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus_star/inputs ...
+ - 'lines.csv' ... 
+   Added 3 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 3 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 3 lines.
+2026-01-17 23:08:45
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus_star/inputs ...
+ - 'lines.csv' ... 
+   Added 3 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 3 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 3 lines.
+2026-01-17 23:15:47
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus_star/inputs ...
+ - 'lines.csv' ... 
+   Added 3 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 3 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 3 lines.
+2026-01-17 23:15:57
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus_star/inputs ...
+ - 'lines.csv' ... 
+   Added 3 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 3 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 3 lines.
+ - Kron system has 3 buses and 3 lines.
+> Initializing estimation of line capacities for the Kron system via algorithm ... 
+ - Exported line capacities calculated via algorithm as CSV.
+> Completed in 0.00 seconds. 
+
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.04 seconds.
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.01 seconds.
+> Estimating capacity for line from bus 3 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.01 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.06 seconds. 
+
+> Completed in 0.07 seconds. 
+
+
+>> Run completed in 0.08 seconds.
+
+2026-01-17 23:17:04
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/4bus_star/inputs ...
+ - 'lines.csv' ... 
+   Added 3 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 4 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 3 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'all'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 4
+ - Buses with either generation, load or storage: 3
+ - Kron reduction will remove 1 buses out of 4 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 4 buses and 3 lines.
+ - Kron system has 3 buses and 3 lines.
+> Initializing estimation of line capacities for the Kron system via algorithm ... 
+ - Exported line capacities calculated via algorithm as CSV.
+> Completed in 0.00 seconds. 
+
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.02 seconds.
+> Estimating capacity for line from bus 1 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.01 seconds.
+> Estimating capacity for line from bus 3 to bus 4.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 5 variables.
+ - Constraints of angle differences for original system.
+   Size: 3 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 5               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 6               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 6.6666666667e+01    nrm: 1e+02    Viol.  con: 0e+00    var: 0e+00  
+  Dual.    obj: 6.6666666667e+01    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.01 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 66.67.
+> Time spent by solver: 0.01 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.04 seconds. 
+
+> Completed in 0.04 seconds. 
+
+
+>> Run completed in 0.04 seconds.
+

@@ -97,7 +97,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
 
     return system
 
-def run_kron(case_directory=os.getcwd(), kron_settings=None):
+def run_kron(case_directory=os.getcwd(), kron_settings=None, solver_settings=None):
     """
     Routine to perform Kron reduction from a case study directory.
     """
@@ -110,7 +110,7 @@ def run_kron(case_directory=os.getcwd(), kron_settings=None):
     system = System.from_csv(case_directory=case_directory)
 
     # Perform Kron reduction
-    kr = KronReduction(system=system, settings=kron_settings)
+    kr = KronReduction(original_system=system, settings=kron_settings, solver_settings=solver_settings)
     kr.reduce()
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")

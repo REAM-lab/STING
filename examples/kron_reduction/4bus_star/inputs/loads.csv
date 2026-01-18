@@ -1,0 +1,4 @@
+﻿bus,scenario,timepoint,load_MW
+1,sc1,1,300
+4,sc1,1,100
+3,sc1,1,100

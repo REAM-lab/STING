@@ -1,0 +1,336 @@
+2026-01-17 22:09:37
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/3bus/inputs ...
+ - 'lines.csv' ... 
+   Added 2 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 3 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 3
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 1 buses out of 3 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 3 buses and 2 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 4 variables.
+ - Constraints of angle differences for original system.
+   Size: 2 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 4               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 5               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 100.00.
+> Time spent by solver: 0.04 seconds.
+2026-01-17 22:09:47
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/3bus/inputs ...
+ - 'lines.csv' ... 
+   Added 2 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 3 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 3
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 1 buses out of 3 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 3 buses and 2 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 4 variables.
+ - Constraints of angle differences for original system.
+   Size: 2 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 4               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 5               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 100.00.
+> Time spent by solver: 0.04 seconds.
+2026-01-17 22:10:32
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/3bus/inputs ...
+ - 'lines.csv' ... 
+   Added 2 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 3 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 3
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 1 buses out of 3 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 3 buses and 2 lines.
+ - Kron system has 2 buses and 1 lines.
+> Initializing estimation of line capacities for the Kron system via optimization ... 
+SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'})
+> Estimating capacity for line from bus 1 to bus 3.
+ - Building optimization model ...
+ - Decision variables of bus angles.
+   Size: 4 variables.
+ - Constraints of angle differences for original system.
+   Size: 2 constraints.
+ - Constraint of angle difference for a line in the Kron system.
+   Size: 1 constraints.
+ - Objective function to maximize the angle difference bound.
+> Solving optimization model to find maximum angle difference bound...
+Problem
+  Name                   :                 
+  Objective sense        : maximize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 4               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 5               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 2
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.0000000000e+02    nrm: 1e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 1.0000000000e+02    nrm: 1e+00    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.04 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 100.00.
+> Time spent by solver: 0.04 seconds.
+ - Exported line capacities calculated via optimization as CSV.
+> Completed in 0.05 seconds. 
+
+> Completed in 0.05 seconds. 
+
+
+>> Run completed in 0.06 seconds.
+
+2026-01-17 22:22:19
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/paul/Documents/STING/examples/kron_reduction/3bus/inputs ...
+ - 'lines.csv' ... 
+   Added 2 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 3 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 2 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 2 'gen' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting Kron reduction ...
+
+{'bus_neighbor_limit': None, 'tolerance': 0.0, 'find_kron_removable_buses': True, 'consider_kron_removable_bus_attribute': False, 'expand_line_capacity': False, 'cost_fixed_power_USDperkW': 1, 'line_capacity_method': 'optimization'}
+> Initializing identify removable buses for Kron reduction ... 
+ - Total number of buses: 3
+ - Buses with either generation, load or storage: 2
+ - Kron reduction will remove 1 buses out of 3 total buses.
+> Completed in 0.00 seconds. 
+
+> Initializing reduction of the system via Kron reduction ... 
+ - Original system has 3 buses and 2 lines.

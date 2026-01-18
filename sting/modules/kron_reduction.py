@@ -213,7 +213,7 @@ class KronReduction():
         p = n_bus - q
 
         # Build & partition admittance matrix
-        (Y_pp, Y_pq), (Y_qp, Y_qq) = mat2cell(self.Y_original, [p,q], [p,q])
+        (Y_pp, Y_pq), (Y_qp, Y_qq) = mat2cell(self.Y_original.imag, [p,q], [p,q])
         # Back substitute to get reduced matrix
         invY_qq = solve(Y_qq, np.eye(q))
         Y_kron = Y_pp - Y_pq @ (invY_qq) @ Y_qp
@@ -280,20 +280,9 @@ class KronReduction():
         
         bus_names = [b.name for b in self.kron_system.bus]
         matrix_to_csv(
-            filepath=os.path.join(self.output_directory, "reduced_conductance_matrix.csv"), 
-                              matrix=self.Y_kron.real, 
-                              index=bus_names, columns=bus_names
-        )
-        matrix_to_csv(
-        filepath=os.path.join(self.output_directory, "reduced_susceptance_matrix.csv"), 
-                              matrix=self.Y_kron.imag, 
-                              index=bus_names, columns=bus_names
-        )
-        matrix_to_csv(
-        filepath=os.path.join(self.output_directory, "reduced_absolute_admittance_matrix.csv"), 
-                              matrix=abs(self.Y_kron), 
-                              index=bus_names, columns=bus_names
-        )
+            filepath=os.path.join(self.output_directory, "reduced_susceptance_matrix.csv"), 
+                              matrix=self.Y_kron, 
+                              index=bus_names, columns=bus_names)
 
     @timeit
     def assign_line_capacities_via_algorithm(self):
@@ -413,7 +402,7 @@ class KronReduction():
             def cDiffKronLine_rule(m):
                 from_bus_id = next((n for n in self.kron_system.bus if n.name == i)).id
                 to_bus_id = next((n for n in self.kron_system.bus if n.name == j)).id
-                y = abs(self.Y_kron[from_bus_id, to_bus_id].imag)
+                y = abs(self.Y_kron[from_bus_id, to_bus_id])
                 return 100 * y * (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA
             
             model.cUpperDiffKronLine = pyo.Constraint(rule= cDiffKronLine_rule)
@@ -425,9 +414,13 @@ class KronReduction():
             Nremovable = {n for n in self.original_system.bus if n.name in self.removable_buses}
 
             # Net flow constraints at removable buses
+            N_exceptNiNj = [n for n in N if ((n.name != i) and (n.name != j))]
             model.cNetFlowAtBus = pyo.Constraint(Nremovable, expr=lambda m, n: 
                                     100 * pyo.quicksum(B_original[n.id, k.id] * (m.vTHETA[n] - m.vTHETA[k]) for k in N_at_bus[n.id]) == 0 )
 
+            #model.cNetFlowAtBusNi = pyo.Constraint(expr= lambda m: 
+            #                        100 * pyo.quicksum(B_original[Ni.id, k.id] * (m.vTHETA[Ni] - m.vTHETA[k]) for k in N_at_bus[Ni.id]) 
+            #                       == - 100 * pyo.quicksum(B_original[Nj.id, k.id] * (m.vTHETA[Nj] - m.vTHETA[k]) for k in N_at_bus[Nj.id]) )
             logger.info(f"   Size: {len(model.cNetFlowAtBus)} constraints.")
 
             logger.info(" - Objective function to maximize the angle difference bound.")

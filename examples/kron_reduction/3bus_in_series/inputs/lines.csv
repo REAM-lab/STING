@@ -1,0 +1,3 @@
+﻿name,from_bus,to_bus,cap_existing_power_MW,expand_capacity,r_pu,x_pu,g_pu,b_pu,angle_min_deg,angle_max_deg
+1,1,2,100,FALSE,0,0.01,0,0,-360,360
+2,3,2,200,FALSE,0,0.01,0,0,-360,360
