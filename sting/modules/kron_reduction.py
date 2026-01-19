@@ -1,13 +1,14 @@
 # ----------------------
 # Import python packages
 # ----------------------
-from pyexpat import model
 import time
 import polars as pl
 import numpy as np
 import os
 import logging
 import copy
+
+from concurrent.futures import ProcessPoolExecutor
 
 from dataclasses import dataclass, field
 from typing import NamedTuple
@@ -27,6 +28,9 @@ from sting.utils.data_tools import mat2cell, timeit, matrix_to_csv
 
 # Logger
 logger = logging.getLogger(__name__)
+# Global read only KronReduction object shared
+# by workers while multiprocessing optimizations.
+SELF = None
 
 # ----------
 # Sub-classes
@@ -45,6 +49,7 @@ class KronReductionSettings(NamedTuple):
     expand_line_capacity: bool = False
     cost_fixed_power_USDperkW: float = None
     line_capacity_method: str = None
+    max_workers: int = None
 
 class SolverSettings(NamedTuple):
     """
@@ -363,89 +368,88 @@ class KronReduction():
 
         logger.info(f"{self.solver_settings}")
 
-        N = self.original_system.bus
-        L = self.original_system.line_pi
+        from_bus = [line.from_bus for line in self.kron_system.line_pi]
+        to_bus = [line.to_bus for line in self.kron_system.line_pi]
 
-        model_solution = {'from_bus': [], 'to_bus': [], 'calculated_capacity_MW': []}
+        # Run all optimizations to determine line capacity in parallel
+        with ProcessPoolExecutor(max_workers=self.settings.max_workers, initializer=worker_init, initargs=(self,)) as ex:
+            calculated_capacity_MW = list(ex.map(line_capacities_optimization, from_bus, to_bus))
 
-        for kron_line in self.kron_system.line_pi:
+        model_solution = {
+            'from_bus': from_bus, 
+            'to_bus': to_bus, 
+            'calculated_capacity_MW': calculated_capacity_MW}
 
-            i = kron_line.from_bus
-            j = kron_line.to_bus
-            
-            logger.info(f"> Estimating capacity for line from bus {i} to bus {j}.")
-            logger.info(" - Building optimization model ...")
-
-
-            model = pyo.ConcreteModel()
-            logger.info(" - Decision variables of bus angles.")
-            model.vTHETA = pyo.Var(N, within=pyo.Reals)
-
-            slack_bus = next(n for n in N if n.bus_type == 'slack')
-            model.vTHETA[slack_bus].fix(0.0)
-
-            model.vALPHA = pyo.Var(within=pyo.NonNegativeReals)
-            model.vBETA = pyo.Var(within=pyo.NonNegativeReals)
-            logger.info(f"   Size: {len(model.vTHETA) + 1} variables.")
-
-            logger.info(" - Constraints of angle differences for original system.")
-            model.cFlowPerExpLine = pyo.Constraint(L, rule=lambda m, l: 
-             (-l.cap_existing_power_MW ,100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id]] - m.vTHETA[N[l.to_bus_id]]), 
-              l.cap_existing_power_MW)
-            )
-            logger.info(f"   Size: {len(model.cFlowPerExpLine)} constraints.")
-
-            logger.info(" - Constraint of angle difference for a line in the Kron system.")           
-            Ni = next((bus for bus in N if bus.name == i))
-            Nj = next((bus for bus in N if bus.name == j))
-            from_bus_id_kron = next((n for n in self.kron_system.bus if n.name == i)).id
-            to_bus_id_kron = next((n for n in self.kron_system.bus if n.name == j)).id
-            y = self.Y_kron[from_bus_id_kron, to_bus_id_kron]
-            model.cUpperDiffKronLine = pyo.Constraint(rule= lambda m:
-                                        100 * abs(y) * (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA)
-
-            
-            # Neighbors at any bus
-            B_original = self.Y_original.imag
-            N_at_bus = {n.id: [N[k] for k in np.nonzero(B_original[n.id, :])[0] if k != n.id] for n in N}
-            Nremovable = {n for n in self.original_system.bus if n.name in self.removable_buses}
-
-            model.eFlowAtBus = pyo.Expression(N,expr=lambda m, n: 100 * pyo.quicksum(B_original[n.id, k.id] * (m.vTHETA[n] - m.vTHETA[k]) for k in N_at_bus[n.id]) )
-
-
-            model.cNetFlowAtRemovableBus = pyo.Constraint(Nremovable, expr=lambda m, n: 
-                                    m.eFlowAtBus[n] == 0 )
-            
-
-            logger.info(f"   Size: {len(model.cNetFlowAtRemovableBus)} constraints.")
-
-            logger.info(" - Objective function to maximize the angle difference bound.")
-            model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vALPHA - m.vBETA, sense=pyo.maximize)
-
-
-            start_time = time.time()
-            logger.info("> Solving optimization model to find maximum angle difference bound...")
-            solver = pyo.SolverFactory(self.solver_settings.solver_name)
-        
-            # Write solver output to sting_log.txt
-            with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
-                results = solver.solve(model, options=self.solver_settings.solver_options, tee=self.solver_settings.tee)
-
-            logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
-            logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-            logger.info(f"> Objective value: {(pyo.value(model.oMaximizeAngleDiff)):.2f}.")
-            logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
-            
-            model_solution['from_bus'].append(i)
-            model_solution['to_bus'].append(j)
-            model_solution['calculated_capacity_MW'].append(pyo.value(model.oMaximizeAngleDiff))
-
-            # Update line capacity in the Kron system
-            kron_line.cap_existing_power_MW = pyo.value(model.oMaximizeAngleDiff)
+        # Update line capacity in the Kron system
+        for kron_line, capacity in zip(self.kron_system.line_pi, calculated_capacity_MW):
+            kron_line.cap_existing_power_MW = capacity
 
         df_solution = pl.DataFrame(model_solution)
         df_solution.write_csv(os.path.join(self.output_directory, "kron_line_capacity_via_optimization.csv"))
         logger.info(" - Exported line capacities calculated via optimization as CSV.")
 
+def line_capacities_optimization(i, j):
+
+    N = SELF.original_system.bus
+    L = SELF.original_system.line_pi
+
+    #logger.info(f"> Estimating capacity for line from bus {i} to bus {j}.")
+    #logger.info(" - Building optimization model ...")
+    model = pyo.ConcreteModel()
+    #logger.info(" - Decision variables of bus angles.")
+    model.vTHETA = pyo.Var(N, within=pyo.Reals)
+
+    slack_bus = next(n for n in N if n.bus_type == 'slack')
+    model.vTHETA[slack_bus].fix(0.0)
+
+    model.vALPHA = pyo.Var(within=pyo.NonNegativeReals)
+    model.vBETA = pyo.Var(within=pyo.NonNegativeReals)
+    #logger.info(f"   Size: {len(model.vTHETA) + 1} variables.")
+    #logger.info(" - Constraints of angle differences for original system.")
+    model.cFlowPerExpLine = pyo.Constraint(L, rule=lambda m, l: 
+        (-l.cap_existing_power_MW ,100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id]] - m.vTHETA[N[l.to_bus_id]]), 
+        l.cap_existing_power_MW)
+    )
+    #logger.info(f"   Size: {len(model.cFlowPerExpLine)} constraints.")
+    #logger.info(" - Constraint of angle difference for a line in the Kron system.")           
+    Ni = next((bus for bus in N if bus.name == i))
+    Nj = next((bus for bus in N if bus.name == j))
+    from_bus_id_kron = next((n for n in SELF.kron_system.bus if n.name == i)).id
+    to_bus_id_kron = next((n for n in SELF.kron_system.bus if n.name == j)).id
+    y = SELF.Y_kron[from_bus_id_kron, to_bus_id_kron]
+    model.cUpperDiffKronLine = pyo.Constraint(rule= lambda m:
+                                100 * abs(y) * (m.vTHETA[Ni] - m.vTHETA[Nj]) == m.vALPHA - m.vBETA)
+
+    # Neighbors at any bus
+    B_original = SELF.Y_original.imag
+    N_at_bus = {n.id: [N[k] for k in np.nonzero(B_original[n.id, :])[0] if k != n.id] for n in N}
+    Nremovable = {n for n in SELF.original_system.bus if n.name in SELF.removable_buses}
+    # FlowIn == FlowOut for all removable buses
+    model.eFlowAtBus = pyo.Expression(N,expr=lambda m, n: 100 * pyo.quicksum(B_original[n.id, k.id] * (m.vTHETA[n] - m.vTHETA[k]) for k in N_at_bus[n.id]) )
+    model.cNetFlowAtRemovableBus = pyo.Constraint(Nremovable, expr=lambda m, n: m.eFlowAtBus[n] == 0 )
+    
+    #logger.info(f"   Size: {len(model.cNetFlowAtRemovableBus)} constraints.")
+    #logger.info(" - Objective function to maximize the angle difference bound.")
+    model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vALPHA - m.vBETA, sense=pyo.maximize)
+
+    #start_time = time.time()
+    #logger.info("> Solving optimization model to find maximum angle difference bound...")
+    solver = pyo.SolverFactory(SELF.solver_settings.solver_name)
+
+    # Write solver output to sting_log.txt
+    with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
+        results = solver.solve(model, options=SELF.solver_settings.solver_options, tee=False)
+
+    #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
+    if results.solver.status.name != 'ok':
+        logger.info(f"WARNING: Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}")
+    #logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
+    #logger.info(f"> Objective value: {(pyo.value(model.oMaximizeAngleDiff)):.2f}.")
+    #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
+
+    return pyo.value(model.oMaximizeAngleDiff)
 
 
+def worker_init(self:KronReduction):
+    global SELF
+    SELF = self
