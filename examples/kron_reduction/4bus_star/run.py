@@ -14,10 +14,10 @@ mosek_solver_settings = {
                 "solver_options": {'MSK_DPAR_INTPNT_TOL_PFEAS':'1e-5'},
             }
 model_settings = {
-                "gen_costs": "quadratic",
+                "gen_costs": "linear",
                 "consider_shedding": True,
                 "consider_line_capacity": True,
-                "consider_bus_max_flow": True,
+                "consider_bus_max_flow": False,
             }
 
 kron_settings = {
@@ -27,13 +27,24 @@ kron_settings = {
                 "consider_kron_removable_bus_attribute": False,
                 "expand_line_capacity": False,
                 "cost_fixed_power_USDperkW": 1,
-                "line_capacity_method": "all"
+                "line_capacity_method": "optimization"
 }
+
+main.run_capex(
+    case_directory=case_dir, 
+    model_settings=model_settings,
+    solver_settings=mosek_solver_settings)
 
 kr = main.run_kron(
     case_directory=case_dir, 
     solver_settings=mosek_solver_settings, 
     kron_settings=kron_settings)
 
+sys, kr = main.run_kron_capex(
+    case_directory=case_dir, 
+    model_settings=model_settings,
+    solver_settings=mosek_solver_settings, 
+    kron_settings=kron_settings)
 
 print('ok')
+

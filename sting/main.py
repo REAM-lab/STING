@@ -133,7 +133,9 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
     kr.reduce()
 
     print('Kron reduction completed.')
-    
+
+    model_settings["consider_bus_max_flow"] = True
+   
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=kr.kron_system, model_settings=model_settings, solver_settings=solver_settings, output_directory=os.path.join(case_directory, "outputs", "kron_capacity_expansion"))
     capex.solve()  

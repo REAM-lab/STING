@@ -2,6 +2,7 @@
 # Import python packages
 # ----------------------
 from __future__ import annotations
+from xml.parsers.expat import model
 import polars as pl
 from dataclasses import dataclass, field
 import os
@@ -109,14 +110,14 @@ class CapacityExpansion:
         start_time = time.time()
 
         def eCostPerTp_rule(m, t):
-            return sum( getattr(m, tp_cost.name)[t] * t.weight for tp_cost in m.cost_components_per_tp)
+            return sum( getattr(m, tp_cost.name)[t] for tp_cost in m.cost_components_per_tp)
         
         def eCostPerPeriod_rule(m):
             return sum( getattr(m, period_cost.name) for period_cost in m.cost_components_per_period)
 
         self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=eCostPerTp_rule)
         self.model.eCostPerPeriod = pyo.Expression(expr=eCostPerPeriod_rule)
-        self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t] for t in self.system.tp))
+        self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.tp))
         
         self.model.rescaling_factor_obj = pyo.Param(initialize=1e-6)  # To express the objective in million USD
 
@@ -144,6 +145,9 @@ class CapacityExpansion:
         logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
         logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
         logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
+
+        with open(os.path.join(self.output_directory, 'model_output.txt'), 'w') as output_file:
+            self.model.pprint(ostream=output_file)
 
         self.export_results_to_csv()
 

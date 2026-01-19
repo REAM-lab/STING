@@ -1,0 +1,4 @@
+﻿site,scenario,timepoint,technology,capacity_factor
+solar_cf,1,1,solar,0
+solar_cf,1,2,solar,1
+solar_cf,1,3,solar,0.8

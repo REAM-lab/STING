@@ -48,8 +48,8 @@ class Bus:
     
     def post_system_init(self, system):
         # Exit if the bus has not constraint on max power flow
-        if self.max_flow_MW is not None:
-            return
+        #if self.max_flow_MW is not None:
+        #   return
         
         # Otherwise, we deduce max power flow based on the lines
         # the current bus is connected to.
@@ -84,9 +84,20 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     L = system.line_pi
     load = system.load
 
-    logger.info(" - Decision variables")
+
+    logger.info(" - Load data lookup")
+    load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
+    load_buses = {ld.bus for ld in load if np.abs(ld.load_MW) != 0}
+    N_load = [n for n in N if n.name in load_buses]
+
+    logger.info(" - Decision variables of bus angles")
     model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
     logger.info(f"   Size: {len(model.vTHETA)} variables")
+
+    if model_settings["consider_shedding"]:
+        logger.info(" - Decision variables of load shedding")
+        model.vSHED = pyo.Var(N_load, S, T, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vSHED)} variables")
     
     slack_bus = next(n for n in N if n.bus_type == 'slack')
     model.vTHETA[slack_bus, :, :].fix(0.0)
@@ -148,18 +159,41 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         logger.info(f"   Size: {len(model.cDiffAngle)} constraints")
 
     logger.info(" - Power balance at each bus")
-    load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
     model.cEnergyBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
-                            (m.eGenAtBus[n, s, t] + m.eNetDischargeAtBus[n, s, t]) * t.weight == 
+                            (m.eGenAtBus[n, s, t] 
+                             + m.eNetDischargeAtBus[n, s, t] 
+                             + (m.vSHED[n, s, t] if ((model_settings["consider_shedding"]) and (n.name in load_buses)) else 0) ) * t.weight == 
                             (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) * t.weight
                             )
     logger.info(f"   Size: {len(model.cEnergyBalance)} constraints")
+
+    if model_settings["consider_shedding"]:
+        logger.info(" - Load shedding cost expressions")
+        model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N_load for s in S)) 
+        model.cost_components_per_tp.append(model.eShedCostPerTp)
+        logger.info(f"   Size: {len(model.eShedCostPerTp)} expressions")
+
+        model.eShedTotalCost = pyo.Expression(
+                                expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
+                                )
     
 
 @timeit
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
     """Transmission results to CSV files."""
+
+    # Export load shedding results if it is existing
+    if hasattr(model, 'vSHED'):
+        pyovariable_to_df(model.vSHED, 
+                          dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
+                          value_name='load_shedding_MW', 
+                          csv_filepath=os.path.join(output_directory, 'load_shedding.csv'))
+        
+        # Export summary of load shedding costs
+        costs = pl.DataFrame({'component' : ['TotalCost_USD'],
+                              'cost' : [  pyo.value(model.eShedTotalCost)]})
+        costs.write_csv(os.path.join(output_directory, 'load_shedding_costs_summary.csv'))
 
     # Export line capacities 
     if hasattr(model, 'vCAPL'):

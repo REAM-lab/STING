@@ -50,6 +50,9 @@ class Timepoint:
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
+    
+    def __repr__(self):
+        return f"Timepoint(id={self.id}, name='{self.name}', timeseries='{self.timeseries}')"
 
 @dataclass(slots=True)
 class Timeseries:
@@ -70,3 +73,6 @@ class Timeseries:
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
+    
+    def __repr__(self):
+        return f"Timeseries(id={self.id}, name='{self.name}')"

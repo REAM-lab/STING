@@ -96,12 +96,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.vGENV = pyo.Var(GV, S, T, within=pyo.NonNegativeReals)
     model.vCAPV = pyo.Var(GV, S, within=pyo.NonNegativeReals)
     logger.info(f"   Size: {len(model.vGEN) + len(model.vCAP) + len(model.vGENV) + len(model.vCAPV)} variables")
-    
-    if model_settings["consider_shedding"]:
-        logger.info(" - Decision variables of load shedding")
-        model.vSHED = pyo.Var(N, S, T, within=pyo.NonNegativeReals)
-        logger.info(f"   Size: {len(model.vSHED)} variables")
-    
+
     for g in GN:
          if (not g.expand_capacity):
             model.vCAP[g].fix(0.0)
@@ -142,9 +137,8 @@ def construct_capacity_expansion_model(system, model, model_settings):
     logger.info(" - Dispatch at bus expressions")
     model.eGenAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
                     sum(m.vGEN[g, t] for g in GN_at_bus[n.id]) + 
-                    sum(m.vGENV[g, s, t] for g in GV_at_bus[n.id]) + 
-                    (m.vSHED[n, s, t] if model_settings["consider_shedding"] else 0)
-                )
+                    sum(m.vGENV[g, s, t] for g in GV_at_bus[n.id]))
+                
     logger.info(f"   Size: {len(model.eGenAtBus)} expressions")
 
     logger.info(" - Generation cost per timepoint expressions")
@@ -162,16 +156,6 @@ def construct_capacity_expansion_model(system, model, model_settings):
 
     model.cost_components_per_tp.append(model.eGenCostPerTp)
     
-    if model_settings["consider_shedding"]:
-        logger.info(" - Load shedding cost expressions")
-        model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N for s in S)) 
-        model.cost_components_per_tp.append(model.eShedCostPerTp)
-        logger.info(f"   Size: {len(model.eShedCostPerTp)} expressions")
-
-        model.eShedTotalCost = pyo.Expression(
-                                expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
-                                )
-
     logger.info(" - Generation cost per period expression")
     model.eGenCostPerPeriod = pyo.Expression(
                                 expr = lambda m: sum(g.cost_fixed_power_USDperkW * m.vCAP[g] * 1000 for g in GN) + 
@@ -219,16 +203,6 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
 
 
-    # Export load shedding results if it is existing
-    if hasattr(model, 'vSHED'):
-        pyovariable_to_df(model.vSHED, 
-                          dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                          value_name='load_shedding_MW', 
-                          csv_filepath=os.path.join(output_directory, 'load_shedding.csv'))
-        
-        # Export summary of load shedding costs
-        costs = pl.DataFrame({'component' : ['TotalCost_USD'],
-                              'cost' : [  pyo.value(model.eShedTotalCost)]})
-        costs.write_csv(os.path.join(output_directory, 'load_shedding_costs_summary.csv'))
+
 
 

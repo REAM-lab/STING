@@ -121,24 +121,22 @@ def csv_to_matrix(filepath):
     return matrix, index, columns
 
 
-def mat2cell(A, m, n):
+def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
     """Python clone of MATLAB mat2cell"""
     # Create a list of lists to hold the sub-arrays
-    cell_array = []
-    row_start = 0
-    for r_size in m:
-        col_start = 0
-        row_list = []
-        for c_size in n:
-            sub_matrix = A[
-                row_start : row_start + r_size, col_start : col_start + c_size
-            ]
-            row_list.append(sub_matrix)
-            col_start += c_size
-        cell_array.append(row_list)
-        row_start += r_size
+    cell_array = np.empty((len(m), len(n)), dtype=object)
 
-    return np.array(cell_array, dtype=object)
+    r_start = 0
+    for i, r_len in enumerate(m):
+        c_start = 0
+        for j, c_len in enumerate(n):
+            cell_array[i,j] = A[
+                r_start: r_start + r_len, c_start : c_start + c_len
+            ]
+            c_start += c_len
+        r_start += r_len
+
+    return cell_array
 
 
 def cell2mat(C):

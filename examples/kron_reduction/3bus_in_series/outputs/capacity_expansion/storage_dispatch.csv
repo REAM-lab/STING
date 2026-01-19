@@ -1,0 +1,4 @@
+storage,scenario,timepoint,discharge_MW,charge_MW,state_of_charge_MWh
+storage,1,1,0.0,0.0,0.0
+storage,1,2,0.0,0.0,0.0
+storage,1,3,0.0,0.0,0.0

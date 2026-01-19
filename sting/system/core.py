@@ -180,15 +180,22 @@ class System:
 
         return self
 
-    def to_csv(self, output_dir=None):
-        # TODO: This is untested
+    def write_csv(self, types = [int, float, str, bool], output_directory=None):
+        
+        if output_directory is None:
+            output_directory = os.path.join(self.case_directory, "outputs", "system_csv")
+        
+        os.makedirs(output_directory, exist_ok=True)
+
         for name in self.components["type"]:
           lst = getattr(self, name)
+          csv_filename = self.components.filter(pl.col("type") == name).select("input_csv").item(0,0)
           if lst:
               # Assumes each component is a dataclass with fields
               cols = fields(lst[0])
-              df = self.query(name).to_table(cols)
-              df.to_csv(os.path.join(output_dir, self.components["input_csv"]))
+              cols = [c.name for c in cols if c.type in types]
+              df = self.query(name).to_table(*cols, index = 'id', index_name = 'id')
+              df.to_csv(os.path.join(output_directory, csv_filename))
 
     def to_matlab(self, session_name=None, export=None, excluded_attributes=None):
 
