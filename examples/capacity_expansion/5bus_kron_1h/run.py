@@ -37,7 +37,8 @@ if __name__ == "__main__":
                     "consider_kron_removable_bus_attribute": False,
                     "expand_line_capacity": False,
                     "cost_fixed_power_USDperkW": 1,
-                    "line_capacity_method": "optimization"
+                    "line_capacity_method": "optimization",
+                    "max_workers": 20
     }
 
     #sys = main.run_capex(

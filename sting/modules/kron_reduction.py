@@ -1,7 +1,7 @@
 # ----------------------
 # Import python packages
 # ----------------------
-import time
+import gc
 import polars as pl
 import numpy as np
 import os
@@ -442,12 +442,19 @@ def line_capacities_optimization(i, j):
 
     #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
     if results.solver.status.name != 'ok':
-        logger.info(f"WARNING: Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}")
-    #logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
+        logger.info(f"WARNING: Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition} "
+                    + f"while estimating capacity for line from bus {i} to bus {j}.")
+    logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
     #logger.info(f"> Objective value: {(pyo.value(model.oMaximizeAngleDiff)):.2f}.")
     #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
 
-    return pyo.value(model.oMaximizeAngleDiff)
+    ans = pyo.value(model.oMaximizeAngleDiff)
+
+    # Free memory (just to be safe, sometimes multiprocessing can fail to free memory correctly)
+    del model, results, solver
+    gc.collect()
+
+    return ans
 
 
 def worker_init(self:KronReduction):
