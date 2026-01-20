@@ -393,10 +393,7 @@ def line_capacities_optimization(i, j):
     N = SELF.original_system.bus
     L = SELF.original_system.line_pi
 
-    #logger.info(f"> Estimating capacity for line from bus {i} to bus {j}.")
-    #logger.info(" - Building optimization model ...")
     model = pyo.ConcreteModel()
-    #logger.info(" - Decision variables of bus angles.")
     model.vTHETA = pyo.Var(N, within=pyo.Reals)
 
     slack_bus = next(n for n in N if n.bus_type == 'slack')
@@ -404,14 +401,12 @@ def line_capacities_optimization(i, j):
 
     model.vALPHA = pyo.Var(within=pyo.NonNegativeReals)
     model.vBETA = pyo.Var(within=pyo.NonNegativeReals)
-    #logger.info(f"   Size: {len(model.vTHETA) + 1} variables.")
-    #logger.info(" - Constraints of angle differences for original system.")
+
     model.cFlowPerExpLine = pyo.Constraint(L, rule=lambda m, l: 
         (-l.cap_existing_power_MW ,100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id]] - m.vTHETA[N[l.to_bus_id]]), 
         l.cap_existing_power_MW)
     )
-    #logger.info(f"   Size: {len(model.cFlowPerExpLine)} constraints.")
-    #logger.info(" - Constraint of angle difference for a line in the Kron system.")           
+       
     Ni = next((bus for bus in N if bus.name == i))
     Nj = next((bus for bus in N if bus.name == j))
     from_bus_id_kron = next((n for n in SELF.kron_system.bus if n.name == i)).id
@@ -428,25 +423,17 @@ def line_capacities_optimization(i, j):
     model.eFlowAtBus = pyo.Expression(N,expr=lambda m, n: 100 * pyo.quicksum(B_original[n.id, k.id] * (m.vTHETA[n] - m.vTHETA[k]) for k in N_at_bus[n.id]) )
     model.cNetFlowAtRemovableBus = pyo.Constraint(Nremovable, expr=lambda m, n: m.eFlowAtBus[n] == 0 )
     
-    #logger.info(f"   Size: {len(model.cNetFlowAtRemovableBus)} constraints.")
-    #logger.info(" - Objective function to maximize the angle difference bound.")
     model.oMaximizeAngleDiff = pyo.Objective(expr= lambda m: m.vALPHA - m.vBETA, sense=pyo.maximize)
 
-    #start_time = time.time()
-    #logger.info("> Solving optimization model to find maximum angle difference bound...")
+    # Solve the optimization model
     solver = pyo.SolverFactory(SELF.solver_settings.solver_name)
 
-    # Write solver output to sting_log.txt
-    with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
-        results = solver.solve(model, options=SELF.solver_settings.solver_options, tee=False)
+    results = solver.solve(model, options=SELF.solver_settings.solver_options, tee=False)
 
-    #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
     if results.solver.status.name != 'ok':
         logger.info(f"WARNING: Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition} "
                     + f"while estimating capacity for line from bus {i} to bus {j}.")
-    logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-    #logger.info(f"> Objective value: {(pyo.value(model.oMaximizeAngleDiff)):.2f}.")
-    #logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
+    logger.info(f"> Line {i}-{j} : Solver status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
 
     ans = pyo.value(model.oMaximizeAngleDiff)
 

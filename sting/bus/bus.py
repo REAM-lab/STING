@@ -47,11 +47,7 @@ class Bus:
         return f"Bus(id={self.id}, bus='{self.name}')"
     
     def post_system_init(self, system):
-        # Exit if the bus has not constraint on max power flow
-        #if self.max_flow_MW is not None:
-        #   return
-        
-        # Otherwise, we deduce max power flow based on the lines
+        # We deduce max power flow based on the lines
         # the current bus is connected to.
         self.max_flow_MW = 0.0
         connected_lines = {line for line in system.line_pi if (self.name in [line.from_bus, line.to_bus])}
@@ -94,7 +90,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
     logger.info(f"   Size: {len(model.vTHETA)} variables")
 
-    if model_settings["consider_shedding"]:
+    if model_settings.load_shedding:
         logger.info(" - Decision variables of load shedding")
         model.vSHED = pyo.Var(N_load, S, T, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vSHED)} variables")
@@ -110,17 +106,17 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
 
-    if model_settings["consider_line_capacity"] == True:
+    if model_settings.line_capacity_expansion:
 
         logger.info(" - Set of expandable and non-expandable lines")
-        L_expandable = set([l for l in L if (l.expand_capacity == True and l.cap_existing_power_MW is not None)])
-        L_nonexpandable = set([l for l in L if (l.expand_capacity == False and l.cap_existing_power_MW is not None)])
+        L_expandable = {l for l in L if (l.expand_capacity == True and l.cap_existing_power_MW is not None)}
+        L_nonexpandable = {l for l in L if (l.expand_capacity == False and l.cap_existing_power_MW is not None)}
         
         logger.info(" - Decision variables of line capacity expansion")
         model.vCAPL = pyo.Var(L_expandable, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vCAPL)} variables")
 
-        logger.info(" - Maximum and minimum flow constraints per line")
+        logger.info(" - Maximum and minimum flow constraints per expandable line")
         def cMaxFlowPerExpLine_rule(m, l, s, t):
                 return  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= m.vCAPL[l] + l.cap_existing_power_MW
         
@@ -141,34 +137,44 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
         model.cost_components_per_period.append(model.eLineCostPerPeriod)
 
-    if model_settings["consider_bus_max_flow"] == True:
+    if (model_settings.line_capacity) and (model_settings.line_capacity_expansion == False):
+        
+        logger.info(" - Maximum and minimum flow constraints per line")
+        L_cap_constrained = {l for l in L if l.cap_existing_power_MW is not None}
+        def cFlowPerNonExpLine_rule(m, l, s, t):
+                return  (-l.cap_existing_power_MW,  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), l.cap_existing_power_MW)
+        
+        model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=cFlowPerNonExpLine_rule)
+        logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
+
+    if model_settings.bus_max_flow:
 
         logger.info(" - Maximum flow constraints per bus")
-        buses_with_max_flow = set([n for n in N if n.max_flow_MW is not None])
+        buses_with_max_flow = {n for n in N if n.max_flow_MW is not None}
         model.cFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW))
         logger.info(f"   Size: {len(model.cFlowPerBus)} constraints")
 
-    if model_settings["consider_angle_limits"] == True:
+    if model_settings.angle_difference_limits:
 
         logger.info(" - Angle difference limit constraints per line")
-        lines_with_angle_limits = set([l for l in L if (l.angle_min_deg > -360) and (l.angle_max_deg < 360)])
+        lines_with_angle_limits = {l for l in L if (l.angle_min_deg > -360) and (l.angle_max_deg < 360)}
         model.cDiffAngle = pyo.Constraint(lines_with_angle_limits, S, T, rule= lambda m, l, s, t: 
                                                                                 (l.angle_min_deg * np.pi / 180, 
                                                                                 m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t],
                                                                                 l.angle_max_deg * np.pi / 180))
         logger.info(f"   Size: {len(model.cDiffAngle)} constraints")
 
-    logger.info(" - Power balance at each bus")
+    logger.info(" - Energy balance at each bus")
     model.cEnergyBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
                             (m.eGenAtBus[n, s, t] 
                              + m.eNetDischargeAtBus[n, s, t] 
-                             + (m.vSHED[n, s, t] if ((model_settings["consider_shedding"]) and (n.name in load_buses)) else 0) ) * t.weight == 
+                             + (m.vSHED[n, s, t] if ((model_settings.load_shedding) and (n.name in load_buses)) else 0) ) * t.weight == 
                             (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) * t.weight
                             )
     logger.info(f"   Size: {len(model.cEnergyBalance)} constraints")
 
-    if model_settings["consider_shedding"]:
+    if model_settings.load_shedding:
         logger.info(" - Load shedding cost expressions")
         model.eShedCostPerTp = pyo.Expression(T, rule= lambda m, t: 1/len(S) * sum(s.probability * 5000 * m.vSHED[n, s, t] for n in N_load for s in S)) 
         model.cost_components_per_tp.append(model.eShedCostPerTp)
@@ -206,14 +212,17 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
         costs.write_csv(os.path.join(output_directory, 'line_costs_summary.csv'))
     
     # Export LMPs
-    df = pyodual_to_df(model.dual, model.cEnergyBalance, 
+    try:
+        df = pyodual_to_df(model.dual, model.cEnergyBalance, 
                             dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
                             value_name='local_marginal_price_USDperMWh')
     
-    df = df.with_columns(
-        (pl.col('local_marginal_price_USDperMWh') / model.rescaling_factor_obj).alias('local_marginal_price_USDperMWh'))
+        df = df.with_columns(
+            (pl.col('local_marginal_price_USDperMWh') / model.rescaling_factor_obj).alias('local_marginal_price_USDperMWh'))
     
-    df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+    except:
+        logger.warning("Could not export LMPs to CSV file. Solver is not supported or duals not available.")
 
     # Export line flows and losses   
     dct = model.vTHETA.extract_values()

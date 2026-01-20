@@ -2,7 +2,6 @@
 # Import python packages
 # ----------------------
 from __future__ import annotations
-from xml.parsers.expat import model
 import polars as pl
 from dataclasses import dataclass, field
 import os
@@ -12,6 +11,7 @@ import logging
 from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
 import importlib
+from typing import NamedTuple
 
 # ------------------
 # Import sting code
@@ -26,14 +26,39 @@ from sting.utils.data_tools import timeit
 logger = logging.getLogger(__name__)
 
 # -----------
+# Sub-classes 
+# -----------
+class ModelSettings(NamedTuple):   
+    """
+    Settings for the capacity expansion model.
+    """
+    generator_type_costs: str = "linear"
+    load_shedding: bool = True
+    single_storage_injection: bool = False
+    line_capacity_expansion: bool = True
+    line_capacity: bool = True
+    bus_max_flow: bool = False
+    angle_difference_limits: bool = False
+    policies: list[int] = None
+    write_model_file: bool = False
+
+class SolverSettings(NamedTuple):
+    """
+    Settings for the solver for the capacity expansion model.
+    """
+    solver_name: str = "mosek_direct"
+    tee: bool = True
+    solver_options: dict = field(default_factory=dict)
+
+# -----------
 # Main class
 # -----------
 @dataclass(slots=True)
 class CapacityExpansion:
     system: System
     model: pyo.ConcreteModel = None
-    solver_settings: dict = None
-    model_settings: dict = None
+    model_settings: ModelSettings = None
+    solver_settings: SolverSettings = None
     output_directory: str = None
     
     def __post_init__(self):
@@ -44,35 +69,34 @@ class CapacityExpansion:
         self.set_output_folder()
 
     def set_settings(self):
-        default =  {
-                "solver_name": "gurobi",
-                "tee": True,
-                "solver_options": {},
-            }
-        if self.solver_settings is not None:
-            for key, value in self.solver_settings.items():
-                default[key] = value
-        
-        self.solver_settings = default
-        logger.info(f"Solver settings: {self.solver_settings}")
 
-        default = {
-                "gen_costs": "quadratic",
-                "consider_shedding": False,
-                "consider_single_storage_injection": False,
-                "consider_line_capacity": True,
-                "consider_bus_max_flow": False,
-                "consider_angle_limits": True,
-                "policies": []
-            }
-        
-        if self.model_settings is not None:
-            for key, value in self.model_settings.items():
-                default[key] = value
-        
-        self.model_settings = default
-        logger.info(f"Model settings: {self.model_settings} \n")
+        if self.model_settings is None:
+            self.model_settings = ModelSettings()
+        else:
+            self.model_settings = ModelSettings(**self.model_settings)
 
+            if self.model_settings.line_capacity_expansion == True and self.model_settings.line_capacity == False:
+                logger.error("line_capacity_expansion setting is True but line_capacity setting is False. " \
+                             "If line_capacity_expansion is True, line_capacity must also be True.")
+                raise ValueError("Inconsistent line capacity settings")
+
+            if self.model_settings.generator_type_costs not in ["linear", "quadratic"]:
+                logger.error("generator_type_costs setting must be either 'linear' or 'quadratic'.")
+                raise ValueError("Invalid value for generator_type_costs")
+            
+            if self.model_settings.bus_max_flow == True and self.model_settings.line_capacity_expansion == True:
+                logger.error("bus_max_flow setting is True but line_capacity setting is also True. " \
+                             "Model is still not able to consider both bus max flow limits and expansion of line capacities at the same time.")
+                raise ValueError("Inconsistent bus max flow settings")
+            
+        logger.info(f"Model settings: {self.model_settings}")
+
+        if self.solver_settings is None:
+            self.solver_settings = SolverSettings()
+        else:
+            self.solver_settings = SolverSettings(**self.solver_settings)
+        
+        logger.info(f"Solver settings: {self.solver_settings} \n")
 
     def set_output_folder(self):
         """
@@ -100,8 +124,8 @@ class CapacityExpansion:
         storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
 
-        if len(self.model_settings["policies"]) > 0:
-            for policy in self.model_settings["policies"]:
+        if self.model_settings.policies is not None:
+            for policy in self.model_settings.policies:
                 class_module = importlib.import_module(policy) 
                 getattr(class_module, "construct_capacity_expansion_model")(self.system, self.model, self.model_settings)
 
@@ -133,21 +157,29 @@ class CapacityExpansion:
         # Use root logger so solver output also goes to the file handler attached there
         start_time = time.time()
         logger.info("> Solving capacity expansion model...")
-        solver = pyo.SolverFactory(self.solver_settings["solver_name"])
+        solver = pyo.SolverFactory(self.solver_settings.solver_name)
         
         # Write solver output to sting_log.txt
         with capture_output(output=LogStream(logger=logging.getLogger(), level=logging.INFO)):
-            results = solver.solve(self.model, options=self.solver_settings['solver_options'], tee=self.solver_settings['tee'])
+            results = solver.solve(self.model, options=self.solver_settings.solver_options, tee=self.solver_settings.tee)
 
         # Load the duals into the 'dual' suffix
-        solver.load_duals()
+        try:
+            solver.load_duals()
+        except:
+            logger.warning("Could not load duals from solver.")
 
         logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
         logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
         logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
 
-        with open(os.path.join(self.output_directory, 'model_output.txt'), 'w') as output_file:
-            self.model.pprint(ostream=output_file)
+        self.model.solver_status = results.solver.status
+        self.model.termination_condition = results.solver.termination_condition
+        self.model.solver_time_spent = time.time() - start_time
+
+        if self.model_settings.write_model_file:
+            with open(os.path.join(self.output_directory, 'model_output.txt'), 'w') as output_file:
+                self.model.pprint(ostream=output_file)
 
         self.export_results_to_csv()
 
@@ -157,6 +189,13 @@ class CapacityExpansion:
         Export all results to CSV files.
         """
         logger.info(f"- Directory: {self.output_directory}")
+
+        # Export solver results summary
+        solver_status = pl.DataFrame({'attribute' : ['SolverName', 'SolverStatus', 'TerminationCondition', 'TimeSpent_seconds'],
+                                      'value' : [ self.solver_settings.solver_name, 
+                                                  self.model.solver_status,
+                                                  self.model.termination_condition,
+                                                  self.model.solver_time_spent]})
 
         # Export costs summary
         costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
@@ -169,8 +208,8 @@ class CapacityExpansion:
         storage.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         bus.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
-        if len(self.model_settings["policies"]) > 0:
-            for policy in self.model_settings["policies"]:
+        if self.model_settings.policies is not None:
+            for policy in self.model_settings.policies:
                 class_module = importlib.import_module(policy) 
                 getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 

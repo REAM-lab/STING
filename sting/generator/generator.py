@@ -142,16 +142,16 @@ def construct_capacity_expansion_model(system, model, model_settings):
     logger.info(f"   Size: {len(model.eGenAtBus)} expressions")
 
     logger.info(" - Generation cost per timepoint expressions")
-    if model_settings["gen_costs"] == "quadratic":
+    if model_settings.generator_type_costs == "quadratic":
         model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
                         sum(g.c2_USDperMWh2 * m.vGEN[g, t]* m.vGEN[g, t] + g.c1_USDperMWh * m.vGEN[g, t] + g.c0_USD for g in GN) + 
                         1/len(S) * sum(s.probability * (g.c2_USDperMWh2 * m.vGENV[g, s, t]* m.vGENV[g, s, t] + g.c1_USDperMWh * m.vGENV[g, s, t] + g.c0_USD ) for g in GV for s in S))
-    elif model_settings["gen_costs"] == "linear":
+    elif model_settings.generator_type_costs == "linear":
         model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
                         sum(g.cost_variable_USDperMWh * m.vGEN[g, t] for g in GN) + 
                         1/len(S) * sum(s.probability * g.cost_variable_USDperMWh * m.vGENV[g, s, t] for g in GV for s in S) )
     else:
-        raise ValueError("model_settings['gen_costs'] must be either 'quadratic' or 'linear'.")
+        raise ValueError("model_settings['generator_type_costs'] must be either 'quadratic' or 'linear'.")
     logger.info(f"   Size: {len(model.eGenCostPerTp)} expressions")
 
     model.cost_components_per_tp.append(model.eGenCostPerTp)

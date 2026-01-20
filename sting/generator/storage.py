@@ -57,13 +57,15 @@ def construct_capacity_expansion_model(system, model, model_settings):
     S = system.sc
     E = system.ess
 
-    logger.info(" - Decision variables")
-    if model_settings["consider_single_storage_injection"]:
+    if model_settings.single_storage_injection:
+            logger.info(" - Decision variables of discharge (single injection)")
             model.vDISCHA = pyo.Var(E, S, T, within=pyo.Reals)            
     else:
+            logger.info(" - Decision variables of discharge and charge")
             model.vDISCHA = pyo.Var(E, S, T, within=pyo.NonNegativeReals)
             model.vCHARGE = pyo.Var(E, S, T, within=pyo.NonNegativeReals)
 
+    logger.info(" - Decision variables of state of charge, power capacity expansion, and energy capacity expansion")
     model.vSOC = pyo.Var(E, S, T, within=pyo.NonNegativeReals)
     model.vPCAP = pyo.Var(E, S, within=pyo.NonNegativeReals)
     model.vECAP = pyo.Var(E, S, within=pyo.NonNegativeReals)
@@ -75,7 +77,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
             model.vPCAP[ess, :].fix(0.0)
             model.vECAP[ess, :].fix(0.0)
 
-    logger.info(" - Energy capacity constraints")
+    logger.info(" - Constraints of energy capacity expansion")
     def cEnerCapStor_rule(m, e, s):
         if e.expand_capacity:
             return  m.vECAP[e, s] <= e.cap_max_energy_MWh - e.cap_existing_energy_MWh
@@ -85,7 +87,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     model.cEnerCapStor = pyo.Constraint(E, S, rule=cEnerCapStor_rule)
     logger.info(f"   Size: {len(model.cEnerCapStor)} constraints")
 
-    logger.info(" - Power capacity constraints")
+    logger.info(" - Constraints of power capacity expansion")
     def cPowerCapStor_rule(m, e, s):
         if e.expand_capacity:
             return  m.vPCAP[e, s] <= e.cap_max_power_MW - e.cap_existing_power_MW
@@ -96,7 +98,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     logger.info(f"   Size: {len(model.cPowerCapStor)} constraints")
 
     logger.info(" - Maximum charge and discharge constraints")
-    if model_settings["consider_single_storage_injection"]:
+    if model_settings.single_storage_injection:
         model.cMaxCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                                           m.vDISCHA[e, s, t] >= - (m.vPCAP[e, s] + e.cap_existing_power_MW))
         model.cMaxDischa = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
@@ -125,7 +127,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     # with circular wrapping for the first and last timepoints within a timeseries
     logger.info(" - State of charge constraints")
     E_AT_BUS = [[e for e in E if e.bus == n.name] for n in N]
-    if model_settings["consider_single_storage_injection"]:
+    if model_settings.single_storage_injection:
         model.cStateOfCharge = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
                         m.vSOC[e, s, t] == m.vSOC[e, s, T[t.prev_timepoint_id]] +
                                         t.duration_hr*(- m.vDISCHA[e, s, t]) )
@@ -143,7 +145,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
     logger.info(f"   Size: {len(model.cStateOfCharge) + len(model.eNetDischargeAtBus)} constraints")
 
     logger.info(" - Storage cost per timepoint expressions")
-    if model_settings["consider_single_storage_injection"]:
+    if model_settings.single_storage_injection:
         model.eStorCostPerTp = pyo.Expression(T, rule=lambda m, t: 0.0 )
     else:
         model.eStorCostPerTp = pyo.Expression(T, rule=lambda m, t: 
