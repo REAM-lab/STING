@@ -175,7 +175,7 @@ class CapacityExpansion:
 
         self.model.solver_status = results.solver.status
         self.model.termination_condition = results.solver.termination_condition
-        self.model.solver_time_spent = time.time() - start_time
+        self.model.solver_time_spent = str(time.time() - start_time)
 
         if self.model_settings.write_model_file:
             with open(os.path.join(self.output_directory, 'model_output.txt'), 'w') as output_file:
@@ -196,6 +196,7 @@ class CapacityExpansion:
                                                   self.model.solver_status,
                                                   self.model.termination_condition,
                                                   self.model.solver_time_spent]})
+        solver_status.write_csv(os.path.join(self.output_directory, 'solver_status.csv'))
 
         # Export costs summary
         costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
