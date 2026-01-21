@@ -3,6 +3,7 @@
 # ----------------------
 from __future__ import annotations
 import polars as pl
+import numpy as np
 from dataclasses import dataclass, field
 import os
 import pyomo.environ as pyo
@@ -41,6 +42,7 @@ class ModelSettings(NamedTuple):
     angle_difference_limits: bool = False
     policies: list[int] = None
     write_model_file: bool = False
+    kron_equivalent_flow_constraints: bool = False
 
 class SolverSettings(NamedTuple):
     """
@@ -49,6 +51,14 @@ class SolverSettings(NamedTuple):
     solver_name: str = "mosek_direct"
     tee: bool = True
     solver_options: dict = field(default_factory=dict)
+
+class KronVariables(NamedTuple):
+    original_system: System
+    removable_buses: set[str] = None
+    Y_original: np.ndarray = None
+    Y_kron: np.ndarray = None
+    B_qp: np.ndarray = None
+    invB_qq: np.ndarray = None
 
 # -----------
 # Main class
@@ -60,6 +70,7 @@ class CapacityExpansion:
     model_settings: ModelSettings = None
     solver_settings: SolverSettings = None
     output_directory: str = None
+    kron_variables: KronVariables = None
     
     def __post_init__(self):
 
@@ -88,6 +99,12 @@ class CapacityExpansion:
                 logger.error("bus_max_flow setting is True but line_capacity setting is also True. " \
                              "Model is still not able to consider both bus max flow limits and expansion of line capacities at the same time.")
                 raise ValueError("Inconsistent bus max flow settings")
+            
+            if (self.model_settings.kron_equivalent_flow_constraints == True) and (self.model_settings.line_capacity == True):
+                logger.error("kron_equivalent_flow_constraints setting is True but line_capacity setting is also True. " \
+                             "Both setting can be false however we don't know if it makes sense to consider both the "\
+                            "thermal line limits of the original system and the line limits assigned in the Kron system.")
+                raise ValueError("Inconsistent thermal flow constraints in model settings")
             
         logger.info(f"Model settings: {self.model_settings}")
 
@@ -122,7 +139,7 @@ class CapacityExpansion:
         # Construct modules
         generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings, self.kron_variables)
 
         if self.model_settings.policies is not None:
             for policy in self.model_settings.policies:

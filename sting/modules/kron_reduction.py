@@ -11,6 +11,7 @@ import copy
 from concurrent.futures import ProcessPoolExecutor
 
 from dataclasses import dataclass, field
+from collections import namedtuple
 from typing import NamedTuple
 from itertools import combinations
 from scipy.linalg import solve
@@ -23,6 +24,7 @@ from pyomo.common.tee import capture_output
 # ------------------
 from sting.system.core import System
 from sting.line.pi_model import LinePiModel
+from sting.modules.capacity_expansion import KronVariables
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines, build_network_graph_from_lines
 from sting.utils.data_tools import mat2cell, timeit, matrix_to_csv
 
@@ -83,6 +85,8 @@ class KronReduction():
     removable_buses: set[str] = None
     Y_original: np.ndarray = None
     Y_kron: np.ndarray = None
+    B_qp: np.ndarray = None
+    invB_qq: np.ndarray = None
     settings: KronReductionSettings = None
     solver_settings: SolverSettings = None
     
@@ -258,6 +262,8 @@ class KronReduction():
             self.kron_system.add(line)
         
         self.Y_kron = Y_kron
+        self.B_qp = Y_qp
+        self.invB_qq = invY_qq
 
         if self.settings.print_matrices:
             self.print_reduced_admittance_matrix()
@@ -387,6 +393,15 @@ class KronReduction():
         df_solution = pl.DataFrame(model_solution)
         df_solution.write_csv(os.path.join(self.output_directory, "kron_line_capacity_via_optimization.csv"))
         logger.info(" - Exported line capacities calculated via optimization as CSV.")
+
+    def to_variables(self):
+        return KronVariables(
+            self.original_system, 
+            self.removable_buses,
+            self.Y_original,
+            self.Y_kron,
+            self.B_qp,
+            self.invB_qq)
 
 def line_capacities_optimization(i, j):
 

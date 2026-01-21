@@ -71,7 +71,7 @@ class Load:
     load_MW: float
 
 @timeit    
-def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict):
+def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict, kron_variables):
     """Construction of transmission variables, constraints, and costs for capacity expansion model."""
 
     N = system.bus
@@ -146,6 +146,30 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         
         model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=cFlowPerNonExpLine_rule)
         logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
+
+    if model_settings.kron_equivalent_flow_constraints and (model_settings.line_capacity == False):
+        X_2 = -1 * kron_variables.invB_qq @ kron_variables.B_qp # (q, p)
+        X_1 = np.eye(X_2.shape[1])
+        X = np.vstack((X_1, X_2))
+
+        N_original = kron_variables.original_system.bus # p + q
+        L_original = kron_variables.original_system.line_pi
+        N_at_bus_original = {n.id: [N_original[k] for k in np.nonzero(X[n.id, :])[0]] for n in N_original}
+
+        model.eTheta = pyo.Expression(
+            N_original, S, T, 
+            expr=lambda m, n, s, t: quicksum(X[n.id, k.id] * m.vTHETA[k, s, t] for k in N_at_bus_original[n.id]) )
+        
+        def cFlowPerNonExpLine_rule(m, l, s, t):
+                b = 100 * l.x_pu / (l.x_pu**2 + l.r_pu**2)
+                max_flow = l.cap_existing_power_MW
+                i = N_original[l.from_bus_id]
+                j = N_original[l.to_bus_id]
+
+                return  (-max_flow, b * (m.eTheta[i, s, t] - m.eTheta[j, s, t]), max_flow)
+        
+        model.cFlowPerNonExpLine = pyo.Constraint(L_original, S, T, rule=cFlowPerNonExpLine_rule)
+         
 
     if model_settings.bus_max_flow:
 

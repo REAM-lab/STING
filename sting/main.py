@@ -132,8 +132,14 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
     kr = KronReduction(original_system=system, settings=kron_settings, solver_settings=solver_settings)
     kr.reduce()
     
+    output_directory = os.path.join(case_directory, "outputs", "kron_capacity_expansion")
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=kr.kron_system, model_settings=model_settings, solver_settings=solver_settings, output_directory=os.path.join(case_directory, "outputs", "kron_capacity_expansion"))
+    capex = CapacityExpansion(
+        system=kr.kron_system, 
+        kron_variables=kr.to_variables(),
+        model_settings=model_settings, 
+        solver_settings=solver_settings, 
+        output_directory=output_directory)
     capex.solve()  
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
