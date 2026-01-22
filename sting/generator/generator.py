@@ -176,23 +176,23 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     # Export generator dispatch results
     pyovariable_to_df(model.vGEN, 
                       dfcol_to_field={'generator': 'name', 'timepoint': 'name'}, 
-                      value_name='Dispatch_MW', 
+                      value_name='dispatch_MW', 
                       csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
 
     pyovariable_to_df(model.vGENV, 
                       dfcol_to_field={'generator': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                      value_name='Dispatch_MW', 
+                      value_name='dispatch_MW', 
                       csv_filepath=os.path.join(output_directory, 'variable_generator_dispatch.csv'))
 
     # Export generator capacity results
     pyovariable_to_df(model.vCAP, 
                       dfcol_to_field={'generator': 'name'}, 
-                      value_name='Capacity_MW', 
+                      value_name='capacity_MW', 
                       csv_filepath=os.path.join(output_directory, 'generator_capacity.csv'))
 
     pyovariable_to_df(model.vCAPV, 
                       dfcol_to_field={'generator': 'name', 'scenario': 'name'}, 
-                      value_name='Capacity_MW', 
+                      value_name='capacity_MW', 
                       csv_filepath=os.path.join(output_directory, 'variable_generator_capacity.csv'))
 
     # Export summary of generator costs
