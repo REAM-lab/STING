@@ -78,14 +78,14 @@ def construct_capacity_expansion_model(system, model, model_settings):
             model.vECAP[ess, :].fix(0.0)
 
     logger.info(" - Constraints of energy capacity expansion")
-    def cEnerCapStor_rule(m, e, s):
-        if e.expand_capacity:
-            return  m.vECAP[e, s] <= e.cap_max_energy_MWh - e.cap_existing_energy_MWh
-        else:
-            return pyo.Constraint.Skip
+    #def cEnerCapStor_rule(m, e, s):
+    #    if e.expand_capacity:
+    #        return  m.vECAP[e, s] <= e.cap_max_energy_MWh - e.cap_existing_energy_MWh
+    #    else:
+    #        return pyo.Constraint.Skip
         
-    model.cEnerCapStor = pyo.Constraint(E, S, rule=cEnerCapStor_rule)
-    logger.info(f"   Size: {len(model.cEnerCapStor)} constraints")
+    #model.cEnerCapStor = pyo.Constraint(E, S, rule=cEnerCapStor_rule)
+    #logger.info(f"   Size: {len(model.cEnerCapStor)} constraints")
 
     logger.info(" - Constraints of power capacity expansion")
     def cPowerCapStor_rule(m, e, s):

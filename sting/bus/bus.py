@@ -148,6 +148,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
 
     if model_settings.kron_equivalent_flow_constraints and (model_settings.line_capacity == False):
+
+        logger.info(" - Constraints for Kron system flow calculations")
         X_2 = -1 * kron_variables.invB_qq @ kron_variables.B_qp # (q, p)
         X_1 = np.eye(X_2.shape[1])
         X = np.vstack((X_1, X_2))
