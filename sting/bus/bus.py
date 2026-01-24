@@ -41,7 +41,7 @@ class Bus:
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
-        return hash(self.id)
+        return self.id
 
     def __repr__(self):
         return f"Bus(id={self.id}, bus='{self.name}')"
@@ -49,6 +49,9 @@ class Bus:
     def post_system_init(self, system):
         # We deduce max power flow based on the lines
         # the current bus is connected to.
+        if self.max_flow_MW is not None:
+            return  # Already defined
+        
         self.max_flow_MW = 0.0
         connected_lines = {line for line in system.line_pi if (self.name in [line.from_bus, line.to_bus])}
 
