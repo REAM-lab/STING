@@ -41,7 +41,7 @@ class KronReductionSettings(NamedTuple):
     """
     Settings for Kron reduction.
     """
-    print_matrices: bool = True
+    print_matrices: bool = False
     tolerance: float = 1e-4
     bus_neighbor_limit: int = None
     find_kron_removable_buses: bool = True
