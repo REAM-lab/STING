@@ -77,7 +77,7 @@ def construct_capacity_expansion_model(system, model, model_settings):
             model.vPCAP[ess, :].fix(0.0)
             model.vECAP[ess, :].fix(0.0)
 
-    logger.info(" - Constraints of energy capacity expansion")
+    #logger.info(" - Constraints of energy capacity expansion")
     #def cEnerCapStor_rule(m, e, s):
     #    if e.expand_capacity:
     #        return  m.vECAP[e, s] <= e.cap_max_energy_MWh - e.cap_existing_energy_MWh
@@ -193,11 +193,11 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     # Export storage capacity results
     df1 = pyovariable_to_df(model.vPCAP, 
                             dfcol_to_field={'storage': 'name', 'scenario': 'name'}, 
-                            value_name='power_capacity_MW')
+                            value_name='built_power_capacity_MW')
     
     df2 = pyovariable_to_df(model.vECAP, 
                             dfcol_to_field={'storage': 'name', 'scenario': 'name'}, 
-                            value_name='energy_capacity_MWh')
+                            value_name='built_energy_capacity_MWh')
     
     df = df1.join(df2, on=['storage', 'scenario'])
     df.write_csv(os.path.join(output_directory, 'storage_capacity.csv'))

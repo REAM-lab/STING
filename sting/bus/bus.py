@@ -129,6 +129,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMaxFlowPerExpLine_rule)
         model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
 
+        logger.info(" - Maximum and minimum flow constraints per non-expandable line")
         def cFlowPerNonExpLine_rule(m, l, s, t):
                 return  (-l.cap_existing_power_MW,  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), l.cap_existing_power_MW)
         
