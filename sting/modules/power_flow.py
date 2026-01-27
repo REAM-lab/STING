@@ -43,7 +43,7 @@ def calc_power_flow_in_branch(row: pd.Series):
     v2mag = row["to_bus_vmag"]
     v2phase = row["to_bus_vphase"]
     r = row["r_pu"]
-    l = row["x_pu"]
+    x = row["x_pu"]
 
     # Power flow calculations
     v1 = v1mag * np.exp(v1phase * 1j)
