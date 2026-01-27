@@ -29,14 +29,14 @@ class Bus:
     name: str
     bus_type: str = None
     kron_removable_bus: bool = None
-    base_power_MVA: float = None
-    base_voltage_kV: float = None
+    base_power_VA: float = None
+    base_voltage_V: float = None
     base_frequency_Hz: float = None
     max_flow_MW: float = None
     v_min: float = None
     v_max: float = None
-    p_load: float = None
-    q_load: float = None
+    p_load: float = 0.0
+    q_load: float = 0.0
     tags: ClassVar[list[str]] = []
 
     def __hash__(self):

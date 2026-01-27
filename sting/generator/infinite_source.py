@@ -48,11 +48,11 @@ class InfiniteSource:
     p_max: float
     q_min: float
     q_max: float
-    sbase: float
-    vbase: float
-    fbase: float
-    r: float
-    l: float
+    base_power_VA: float
+    base_voltage_V: float
+    base_frequency_Hz: float
+    r_pu: float
+    x_pu: float
     bus_id: int = None
     pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
@@ -62,7 +62,7 @@ class InfiniteSource:
     variables_emt: Optional[VariablesEMT] = None
     id_variables_emt: Optional[dict] = None
 
-    def assign_indices(self, system):
+    def post_system_init(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
 
     def _load_power_flow_solution(self, power_flow_instance):
@@ -76,10 +76,10 @@ class InfiniteSource:
 
     def _build_small_signal_model(self):
 
-        r = self.r
-        l = self.l
+        r = self.r_pu
+        x = self.x_pu
 
-        wb = 2 * np.pi * self.fbase
+        wb = 2 * np.pi * self.base_frequency_Hz
         cosphi = np.cos(self.emt_init.angle_ref * np.pi / 180)
         sinphi = np.sin(self.emt_init.angle_ref * np.pi / 180)
 
@@ -91,12 +91,12 @@ class InfiniteSource:
 
         # Define state-space matrices 
         A = wb * np.array(
-            [[-r/l,    1], 
-             [  -1, -r/l]])
+            [[-r/x,    1], 
+             [  -1, -r/x]])
 
         B = wb * np.array(
-            [[  1/l,    0, -1/l,    0], 
-             [    0,  1/l,    0, -1/l]]) 
+            [[  1/x,    0, -1/x,    0], 
+             [    0,  1/x,    0, -1/x]]) 
         B = B @ block_diag(np.eye(2), R.T) 
         # fmt: on
         C = R
@@ -143,7 +143,7 @@ class InfiniteSource:
         v_bus_DQ = vmag_bus * np.exp(vphase_bus * 1j * np.pi / 180)
         i_bus_DQ = ((p_bus + 1j * q_bus) / v_bus_DQ).conjugate()
 
-        v_int_DQ = v_bus_DQ + i_bus_DQ * (self.r + 1j * self.l)
+        v_int_DQ = v_bus_DQ + i_bus_DQ * (self.r_pu + 1j * self.x_pu)
         angle_ref = np.angle(v_int_DQ, deg=True)
 
         v_int_dq = v_int_DQ * np.exp(-angle_ref * np.pi / 180 * 1j)
@@ -212,14 +212,14 @@ class InfiniteSource:
         v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_ref)
 
         # Get parameters
-        r = self.r
-        l = self.l
-        wb = 2 * np.pi * self.fbase
+        r = self.r_pu
+        x = self.x_pu
+        wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
-        d_i_bus_a = wb / l * (v_ref_a - v_bus_a - r * i_bus_a)
-        d_i_bus_b = wb / l * (v_ref_b - v_bus_b - r * i_bus_b)
-        d_i_bus_c = wb / l * (v_ref_c - v_bus_c - r * i_bus_c)
+        d_i_bus_a = wb / x * (v_ref_a - v_bus_a - r * i_bus_a)
+        d_i_bus_b = wb / x * (v_ref_b - v_bus_b - r * i_bus_b)
+        d_i_bus_c = wb / x * (v_ref_c - v_bus_c - r * i_bus_c)
         d_angle_ref = wb 
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
@@ -249,7 +249,7 @@ class InfiniteSource:
         fig.update_xaxes(title_text='Time [s]', row=1, col=2)
         fig.update_yaxes(title_text='i_bus_q [p.u.]', row=1, col=2)
 
-        name = f"{self.type}_{self.idx}"
+        name = f"{self.type}_{self.id}"
         fig.update_layout(  title_text = name,
                             title_x=0.5,
                             showlegend = False,
