@@ -48,12 +48,12 @@ def calc_power_flow_in_branch(row: pd.Series):
     # Power flow calculations
     v1 = v1mag * np.exp(v1phase * 1j)
     v2 = v2mag * np.exp(v2phase * 1j)
-    i = (v1 - v2) / (r + 1j * l)
+    i = (v1 - v2) / (r + 1j * x)
     s = v1 * np.conjugate(i)
     p = s.real
     q = s.imag
     ploss = r * (np.abs(i)) ** 2
-    qloss = l * (abs(i)) ** 2
+    qloss = x * (abs(i)) ** 2
 
     return p, ploss, q, qloss
 

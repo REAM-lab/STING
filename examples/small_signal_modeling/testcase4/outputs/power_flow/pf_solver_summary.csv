@@ -1,0 +1,2 @@
+,Solver Status,Model Status,Objective,Num of Equations,Num of Variables,Model Type,Solver,Solver Time
+0,Normal,OptimalLocal,-3.99600000014721e-07,13,21,NLP,IPOPT,0.007

@@ -58,34 +58,34 @@ class InitialConditionsEMT(NamedTuple):
 class GFLIb:
     """GFLI that has L filter, PLL, DC-side with voltage control."""
     id: int = field(default=-1, init=False)
-    bus_id: int
+    bus: str
     p_min: float	
     p_max: float
     q_min: float
     q_max: float
-    sbase: float
-    vbase: float
-    vbase: float
-    fbase: float
-    rf: float	
-    lf: float
-    txr_sbase: float
-    txr_v1base: float
-    txr_v2base: float
-    txr_r1: float
-    txr_l1: float
-    txr_r2: float
-    txr_l2: float	
+    base_power_VA: float
+    base_voltage_V: float
+    base_frequency_Hz: float
+    rf_pu: float	
+    xf_pu: float
+    txr_power_VA: float
+    txr_voltage1_V: float
+    txr_voltage2_V: float
+    txr_r1_pu: float
+    txr_x1_pu: float
+    txr_r2_pu: float
+    txr_x2_pu: float	
     beta: float	
-    kp_pll: float
-    ki_pll: float
-    kp_cc: float	
-    ki_cc: float
-    i_dc_src: float
-    r_dc: float
-    c_dc: float 
-    kp_dc:float
-    ki_dc:float
+    kp_pll_pu: float
+    ki_pll_puHz: float
+    kp_cc_pu: float	
+    ki_cc_puHz: float
+    i_src_pu: float
+    r_dc_pu: float
+    c_dc_pu: float 
+    kp_dc_pu: float
+    ki_dc_puHz: float
+    bus_id: int = None
     x_pll_rescale: np.ndarray = field(default_factory=lambda: np.array([[100, 0], [0, 1]])) 
     name: str = field(default_factory=str)
     type: str = "gfli_b"
@@ -96,15 +96,18 @@ class GFLIb:
 
     @property
     def txr_r(self):
-        return (self.txr_r1 + self.txr_r2)*self.sbase/self.txr_sbase
+        return (self.txr_r1_pu + self.txr_r2_pu)*self.base_power_VA/self.txr_power_VA
 
     @property
-    def txr_l(self):
-        return (self.txr_l1 + self.txr_l2)*self.sbase/self.txr_sbase
+    def txr_x(self):
+        return (self.txr_x1_pu + self.txr_x2_pu)*self.base_power_VA/self.txr_power_VA
     
     @property
     def wbase(self):
-        return 2*np.pi*self.fbase
+        return 2*np.pi*self.base_frequency_Hz   
+    
+    def post_system_init(self, system):
+        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
     
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]
@@ -116,7 +119,7 @@ class GFLIb:
     def _build_small_signal_model(self):
         
         # Current PI controller
-        kp_cc, ki_cc = self.kp_cc, self.ki_cc
+        kp_cc, ki_cc = self.kp_cc_pu, self.ki_cc_puHz
         pi_cc_d, pi_cc_q = self.emt_init.pi_cc_d, self.emt_init.pi_cc_q
 
         pi_controller = StateSpaceModel( A = np.zeros((2,2)), 
@@ -129,15 +132,15 @@ class GFLIb:
                                                                     init= [pi_cc_d, pi_cc_q]) )
         
         # L filter
-        rf = self.rf + self.txr_r
-        lf = self.lf + self.txr_l
+        rf_t = self.rf_pu + self.txr_r
+        xf_t = self.xf_pu + self.txr_x
         wb = self.wbase
         i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
 
-        l_filter = StateSpaceModel( A = wb*np.array([[-rf/lf,  1], 
-                                                       [-1    ,  -rf/lf]]),
-                                      B = wb*np.array([[ 1/lf ,  0   ,  -1/lf  ,  0,    -i_bus_q] ,
-                                                       [0,      1/lf,       0  , -1/lf,  i_bus_d]]),
+        l_filter = StateSpaceModel( A = wb*np.array([[-rf_t/xf_t,  1], 
+                                                       [-1    ,  -rf_t/xf_t]]),
+                                      B = wb*np.array([[ 1/xf_t ,  0   ,  -1/xf_t  ,  0,    -i_bus_q] ,
+                                                       [0,      1/xf_t,       0  , -1/xf_t,  i_bus_d]]),
                                       C = np.eye(2),
                                       D = np.zeros((2,5)),
                                       u = DynamicalVariables(name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w']), 
@@ -146,7 +149,7 @@ class GFLIb:
                                                               init= [i_bus_d, i_bus_q]))
         
         # Phase-locked loop
-        kp_pll, ki_pll = self.kp_pll, self.ki_pll
+        kp_pll, ki_pll = self.kp_pll_pu, self.ki_pll_puHz
         beta = self.beta
         vmag_bus = self.emt_init.vmag_bus
         sinphi = np.sin(self.emt_init.angle_ref*np.pi/180)
@@ -174,7 +177,7 @@ class GFLIb:
         pll.C = pll.C @ scipy.linalg.inv(self.x_pll_rescale)
 
         # DC voltage PI controller
-        kp_dc, ki_dc = self.kp_dc, self.ki_dc
+        kp_dc, ki_dc = self.kp_dc_pu, self.ki_dc_puHz
         i_bus_d = self.emt_init.i_bus_d
 
         dc_pi_controller = StateSpaceModel(   A = np.array([ [0]]),
@@ -187,7 +190,7 @@ class GFLIb:
                                                                      init = [i_bus_d] )  )
         
         # DC circuit
-        r_dc, c_dc = self.r_dc, self.c_dc
+        r_dc, c_dc = self.r_dc_pu, self.c_dc_pu
         v_dc = self.emt_init.v_dc
         dc_circuit = StateSpaceModel(   A = -wb*2*1/(c_dc*r_dc)*np.eye(1),
                                         B = wb*2*1/c_dc*np.array([ [1, -1] ] ),
@@ -216,8 +219,8 @@ class GFLIb:
                              np.zeros((8,)),
                              [0, 0, 1, 0, 0, 0, 0, 0],
                              [0, 0, 0, 1, 0, 0, 0, 0],
-                             [1, 0, 0, -lf, 0, 0, 0, 0],
-                             [0, 1, lf, 0, -beta*vmag_bus, 0, 0, 0],
+                             [1, 0, 0, -xf_t, 0, 0, 0, 0],
+                             [0, 1, xf_t, 0, -beta*vmag_bus, 0, 0, 0],
                              np.zeros((8,)),
                              [0, 0, 0, 0, -vmag_bus, 0, 0, 0],
                              [0, 0, 0, 0, 0, 1, 0, 0],
@@ -250,12 +253,12 @@ class GFLIb:
         connections = [Fccm, Gccm, Hccm, Lccm]
 
         # Inputs and outputs
-        i_dc_src = self.i_dc_src
+        i_src = self.i_src_pu
         v_bus_D, v_bus_Q= self.emt_init.v_bus_D, self.emt_init.v_bus_Q
         u = DynamicalVariables(
-                                    name=['v_dc_ref', 'i_bus_q_ref', 'i_dc_src', 'v_bus_D', 'v_bus_Q'],
+                                    name=['v_dc_ref', 'i_bus_q_ref', 'i_src', 'v_bus_D', 'v_bus_Q'],
                                     type=["device", "device", "device", "grid", "grid"],
-                                    init=[v_dc, i_bus_q, i_dc_src, v_bus_D, v_bus_Q])
+                                    init=[v_dc, i_bus_q, i_src, v_bus_D, v_bus_Q])
         
         i_bus_D, i_bus_Q= self.emt_init.i_bus_D, self.emt_init.i_bus_Q
         y = DynamicalVariables(
@@ -275,8 +278,8 @@ class GFLIb:
         p_bus = self.pf.p_bus
         q_bus = self.pf.q_bus
 
-        i_dc_src = self.i_dc_src
-        r_dc = self.r_dc
+        i_src = self.i_src_pu
+        r_dc = self.r_dc_pu
 
         # Voltage in the end of the filter
         v_bus_DQ = vmag_bus*np.exp(vphase_bus*np.pi/180*1j)
@@ -286,8 +289,8 @@ class GFLIb:
         i_bus_DQ = (p_bus - q_bus*1j)/np.conjugate(v_bus_DQ)
 
         # Voltage at the terminals of the VSC
-        v_vsc_DQ = v_bus_DQ + (self.rf + self.txr_r + (self.lf + self.txr_l)*1j)*i_bus_DQ
-
+        v_vsc_DQ = v_bus_DQ + (self.rf_pu + self.txr_r + (self.xf_pu + self.txr_x)*1j)*i_bus_DQ
+    
         # We refer the voltage and currents to the synchronous frames of the
         # inverter 
         v_vsc_dq = v_vsc_DQ*np.exp(-angle_ref*np.pi/180*1j) 
@@ -297,11 +300,11 @@ class GFLIb:
         i_bus_dq = i_bus_DQ*np.exp(-angle_ref*np.pi/180*1j) 
 
         # Initial conditions for the integral controllers
-        pi_cc_dq = v_vsc_dq - 1j*(self.lf + self.txr_l)*i_bus_dq - self.beta*v_bus_dq
+        pi_cc_dq = v_vsc_dq - 1j*(self.xf_pu + self.txr_x)*i_bus_dq - self.beta*v_bus_dq
 
         # Initial condition for DC-side circuit
         p_vsc = (v_vsc_dq*np.conjugate(i_bus_dq)).real
-        v_dc = (i_dc_src + (i_dc_src**2 - 4*(1/r_dc)*p_vsc)**0.5)/(2/r_dc)
+        v_dc = (i_src + (i_src**2 - 4*(1/r_dc)*p_vsc)**0.5)/(2/r_dc)
         i_out = p_vsc/v_dc
 
         self.emt_init = InitialConditionsEMT(    vmag_bus = vmag_bus,

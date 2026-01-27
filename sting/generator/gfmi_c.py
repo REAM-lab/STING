@@ -63,27 +63,27 @@ class GFMIc:
     p_max: float
     q_min: float
     q_max: float
-    sbase: float
-    vbase: float
-    fbase: float
-    rf1: float
-    lf1: float
-    rsh: float
-    csh: float
-    txr_sbase: float
-    txr_v1base: float
-    txr_v2base: float
-    txr_r1: float
-    txr_l1: float
-    txr_r2: float
-    txr_l2: float
-    h: float
-    kd: float
-    droop_q: float
-    tau_pc: float
-    kp_vc: float
-    ki_vc: float
-    v_dc: float
+    base_power_VA: float
+    base_voltage_V: float
+    base_frequency_Hz: float
+    rf1_pu: float
+    xf1_pu: float
+    rsh_pu: float
+    csh_pu: float
+    txr_power_VA: float
+    txr_voltage1_V: float
+    txr_voltage2_V: float
+    txr_r1_pu: float
+    txr_x1_pu: float
+    txr_r2_pu: float
+    txr_x2_pu: float
+    h_s: float
+    kd_pu: float
+    droop_q_pu: float
+    tau_pc_s: float
+    kp_vc_pu: float
+    ki_vc_puHz: float
+    v_dc_pu: float
     bus_id: int = None
     name: str = field(default_factory=str)
     type: str = "gfmi_c"
@@ -93,19 +93,19 @@ class GFMIc:
     tags: ClassVar[list[str]] = ["generator"]
 
     @property
-    def rf2(self):
-        return (self.txr_r1 + self.txr_r2) * self.sbase / self.txr_sbase
+    def rf2_pu(self):
+        return (self.txr_r1_pu + self.txr_r2_pu) * self.base_power_VA / self.txr_power_VA
 
     @property
-    def lf2(self):
-        return (self.txr_l1 + self.txr_l2) * self.sbase / self.txr_sbase
+    def xf2_pu(self):
+        return (self.txr_x1_pu + self.txr_x2_pu) * self.base_power_VA / self.txr_power_VA
 
     @property
     def wbase(self):
-        return 2 * np.pi * self.fbase
+        return 2 * np.pi * self.base_frequency_Hz
     
-    def assign_bus_id(self, buses: list):
-        self.bus_id = next((n for n in buses if n.name == self.bus)).id
+    def post_system_init(self, system):
+        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]
@@ -129,7 +129,7 @@ class GFMIc:
         i_bus_DQ = (p_bus - q_bus * 1j) / np.conjugate(v_bus_DQ)
 
         # Voltage across the shunt element in the LCL filter
-        v_lcl_sh_DQ = v_bus_DQ + (self.rf2 + self.lf2 * 1j) * i_bus_DQ
+        v_lcl_sh_DQ = v_bus_DQ + (self.rf2_pu + self.xf2_pu * 1j) * i_bus_DQ
 
         # Voltage and power references
         v_ref = abs(v_lcl_sh_DQ)
@@ -138,12 +138,12 @@ class GFMIc:
         q_ref = s_ref.imag
 
         # Current flowing through shunt element of LCL filter
-        i_lcl_sh_DQ = v_lcl_sh_DQ * (self.csh * 1j) + v_lcl_sh_DQ / self.rsh
+        i_lcl_sh_DQ = v_lcl_sh_DQ * (self.csh_pu * 1j) + v_lcl_sh_DQ / self.rsh_pu
 
         # Current sent from the beginning of the LCL filter
         i_vsc_DQ = i_bus_DQ + i_lcl_sh_DQ
-        v_vsc_DQ = v_lcl_sh_DQ + (self.rf1 + self.lf1 * 1j) * i_vsc_DQ
-
+        v_vsc_DQ = v_lcl_sh_DQ + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_DQ
+        
         # Angle reference
         angle_ref = np.angle(v_vsc_DQ, deg=True)
 
@@ -184,11 +184,11 @@ class GFMIc:
     def _build_small_signal_model(self):
         
         # Power controller (Virtual inertia and droop control for reactive power)
-        tau_pc = self.tau_pc
+        tau_pc = self.tau_pc_s
         wb = self.wbase
-        h = self.h
-        kd = self.kd
-        droop_q = self.droop_q
+        h = self.h_s
+        kd = self.kd_pu
+        droop_q = self.droop_q_pu
         i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
         v_lcl_sh_d, v_lcl_sh_q = self.emt_init.v_lcl_sh_d, self.emt_init.v_lcl_sh_q
         p_ref, q_ref = self.emt_init.p_ref, self.emt_init.q_ref
@@ -215,7 +215,7 @@ class GFMIc:
 
 
         # Voltage magnitude controller
-        kp_vc, ki_vc = self.kp_vc, self.ki_vc
+        kp_vc, ki_vc = self.kp_vc_pu, self.ki_vc_puHz
         v_vsc_d = self.emt_init.v_vsc_d
         
         voltage_mag_controller = StateSpaceModel(  
@@ -232,23 +232,23 @@ class GFMIc:
 
 
         # LCL filter
-        rf1, lf1, rf2, lf2, rsh, csh = self.rf1, self.lf1, self.rf2, self.lf2, self.rsh, self.csh
+        rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
         wb = self.wbase
         i_vsc_d, i_vsc_q = self.emt_init.i_vsc_d, self.emt_init.i_vsc_q
         i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
         v_lcl_sh_d, v_lcl_sh_q = self.emt_init.v_lcl_sh_d, self.emt_init.v_lcl_sh_q
 
         lcl_filter = StateSpaceModel(
-                        A = wb*np.array([[-rf1/lf1  ,   1       ,  0        ,   0       ,       -1/lf1      ,  0],
-                                         [-1        ,   -rf1/lf1,  0        ,   0       ,       0           ,  -1/lf1],
-                                         [0         ,   0       ,  -rf2/lf2 ,   1       ,       1/lf2       ,  0],
-                                         [0         ,   0       ,  -1       ,   -rf2/lf2,       0           ,  1/lf2],
+                        A = wb*np.array([[-rf1/xf1  ,   1       ,  0        ,   0       ,       -1/xf1      ,  0],
+                                         [-1        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1],
+                                         [0         ,   0       ,  -rf2/xf2 ,   1       ,       1/xf2       ,  0],
+                                         [0         ,   0       ,  -1       ,   -rf2/xf2,       0           ,  1/xf2],
                                          [1/csh     ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  1],
                                          [0         ,   1/csh   ,  0        ,   -1/csh  ,       -1          ,  -1/(rsh*csh)]]),
-                        B = wb*np.array([[1/lf1 ,    0      ,   0       ,   0      ,      i_vsc_q],
-                                         [0     ,    1/lf1  ,   0       ,   0      ,      -i_vsc_d],
-                                         [0     ,    0      ,   -1/lf2  ,   0      ,      i_bus_q],
-                                         [0     ,    0      ,   0       ,   -1/lf2 ,      -i_bus_d],
+                        B = wb*np.array([[1/xf1 ,    0      ,   0       ,   0      ,      i_vsc_q],
+                                         [0     ,    1/xf1  ,   0       ,   0      ,      -i_vsc_d],
+                                         [0     ,    0      ,   -1/xf2  ,   0      ,      i_bus_q],
+                                         [0     ,    0      ,   0       ,   -1/xf2 ,      -i_bus_d],
                                          [0     ,    0      ,   0       ,   0      ,      v_lcl_sh_q],
                                          [0     ,    0      ,   0       ,   0      ,      -v_lcl_sh_d]]),
                         C = np.eye(6),

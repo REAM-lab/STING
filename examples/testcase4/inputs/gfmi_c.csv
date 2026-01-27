@@ -1,2 +1,0 @@
-name,bus_idx,p_min,p_max,q_min,q_max,sbase,vbase,fbase,rf1,lf1,rsh,csh,txr_sbase,txr_v1base,txr_v2base,txr_r1,txr_l1,txr_r2,txr_l2,h,kd,droop_q,tau_pc,v_dc,kp_vc,ki_vc
-solar,2,0.8,0.8,0.5,0.5,1.00E+08,4.80E+02,60,0.02,0.1,1,0.1,1.00E+08,4.80E+02,2.30E+05,0.01,0.1,0.02,0.1,0.5,70,0,0.001,1,1,10
