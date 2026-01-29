@@ -43,17 +43,17 @@ def calc_power_flow_in_branch(row: pd.Series):
     v2mag = row["to_bus_vmag"]
     v2phase = row["to_bus_vphase"]
     r = row["r_pu"]
-    l = row["l_pu"]
+    x = row["x_pu"]
 
     # Power flow calculations
     v1 = v1mag * np.exp(v1phase * 1j)
     v2 = v2mag * np.exp(v2phase * 1j)
-    i = (v1 - v2) / (r + 1j * l)
+    i = (v1 - v2) / (r + 1j * x)
     s = v1 * np.conjugate(i)
     p = s.real
     q = s.imag
     ploss = r * (np.abs(i)) ** 2
-    qloss = l * (abs(i)) ** 2
+    qloss = x * (abs(i)) ** 2
 
     return p, ploss, q, qloss
 
@@ -157,7 +157,7 @@ class PowerFlow:
         1    | 1.00   1.00  0.00    0.00
 
         * Branches *
-                 | from_bus  to_bus  r    l
+                 | from_bus  to_bus  r    x
         ------------------------------------------------
         se_rl_1 |        1   2      0.01  0.05
 
@@ -180,7 +180,7 @@ class PowerFlow:
         self.buses.index = self.buses.index.map(str)
 
         # Note: we assume only one branch between two adjacent buses
-        self.branches = sys.branches.to_table("from_bus_id", "to_bus_id", "r_pu", "l_pu")
+        self.branches = sys.branches.to_table("from_bus_id", "from_bus", "to_bus", "to_bus_id", "r_pu", "x_pu")
         self.shunts = sys.shunts.to_table("bus_id", "g_pu", "b_pu")
         self.shunts.bus_id = self.shunts.bus_id.map(str)
 

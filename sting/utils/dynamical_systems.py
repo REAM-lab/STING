@@ -442,6 +442,11 @@ class StateSpaceModel:
         y = self.y.to_list()
         x = self.x.to_list()
 
+        # As x, y, u are lists of tuples, we need to convert them to lists of strings
+        u = [str(name) for name in u]
+        y = [str(name) for name in y]
+        x = [str(name) for name in x]
+        
         # Export each matrix
         matrix_to_csv(
             filepath=os.path.join(filepath, "A.csv"), matrix=self.A, index=x, columns=x

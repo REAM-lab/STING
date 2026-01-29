@@ -15,33 +15,33 @@ def decompose_lines(system):
                 from_bus_id=line.from_bus_id,
                 to_bus=line.to_bus,
                 to_bus_id=line.to_bus_id,
-                sbase_VA=line.sbase_VA,
-                vbase_V=line.vbase_V,
-                fbase_Hz=line.fbase_Hz,
+                base_power_VA=line.base_power_VA,
+                base_voltage_V=line.base_voltage_V,
+                base_frequency_Hz=line.base_frequency_Hz,
                 r_pu=line.r_pu,
-                l_pu=line.l_pu,
+                x_pu=line.x_pu,
             )
 
             from_shunt = ShuntParallelRC(
                 name=f"from_line_{line.id}",
                 bus=line.from_bus,
                 bus_id=line.from_bus_id,
-                sbase_VA=line.sbase_VA,
-                vbase_V=line.vbase_V,
-                fbase_Hz=line.fbase_Hz,
-                r_pu=1 / line.g_pu,
-                c_pu=1 / line.b_pu,
+                base_power_VA=line.base_power_VA,
+                base_voltage_V=line.base_voltage_V,
+                base_frequency_Hz=line.base_frequency_Hz,
+                g_pu= line.g_pu,
+                b_pu= line.b_pu,
             )
 
             to_shunt = ShuntParallelRC(
                 name=f"to_line_{line.id}",
                 bus=line.to_bus,
                 bus_id=line.to_bus_id,
-                sbase_VA=line.sbase_VA,
-                vbase_V=line.vbase_V,
-                fbase_Hz=line.fbase_Hz,
-                r_pu=1 / line.g_pu,
-                c_pu=1 / line.b_pu,
+                base_power_VA=line.base_power_VA,
+                base_voltage_V=line.base_voltage_V,
+                base_frequency_Hz=line.base_frequency_Hz,
+                g_pu= line.g_pu,
+                b_pu= line.b_pu,
             )
 
             # Add shunts and branch to system

@@ -1,3 +1,0 @@
-name,bus,p_min,p_max,q_min,q_max,sbase,vbase,fbase,r,l
-gen1,lima,-2,2,-5,5,1.00E+08,2.30E+05,60,0.01,0.5
-gen2,chile,1,1,0.74,0.75,1.00E+08,2.30E+05,60,0.05,0.2

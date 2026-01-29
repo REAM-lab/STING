@@ -29,14 +29,14 @@ class Bus:
     name: str
     bus_type: str = None
     kron_removable_bus: bool = None
-    base_power_MVA: float = None
-    base_voltage_kV: float = None
+    base_power_VA: float = None
+    base_voltage_V: float = None
     base_frequency_Hz: float = None
     max_flow_MW: float = None
     v_min: float = None
     v_max: float = None
-    p_load: float = None
-    q_load: float = None
+    p_load: float = 0.0
+    q_load: float = 0.0
     tags: ClassVar[list[str]] = []
 
     def __hash__(self):
@@ -129,6 +129,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMaxFlowPerExpLine_rule)
         model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
 
+        logger.info(" - Maximum and minimum flow constraints per non-expandable line")
         def cFlowPerNonExpLine_rule(m, l, s, t):
                 return  (-l.cap_existing_power_MW,  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), l.cap_existing_power_MW)
         

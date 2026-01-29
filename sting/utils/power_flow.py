@@ -152,17 +152,17 @@ class PowerFlow:
         """
         sys = self.system
 
-        attrs = ["bus_idx", "p_min", "p_max", "q_min", "q_max"]
-        self.generators = sys.generators.to_table(*attrs, index_name="gen_idx")
-        self.generators["bus_idx"] = self.generators["bus_idx"].map(str)
+        attrs = ["bus_id", "p_min", "p_max", "q_min", "q_max"]
+        self.generators = sys.generators.to_table(*attrs, index_name="gen_id")
+        self.generators["bus_id"] = self.generators["bus_id"].map(str)
 
         attrs = ["v_min", "v_max", "p_load", "q_load"]
-        self.buses = sys.query("bus").to_table(*attrs, index="idx", index_name="bus_idx")
+        self.buses = sys.query("bus").to_table(*attrs, index="id", index_name="bus_id")
         self.buses.index = self.buses.index.map(str)
 
         # Note: we assume only one branch between two adjacent buses
-        self.branches = sys.branches.to_table("from_bus", "to_bus", "r", "l")
-        self.shunts = sys.shunts.to_table("bus_idx", "g", "b")
+        self.branches = sys.branches.to_table("from_bus", "to_bus", "r_pu", "x_pu")
+        self.shunts = sys.shunts.to_table("bus_id", "g_pu", "b_pu")
 
     def run_acopf(self):
         """
@@ -192,7 +192,7 @@ class PowerFlow:
         ]  # It determines the type of formulation of the power flow equations
 
         # Create set of buses
-        n = gsp.Set(m, name="bus_idx", records=buses.index)
+        n = gsp.Set(m, name="bus_id", records=buses.index)
         k = gsp.Alias(
             m, alias_with=n
         )  # Necessary to iterate over buses twice in the power flow formulation.
@@ -216,10 +216,10 @@ class PowerFlow:
             B = gsp.Parameter(m, domain=[n, k], records=Y.imag)
 
         # Create set of generators
-        g = gsp.Set(m, name="gen_idx", records=generators.index)
+        g = gsp.Set(m, name="gen_id", records=generators.index)
 
         # Create link sets: (bus, gen). It is necessary to create bus power generation.
-        bus_gen_connections = generators.reset_index()[["bus_idx", "gen_idx"]].apply(
+        bus_gen_connections = generators.reset_index()[["bus_id", "gen_id"]].apply(
             tuple, axis=1
         )
         bus_gen = gsp.Set(m, domain=[n, g], records=list(bus_gen_connections))
@@ -258,7 +258,7 @@ class PowerFlow:
         vphase.lo[n] = -np.pi / 2
         vphase.up[n] = +np.pi / 2
 
-        vphase.fx["1"] = 0  # Fix voltage phase of first bus to zero.
+        vphase.fx[buses.index[0]] = 0  # Fix voltage phase of first bus to zero.
 
         # Create variables that represent active and reactive power shedding [p.u.] at every bus.
         pshed = gsp.Variable(m, domain=[n], type="Positive")
@@ -381,12 +381,12 @@ class PowerFlow:
         generators = generators.join(qg).rename(columns={"level": "q"})
         generators = generators.merge(
             vmag.rename(columns={"level": "bus_vmag"}),
-            left_on="bus_idx",
+            left_on="bus_id",
             right_index=True,
         )
         generators = generators.merge(
             vphase.rename(columns={"level": "bus_vphase"}),
-            left_on="bus_idx",
+            left_on="bus_id",
             right_index=True,
         )
 
@@ -413,10 +413,10 @@ class PowerFlow:
 
         # Update shunt dataframe with opf solution
         if shunts is not None:
-            shunts = shunts.merge(vmag, left_on="bus_idx", right_index=True).rename(
+            shunts = shunts.merge(vmag, left_on="bus_id", right_index=True).rename(
                 columns={"level": "bus_vmag"}
             )
-            shunts = shunts.merge(vphase, left_on="bus_idx", right_index=True).rename(
+            shunts = shunts.merge(vphase, left_on="bus_id", right_index=True).rename(
                 columns={"level": "bus_vphase"}
             )
             shunts[["p", "q"]] = shunts.apply(
@@ -513,9 +513,9 @@ class PowerFlow:
                 print("| Shunts")
                 if not self.shunts.empty:
                     df = self.shunts.copy()
-                    df = df[["bus_idx", "p", "q"]]
+                    df = df[["bus_id", "p", "q"]]
                     df.rename(
-                        columns={"bus_idx": "Bus", "p": "P [p.u.]", "q": "Q [p.u.]"},
+                        columns={"bus_id": "Bus", "p": "P [p.u.]", "q": "Q [p.u.]"},
                         inplace=True,
                     )
                     print(df.to_markdown(**print_settings))

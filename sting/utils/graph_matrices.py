@@ -35,7 +35,7 @@ def build_admittance_matrix(num_buses: int, branch_data=None, shunt_data=None):
             i, j = row_tuple.from_bus_id, row_tuple.to_bus_id
 
             # Calculate branch admittance
-            z = complex(row_tuple.r_pu, row_tuple.l_pu)
+            z = complex(row_tuple.r_pu, row_tuple.x_pu)
             y = 1.0 / z
 
             # Calculate off-diagonal elements are the negative of the branch admittance

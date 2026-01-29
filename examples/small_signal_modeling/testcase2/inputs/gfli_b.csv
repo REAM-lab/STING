@@ -1,0 +1,2 @@
+name,bus,p_min,p_max,q_min,q_max,base_power_VA,base_voltage_V,base_frequency_Hz,rf_pu,xf_pu,txr_power_VA,txr_voltage1_V,txr_voltage2_V,txr_r1_pu,txr_x1_pu,txr_r2_pu,txr_x2_pu,beta,kp_pll_pu,ki_pll_puHz,kp_cc_pu,ki_cc_puHz,r_dc_pu,c_dc_pu,kp_dc_pu,ki_dc_puHz,i_src_pu
+solar,south,0.8,0.8,0.5,0.5,1.00E+08,4.80E+02,60,0.02,0.1,1.00E+08,4.80E+02,2.30E+05,0.01,0.1,0.02,0.1,0.75,1,5,1,5,50,10,2,4,0.5

@@ -42,11 +42,11 @@ class BranchSeriesRL:
     name: str 
     from_bus: str
     to_bus: str
-    sbase_VA: float
-    vbase_V: float
-    fbase_Hz: float
+    base_power_VA: float
+    base_voltage_V: float
+    base_frequency_Hz: float
     r_pu: float
-    l_pu: float
+    x_pu: float
     tags: ClassVar[list[str]] = ["branch"]
     pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
@@ -70,7 +70,7 @@ class BranchSeriesRL:
     def _calculate_emt_initial_conditions(self):
         
         r = self.r_pu
-        l = self.l_pu
+        x = self.x_pu
 
         vmag_from_bus = self.pf.vmag_from_bus
         vphase_from_bus = self.pf.vphase_from_bus
@@ -81,7 +81,7 @@ class BranchSeriesRL:
         v_from_bus_DQ = vmag_from_bus * np.exp(vphase_from_bus * np.pi / 180 * 1j)
         v_to_bus_DQ = vmag_to_bus * np.exp(vphase_to_bus * np.pi / 180 * 1j)
 
-        i_br_DQ = (v_from_bus_DQ - v_to_bus_DQ) / (r + 1j * l)
+        i_br_DQ = (v_from_bus_DQ - v_to_bus_DQ) / (r + 1j * x)
 
         self.emt_init = InitialConditionsEMT(
             vmag_from_bus=vmag_from_bus,
@@ -99,18 +99,18 @@ class BranchSeriesRL:
     def _build_small_signal_model(self):
 
         rse = self.r_pu
-        lse = self.l_pu
-        wb = 2 * np.pi * self.fbase_Hz
+        xse = self.x_pu
+        wb = 2 * np.pi * self.base_frequency_Hz
 
         # Define state-space matrices (turn off code formatters for matrices)
         # fmt: off
         A = wb * np.array(
-            [[-rse/lse,        1], 
-             [      -1, -rse/lse]])
+            [[-rse/xse,        1], 
+             [      -1, -rse/xse]])
 
         B = wb * np.array(
-            [[1/lse,     0, -1/lse,      0], 
-             [    0, 1/lse,      0, -1/lse]])
+            [[1/xse,     0, -1/xse,      0], 
+             [    0, 1/xse,      0, -1/xse]])
         # fmt: on
         C = np.eye(2)
 
@@ -175,14 +175,14 @@ class BranchSeriesRL:
         v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = self.variables_emt.u.value
 
         # Get parameters
-        r = self.r
-        l = self.l
-        wb = 2 * np.pi * self.fbase
+        r = self.r_pu
+        x = self.x_pu
+        wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
-        d_i_br_a = wb / l * (v_from_bus_a - v_to_bus_a - r * i_br_a)
-        d_i_br_b = wb / l * (v_from_bus_b - v_to_bus_b - r * i_br_b)
-        d_i_br_c = wb / l * (v_from_bus_c - v_to_bus_c - r * i_br_c)
+        d_i_br_a = wb / x   * (v_from_bus_a - v_to_bus_a - r * i_br_a)
+        d_i_br_b = wb / x * (v_from_bus_b - v_to_bus_b - r * i_br_b)
+        d_i_br_c = wb / x * (v_from_bus_c - v_to_bus_c - r * i_br_c)
 
         return [d_i_br_a, d_i_br_b, d_i_br_c]
         
@@ -197,7 +197,7 @@ class BranchSeriesRL:
         
         # Retrieve simulation results
         time = self.variables_emt.x.time
-        angle_ref =  2 * np.pi * self.fbase * time
+        angle_ref =  2 * np.pi * self.base_frequency_Hz * time
         i_br_a, i_br_b, i_br_c = self.variables_emt.x.value
        
         # Transform abc to dq0

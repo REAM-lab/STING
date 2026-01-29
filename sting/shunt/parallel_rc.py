@@ -35,11 +35,11 @@ class ShuntParallelRC:
     id: int = field(default=-1, init=False)
     name: str
     bus: str
-    sbase_VA: float
-    vbase_V: float
-    fbase_Hz: float
-    r_pu: float
-    c_pu: float
+    base_power_VA: float
+    base_voltage_V: float
+    base_frequency_Hz: float
+    g_pu: float
+    b_pu: float
     bus_id: int = None
     pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
@@ -48,14 +48,6 @@ class ShuntParallelRC:
     tags: ClassVar[list[str]] = ["shunt"]
     variables_emt: Optional[VariablesEMT] = None
     id_variables_emt: Optional[dict] = None
-
-    @property
-    def g_pu(self):
-        return 1 / self.r_pu
-
-    @property
-    def b_pu(self):
-        return 1 / self.c_pu
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.shunts.loc[f"{self.type}_{self.id}"]
@@ -86,7 +78,7 @@ class ShuntParallelRC:
     def _build_small_signal_model(self):
         g = self.g_pu
         b = self.b_pu
-        wb = 2 * np.pi * self.fbase_Hz
+        wb = 2 * np.pi * self.base_frequency_Hz
 
         # Define state-space matrices (turn off code formatters for matrices)
         # fmt: off
@@ -157,7 +149,7 @@ class ShuntParallelRC:
         # Get parameters
         g = self.g_pu
         b = self.b_pu
-        wb = 2 * np.pi * self.fbase_Hz
+        wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
         d_v_bus_a = wb / b * (- g * v_bus_a + i_bus_a)

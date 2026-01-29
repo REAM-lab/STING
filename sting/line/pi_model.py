@@ -17,9 +17,9 @@ class LinePiModel:
     cost_fixed_power_USDperkW: float = 0.0
     angle_max_deg: float = 360
     angle_min_deg: float = -360
-    sbase_VA: float = None
-    vbase_V: float = None
-    fbase_Hz: float = None
+    base_power_VA: float = None
+    base_voltage_V: float = None
+    base_frequency_Hz: float = None
     decomposed: bool = field(default=False)
     tags: ClassVar[list[str]] = ["line"]
     from_bus_id: int = None
