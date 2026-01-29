@@ -27,9 +27,10 @@ class EnergyBudget:
     id: int = field(default=-1, init=False)
     budget_region: str
     budget_term: str
-    budget_constraint_GWh: float
+    budget_constraint: float
     generators: list[Generator] = None
     timepoints: list[Timepoint] = None
+    weights: list[float] = None
 
     # attributes shared across all instances
     _cache_initialized: ClassVar[bool] = False
@@ -51,14 +52,19 @@ class EnergyBudget:
 
             # Load generator to region mapping
             generator_to_region_df = pl.read_csv(os.path.join(system.case_directory, "inputs", "energy_budget_regions.csv"))
-            regions_df = generator_to_region_df.group_by("budget_region").agg(pl.col("generator").alias("generators"))
+            regions_df = generator_to_region_df.group_by("budget_region").agg(pl.col("generator").alias("generators"), pl.col("power_to_constraint").alias("weights"))
             EnergyBudget._cached_regions = dict(zip(regions_df["budget_region"], regions_df["generators"]))
-            
+
+            # Mapping of the key pair (budget_region, generator.name) -> power_to_constraint
+            EnergyBudget._cached_weights = {(row["budget_region"], row["generator"]) : row["power_to_constraint"] for row in generator_to_region_df.iter_rows(named=True)}
             EnergyBudget._cache_initialized = True
     
         # Use cached data for this instance
-        self.generators = [g for g in system.gen if g.name in EnergyBudget._cached_regions[self.budget_region]]
+        region_gens = EnergyBudget._cached_regions[self.budget_region]
+
+        self.generators = [g for g in system.gen if (g.name in region_gens)]
         self.timepoints = [t for t in system.tp if t.name in EnergyBudget._cached_terms[self.budget_term]]
+        self.weights = [EnergyBudget._cached_weights[(self.budget_region, g.name)] for g in system.gen if (g.name in region_gens)]
 
 @timeit
 def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict):
@@ -66,7 +72,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     logger.info(" - Energy budget constraints")
     def cEnergyBudget_rule(m, eb):
-        return  sum(m.vGEN[g, t] * t.weight for g in eb.generators for t in eb.timepoints) * 1e-3 <= eb.budget_constraint_GWh
+
+        return  sum(m.vGEN[g, t] * w * t.duration_hr for g, w in zip(eb.generators, eb.weights) for t in eb.timepoints) <= eb.budget_constraint
         
     model.cEnergyBudget = pyo.Constraint(system.energy_budget, rule=cEnergyBudget_rule)
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")
@@ -75,8 +82,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
     """Export energy budget results to CSV files."""
 
-    df = pl.DataFrame( schema=['budget_region', 'budget_term', 'budget_constraint_GWh', "used_energy_GWh"],
-                        data=map(lambda tuple: (tuple[0].budget_region, tuple[0].budget_term, tuple[0].budget_constraint_GWh, tuple[1]), 
+    df = pl.DataFrame( schema=['budget_region', 'budget_term', 'budget_constraint', "lefthand_side"],
+                        data=map(lambda tuple: (tuple[0].budget_region, tuple[0].budget_term, tuple[0].budget_constraint, tuple[1]), 
                                                 zip(model.cEnergyBudget, pyo.value(model.cEnergyBudget[:]))) )
 
     df.write_csv(os.path.join(output_directory, "energy_budget_constraints.csv"))  

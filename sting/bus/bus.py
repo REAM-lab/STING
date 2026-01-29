@@ -251,6 +251,8 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     
         df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
     except:
+        df = pl.DataFrame(data=None, schema=["bus", "scenario", "timepoint", "local_marginal_price_USDperMWh"])
+        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
         logger.warning("Could not export LMPs to CSV file. Solver is not supported or duals not available.")
 
     # Export line flows and losses   
