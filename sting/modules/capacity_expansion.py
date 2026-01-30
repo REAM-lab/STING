@@ -38,6 +38,7 @@ class ModelSettings(NamedTuple):
     single_storage_injection: bool = False
     line_capacity_expansion: bool = True
     line_capacity: bool = True
+    bus_max_flow_expansion: bool = False
     bus_max_flow: bool = False
     angle_difference_limits: bool = False
     policies: list[int] = None
@@ -88,7 +89,9 @@ class CapacityExpansion:
 
             if self.model_settings.line_capacity_expansion == True and self.model_settings.line_capacity == False:
                 logger.error("line_capacity_expansion setting is True but line_capacity setting is False. " \
-                             "If line_capacity_expansion is True, line_capacity must also be True.")
+                             "It does not make sense to expand line capacities if line capacities are neglected. " \
+                             "If line_capacity_expansion is True, line_capacity must also be True." \
+                             "If line_capacity_expansion is False, line_capacity can be True or False.")
                 raise ValueError("Inconsistent line capacity settings")
 
             if self.model_settings.generator_type_costs not in ["linear", "quadratic"]:
@@ -96,15 +99,21 @@ class CapacityExpansion:
                 raise ValueError("Invalid value for generator_type_costs")
             
             if self.model_settings.bus_max_flow == True and self.model_settings.line_capacity_expansion == True:
-                logger.error("bus_max_flow setting is True but line_capacity setting is also True. " \
-                             "Model is still not able to consider both bus max flow limits and expansion of line capacities at the same time.")
+                logger.error("bus_max_flow setting is True but line_capacity_expansion setting is also True. " \
+                             "It does not make sense to upgrade lines but keeping the bus max flow fixed." \
+                             "You may consider bus_max_flow False in this case, and just allow line capacity expansion.")
                 raise ValueError("Inconsistent bus max flow settings")
+            
+            if self.model_settings.bus_max_flow_expansion == True and self.model_settings.line_capacity_expansion == True:
+                logger.error("bus_max_flow_expansion setting is True but line_capacity_expansion setting is also True. " \
+                             "It is unexpected how the model performs. Select either line_capacity_expansion or bus_max_flow_expansion to be True, not both.")
             
             if (self.model_settings.kron_equivalent_flow_constraints == True) and (self.model_settings.line_capacity == True):
                 logger.error("kron_equivalent_flow_constraints setting is True but line_capacity setting is also True. " \
                              "Both setting can be false however we don't know if it makes sense to consider both the "\
                             "thermal line limits of the original system and the line limits assigned in the Kron system.")
                 raise ValueError("Inconsistent thermal flow constraints in model settings")
+                        
             
         logger.info(f"Model settings: {self.model_settings}")
 

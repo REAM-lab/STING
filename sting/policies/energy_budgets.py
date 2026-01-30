@@ -31,6 +31,7 @@ class EnergyBudget:
     generators: list[Generator] = None
     timepoints: list[Timepoint] = None
     weights: list[float] = None
+    budget_constraint_units: str = None
 
     # attributes shared across all instances
     _cache_initialized: ClassVar[bool] = False
@@ -73,7 +74,15 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     logger.info(" - Energy budget constraints")
     def cEnergyBudget_rule(m, eb):
 
-        return  sum(m.vGEN[g, t] * w * t.duration_hr for g, w in zip(eb.generators, eb.weights) for t in eb.timepoints) <= eb.budget_constraint
+        match eb.budget_constraint_units:
+            case "million metric tons CO2e":
+                factor = 1e5
+            case "GWh":
+                factor = 1e3
+            case _:
+                factor = 1.0
+        
+        return  sum(m.vGEN[g, t] * w * factor * t.duration_hr for g, w in zip(eb.generators, eb.weights) for t in eb.timepoints) <= eb.budget_constraint * factor
         
     model.cEnergyBudget = pyo.Constraint(system.energy_budget, rule=cEnergyBudget_rule)
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")

@@ -29,8 +29,8 @@ class Bus:
     name: str
     bus_type: str = None
     kron_removable_bus: bool = None
-    base_power_VA: float = None
-    base_voltage_V: float = None
+    base_power_MVA: float = None
+    base_voltage_kV: float = None
     base_frequency_Hz: float = None
     max_flow_MW: float = None
     v_min: float = None
@@ -141,7 +141,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
         model.cost_components_per_period.append(model.eLineCostPerPeriod)
 
-    if (model_settings.line_capacity) and (model_settings.line_capacity_expansion == False):
+    elif (model_settings.line_capacity):
         
         logger.info(" - Maximum and minimum flow constraints per line")
         L_cap_constrained = {l for l in L if l.cap_existing_power_MW is not None}
@@ -177,10 +177,25 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.cFlowPerNonExpLine = pyo.Constraint(L_original, S, T, rule=cFlowPerNonExpLine_rule)
          
 
-    if model_settings.bus_max_flow:
+    if model_settings.bus_max_flow_expansion:
+         
+        logger.info(" - Maximum flow variables per bus")
+        buses_with_max_flow = {n for n in N if n.max_flow_MW is not None}
+        model.vCAPBus = pyo.Var(buses_with_max_flow, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vCAPBus)} variables")
 
         logger.info(" - Maximum flow constraints per bus")
-        buses_with_max_flow = {n for n in N if n.max_flow_MW is not None}
+        model.cMaxFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: m.eFlowAtBus[n, s, t] <= n.max_flow_MW + m.vCAPBus[n])
+        model.cMinFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: m.eFlowAtBus[n, s, t] >= -(n.max_flow_MW + m.vCAPBus[n]))
+        logger.info(f"   Size: {len(model.cMinFlowPerBus) + len(model.cMaxFlowPerBus)} constraints")
+
+        logger.info(" - Bus flow expansion cost expressions")
+        model.eBusFlowExpCostPerPeriod = pyo.Expression(expr = lambda m: sum(1000 * 150 * m.vCAPBus[n] for n in buses_with_max_flow))
+        model.cost_components_per_period.append(model.eBusFlowExpCostPerPeriod)
+
+    elif model_settings.bus_max_flow:
+
+        logger.info(" - Maximum flow constraints per bus")
         model.cFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW))
         logger.info(f"   Size: {len(model.cFlowPerBus)} constraints")
 
@@ -235,12 +250,22 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     if hasattr(model, 'vCAPL'):
         pyovariable_to_df(model.vCAPL, 
                             dfcol_to_field={'line': 'name'}, 
-                            value_name='capacity_MW', 
+                            value_name='built_capacity_MW', 
                             csv_filepath=os.path.join(output_directory, 'line_built_capacity.csv'))
         costs = pl.DataFrame({ 'component' : ['CostPerPeriod_USD'],
                                 'cost' : [  pyo.value(model.eLineCostPerPeriod)]})
         costs.write_csv(os.path.join(output_directory, 'line_costs_summary.csv'))
     
+    # Export bus max flow expansions
+    if hasattr(model, 'vCAPBus'):
+        pyovariable_to_df(model.vCAPBus, 
+                            dfcol_to_field={'bus': 'name'}, 
+                            value_name='built_capacity_MW', 
+                            csv_filepath=os.path.join(output_directory, 'bus_built_capacity.csv'))
+        costs = pl.DataFrame({ 'component' : ['CostPerPeriod_USD'],
+                                'cost' : [  pyo.value(model.eBusFlowExpCostPerPeriod)]})
+        costs.write_csv(os.path.join(output_directory, 'bus_max_flow_costs_summary.csv'))
+
     # Export LMPs
     try:
         df = pyodual_to_df(model.dual, model.cEnergyBalance, 
