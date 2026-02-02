@@ -177,10 +177,10 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.cFlowPerNonExpLine = pyo.Constraint(L_original, S, T, rule=cFlowPerNonExpLine_rule)
          
 
+    buses_with_max_flow = {n for n in N if n.max_flow_MW is not None}
     if model_settings.bus_max_flow_expansion:
          
         logger.info(" - Maximum flow variables per bus")
-        buses_with_max_flow = {n for n in N if n.max_flow_MW is not None}
         model.vCAPBus = pyo.Var(buses_with_max_flow, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vCAPBus)} variables")
 
@@ -214,8 +214,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
                                          rule=lambda m, n, s, t: 
                             (m.eGenAtBus[n, s, t] 
                              + m.eNetDischargeAtBus[n, s, t] 
-                             + (m.vSHED[n, s, t] if ((model_settings.load_shedding) and (n.name in load_buses)) else 0) ) * t.weight == 
-                            (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) * t.weight
+                             + (m.vSHED[n, s, t] if ((model_settings.load_shedding) and (n.name in load_buses)) else 0) )  == 
+                            (load_lookup.get((n.name, s.name, t.name), 0.0) + m.eFlowAtBus[n, s, t]) 
                             )
     logger.info(f"   Size: {len(model.cEnergyBalance)} constraints")
 
@@ -271,9 +271,16 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
         df = pyodual_to_df(model.dual, model.cEnergyBalance, 
                             dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
                             value_name='local_marginal_price_USDperMWh')
+        
+        df_timepoints = pl.DataFrame(
+                        schema = ['timepoint', 'weight'],
+                        data= map(lambda t: (t.name, t.weight), system.tp)
+                        )
+        
+        df = df.join(df_timepoints, left_on='timepoint', right_on='timepoint')
     
         df = df.with_columns(
-            (pl.col('local_marginal_price_USDperMWh') / model.rescaling_factor_obj).alias('local_marginal_price_USDperMWh'))
+            (pl.col('local_marginal_price_USDperMWh') / (model.rescaling_factor_obj * pl.col('weight'))).alias('local_marginal_price_USDperMWh'))
     
         df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
     except:

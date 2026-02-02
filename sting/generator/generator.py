@@ -34,6 +34,7 @@ class Generator:
     c0_USD: float
     c1_USDperMWh: float
     c2_USDperMWh2: float
+    emission_rate_tonneCO2perMWh: float
     tags: ClassVar[list[str]] = ["generator"]
     bus_id: int = None
     expand_capacity: bool = True
@@ -140,6 +141,12 @@ def construct_capacity_expansion_model(system, model, model_settings):
                     sum(m.vGENV[g, s, t] for g in GV_at_bus[n.id]))
                 
     logger.info(f"   Size: {len(model.eGenAtBus)} expressions")
+
+    logger.info(" - Emission per timepoint expressions")
+    G_with_emissions = [g for g in GN if g.emission_rate_tonneCO2perMWh > 0.0]
+    model.eEmissionsPerTp = pyo.Expression(T, rule=lambda m, t: 
+                    sum(g.emission_rate_tonneCO2perMWh * m.vGEN[g, t] for g in G_with_emissions))
+    logger.info(f"   Size: {len(model.eEmissionsPerTp)} expressions")
 
     logger.info(" - Generation cost per timepoint expressions")
     if model_settings.generator_type_costs == "quadratic":
