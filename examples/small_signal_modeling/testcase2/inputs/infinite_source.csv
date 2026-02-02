@@ -1,2 +1,2 @@
-name,bus,p_min,p_max,q_min,q_max,base_power_VA,base_voltage_V,base_frequency_Hz,r_pu,x_pu
-gen1,north,-2,2,-5,5,1.00E+08,2.30E+05,60,0.01,0.5
+name,bus,p_min,p_max,q_min,q_max,base_power_MVA,base_voltage_kV,base_frequency_Hz,r_pu,x_pu
+gen1,north,-2,2,-5,5,1.00E+02,2.30E+02,60,0.01,0.5

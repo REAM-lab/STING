@@ -48,8 +48,8 @@ class InfiniteSource:
     p_max: float
     q_min: float
     q_max: float
-    base_power_VA: float
-    base_voltage_V: float
+    base_power_MVA: float
+    base_voltage_kV: float
     base_frequency_Hz: float
     r_pu: float
     x_pu: float

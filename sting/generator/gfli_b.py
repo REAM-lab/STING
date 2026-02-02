@@ -63,14 +63,14 @@ class GFLIb:
     p_max: float
     q_min: float
     q_max: float
-    base_power_VA: float
-    base_voltage_V: float
+    base_power_MVA: float
+    base_voltage_kV: float
     base_frequency_Hz: float
     rf_pu: float	
     xf_pu: float
-    txr_power_VA: float
-    txr_voltage1_V: float
-    txr_voltage2_V: float
+    txr_power_MVA: float
+    txr_voltage1_kV: float
+    txr_voltage2_kV: float
     txr_r1_pu: float
     txr_x1_pu: float
     txr_r2_pu: float
@@ -96,11 +96,11 @@ class GFLIb:
 
     @property
     def txr_r(self):
-        return (self.txr_r1_pu + self.txr_r2_pu)*self.base_power_VA/self.txr_power_VA
+        return (self.txr_r1_pu + self.txr_r2_pu)*self.base_power_MVA/self.txr_power_MVA
 
     @property
     def txr_x(self):
-        return (self.txr_x1_pu + self.txr_x2_pu)*self.base_power_VA/self.txr_power_VA
+        return (self.txr_x1_pu + self.txr_x2_pu)*self.base_power_MVA/self.txr_power_MVA
     
     @property
     def wbase(self):

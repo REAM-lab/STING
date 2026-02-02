@@ -42,8 +42,8 @@ class BranchSeriesRL:
     name: str 
     from_bus: str
     to_bus: str
-    base_power_VA: float
-    base_voltage_V: float
+    base_power_MVA: float
+    base_voltage_kV: float
     base_frequency_Hz: float
     r_pu: float
     x_pu: float

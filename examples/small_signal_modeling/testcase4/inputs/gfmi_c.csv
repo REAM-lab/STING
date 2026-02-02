@@ -1,2 +1,2 @@
-name,bus,p_min,p_max,q_min,q_max,base_power_VA,base_voltage_V,base_frequency_Hz,rf1_pu,xf1_pu,rsh_pu,csh_pu,txr_power_VA,txr_voltage1_V,txr_voltage2_V,txr_r1_pu,txr_x1_pu,txr_r2_pu,txr_x2_pu,h_s,kd_pu,droop_q_pu,tau_pc_s,v_dc_pu,kp_vc_pu,ki_vc_puHz
-solar,south,0.8,0.8,0.5,0.5,1.00E+08,4.80E+02,60,0.02,0.1,1,0.1,1.00E+08,4.80E+02,2.30E+05,0.01,0.1,0.02,0.1,0.5,70,0,0.001,1,1,10
+name,bus,p_min,p_max,q_min,q_max,base_power_MVA,base_voltage_kV,base_frequency_Hz,rf1_pu,xf1_pu,rsh_pu,csh_pu,txr_power_MVA,txr_voltage1_kV,txr_voltage2_kV,txr_r1_pu,txr_x1_pu,txr_r2_pu,txr_x2_pu,h_s,kd_pu,droop_q_pu,tau_pc_s,v_dc_pu,kp_vc_pu,ki_vc_puHz
+solar,south,0.8,0.8,0.5,0.5,1.00E+02,4.80E-01,60,0.02,0.1,1,0.1,1.00E+02,4.80E-01,2.30E+02,0.01,0.1,0.02,0.1,0.5,70,0,0.001,1,1,10

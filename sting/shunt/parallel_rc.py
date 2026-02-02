@@ -35,8 +35,8 @@ class ShuntParallelRC:
     id: int = field(default=-1, init=False)
     name: str
     bus: str
-    base_power_VA: float
-    base_voltage_V: float
+    base_power_MVA: float
+    base_voltage_kV: float
     base_frequency_Hz: float
     g_pu: float
     b_pu: float

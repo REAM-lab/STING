@@ -1,2 +1,2 @@
-name,from_bus,to_bus,base_power_VA,base_voltage_V,base_frequency_Hz,r_pu,x_pu,g_pu,b_pu
-tx_1,north,south,1.00E+08,2.30E+05,60,0.01,0.2,0.05,0.066666667
+name,from_bus,to_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,r_pu,x_pu,g_pu,b_pu
+tx_1,north,south,1.00E+02,2.30E+02,60,0.01,0.2,0.05,0.066666667
