@@ -69,7 +69,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     logger.info(" - Energy budget constraints")
     def cEnergyBudget_rule(m, eb):
-        return  sum(m.vGEN[g, t] * t.weight for g in eb.generators for t in eb.timepoints) <= eb.budget_constraint_GWh * 1000.0  # convert GWh to MWh
+        return  sum(m.vGEN[g, t] * t.weight for g in eb.generators for t in eb.timepoints) <= (eb.budget_constraint_GWh * 1000.0)  # convert GWh to MWh
         
     model.cEnergyBudget = pyo.Constraint(system.energy_budget, rule=cEnergyBudget_rule)
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")
@@ -82,4 +82,9 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                         data=map(lambda tuple: (tuple[0].budget_region, tuple[0].budget_term, tuple[0].budget_constraint_GWh, tuple[1]), 
                                                 zip(model.cEnergyBudget, pyo.value(model.cEnergyBudget[:]))) )
 
-    df.write_csv(os.path.join(output_directory, "energy_budget_constraints.csv"))  
+    df.write_csv(os.path.join(output_directory, "energy_budget_constraints.csv"))
+
+    # [!] WARNING [!] The `_cache_initialized` attribute is GLOBAL to all instances of energy budgets.
+    # In order to run more than one capacity expansion model in the same python session we need to 
+    # set this  this attribute back to False (so that new input datasets are read).
+    EnergyBudget._cache_initialized = False

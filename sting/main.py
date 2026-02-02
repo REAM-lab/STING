@@ -22,7 +22,7 @@ from sting.modules.capacity_expansion import CapacityExpansion
 from sting.modules.kron_reduction import KronReduction
 from sting.utils.data_tools import setup_logging_file
 
-
+from sting.policies.energy_budgets import EnergyBudget
 # ----------------
 # Main functions
 # ----------------
@@ -95,7 +95,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     capex.solve()  
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
-    return system
+    return capex, system
 
 def run_kron(case_directory=os.getcwd(), kron_settings=None, solver_settings=None):
     """
