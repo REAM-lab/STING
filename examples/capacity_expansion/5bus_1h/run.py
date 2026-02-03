@@ -18,12 +18,15 @@ mosek_solver_settings = {
                 "solver_options": {},
             }
 model_settings = {
-                "gen_costs": "quadratic",
-                "consider_shedding": True,
-                "consider_line_capacity": False,
-                "consider_bus_max_flow": True,
-                "consider_angle_limits": True,
-            }
+        "generator_type_costs": "quadratic",
+        "load_shedding": False,
+        "line_capacity_expansion": False,
+        "line_capacity": False,
+        "kron_equivalent_flow_constraints": False,
+        "bus_max_flow_expansion": False,
+        "bus_max_flow": True,
+        "policies": [],
+    }
 
 gurobi_solver_settings = {
                 "solver_name": "gurobi",
@@ -34,6 +37,8 @@ gurobi_solver_settings = {
 			           'Method': 2},
 }
 
-sys= main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
+main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
+
+main.run_zonal_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings, components_to_clone=['cf', 'tp', 'ts', 'sc'])
 
 print('ok')

@@ -1,0 +1,4 @@
+id,name,bus_type,zone,kron_removable_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,max_flow_MW,v_min,v_max,p_load,q_load
+0,south,zone_bus,south,,,,,3000.0,,,0.0,0.0
+1,center,zone_bus,center,,,,,2400.0,,,0.0,0.0
+2,north,zone_bus,north,,,,,1400.0,,,0.0,0.0

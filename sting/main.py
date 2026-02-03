@@ -144,3 +144,33 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return capex, kr
+
+def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, solver_settings: dict = None, components_to_clone: list[str] = None):
+    """
+    Perform capacity expansion analysis with manual zonal grouping from a case study directory.
+    """
+    
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
+    start_time = time.time()
+    # Load system from CSV files
+    system = System.from_csv(case_directory=case_directory)
+    
+    # Perform manual zonal grouping
+    zonal_system = system.group_by_zones(components_to_clone=components_to_clone)
+
+    # Save zonal system to CSV files
+    zonal_system.write_csv(types = [int, float, str, bool])
+    
+    output_directory = os.path.join(case_directory, "outputs", "zonal_capacity_expansion")
+    # Perform capacity expansion analysis
+    capex = CapacityExpansion(
+        system=zonal_system, 
+        model_settings=model_settings, 
+        solver_settings=solver_settings, 
+        output_directory=output_directory)
+    capex.solve()  
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+    return capex, zonal_system

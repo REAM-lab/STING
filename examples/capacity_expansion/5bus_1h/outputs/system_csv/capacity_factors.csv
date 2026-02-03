@@ -1,0 +1,2 @@
+id,site,scenario,timepoint,capacity_factor,technology
+0,cf_one,sc1,1,1.0,solar

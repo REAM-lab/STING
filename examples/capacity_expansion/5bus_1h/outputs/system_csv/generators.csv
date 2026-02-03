@@ -1,0 +1,6 @@
+id,name,technology,bus,site,cap_existing_power_MW,cap_max_power_MW,cost_fixed_power_USDperkW,cost_variable_USDperMWh,c0_USD,c1_USDperMWh,c2_USDperMWh2,emission_rate_tonneCO2perMWh,bus_id,expand_capacity
+0,1,gas,center,cf_one,40.0,40.0,0.0,0.0,0.0,14.0,0.0,0,1,False
+1,2,gas,center,cf_one,170.0,170.0,0.0,0.0,0.0,15.0,0.0,0,1,False
+2,3,gas,south,cf_one,520.0,520.0,0.0,0.0,0.0,30.0,0.0,0,0,False
+3,4,gas,south,cf_one,200.0,200.0,0.0,0.0,0.0,40.0,0.0,0,0,False
+4,5,gas,south,cf_one,600.0,600.0,0.0,0.0,0.0,10.0,0.0,0,0,False

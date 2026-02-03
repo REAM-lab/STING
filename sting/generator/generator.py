@@ -34,7 +34,7 @@ class Generator:
     c0_USD: float
     c1_USDperMWh: float
     c2_USDperMWh2: float
-    emission_rate_tonneCO2perMWh: float
+    emission_rate_tonneCO2perMWh: float = 0
     tags: ClassVar[list[str]] = ["generator"]
     bus_id: int = None
     expand_capacity: bool = True

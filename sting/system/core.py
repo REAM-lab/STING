@@ -15,12 +15,14 @@ import polars as pl
 import time
 import logging
 import datetime
+import copy
 
 # -----------------------
 # Import sting code
 # -----------------------
 from sting import __logo__
 from sting import data_files
+from sting.bus.bus import Bus
 from sting.line.core import decompose_lines
 from sting.utils.data_tools import timeit, convert_class_instance_to_dictionary
 # from sting.shunt.core import combine_shunts
@@ -221,6 +223,60 @@ class System:
             eng.workspace[typ] = components_dict
 
         eng.quit()
+
+    @timeit
+    def group_by_zones(self, components_to_clone: list[str] = None):
+        """
+        Creation of a zonal system where buses are grouped by their zone attribute.
+
+        Method created for a manual zonal reduction of the system, needed for the capacity expansion module.
+        Warnings:
+         - Only components that have bus, from_bus, to_bus attributes are re-assigned to the new zonal buses.
+         - Buses without a zone attribute are ignored.
+         - Other attributes are set to None or default values.
+        """
+
+        zonal_system = System(case_directory=self.case_directory)
+
+        mapping_bus_to_zone = {n.name: n.zone for n in self.bus if n.zone is not None}
+        zones = set(mapping_bus_to_zone.values())
+
+        for zone in zones:
+            zonal_system.add( Bus(
+                name=zone,
+                bus_type="zone_bus",
+                zone=zone,
+            ))
+        logger.info(f" - System with new buses created: {zones}")
+
+        for component in self:
+            if (hasattr(component, 'bus')) and (component.bus in mapping_bus_to_zone):
+                copied_component = copy.deepcopy(component)
+                copied_component.bus = mapping_bus_to_zone[component.bus]
+                zonal_system.add(copied_component)
+
+            if ((hasattr(component, 'from_bus') and hasattr(component, 'to_bus')) and 
+                (component.from_bus in mapping_bus_to_zone) and (component.to_bus in mapping_bus_to_zone)):
+                if mapping_bus_to_zone[component.from_bus] != mapping_bus_to_zone[component.to_bus]:
+                    copied_component = copy.deepcopy(component)
+                    copied_component.from_bus = mapping_bus_to_zone[component.from_bus]
+                    copied_component.to_bus = mapping_bus_to_zone[component.to_bus]
+                    zonal_system.add(copied_component)
+        
+        logger.info(f" - Re-assigning bus, from_bus, to_bus attributes in system components completed.")
+
+        if components_to_clone is not None:
+            for attr in components_to_clone:
+                setattr(zonal_system, attr, copy.deepcopy(getattr(self, attr)))
+        logger.info(f" - Cloning components: {components_to_clone} completed.")
+
+        logger.info(f" - New system has: ")
+        for component_name in zonal_system.components["type"]:
+            logger.info(f"  - {len(getattr(zonal_system, component_name))} '{component_name}' components. ")
+
+        zonal_system.apply("post_system_init", zonal_system)
+
+        return zonal_system
 
     # ------------------------------------------------------------
     # Component Management + Searching

@@ -28,6 +28,7 @@ class Bus:
     id: int = field(default=-1, init=False)
     name: str
     bus_type: str = None
+    zone: str = None
     kron_removable_bus: bool = None
     base_power_MVA: float = None
     base_voltage_kV: float = None
@@ -84,8 +85,16 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     load = system.load
 
 
-    logger.info(" - Load data lookup")
-    load_lookup = {(ld.bus, ld.scenario, ld.timepoint): ld.load_MW for ld in load}
+    logger.info(" - Load data processing")
+    load_df = pl.DataFrame(
+                        schema = ['id', 'bus', 'scenario', 'timepoint', 'load_MW'],
+                        data= map(lambda ld: (ld.id, ld.bus, ld.scenario, ld.timepoint, ld.load_MW), load)
+                        )
+    if len(load_df.select(['bus', 'scenario', 'timepoint']).unique()) != (load_df.height):
+        logger.info("There are multiple load entries for the same bus, scenario, and timepoint. They will be summed.")
+        load_df = load_df.group_by(['bus', 'scenario', 'timepoint']).agg(pl.col('load_MW').sum().alias('load_MW'))
+    
+    load_lookup = {(ld['bus'], ld['scenario'], ld['timepoint']): ld['load_MW'] for ld in load_df.iter_rows(named=True)}
     load_buses = {ld.bus for ld in load if np.abs(ld.load_MW) != 0}
     N_load = [n for n in N if n.name in load_buses]
 
@@ -98,7 +107,9 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.vSHED = pyo.Var(N_load, S, T, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vSHED)} variables")
     
-    slack_bus = next(n for n in N if n.bus_type == 'slack')
+    slack_bus = next((n for n in N if n.bus_type == 'slack'), None)
+    if slack_bus is None:
+            slack_bus = N[0]
     model.vTHETA[slack_bus, :, :].fix(0.0)
 
     logger.info(" - Power flow per bus expressions")
