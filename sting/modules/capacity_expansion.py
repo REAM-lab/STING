@@ -177,13 +177,6 @@ class CapacityExpansion:
         logger.info(f"> Completed in {time.time() - start_time:.2f} seconds. \n")
 
 
-    def upload_solution(self, solution_file: str):
-        """
-        Upload a solution from a file. This can be used to warm start the optimization with a given solution.
-        """
-
-
-
     def solve(self):
         """
         Solve the capacity expansion optimization model.
@@ -250,6 +243,24 @@ class CapacityExpansion:
                     getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 
 
+    @timeit
+    def upload_built_capacities(self, input_directory: str,  make_non_expandable: bool = True):
+        """
+        Upload built capacities from a previous capex solution. 
+        
+        ### Args:
+        - input_directory: `str` 
+                    Directory where the CSV files with built capacities are located.
+        - make_non_expandable: `bool`, default True
+                    If True, the generators, storage units and buses for which built capacities are uploaded will be made non-expandable, 
+                    so that their capacities cannot be further expanded in the optimization. 
+                    If False, we check the uploaded built capacity against the maximum capacity, and 
+                    only make non-expandable those units for which the uploaded built capacity is greater or equal to the maximum capacity. 
+
+        """
+        generator.upload_built_capacities(self.system, input_directory, make_non_expandable)
+        storage.upload_built_capacities(self.system, input_directory, make_non_expandable)
+        bus.upload_built_capacities(self.system, input_directory, make_non_expandable)
 
 
 

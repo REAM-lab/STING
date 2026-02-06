@@ -365,7 +365,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
 def upload_built_capacities(system, input_directory: str,  make_non_expandable: bool = True):
-    """Function to upload a previous solution. This can be used to warm start the optimization with a given solution."""
+    """Upload built capacities from a previous capex solution. """
     
     if os.path.exists(os.path.join(input_directory, "line_built_capacity.csv")):
         line_built_capacity = pl.read_csv(os.path.join(input_directory, "line_built_capacity.csv"),

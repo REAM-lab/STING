@@ -156,7 +156,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
 
 def upload_built_capacities(system, input_directory: str,  make_non_expandable: bool = True):
-    """Function to upload a previous solution. This can be used to warm start the optimization with a given solution."""
+    """Upload built capacities from a previous capex solution. """
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
         logger.warning(f"No file named 'generator_built_capacity.csv' found in {input_directory}. Skipping upload of built capacities.")
