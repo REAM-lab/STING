@@ -33,18 +33,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     """Construction of energy budget constraints."""
 
     logger.info(" - Annual carbon policy constraint")
-    def cAnnualCarbonCap_rule(m, carbon_policy):
-        return  0.1 * sum(m.eEmissionsPerTp[t] * t.weight for t in system.tp) <= carbon_policy.carbon_cap_tonneCO2peryear * 0.1
+    def cAnnualCarbonCap_rule(m, carbon_policy, scenario):
+        return  0.1 * sum(m.eEmissionsPerScPerTp[scenario, t] * t.weight for t in system.tp) <= carbon_policy.carbon_cap_tonneCO2peryear * 0.1
         
-    model.cAnnualCarbonCap = pyo.Constraint(system.carbon_policy, rule=cAnnualCarbonCap_rule)
+    model.cAnnualCarbonCap = pyo.Constraint(system.carbon_policy, system.sc, rule=cAnnualCarbonCap_rule)
     logger.info(f"   Size: {len(model.cAnnualCarbonCap)} constraints")
-
-@timeit
-def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
-    """Export energy budget results to CSV files."""
-
-    df = pl.DataFrame( schema=['carbon_cap_tonneCO2peryear', 'total_emissions_tonneCO2peryear'],
-                        data=map(lambda tuple: (tuple[0].carbon_cap_tonneCO2peryear, tuple[1]), 
-                                                zip(model.cAnnualCarbonCap, pyo.value(model.cAnnualCarbonCap[:]))) )
-
-    df.write_csv(os.path.join(output_directory, "annual_carbon_policy_constraints.csv"))  

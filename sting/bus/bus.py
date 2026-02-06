@@ -122,9 +122,13 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     if model_settings.line_capacity_expansion:
 
-        logger.info(" - Set of expandable and non-expandable lines")
+        logger.info(" - Set of capacity-expandable lines")
         L_expandable = {l for l in L if (l.expand_capacity == True and l.cap_existing_power_MW is not None)}
+        logger.info(f"   Size: {len(L_expandable)} lines")
+
+        logger.info(" - Set of non capacity-expandable lines")
         L_nonexpandable = {l for l in L if (l.expand_capacity == False and l.cap_existing_power_MW is not None)}
+        logger.info(f"   Size: {len(L_nonexpandable)} lines")
         
         logger.info(" - Decision variables of line capacity expansion")
         model.vCAPL = pyo.Var(L_expandable, within=pyo.NonNegativeReals)
@@ -139,13 +143,14 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
    
         model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMaxFlowPerExpLine_rule)
         model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
+        logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine)} constraints")
 
         logger.info(" - Maximum and minimum flow constraints per non-expandable line")
         def cFlowPerNonExpLine_rule(m, l, s, t):
                 return  (-l.cap_existing_power_MW,  100 * l.x_pu / (l.x_pu**2 + l.r_pu**2) * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), l.cap_existing_power_MW)
         
         model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=cFlowPerNonExpLine_rule)
-        logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine) + len(model.cFlowPerNonExpLine)} constraints")
+        logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
         
         logger.info(" - Line cost per period expression")
         model.eLineCostPerPeriod = pyo.Expression(expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L_expandable))
@@ -253,7 +258,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                           csv_filepath=os.path.join(output_directory, 'load_shedding.csv'))
         
         # Export summary of load shedding costs
-        costs = pl.DataFrame({'component' : ['TotalCost_USD'],
+        costs = pl.DataFrame({'component' : ['total_cost_USD'],
                               'cost' : [  pyo.value(model.eShedTotalCost)]})
         costs.write_csv(os.path.join(output_directory, 'load_shedding_costs_summary.csv'))
 
@@ -263,7 +268,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                             dfcol_to_field={'line': 'name'}, 
                             value_name='built_capacity_MW', 
                             csv_filepath=os.path.join(output_directory, 'line_built_capacity.csv'))
-        costs = pl.DataFrame({ 'component' : ['CostPerPeriod_USD'],
+        costs = pl.DataFrame({ 'component' : ['cost_per_period_USD'],
                                 'cost' : [  pyo.value(model.eLineCostPerPeriod)]})
         costs.write_csv(os.path.join(output_directory, 'line_costs_summary.csv'))
     
@@ -273,7 +278,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                             dfcol_to_field={'bus': 'name'}, 
                             value_name='built_capacity_MW', 
                             csv_filepath=os.path.join(output_directory, 'bus_built_capacity.csv'))
-        costs = pl.DataFrame({ 'component' : ['CostPerPeriod_USD'],
+        costs = pl.DataFrame({ 'component' : ['cost_per_period_USD'],
                                 'cost' : [  pyo.value(model.eBusFlowExpCostPerPeriod)]})
         costs.write_csv(os.path.join(output_directory, 'bus_max_flow_costs_summary.csv'))
 
@@ -358,6 +363,42 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     
     # Export to CSV
     df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
+
+def upload_built_capacities(system, input_directory: str,  make_non_expandable: bool = True):
+    """Function to upload a previous solution. This can be used to warm start the optimization with a given solution."""
+    
+    if os.path.exists(os.path.join(input_directory, "line_built_capacity.csv")):
+        line_built_capacity = pl.read_csv(os.path.join(input_directory, "line_built_capacity.csv"),
+                                            schema_overrides={'line': pl.String, 'built_capacity_MW': pl.Float64})
+        line_built_capacity = dict(line_built_capacity.select("line", "built_capacity_MW").iter_rows())
+
+        lines_to_update = [l for l in system.line_pi if l.name in line_built_capacity]
+    
+        if lines_to_update:
+            for l in lines_to_update:
+                l.cap_existing_power_MW += line_built_capacity[l.name]
+                if make_non_expandable:
+                    l.expand_capacity = False
+                else:
+                    l.expand_capacity = False if l.cap_existing_power_MW >= l.cap_max_power_MW else True
+        logger.info(f"> Updated existing capacities for {len(lines_to_update)} lines based on input file {os.path.join(input_directory, 'line_built_capacity.csv')}")
+    else:
+        logger.warning(f"No file named 'line_built_capacity.csv' found in {input_directory}. Skipping upload of built line capacities.")
+
+    if os.path.exists(os.path.join(input_directory, "bus_built_capacity.csv")):
+        bus_built_capacity = pl.read_csv(os.path.join(input_directory, "bus_built_capacity.csv"),                                           
+                                         schema_overrides={'bus': pl.String, 'built_capacity_MW': pl.Float64})
+        bus_built_capacity = dict(bus_built_capacity.select("bus", "built_capacity_MW").iter_rows())
+
+        buses_to_update = [n for n in system.bus if n.name in bus_built_capacity]
+       
+        if buses_to_update:
+            for n in buses_to_update:
+                n.max_flow_MW += bus_built_capacity[n.name]
+        
+        logger.info(f"> Updated existing capacities for {len(buses_to_update)} buses based on input file {os.path.join(input_directory, 'bus_built_capacity.csv')}")  
+    else:
+        logger.warning(f"No file named 'bus_built_capacity.csv' found in {input_directory}. Skipping upload of built bus capacities.")
 
     
                         

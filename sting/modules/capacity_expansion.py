@@ -36,6 +36,8 @@ class ModelSettings(NamedTuple):
     generator_type_costs: str = "linear"
     load_shedding: bool = True
     single_storage_injection: bool = False
+    generation_capacity_expansion: bool = True
+    storage_capacity_expansion: bool = True
     line_capacity_expansion: bool = True
     line_capacity: bool = True
     bus_max_flow_expansion: bool = False
@@ -175,6 +177,12 @@ class CapacityExpansion:
         logger.info(f"> Completed in {time.time() - start_time:.2f} seconds. \n")
 
 
+    def upload_solution(self, solution_file: str):
+        """
+        Upload a solution from a file. This can be used to warm start the optimization with a given solution.
+        """
+
+
 
     def solve(self):
         """
@@ -217,7 +225,7 @@ class CapacityExpansion:
         logger.info(f"- Directory: {self.output_directory}")
 
         # Export solver results summary
-        solver_status = pl.DataFrame({'attribute' : ['SolverName', 'SolverStatus', 'TerminationCondition', 'TimeSpent_seconds'],
+        solver_status = pl.DataFrame({'attribute' : ['solver_name', 'solver_status', 'termination_condition', 'time_spent_seconds'],
                                       'value' : [ self.solver_settings.solver_name, 
                                                   self.model.solver_status,
                                                   self.model.termination_condition,
@@ -225,7 +233,7 @@ class CapacityExpansion:
         solver_status.write_csv(os.path.join(self.output_directory, 'solver_status.csv'))
 
         # Export costs summary
-        costs = pl.DataFrame({'component' : ['CostPerTimepoint_USD', 'CostPerPeriod_USD', 'TotalCost_USD'],
+        costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
                               'cost' : [  sum( pyo.value(self.model.eCostPerTp[t]) * t.weight for t in self.system.tp), 
                                             pyo.value(self.model.eCostPerPeriod), 
                                             pyo.value(self.model.eTotalCost)]})
@@ -238,7 +246,8 @@ class CapacityExpansion:
         if self.model_settings.policies is not None:
             for policy in self.model_settings.policies:
                 class_module = importlib.import_module(policy) 
-                getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
+                if hasattr(class_module, "export_results_capacity_expansion"):
+                    getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 
 
 
