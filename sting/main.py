@@ -99,7 +99,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
 
 def run_kron(case_directory=os.getcwd(), kron_settings=None, solver_settings=None):
     """
-    Routine to perform Kron reduction from a case study directory.
+    Function to perform Kron reduction from a case study directory.
     """
 
     start_time = time.time()
@@ -118,7 +118,7 @@ def run_kron(case_directory=os.getcwd(), kron_settings=None, solver_settings=Non
 
 def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, kron_settings=None):
     """
-    Perform capacity expansion analysis with Kron reduction from a case study directory.
+    Function to run capacity expansion analysis with Kron reduction from a case study directory.
     """
     
     # Set up logging to file
@@ -147,7 +147,7 @@ def run_kron_capex(case_directory=os.getcwd(), model_settings=None, solver_setti
 
 def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, solver_settings: dict = None, components_to_clone: list[str] = None):
     """
-    Perform capacity expansion analysis with manual zonal grouping from a case study directory.
+    Function to run capacity expansion analysis with manual zonal grouping from a case study directory.
     """
     
     # Set up logging to file
@@ -174,3 +174,36 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return capex, zonal_system
+
+def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None, solver_settings=None,
+                                 output_directory=None,
+                                 built_capacity_directory=None, make_non_expandable=False):
+    """
+    Function to run capacity expansion analysis with initial built capacities from a previous solution. 
+    """
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
+    start_time = time.time()
+
+    # Load system from CSV files
+    system = System.from_csv(case_directory=case_directory)
+
+    # If built_capacity_directory is not provided, it will look for built capacities in the default output directory of the capacity expansion results.
+    if built_capacity_directory is None:
+        built_capacity_directory = os.path.join(case_directory, "outputs", "capacity_expansion")
+
+    # Upload built capacities
+    system.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
+                                            make_non_expandable=make_non_expandable)
+
+    # Perform capacity expansion analysis
+    capex = CapacityExpansion(system=system , model_settings=model_settings, solver_settings=solver_settings,
+                              output_directory=output_directory)
+
+    # Solve capacity expansion
+    capex.solve()
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+
+    return capex, system

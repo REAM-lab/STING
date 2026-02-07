@@ -1,10 +1,18 @@
+"""
+This script runs the capacity expansion model for the 5-bus case study with 1-hour time resolution. 
+The data parameters and model settings are configured so that the capacity expansion is actually cost production model.
+The objective function for the bus-level model value must be 17479.90 USD.
+The objective function for the zonal model value must be 14810 USD. 
+
+%   Based on data from ...
+%     F.Li and R.Bo, "Small Test Systems for Power System Economic Studies",
+%     Proceedings of the 2010 IEEE Power & Energy Society General Meeting
+
+%   Created by Rui Bo in 2006, modified in 2010, 2014.
+"""
+
 # Import Python standard and third-party packages
-import os
-import matlab.engine
-import numpy as np
-import pandas as pd
 from pathlib import Path
-import numpy as np
 
 # Import sting package
 from sting import main
@@ -20,11 +28,13 @@ mosek_solver_settings = {
 model_settings = {
         "generator_type_costs": "quadratic",
         "load_shedding": False,
+        "generation_capacity_expansion": False,
+        "storage_capacity_expansion": False,
         "line_capacity_expansion": False,
-        "line_capacity": False,
+        "line_capacity": True,
         "kron_equivalent_flow_constraints": False,
         "bus_max_flow_expansion": False,
-        "bus_max_flow": True,
+        "bus_max_flow": False,
         "policies": [],
     }
 

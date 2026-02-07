@@ -1,0 +1,4 @@
+bus,scenario,timepoint,generator_dispatch_MW,storage_dispatch_MW,load_shedding_MW,load_MW,net_line_leaving_flow_MW
+south,sc1,1,789.9999999999993,0.0,0.0,700.0,89.99999999999943
+north,sc1,1,0.0,0.0,0.0,300.0,-300.0
+center,sc1,1,210.0,0.0,0.0,0.0,210.00000000000054

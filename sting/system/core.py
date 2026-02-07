@@ -29,6 +29,9 @@ from sting.utils.data_tools import timeit, convert_class_instance_to_dictionary
 from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 import sting.system.selections as sl
+import sting.bus.bus as bus
+import sting.generator.generator as generator
+import sting.generator.storage as storage
 
 logger = logging.getLogger(__name__)
 
@@ -277,6 +280,25 @@ class System:
         zonal_system.apply("post_system_init", zonal_system)
 
         return zonal_system
+    
+    @timeit
+    def upload_built_capacities_from_csv(self, built_capacity_directory: str,  make_non_expandable: bool = True):
+        """
+        Upload built capacities from a previous capex solution. 
+        
+        ### Args:
+        - built_capacity_directory: `str` 
+                    Directory where the CSV files with built capacities are located.
+        - make_non_expandable: `bool`, default True
+                    If True, the generators, storage units and buses for which built capacities are uploaded will be made non-expandable, 
+                    so that their capacities cannot be further expanded in the optimization. 
+                    If False, we check the uploaded built capacity against the maximum capacity, and 
+                    only make non-expandable those units for which the uploaded built capacity is greater or equal to the maximum capacity. 
+
+        """
+        generator.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
+        storage.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
+        bus.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
 
     # ------------------------------------------------------------
     # Component Management + Searching

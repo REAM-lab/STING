@@ -1,0 +1,5 @@
+attribute,value
+solver_name,gurobi
+solver_status,ok
+termination_condition,optimal
+time_spent_seconds,0.050306081771850586

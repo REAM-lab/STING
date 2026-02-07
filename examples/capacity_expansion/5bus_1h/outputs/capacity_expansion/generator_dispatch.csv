@@ -1,1 +1,6 @@
-generator,timepoint,dispatch_MW
+generator,scenario,timepoint,dispatch_MW
+1,sc1,1,40.0
+2,sc1,1,170.0
+3,sc1,1,323.4948462690512
+4,sc1,1,0.0
+5,sc1,1,466.5051537309486

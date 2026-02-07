@@ -1,0 +1,2 @@
+bus,name,c0_USD,c1_USDperMWh,c2_USDperMWh2,cap_existing_energy_MWh,cap_existing_power_MW,cap_max_power_MW,cost_fixed_energy_USDperkWh,cost_fixed_power_USDperkW,cost_variable_USDperMWh,duration_hr,efficiency_charge,efficiency_discharge,technology
+1,cats_1,0,0,0,0,0,0,0,0,0,0,0.92,0.92,hydroelectric pumped storage

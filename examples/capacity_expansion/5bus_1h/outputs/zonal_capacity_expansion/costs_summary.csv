@@ -1,4 +1,4 @@
 component,cost
-CostPerTimepoint_USD,14810.0
-CostPerPeriod_USD,0.0
-TotalCost_USD,14810.0
+cost_per_timepoint_USD,14809.99999999998
+cost_per_period_USD,0.0
+total_cost_USD,14809.99999999998

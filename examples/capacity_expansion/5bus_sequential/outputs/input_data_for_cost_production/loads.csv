@@ -1,0 +1,6 @@
+id,bus,scenario,timepoint,load_MW
+0,1,sc1,1,0.0
+1,2,sc1,1,300.0
+2,3,sc1,1,300.0
+3,4,sc1,1,400.0
+4,5,sc1,1,0.0

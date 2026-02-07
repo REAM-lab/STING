@@ -34,7 +34,7 @@ class ModelSettings(NamedTuple):
     Settings for the capacity expansion model.
     """
     generator_type_costs: str = "linear"
-    load_shedding: bool = True
+    load_shedding: bool = False
     single_storage_injection: bool = False
     generation_capacity_expansion: bool = True
     storage_capacity_expansion: bool = True
@@ -194,11 +194,11 @@ class CapacityExpansion:
         try:
             solver.load_duals()
         except:
-            logger.warning("Could not load duals from solver.")
+            logger.warning("Could not load duals, i.e., shadow prices, from solver.")
 
         logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
         logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD.")
+        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD. \n")
 
         self.model.solver_status = results.solver.status
         self.model.termination_condition = results.solver.termination_condition
@@ -243,24 +243,7 @@ class CapacityExpansion:
                     getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 
 
-    @timeit
-    def upload_built_capacities(self, input_directory: str,  make_non_expandable: bool = True):
-        """
-        Upload built capacities from a previous capex solution. 
-        
-        ### Args:
-        - input_directory: `str` 
-                    Directory where the CSV files with built capacities are located.
-        - make_non_expandable: `bool`, default True
-                    If True, the generators, storage units and buses for which built capacities are uploaded will be made non-expandable, 
-                    so that their capacities cannot be further expanded in the optimization. 
-                    If False, we check the uploaded built capacity against the maximum capacity, and 
-                    only make non-expandable those units for which the uploaded built capacity is greater or equal to the maximum capacity. 
 
-        """
-        generator.upload_built_capacities(self.system, input_directory, make_non_expandable)
-        storage.upload_built_capacities(self.system, input_directory, make_non_expandable)
-        bus.upload_built_capacities(self.system, input_directory, make_non_expandable)
 
 
 

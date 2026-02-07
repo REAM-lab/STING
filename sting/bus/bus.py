@@ -95,6 +95,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         load_df = load_df.group_by(['bus', 'scenario', 'timepoint']).agg(pl.col('load_MW').sum().alias('load_MW'))
     
     load_lookup = {(ld['bus'], ld['scenario'], ld['timepoint']): ld['load_MW'] for ld in load_df.iter_rows(named=True)}
+    model.load_lookup = load_lookup
     load_buses = {ld.bus for ld in load if np.abs(ld.load_MW) != 0}
     N_load = [n for n in N if n.name in load_buses]
 
@@ -250,6 +251,19 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
     """Transmission results to CSV files."""
 
+    # Export power balance by bus, scenario, and timepoint
+    df = pl.DataFrame(  data = [ (n.name, 
+                                  s.name, 
+                                  t.name, 
+                                  pyo.value(model.eGenAtBus[n, s, t]),
+                                  pyo.value(model.eNetDischargeAtBus[n, s, t]),
+                                  pyo.value(model.vSHED[n, s, t]) if hasattr(model, 'vSHED') else 0.0,
+                                  model.load_lookup.get((n.name, s.name, t.name), 0.0),
+                                  pyo.value(model.eFlowAtBus[n, s, t])) for n in system.bus for s in system.sc for t in system.tp],
+                        schema= ['bus', 'scenario', 'timepoint', 'generator_dispatch_MW', 'storage_dispatch_MW', 'load_shedding_MW', 'load_MW', 'net_line_leaving_flow_MW'],
+                        orient= 'row')
+    df.write_csv(os.path.join(output_directory, 'power_balance_by_bus.csv'))
+
     # Export load shedding results if it is existing
     if hasattr(model, 'vSHED'):
         pyovariable_to_df(model.vSHED, 
@@ -283,26 +297,14 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
         costs.write_csv(os.path.join(output_directory, 'bus_max_flow_costs_summary.csv'))
 
     # Export LMPs
-    try:
-        df = pyodual_to_df(model.dual, model.cEnergyBalance, 
-                            dfcol_to_field={'bus': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                            value_name='local_marginal_price_USDperMWh')
-        
-        df_timepoints = pl.DataFrame(
-                        schema = ['timepoint', 'weight'],
-                        data= map(lambda t: (t.name, t.weight), system.tp)
-                        )
-        
-        df = df.join(df_timepoints, left_on='timepoint', right_on='timepoint')
-    
-        df = df.with_columns(
-            (pl.col('local_marginal_price_USDperMWh') / (model.rescaling_factor_obj * pl.col('weight'))).alias('local_marginal_price_USDperMWh'))
-    
-        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
-    except:
-        df = pl.DataFrame(data=None, schema=["bus", "scenario", "timepoint", "local_marginal_price_USDperMWh"])
-        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
-        logger.warning("Could not export LMPs to CSV file. Solver is not supported or duals not available.")
+    df = pl.DataFrame( data = [ (n.name, 
+                                 s.name, 
+                                 t.name, 
+                                 model.dual[model.cEnergyBalance[n, s, t]]/(model.rescaling_factor_obj * t.weight) if hasattr(model, 'dual') else 'Not available') for n in system.bus for s in system.sc for t in system.tp],
+                        schema= ['bus', 'scenario', 'timepoint', 'local_marginal_price_USDperMWh'],
+                        orient= 'row')
+    df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+
 
     # Export line flows and losses   
     dct = model.vTHETA.extract_values()
@@ -364,7 +366,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
     # Export to CSV
     df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
-def upload_built_capacities(system, input_directory: str,  make_non_expandable: bool = True):
+def upload_built_capacities_from_csv(system, input_directory: str,  make_non_expandable: bool = True):
     """Upload built capacities from a previous capex solution. """
     
     if os.path.exists(os.path.join(input_directory, "line_built_capacity.csv")):
@@ -379,8 +381,7 @@ def upload_built_capacities(system, input_directory: str,  make_non_expandable: 
                 l.cap_existing_power_MW += line_built_capacity[l.name]
                 if make_non_expandable:
                     l.expand_capacity = False
-                else:
-                    l.expand_capacity = False if l.cap_existing_power_MW >= l.cap_max_power_MW else True
+                    
         logger.info(f"> Updated existing capacities for {len(lines_to_update)} lines based on input file {os.path.join(input_directory, 'line_built_capacity.csv')}")
     else:
         logger.warning(f"No file named 'line_built_capacity.csv' found in {input_directory}. Skipping upload of built line capacities.")

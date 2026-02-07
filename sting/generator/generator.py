@@ -155,7 +155,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                             pyo.value(model.eGenTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
 
-def upload_built_capacities(system, input_directory: str,  make_non_expandable: bool = True):
+def upload_built_capacities_from_csv(system, input_directory: str,  make_non_expandable: bool = True):
     """Upload built capacities from a previous capex solution. """
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
