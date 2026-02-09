@@ -47,7 +47,7 @@ gurobi_solver_settings = {
 			           'Method': 2},
 }
 
-main.run_capex(case_dir, solver_settings=gurobi_solver_settings, model_settings=model_settings)
+main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
 
 main.run_zonal_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings, components_to_clone=['cf', 'tp', 'ts', 'sc'])
 

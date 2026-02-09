@@ -3,6 +3,7 @@ from more_itertools import transpose
 from itertools import tee
 from typing import Iterable, Any
 import pandas as pd
+import polars as pl
 import copy
 
 class Stream:
@@ -67,6 +68,40 @@ class Stream:
             df = df.set_index("index").drop(columns=["__name__", "id"])
 
         df.index.name = index_name
+
+        return df
+    
+    def to_table_pl(self, *attrs, index=None, index_name=None):
+        """Return a dataframe with one column per selected attribute."""
+        attrs = list(attrs)
+        if index:
+            attrs.append(index)
+        else:
+            attrs.append("id")
+            class_name = self.copy().map(lambda x: type(x).__name__).to_list()
+
+        selection = self.select(*attrs)
+        df = pl.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)})
+
+        if index:
+            df = df.set_index(index)
+        else:
+            # Add a column "component" with the class name of each component (e.g. "InfiniteSource") 
+            df = df.with_columns( pl.Series("class", class_name) )
+            
+            # Replace column "component" with type name based on index map (e.g. "inf_src") 
+            df = df.with_columns( 
+                                 pl.col("class").replace(self._index_map).alias("component") )
+            df = df.with_columns(
+                                 (pl.col("component") + "_" + pl.col("id").cast(pl.String)).alias("component_id")
+                                )
+            df = df.select(["component_id"] + attrs).drop("id")
+            
+            df
+            #df["component_id"] = df["__name__"].replace(self._index_map) + "_" + df["id"].astype(str)
+            #df = df.set_index("index").drop(columns=["__name__", "id"])
+
+        #df.index.name = index_name
 
         return df
 

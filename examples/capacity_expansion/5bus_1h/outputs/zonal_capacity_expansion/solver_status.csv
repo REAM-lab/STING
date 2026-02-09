@@ -2,4 +2,4 @@ attribute,value
 solver_name,mosek_direct
 solver_status,ok
 termination_condition,optimal
-time_spent_seconds,0.00879526138305664
+time_spent_seconds,0.010914087295532227

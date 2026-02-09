@@ -2,7 +2,6 @@
 # Import python packages
 # ----------------------
 from __future__ import annotations
-from xml.parsers.expat import model
 import polars as pl
 import numpy as np
 from dataclasses import dataclass, field

@@ -24,24 +24,31 @@ logger = logging.getLogger(__name__)
 class Generator:
     id: int = field(default=0, init=False)
     name: str
-    technology: str
-    bus: str
-    site: str
-    cap_existing_power_MW: float
-    cap_max_power_MW: float
-    cost_fixed_power_USDperkW: float
-    cost_variable_USDperMWh: float
-    c0_USD: float
-    c1_USDperMWh: float
-    c2_USDperMWh2: float
+    bus: str 
+    minimum_active_power_MW: float = None
+    maximum_active_power_MW: float = None
+    minimum_reactive_power_MVAR: float = None
+    maximum_reactive_power_MVAR: float = None
+    technology: str = None
+    site: str = None
+    cap_existing_power_MW: float = None
+    cap_max_power_MW: float = None
+    cost_fixed_power_USDperkW: float = None
+    cost_variable_USDperMWh: float = None
+    c0_USD: float = None
+    c1_USDperMWh: float = None
+    c2_USDperMWh2: float = None
     emission_rate_tonneCO2perMWh: float = None
     tags: ClassVar[list[str]] = ["generator"]
     bus_id: int = None
-    expand_capacity: bool = True
+    expand_capacity: bool = None
+    component_id: str = None
 
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
-        self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
+
+        if self.cap_existing_power_MW is not None and self.cap_max_power_MW is not None:
+            self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
@@ -55,6 +62,10 @@ class CapacityFactor:
     timepoint: str
     capacity_factor: float
     technology: str = None
+
+
+def construct_ac_power_flow(acopf):
+    pass
 
 @timeit
 def construct_capacity_expansion_model(system, model, model_settings):

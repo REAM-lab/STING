@@ -16,3 +16,4 @@ cf,CapacityFactor,sting.generator.generator,capacity_factors.csv
 ess,Storage,sting.generator.storage,storage.csv
 energy_budget,EnergyBudget,sting.policies.energy_budgets,energy_budget_constraints.csv
 carbon_policy,CarbonPolicy,sting.policies.carbon_policies,carbon_policies.csv
+inf,InfiniteSource2,sting.generator.inf_src,inf_src.csv

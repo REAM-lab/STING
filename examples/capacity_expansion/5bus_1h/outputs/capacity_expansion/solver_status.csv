@@ -1,5 +1,5 @@
 attribute,value
-solver_name,gurobi
+solver_name,mosek_direct
 solver_status,ok
 termination_condition,optimal
-time_spent_seconds,0.09285616874694824
+time_spent_seconds,0.2707951068878174
