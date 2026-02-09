@@ -5985,3 +5985,1657 @@ Basic solution summary
 
 >> Run completed in 0.04 seconds.
 
+2026-02-08 14:04:07
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.02 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.01 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.02 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.01 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.03 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.01 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.01 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.01 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.15 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.07 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.07 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 13              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 4               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 8                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 10                after factor           : 10              
+Factor     - dense dim.             : 0                 flops                  : 1.00e+02        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   7.4e+02  5.3e-01  8.6e+01  0.00e+00   5.317106115e-02   2.008031974e+01   1.1e+02  0.01  
+1   1.5e+02  1.1e-01  1.8e+01  3.08e+00   2.559061933e-02   2.466445804e+01   2.2e+01  0.01  
+2   1.9e+00  1.4e-03  2.3e-01  1.16e+00   2.287060515e-02   5.505723559e-02   2.8e-01  0.01  
+3   1.1e-01  7.9e-05  1.3e-02  1.10e+00   2.321017279e-02   2.300019069e-02   1.6e-02  0.01  
+4   3.4e-02  2.4e-05  4.0e-03  4.25e-01   1.762762433e-02   1.691732143e-02   4.9e-03  0.01  
+5   1.5e-03  1.1e-06  1.7e-04  1.02e+00   1.759688411e-02   1.756167147e-02   2.1e-04  0.01  
+6   7.8e-05  5.6e-08  9.2e-06  1.01e+00   1.748886053e-02   1.748700284e-02   1.1e-05  0.01  
+7   1.4e-06  1.0e-09  1.7e-07  9.93e-01   1.748017151e-02   1.748014040e-02   2.1e-07  0.01  
+8   2.3e-10  1.7e-13  2.8e-11  9.98e-01   1.747989696e-02   1.747989696e-02   3.4e-11  0.01  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.01    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7479896962e-02    nrm: 5e+02    Viol.  con: 2e-07    var: 0e+00  
+  Dual.    obj: 1.7479896940e-02    nrm: 6e-05    Viol.  con: 7e-14    var: 4e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7479896925e-02    nrm: 5e+02    Viol.  con: 2e-13    var: 0e+00  
+  Dual.    obj: 1.7479896966e-02    nrm: 6e-05    Viol.  con: 0e+00    var: 9e-11  
+> Time spent by solver: 0.09 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.04 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.06 seconds. 
+
+> Completed in 0.12 seconds. 
+
+
+>> Run completed in 0.44 seconds.
+
+2026-02-08 14:04:36
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.01 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.03 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.02 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.03 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 20              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 13              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 4               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 8                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 10                after factor           : 10              
+Factor     - dense dim.             : 0                 flops                  : 1.00e+02        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   7.4e+02  5.3e-01  8.6e+01  0.00e+00   5.317106115e-02   2.008031974e+01   1.1e+02  0.01  
+1   1.5e+02  1.1e-01  1.8e+01  3.08e+00   2.559061933e-02   2.466445804e+01   2.2e+01  0.01  
+2   1.9e+00  1.4e-03  2.3e-01  1.16e+00   2.287060515e-02   5.505723559e-02   2.8e-01  0.01  
+3   1.1e-01  7.9e-05  1.3e-02  1.10e+00   2.321017279e-02   2.300019069e-02   1.6e-02  0.01  
+4   3.4e-02  2.4e-05  4.0e-03  4.25e-01   1.762762433e-02   1.691732143e-02   4.9e-03  0.01  
+5   1.5e-03  1.1e-06  1.7e-04  1.02e+00   1.759688411e-02   1.756167147e-02   2.1e-04  0.01  
+6   7.8e-05  5.6e-08  9.2e-06  1.01e+00   1.748886053e-02   1.748700284e-02   1.1e-05  0.01  
+7   1.4e-06  1.0e-09  1.7e-07  9.93e-01   1.748017151e-02   1.748014040e-02   2.1e-07  0.01  
+8   2.3e-10  1.7e-13  2.8e-11  9.98e-01   1.747989696e-02   1.747989696e-02   3.4e-11  0.01  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.01    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7479896962e-02    nrm: 5e+02    Viol.  con: 2e-07    var: 0e+00  
+  Dual.    obj: 1.7479896940e-02    nrm: 6e-05    Viol.  con: 7e-14    var: 4e-14  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7479896925e-02    nrm: 5e+02    Viol.  con: 2e-13    var: 0e+00  
+  Dual.    obj: 1.7479896966e-02    nrm: 6e-05    Viol.  con: 0e+00    var: 9e-11  
+> Time spent by solver: 0.12 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.04 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.10 seconds. 
+
+> Completed in 0.15 seconds. 
+
+
+>> Run completed in 0.33 seconds.
+
+2026-02-08 14:04:57
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpsxcv8cz3.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.18 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.04 seconds. 
+
+
+>> Run completed in 0.24 seconds.
+
+2026-02-08 14:05:31
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.01 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.01 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.03 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpb1mu174f.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.10 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.02 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.02 seconds. 
+
+> Completed in 0.06 seconds. 
+
+
+>> Run completed in 0.21 seconds.
+
+2026-02-08 14:07:33
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpgl77cylq.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.07 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.03 seconds. 
+
+
+>> Run completed in 0.12 seconds.
+
+2026-02-08 14:07:49
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.02 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmps328w1n9.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.11 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.04 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.07 seconds. 
+
+
+>> Run completed in 0.20 seconds.
+
+2026-02-08 14:08:04
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.01 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.01 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.01 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.04 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.02 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpev0plb7b.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.11 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.02 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.14 seconds. 
+
+> Completed in 0.17 seconds. 
+
+
+>> Run completed in 0.34 seconds.
+
+2026-02-08 14:08:37
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.00 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.00 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpx8rl3g0t.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xd4ca6805
+Coefficient statistics:
+  Matrix range     [9e-01, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [4e+01, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 7.21e-14  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 8.25e-14  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 1.88e-13  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 1.37e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.07 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.12 seconds.
+
+2026-02-08 14:10:10
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+   Completed
+> Loading system from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/inputs ...
+ - 'lines.csv' ... 
+   Added 6 'line_pi' components. 
+   Completed in 0.01 seconds.
+ - 'buses.csv' ... 
+   Added 5 'bus' components. 
+   Completed in 0.00 seconds.
+ - 'timeseries.csv' ... 
+   Added 1 'ts' components. 
+   Completed in 0.00 seconds.
+ - 'timepoints.csv' ... 
+   Added 1 'tp' components. 
+   Completed in 0.00 seconds.
+ - 'scenarios.csv' ... 
+   Added 1 'sc' components. 
+   Completed in 0.01 seconds.
+ - 'loads.csv' ... 
+   Added 5 'load' components. 
+   Completed in 0.00 seconds.
+ - 'generators.csv' ... 
+   Added 5 'gen' components. 
+   Completed in 0.00 seconds.
+ - 'capacity_factors.csv' ... 
+   Added 1 'cf' components. 
+   Completed in 0.00 seconds.
+ - 'storage.csv' ... 
+   Added 1 'ess' components. 
+   Completed in 0.01 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.04 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum and minimum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.02 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+> Solving capacity expansion model...
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpzjiw2avg.pyomo.lp
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0x92a2bb3c
+Coefficient statistics:
+  Matrix range     [1e-02, 2e+04]
+  Objective range  [1e-05, 4e-05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [3e+00, 1e+03]
+Presolve removed 8 rows and 18 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 8 columns, 18 nonzeros
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 6.000e+00
+ Factor NZ  : 1.000e+01
+ Factor Ops : 3.000e+01 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -1.45768059e+02  2.00966885e-02  0.00e+00 4.60e+01  5.21e+01     0s
+   1  -6.89922627e+01  2.29802740e-02  0.00e+00 6.08e+00  6.11e+00     0s
+   2  -2.45165571e-01  2.29144547e-02  0.00e+00 0.00e+00  2.35e-02     0s
+   3   4.33334015e-03  2.21055926e-02  0.00e+00 0.00e+00  1.52e-03     0s
+   4   1.61013129e-02  1.75423861e-02  0.00e+00 0.00e+00  1.11e-04     0s
+   5   1.74317501e-02  1.75030058e-02  0.00e+00 1.32e-13  5.50e-06     0s
+   6   1.74780178e-02  1.74823347e-02  0.00e+00 2.65e-13  3.34e-07     0s
+   7   1.74798208e-02  1.74798983e-02  0.00e+00 6.82e-14  5.99e-09     0s
+   8   1.74798969e-02  1.74798969e-02  0.00e+00 3.23e-13  6.36e-15     0s
+
+Barrier solved model in 8 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798969e-02
+
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.09 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.90 USD. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_1h/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.02 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.05 seconds. 
+
+> Completed in 0.09 seconds. 
+
+
+>> Run completed in 0.24 seconds.
+

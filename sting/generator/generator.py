@@ -86,9 +86,9 @@ def construct_capacity_expansion_model(system, model, model_settings):
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     def max_dispatch_rule(m, g, s, t):
         if g.site != "no_capacity_factor":
-                return m.vGEN[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+                return 1e2 * m.vGEN[g, s, t] <= 1e2 * cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
         else:
-                return m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+                return  m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
 
     model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
     logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")

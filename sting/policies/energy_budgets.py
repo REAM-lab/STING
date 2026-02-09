@@ -41,6 +41,9 @@ class EnergyBudget:
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
     
+    def __repr__(self):
+        return f"EnergyBudget(id={self.id}, budget_region='{self.budget_region}', budget_term='{self.budget_term}', budget_constraint_GWh={self.budget_constraint_GWh})"
+    
     def post_system_init(self, system):
         
         if EnergyBudget._cache_initialized is False:
@@ -69,8 +72,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     logger.info(" - Constraint for energy budget")
     def cEnergyBudget_rule(m, eb, s):
-        return  sum(m.vGEN[g, s, t] * t.weight for g in eb.generators for t in eb.timepoints) <= (eb.budget_constraint_GWh * 1000.0)  # convert GWh to MWh
-        
+        return  0.01 * sum(m.vGEN[g, s, t] * t.weight for g in eb.generators for t in eb.timepoints) <= (eb.budget_constraint_GWh * 10)  # convert GWh to MWh
+
     model.cEnergyBudget = pyo.Constraint(system.energy_budget, system.sc, rule=cEnergyBudget_rule)
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")
 

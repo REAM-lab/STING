@@ -34,7 +34,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     logger.info(" - Annual carbon policy constraint")
     def cAnnualCarbonCap_rule(m, carbon_policy, scenario):
-        return  0.1 * sum(m.eEmissionsPerScPerTp[scenario, t] * t.weight for t in system.tp) <= carbon_policy.carbon_cap_tonneCO2peryear * 0.1
+        return  0.01 * sum(m.eEmissionsPerScPerTp[scenario, t] * t.weight for t in system.tp) <= carbon_policy.carbon_cap_tonneCO2peryear * 0.01
         
     model.cAnnualCarbonCap = pyo.Constraint(system.carbon_policy, system.sc, rule=cAnnualCarbonCap_rule)
     logger.info(f"   Size: {len(model.cAnnualCarbonCap)} constraints")

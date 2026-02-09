@@ -2,6 +2,7 @@
 # Import python packages
 # ----------------------
 from __future__ import annotations
+from xml.parsers.expat import model
 import polars as pl
 import numpy as np
 from dataclasses import dataclass, field
@@ -13,6 +14,10 @@ from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
 import importlib
 from typing import NamedTuple
+
+from pyomo.environ import *
+from pyomo.repn import generate_standard_repn
+import math
 
 # ------------------
 # Import sting code
@@ -80,6 +85,7 @@ class CapacityExpansion:
         logger.info("\n>> Starting capacity expansion...\n")
         self.set_settings()
         self.construct()
+        self.inspect_coefficients()
         self.set_output_folder()
 
     def set_settings(self):
@@ -171,7 +177,7 @@ class CapacityExpansion:
         self.model.eCostPerPeriod = pyo.Expression(expr=eCostPerPeriod_rule)
         self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.tp))
         
-        self.model.rescaling_factor_obj = pyo.Param(initialize=1e-6)  # To express the objective in million USD
+        self.model.rescaling_factor_obj = pyo.Param(initialize=1e-2)  # To reduce range of objective function values.
 
         self.model.obj = pyo.Objective(expr= self.model.rescaling_factor_obj * self.model.eTotalCost, sense=pyo.minimize)
         logger.info(f"> Completed in {time.time() - start_time:.2f} seconds. \n")
@@ -198,7 +204,7 @@ class CapacityExpansion:
 
         logger.info(f"> Time spent by solver: {time.time() - start_time:.2f} seconds.")
         logger.info(f"> Solver finished with status: {results.solver.status}, termination condition: {results.solver.termination_condition}.")
-        logger.info(f"> Objective value: {(pyo.value(self.model.obj) * 1/self.model.rescaling_factor_obj):.2f} USD. \n")
+        logger.info(f"> Objective value: {(pyo.value(self.model.obj))}. \n")
 
         self.model.solver_status = results.solver.status
         self.model.termination_condition = results.solver.termination_condition
@@ -242,10 +248,98 @@ class CapacityExpansion:
                 if hasattr(class_module, "export_results_capacity_expansion"):
                     getattr(class_module, "export_results_capacity_expansion")(self.system, self.model, self.output_directory)
 
+    @timeit
+    def inspect_coefficients(self):
+        """
+        Inspection of coefficients in the model.
+        """
+
+        min_coef = math.inf
+        max_coef = 0
+
+        min_coef_info = None
+        max_coef_info = None
+
+        min_rhs = math.inf
+        max_rhs = -math.inf
+
+        min_rhs_info = None
+        max_rhs_info = None
+
+        for c in self.model.component_data_objects(Constraint, active=True):
+            repn = generate_standard_repn(c.body, compute_values=False)
+
+            for var, coef in zip(repn.linear_vars, repn.linear_coefs):
+                val = abs(coef)
+
+                if val == 0:
+                    continue
+
+                if val < min_coef:
+                    min_coef = val
+                    min_coef_info = (coef, c.name, var.name)
+
+                if val > max_coef:
+                    max_coef = val
+                    max_coef_info = (coef, c.name, var.name)
+
+            if c.lower is not None:
+                v = abs(value(c.lower))
+                if v < min_rhs:
+                    min_rhs = v
+                    min_rhs_info = (value(c.lower), c.name, "lower")
+                if v > max_rhs:
+                    max_rhs = v
+                    max_rhs_info = (value(c.lower), c.name, "lower")
 
 
+            if c.upper is not None:
+                v = abs(value(c.upper))
+                if v < min_rhs:
+                    min_rhs = v
+                    min_rhs_info = (value(c.upper), c.name, "upper")
+                if v > max_rhs:
+                    max_rhs = v
+                    max_rhs_info = (value(c.upper), c.name, "upper")
 
+        obj = next(self.model.component_data_objects(Objective, active=True))
 
+        repn = generate_standard_repn(obj.expr, compute_values=False)
 
+        min_obj_coef = math.inf
+        max_obj_coef = 0
+        min_obj_info = None
+        max_obj_info = None
 
+        for var, coef in zip(repn.linear_vars, repn.linear_coefs):
 
+            val = abs(coef)
+
+            if val < min_obj_coef:
+                min_obj_coef = coef
+                min_obj_info = (coef, var.name)
+
+            if val > max_obj_coef:
+                max_obj_coef = coef               
+                max_obj_info = (coef, var.name)
+
+        logger.info(f"  - Matrix coefficient extremes:")
+        logger.info(f"     - Minimum coefficient: {min_coef_info[0]}")
+        logger.info(f"       Constraint={min_coef_info[1]}  ")
+        logger.info(f"       Variable={min_coef_info[2]}")
+        logger.info(f"     - Maximum coefficient: {max_coef_info[0]}")
+        logger.info(f"       Constraint={max_coef_info[1]}  ")
+        logger.info(f"       Variable={max_coef_info[2]} \n")
+        logger.info(f"  - RHS extremes:")
+        logger.info(f"     - Minimum RHS: {min_rhs_info[0]}")
+        logger.info(f"       Constraint={min_rhs_info[1]}  ")
+        logger.info(f"       Bound={min_rhs_info[2]}")
+        logger.info(f"     - Maximum RHS: {max_rhs_info[0]}")
+        logger.info(f"       Constraint={max_rhs_info[1]}  ")
+        logger.info(f"       Bound={max_rhs_info[2]} \n")
+
+        logger.info(f"  - Objective coefficient extremes:")
+        logger.info(f"     - Minimum coefficient: {min_obj_info[0]}")
+        logger.info(f"       Variable={min_obj_info[1]}")
+        logger.info(f"     - Maximum coefficient: {max_obj_info[0]}")
+        logger.info(f"       Variable={max_obj_info[1]}")
