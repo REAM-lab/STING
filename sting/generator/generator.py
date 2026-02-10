@@ -53,6 +53,9 @@ class Generator:
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
+    
+    def __repr__(self):
+        return f"Generator(id={self.id}, name='{self.name}', bus='{self.bus}')"
 
 @dataclass(slots=True)
 class CapacityFactor:

@@ -44,6 +44,7 @@ class ModelSettings(NamedTuple):
     storage_capacity_expansion: bool = True
     line_capacity_expansion: bool = True
     line_capacity: bool = True
+    power_flow: str = "dc"
     bus_max_flow_expansion: bool = False
     bus_max_flow: bool = False
     angle_difference_limits: bool = False

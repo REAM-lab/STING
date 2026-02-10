@@ -24,6 +24,7 @@ class LinePiModel:
     tags: ClassVar[list[str]] = ["line"]
     from_bus_id: int = None
     to_bus_id: int = None
+    efficiency: float = 0.98
 
     def post_system_init(self, system):
         self.from_bus_id = next((n for n in system.bus if n.name == self.from_bus)).id

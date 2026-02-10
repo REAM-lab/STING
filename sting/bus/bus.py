@@ -101,27 +101,52 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
     load_buses = {ld.bus for ld in load if np.abs(ld.load_MW) != 0}
     N_load = [n for n in N if n.name in load_buses]
 
-    logger.info(" - Decision variables of bus angles")
-    model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
-    logger.info(f"   Size: {len(model.vTHETA)} variables")
-
     if model_settings.load_shedding:
         logger.info(" - Decision variables of load shedding")
         model.vSHED = pyo.Var(N_load, S, T, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vSHED)} variables")
-    
-    slack_bus = next((n for n in N if n.bus_type == 'slack'), None)
-    if slack_bus is None:
+
+    if model_settings.power_flow == 'dc':    
+        logger.info(" - Decision variables of bus angles")
+        model.vTHETA = pyo.Var(N, S, T, within=pyo.Reals)
+        logger.info(f"   Size: {len(model.vTHETA)} variables")
+
+        slack_bus = next((n for n in N if n.bus_type == 'slack'), None)
+        if slack_bus is None:
             slack_bus = N[0]
-    model.vTHETA[slack_bus, :, :].fix(0.0)
+        model.vTHETA[slack_bus, :, :].fix(0.0)
 
-    logger.info(" - Power flow per bus expressions")
-    Y = build_admittance_matrix_from_lines(len(N), L)
-    B = Y.imag
+        logger.info(" - Power flow per bus expressions")
+        Y = build_admittance_matrix_from_lines(len(N), L)
+        B = Y.imag
 
-    N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
+        N_at_bus = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
+        model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
 
-    model.eFlowAtBus = pyo.Expression(N, S, T, expr=lambda m, n, s, t: 100 * quicksum(B[n.id, k.id] * (m.vTHETA[n, s, t] - m.vTHETA[k, s, t]) for k in N_at_bus[n.id]) )
+    elif model_settings.power_flow == 'transport':
+        logger.info(" - Decision variables of line flows")
+        model.vFLOWSENT = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
+        model.vFLOWSENT_REV = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vFLOWSENT) + len(model.vFLOWSENT_REV)} variables")
+        
+        L_at_bus = {n.id: [l for l in L if n.name in [l.from_bus, l.to_bus]] for n in N}
+
+        def cFlowSentAtBus_rule(m, n, s, t):
+            sending_lines = [l for l in L_at_bus[n.id] if l.from_bus == n.name]
+
+            return quicksum(m.vFLOWSENT[l, s, t] - m.vFLOWSENT_REV[l, s, t] for l in sending_lines) 
+
+        model.eFlowSentAtBus = pyo.Expression(N, S, T, rule=cFlowSentAtBus_rule)
+
+        def cFlowRecAtBus_rule(m, n, s, t):
+            receiving_lines = [l for l in L_at_bus[n.id] if l.to_bus == n.name]
+
+            return quicksum(m.vFLOWSENT[l, s, t] * l.efficiency - m.vFLOWSENT_REV[l, s, t] * l.efficiency for l in receiving_lines)
+        
+        model.eFlowRecAtBus = pyo.Expression(N, S, T, rule=cFlowRecAtBus_rule)
+
+        model.eFlowAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: m.eFlowSentAtBus[n, s, t] - m.eFlowRecAtBus[n, s, t])
+
 
     if model_settings.line_capacity_expansion:
 
@@ -137,27 +162,39 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.vCAPL = pyo.Var(L_expandable, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vCAPL)} variables")
 
-        logger.info(" - Maximum and minimum flow constraints per expandable line")
-        def cMaxFlowPerExpLine_rule(m, l, s, t):
-                b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
-                return  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= 1/100 * (m.vCAPL[l] + l.cap_existing_power_MW)
-        
-        def cMinFlowPerExpLine_rule(m, l, s, t):
-                b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
-                return  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) >= -1/100 * (m.vCAPL[l] + l.cap_existing_power_MW)
+        if model_settings.power_flow == 'dc':  
+            logger.info(" - Maximum and minimum flow constraints per expandable line")
+            def cMaxFlowPerExpLine_rule(m, l, s, t):
+                    b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
+                    return  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) <= 1/100 * (m.vCAPL[l] + l.cap_existing_power_MW)
+            
+            def cMinFlowPerExpLine_rule(m, l, s, t):
+                    b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
+                    return  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]) >= -1/100 * (m.vCAPL[l] + l.cap_existing_power_MW)
    
-        model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMaxFlowPerExpLine_rule)
-        model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
-        logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine)} constraints")
+            model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMaxFlowPerExpLine_rule)
+            model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
+            logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine)} constraints")
 
-        logger.info(" - Maximum and minimum flow constraints per non-expandable line")
-        def cFlowPerNonExpLine_rule(m, l, s, t):
+            logger.info(" - Maximum and minimum flow constraints per non-expandable line")
+            def cFlowPerNonExpLine_rule(m, l, s, t):
                 b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
                 return  (-1/100 * l.cap_existing_power_MW,  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), 1/100 * l.cap_existing_power_MW)
         
-        model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=cFlowPerNonExpLine_rule)
-        logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
-        
+            model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=cFlowPerNonExpLine_rule)
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
+
+        elif model_settings.power_flow == 'transport':
+            logger.info(" - Maximum and minimum flow constraints per expandable line")
+            model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOWSENT[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
+            model.cMaxFlowPerExpLineRev = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOWSENT_REV[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
+            logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMaxFlowPerExpLineRev)} constraints")
+
+            logger.info(" - Maximum and minimum flow constraints per non-expandable line")
+            model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOWSENT[l, s, t] <= l.cap_existing_power_MW))
+            model.cFlowPerNonExpLineRev = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOWSENT_REV[l, s, t] <= l.cap_existing_power_MW))
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine) + len(model.cFlowPerNonExpLineRev)} constraints")
+
         logger.info(" - Line cost per period expression")
         model.eLineCostPerPeriod = pyo.Expression(expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L_expandable))
 
@@ -165,14 +202,20 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     elif (model_settings.line_capacity):
         
-        logger.info(" - Maximum and minimum flow constraints per line")
         L_cap_constrained = {l for l in L if l.cap_existing_power_MW is not None}
-        def cFlowPerNonExpLine_rule(m, l, s, t):
-                b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
-                return  (-1/100 * l.cap_existing_power_MW,  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), 1/100 * l.cap_existing_power_MW)
-        
-        model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=cFlowPerNonExpLine_rule)
-        logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
+        logger.info(" - Maximum flow constraints per line")
+        if model_settings.power_flow == 'dc':
+            def cFlowPerNonExpLine_rule(m, l, s, t):
+                    b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
+                    return  (-1/100 * l.cap_existing_power_MW,  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), 1/100 * l.cap_existing_power_MW)
+            
+            model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=cFlowPerNonExpLine_rule)
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
+
+        if model_settings.power_flow == 'transport':
+            model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOWSENT[l, s, t] <= l.cap_existing_power_MW)
+            model.cFlowPerNonExpLineRev = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOWSENT_REV[l, s, t] <= l.cap_existing_power_MW)
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine) + len(model.cFlowPerNonExpLineRev)} constraints")
 
     if model_settings.kron_equivalent_flow_constraints and (model_settings.line_capacity == False):
 
@@ -222,7 +265,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
         model.cFlowPerBus = pyo.Constraint(buses_with_max_flow, S, T, rule=lambda m, n, s, t: (-n.max_flow_MW, m.eFlowAtBus[n, s, t], n.max_flow_MW))
         logger.info(f"   Size: {len(model.cFlowPerBus)} constraints")
 
-    if model_settings.angle_difference_limits:
+    if model_settings.angle_difference_limits and model_settings.power_flow == 'dc':
 
         logger.info(" - Angle difference limit constraints per line")
         lines_with_angle_limits = {l for l in L if (l.angle_min_deg > -360) and (l.angle_max_deg < 360)}
@@ -316,64 +359,79 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
 
 
     # Export line flows and losses   
-    dct = model.vTHETA.extract_values()
+    if hasattr(model, 'vFLOWSENT'):
+        df = pl.DataFrame(  data = [ (l.name, 
+                                      l.from_bus, 
+                                      l.to_bus, 
+                                      s.name, 
+                                      t.name, 
+                                      pyo.value(model.vFLOWSENT[l, s, t]), 
+                                      pyo.value(model.vFLOWSENT_REV[l, s, t])
+                                      ) for l in system.line_pi for s in system.sc for t in system.tp],
+                            schema= ['line', 'from_bus', 'to_bus', 'scenario', 'timepoint', 'flow_sent_MW', 'flow_sent_reverse_MW'],
+                            orient= 'row')
+        df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
-    def dct_to_tuple(dct_item):
-        k, v = dct_item
-        bus, sc, t = k
-        return (bus.name, sc.name, t.name, v) 
-    
-    df_angle = pl.DataFrame(  
-                        schema =['bus', 'scenario', 'timepoint', 'angle_rad'],
-                        data= map(dct_to_tuple, dct.items()) )
 
-    df_line = pl.DataFrame(
-        schema = ['name', 'from_bus', 'to_bus', 'r_pu', 'x_pu', 'g_pu', 'b_pu'],
-        data= map(lambda l: (l.name, l.from_bus, l.to_bus, l.r_pu, l.x_pu, l.g_pu, l.b_pu), system.line_pi)
-    )
+    if hasattr(model, 'vTHETA'):
+        dct = model.vTHETA.extract_values()
 
-    # Join
-    df = df_line.join(df_angle,
-                        left_on = ['from_bus'],
-                        right_on = ['bus'],
-                        how = 'right')
-    
-    df = df.drop_nulls()
-    df = df.rename({'angle_rad': 'from_bus_angle_rad', 'bus': 'from_bus'})
+        def dct_to_tuple(dct_item):
+            k, v = dct_item
+            bus, sc, t = k
+            return (bus.name, sc.name, t.name, v) 
+        
+        df_angle = pl.DataFrame(  
+                            schema =['bus', 'scenario', 'timepoint', 'angle_rad'],
+                            data= map(dct_to_tuple, dct.items()) )
 
-    # Join again
-    df = df.join(df_angle, 
-                 left_on = ['to_bus', 'scenario', 'timepoint'],
-                 right_on = ['bus', 'scenario', 'timepoint'],
-                 how = 'right')
-    df = df.drop_nulls()
-    df = df.rename({'angle_rad': 'to_bus_angle_rad', 'bus': 'to_bus'})
-    
-    # Compute admittance
-    df = df.with_columns(
-        (pl.col('x_pu') / (pl.col('r_pu')**2 + pl.col('x_pu')**2)).alias('y_pu'))
-    
-    # Compute DC flow
-    df = df.with_columns(
-        (100 * pl.col('y_pu') * (pl.col('from_bus_angle_rad') - pl.col('to_bus_angle_rad'))).alias('DCflow_MW'))
-    
-    # Compute losses
-    df = df.with_columns(
-        (pl.col('r_pu') * pl.col('DCflow_MW')**2).alias('losses_MW'))
-    
-    # Transform radians to degrees
-    df = df.with_columns(
-        (pl.col('from_bus_angle_rad') * 180 / np.pi).alias('from_bus_angle_deg'))
-    df = df.with_columns(
-        (pl.col('to_bus_angle_rad') * 180 / np.pi).alias('to_bus_angle_deg'))
-    
-    # Select columns to export
-    df = df.select([
-                    'name', 'from_bus', 'to_bus', 'scenario', 'timepoint', 'from_bus_angle_deg', 'to_bus_angle_deg',
-                    'DCflow_MW', 'losses_MW'])
-    
-    # Export to CSV
-    df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
+        df_line = pl.DataFrame(
+            schema = ['name', 'from_bus', 'to_bus', 'r_pu', 'x_pu', 'g_pu', 'b_pu'],
+            data= map(lambda l: (l.name, l.from_bus, l.to_bus, l.r_pu, l.x_pu, l.g_pu, l.b_pu), system.line_pi)
+        )
+
+        # Join
+        df = df_line.join(df_angle,
+                            left_on = ['from_bus'],
+                            right_on = ['bus'],
+                            how = 'right')
+        
+        df = df.drop_nulls()
+        df = df.rename({'angle_rad': 'from_bus_angle_rad', 'bus': 'from_bus'})
+
+        # Join again
+        df = df.join(df_angle, 
+                    left_on = ['to_bus', 'scenario', 'timepoint'],
+                    right_on = ['bus', 'scenario', 'timepoint'],
+                    how = 'right')
+        df = df.drop_nulls()
+        df = df.rename({'angle_rad': 'to_bus_angle_rad', 'bus': 'to_bus'})
+        
+        # Compute admittance
+        df = df.with_columns(
+            (pl.col('x_pu') / (pl.col('r_pu')**2 + pl.col('x_pu')**2)).alias('y_pu'))
+        
+        # Compute DC flow
+        df = df.with_columns(
+            (100 * pl.col('y_pu') * (pl.col('from_bus_angle_rad') - pl.col('to_bus_angle_rad'))).alias('DCflow_MW'))
+        
+        # Compute losses
+        df = df.with_columns(
+            (pl.col('r_pu') * pl.col('DCflow_MW')**2).alias('losses_MW'))
+        
+        # Transform radians to degrees
+        df = df.with_columns(
+            (pl.col('from_bus_angle_rad') * 180 / np.pi).alias('from_bus_angle_deg'))
+        df = df.with_columns(
+            (pl.col('to_bus_angle_rad') * 180 / np.pi).alias('to_bus_angle_deg'))
+        
+        # Select columns to export
+        df = df.select([
+                        'name', 'from_bus', 'to_bus', 'scenario', 'timepoint', 'from_bus_angle_deg', 'to_bus_angle_deg',
+                        'DCflow_MW', 'losses_MW'])
+        
+        # Export to CSV
+        df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
 def upload_built_capacities_from_csv(system, input_directory: str,  make_non_expandable: bool = True):
     """Upload built capacities from a previous capex solution. """
