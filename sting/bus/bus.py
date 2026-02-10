@@ -125,23 +125,23 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     elif model_settings.power_flow == 'transport':
         logger.info(" - Decision variables of line flows")
-        model.vFLOWSENT = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
-        model.vFLOWSENT_REV = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
-        logger.info(f"   Size: {len(model.vFLOWSENT) + len(model.vFLOWSENT_REV)} variables")
+        model.vFLOW_SENT_AT_FROM_BUS = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
+        model.vFLOW_SENT_AT_TO_BUS = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
+        logger.info(f"   Size: {len(model.vFLOW_SENT_AT_FROM_BUS) + len(model.vFLOW_SENT_AT_TO_BUS)} variables")
         
         L_at_bus = {n.id: [l for l in L if n.name in [l.from_bus, l.to_bus]] for n in N}
 
         def cFlowSentAtBus_rule(m, n, s, t):
             sending_lines = [l for l in L_at_bus[n.id] if l.from_bus == n.name]
 
-            return quicksum(m.vFLOWSENT[l, s, t] - m.vFLOWSENT_REV[l, s, t] for l in sending_lines) 
+            return quicksum(m.vFLOW_SENT_AT_FROM_BUS[l, s, t] - l.efficiency * m.vFLOW_SENT_AT_TO_BUS[l, s, t] for l in sending_lines) 
 
         model.eFlowSentAtBus = pyo.Expression(N, S, T, rule=cFlowSentAtBus_rule)
 
         def cFlowRecAtBus_rule(m, n, s, t):
             receiving_lines = [l for l in L_at_bus[n.id] if l.to_bus == n.name]
 
-            return quicksum(m.vFLOWSENT[l, s, t] * l.efficiency - m.vFLOWSENT_REV[l, s, t] * l.efficiency for l in receiving_lines)
+            return quicksum(m.vFLOW_SENT_AT_TO_BUS[l, s, t] * l.efficiency - m.vFLOW_SENT_AT_FROM_BUS[l, s, t] for l in receiving_lines)
         
         model.eFlowRecAtBus = pyo.Expression(N, S, T, rule=cFlowRecAtBus_rule)
 
@@ -176,7 +176,7 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             model.cMinFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=cMinFlowPerExpLine_rule)
             logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMinFlowPerExpLine)} constraints")
 
-            logger.info(" - Maximum and minimum flow constraints per non-expandable line")
+            logger.info(" - Maximum flow constraints per non-expandable line")
             def cFlowPerNonExpLine_rule(m, l, s, t):
                 b = l.x_pu / (l.x_pu**2 + l.r_pu**2)
                 return  (-1/100 * l.cap_existing_power_MW,  b * (m.vTHETA[N[l.from_bus_id], s, t] - m.vTHETA[N[l.to_bus_id], s, t]), 1/100 * l.cap_existing_power_MW)
@@ -185,15 +185,15 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
 
         elif model_settings.power_flow == 'transport':
-            logger.info(" - Maximum and minimum flow constraints per expandable line")
-            model.cMaxFlowPerExpLine = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOWSENT[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
-            model.cMaxFlowPerExpLineRev = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOWSENT_REV[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
-            logger.info(f"   Size: {len(model.cMaxFlowPerExpLine) + len(model.cMaxFlowPerExpLineRev)} constraints")
+            logger.info(" - Maximum flow constraints per expandable line")
+            model.cMaxFlowPerExpLine1 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
+            model.cMaxFlowPerExpLine2 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
+            logger.info(f"   Size: {len(model.cMaxFlowPerExpLine1) + len(model.cMaxFlowPerExpLine2)} constraints")
 
-            logger.info(" - Maximum and minimum flow constraints per non-expandable line")
-            model.cFlowPerNonExpLine = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOWSENT[l, s, t] <= l.cap_existing_power_MW))
-            model.cFlowPerNonExpLineRev = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOWSENT_REV[l, s, t] <= l.cap_existing_power_MW))
-            logger.info(f"   Size: {len(model.cFlowPerNonExpLine) + len(model.cFlowPerNonExpLineRev)} constraints")
+            logger.info(" - Maximum flow constraints per non-expandable line")
+            model.cFlowPerNonExpLine1 = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW))
+            model.cFlowPerNonExpLine2 = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW))
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine1) + len(model.cFlowPerNonExpLine2)} constraints")
 
         logger.info(" - Line cost per period expression")
         model.eLineCostPerPeriod = pyo.Expression(expr = lambda m: sum(l.cost_fixed_power_USDperkW * m.vCAPL[l] * 1000 for l in L_expandable))
@@ -213,9 +213,9 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
 
         if model_settings.power_flow == 'transport':
-            model.cFlowPerNonExpLine = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOWSENT[l, s, t] <= l.cap_existing_power_MW)
-            model.cFlowPerNonExpLineRev = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOWSENT_REV[l, s, t] <= l.cap_existing_power_MW)
-            logger.info(f"   Size: {len(model.cFlowPerNonExpLine) + len(model.cFlowPerNonExpLineRev)} constraints")
+            model.cFlowPerNonExpLine1 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
+            model.cFlowPerNonExpLine2 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW)
+            logger.info(f"   Size: {len(model.cFlowPerNonExpLine1) + len(model.cFlowPerNonExpLine2)} constraints")
 
     if model_settings.kron_equivalent_flow_constraints and (model_settings.line_capacity == False):
 
@@ -348,27 +348,42 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
         costs.write_csv(os.path.join(output_directory, 'bus_max_flow_costs_summary.csv'))
 
     # Export LMPs
-    df = pl.DataFrame( data = [ (n.name, 
+    if hasattr(model, 'dual'): 
+        df = pl.DataFrame( data = [ (n.name, 
                                  s.name, 
                                  t.name, 
                                  (model.dual[model.cEnergyBalance[n, s, t]] * model.rescaling_factor_cEnergyBalance)/(model.rescaling_factor_obj * t.weight) 
-                                 if hasattr(model, 'dual') else 'Not available') for n in system.bus for s in system.sc for t in system.tp],
+                                 ) for n in system.bus for s in system.sc for t in system.tp],
                         schema= ['bus', 'scenario', 'timepoint', 'local_marginal_price_USDperMWh'],
                         orient= 'row')
-    df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
 
 
     # Export line flows and losses   
-    if hasattr(model, 'vFLOWSENT'):
+    if hasattr(model, 'vFLOW_SENT_AT_FROM_BUS'):
         df = pl.DataFrame(  data = [ (l.name, 
                                       l.from_bus, 
                                       l.to_bus, 
                                       s.name, 
                                       t.name, 
-                                      pyo.value(model.vFLOWSENT[l, s, t]), 
-                                      pyo.value(model.vFLOWSENT_REV[l, s, t])
+                                      pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t] - model.vFLOW_SENT_AT_TO_BUS[l, s, t] * l.efficiency),
+                                      pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t] * l.efficiency - model.vFLOW_SENT_AT_TO_BUS[l, s, t]),
+                                      pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t]), 
+                                      pyo.value(- model.vFLOW_SENT_AT_TO_BUS[l, s, t] * l.efficiency),
+                                      pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t] * l.efficiency),
+                                      pyo.value(- model.vFLOW_SENT_AT_TO_BUS[l, s, t])
                                       ) for l in system.line_pi for s in system.sc for t in system.tp],
-                            schema= ['line', 'from_bus', 'to_bus', 'scenario', 'timepoint', 'flow_sent_MW', 'flow_sent_reverse_MW'],
+                            schema= ['line', 
+                                     'from_bus', 
+                                     'to_bus', 
+                                     'scenario', 
+                                     'timepoint', 
+                                     'net_sent_flow_at_from_bus_MW', 
+                                     'net_delivered_flow_at_to_bus_MW',
+                                     'flow_sent_at_from_bus_MW',
+                                     'flow_sent_at_to_bus_times_efficiency_MW',
+                                     'flow_sent_at_from_bus_MW_times_efficiency_MW',
+                                     'flow_sent_at_to_bus_MW'],
                             orient= 'row')
         df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
