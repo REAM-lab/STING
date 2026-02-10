@@ -4,7 +4,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
 
 ## Installation 
 
-1. **Download STING**: Make sure you have [python3.12](https://www.python.org/downloads/release/python-3129/) installed on your computer. Start by cloning this repository and navigating into the STING directory.
+1. **Download STING**: Make sure you have [python3.13](https://www.python.org/downloads/release/python-31311/) installed on your computer. Using [`pyenv`](https://github.com/pyenv/pyenv) can be helpful for managing multiple versions of python on your PC. Start by cloning this repository and navigating into the STING directory.
     ```
     $ git clone https://github.com/REAM-lab/sting
     $ cd sting
