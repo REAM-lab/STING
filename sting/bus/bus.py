@@ -125,27 +125,20 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
 
     elif model_settings.power_flow == 'transport':
         logger.info(" - Decision variables of line flows")
+        # vFLOW_SENT_AT_FROM_BUS is the flow leaving from_bus going to to_bus
         model.vFLOW_SENT_AT_FROM_BUS = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
+        # vFLOW_SENT_AT_TO_BUS is the flow leaving at to_bus going to from_bus
         model.vFLOW_SENT_AT_TO_BUS = pyo.Var(L, S, T, within=pyo.NonNegativeReals)
         logger.info(f"   Size: {len(model.vFLOW_SENT_AT_FROM_BUS) + len(model.vFLOW_SENT_AT_TO_BUS)} variables")
         
-        L_at_bus = {n.id: [l for l in L if n.name in [l.from_bus, l.to_bus]] for n in N}
+        # L_from_bus is the set of lines for which bus n is a from_bus
+        L_from_bus = {n.id: [l for l in L if l.from_bus == n.name] for n in N}
+        # L_to_bus is the set of lines for which bus n is a to_bus
+        L_to_bus = {n.id: [l for l in L if l.to_bus == n.name] for n in N}
 
-        def cFlowSentAtBus_rule(m, n, s, t):
-            sending_lines = [l for l in L_at_bus[n.id] if l.from_bus == n.name]
-
-            return quicksum(m.vFLOW_SENT_AT_FROM_BUS[l, s, t] - l.efficiency * m.vFLOW_SENT_AT_TO_BUS[l, s, t] for l in sending_lines) 
-
-        model.eFlowSentAtBus = pyo.Expression(N, S, T, rule=cFlowSentAtBus_rule)
-
-        def cFlowRecAtBus_rule(m, n, s, t):
-            receiving_lines = [l for l in L_at_bus[n.id] if l.to_bus == n.name]
-
-            return quicksum(m.vFLOW_SENT_AT_TO_BUS[l, s, t] * l.efficiency - m.vFLOW_SENT_AT_FROM_BUS[l, s, t] for l in receiving_lines)
-        
-        model.eFlowRecAtBus = pyo.Expression(N, S, T, rule=cFlowRecAtBus_rule)
-
-        model.eFlowAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: m.eFlowSentAtBus[n, s, t] - m.eFlowRecAtBus[n, s, t])
+        model.eFlowAtBus = pyo.Expression(N, S, T, rule=lambda m, n, s, t: 
+                                          quicksum(m.vFLOW_SENT_AT_FROM_BUS[l, s, t] - l.efficiency * m.vFLOW_SENT_AT_TO_BUS[l, s, t] for l in L_from_bus[n.id]) 
+                                          + quicksum(m.vFLOW_SENT_AT_TO_BUS[l, s, t] - l.efficiency * m.vFLOW_SENT_AT_FROM_BUS[l, s, t] for l in L_to_bus[n.id]) )
 
 
     if model_settings.line_capacity_expansion:
@@ -378,11 +371,11 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                      'to_bus', 
                                      'scenario', 
                                      'timepoint', 
-                                     'net_sent_flow_at_from_bus_MW', 
-                                     'net_delivered_flow_at_to_bus_MW',
+                                     'net_flow_leaving_from_bus_MW', 
+                                     'net_flow_arriving_at_to_bus_MW',
                                      'flow_sent_at_from_bus_MW',
                                      'flow_sent_at_to_bus_times_efficiency_MW',
-                                     'flow_sent_at_from_bus_MW_times_efficiency_MW',
+                                     'flow_sent_at_from_bus_times_efficiency_MW',
                                      'flow_sent_at_to_bus_MW'],
                             orient= 'row')
         df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
