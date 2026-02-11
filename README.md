@@ -11,7 +11,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
     ```
     Next, create a virtual environment and download all required packages.
     ```
-    $ python3.12 -m venv .venv 
+    $ python3.13 -m venv .venv 
     $ source .venv/bin/activate
     (.venv)$ pip install -e .  
     ```

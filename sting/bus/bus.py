@@ -181,11 +181,13 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             logger.info(" - Maximum flow constraints per expandable line")
             model.cMaxFlowPerExpLine1 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
             model.cMaxFlowPerExpLine2 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
+            model.cMaxFlowPerExpLine3 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] + m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= m.vCAPL[l] + l.cap_existing_power_MW)
             logger.info(f"   Size: {len(model.cMaxFlowPerExpLine1) + len(model.cMaxFlowPerExpLine2)} constraints")
 
             logger.info(" - Maximum flow constraints per non-expandable line")
             model.cFlowPerNonExpLine1 = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW))
             model.cFlowPerNonExpLine2 = pyo.Constraint(L_nonexpandable, S, T, rule=lambda m, l, s, t: (m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW))
+            model.cFlowPerNonExpLine3 = pyo.Constraint(L_expandable, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] + m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
             logger.info(f"   Size: {len(model.cFlowPerNonExpLine1) + len(model.cFlowPerNonExpLine2)} constraints")
 
         logger.info(" - Line cost per period expression")
