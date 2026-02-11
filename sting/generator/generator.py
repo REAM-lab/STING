@@ -206,7 +206,8 @@ def upload_built_capacities_from_csv(system, input_directory: str,  make_non_exp
 def construct_ac_power_flow_model(pf):
 
     T = pf.system.tp
-    G = pf.system.gen + pf.system.inf_src
+    #G = pf.system.gen + pf.system.inf_src 
+    G = pf.system.generators.to_list()
     N = pf.system.bus
 
     logger.info(" - Decision variables of active power and reactive power for generators")

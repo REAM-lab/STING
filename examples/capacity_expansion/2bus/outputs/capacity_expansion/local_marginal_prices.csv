@@ -1,0 +1,3 @@
+bus,scenario,timepoint,local_marginal_price_USDperMWh
+north,sc1,1,10.0
+south,sc1,1,50.0

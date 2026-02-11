@@ -122,7 +122,9 @@ def find_tagged(system, tag_name):
         component_list = getattr(system, name)
         # If the component is tagged with the current tag name 
         # add it to the running list
-        if len(component_list) > 0 and (tag_name in component_list[0].tags):
+        if  (len(component_list) > 0 and 
+            hasattr(component_list[0], "tags") and 
+            (tag_name in component_list[0].tags)):
             tagged_components.append(name)
 
     return tagged_components
