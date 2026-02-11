@@ -14,7 +14,6 @@ import logging
 # --------------
 from sting.utils.data_tools import pyovariable_to_df, timeit
 
-
 logger = logging.getLogger(__name__)
 
 # ----------------
@@ -40,6 +39,7 @@ class Generator:
     c2_USDperMWh2: float = None
     emission_rate_tonneCO2perMWh: float = None
     tags: ClassVar[list[str]] = ["generator"]
+    type: str = "gen"
     bus_id: int = None
     expand_capacity: bool = None
     component_id: str = None
@@ -53,7 +53,11 @@ class Generator:
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
-        return self.id
+        return hash((self.id, self.type))
+    
+    def __eq__(self, value):
+        """Equality based on id attribute, which must be unique for each instance."""
+        return self.id == value.id and self.type == value.type
     
     def __repr__(self):
         return f"Generator(id={self.id}, name='{self.name}', bus='{self.bus}')"
@@ -199,6 +203,20 @@ def upload_built_capacities_from_csv(system, input_directory: str,  make_non_exp
     logger.info(f"> Updated existing capacities for {len(gens_to_update)} generators based on input file {os.path.join(input_directory, 'generator_built_capacity.csv')}")
     
         
+def construct_ac_power_flow_model(pf):
 
+    T = pf.system.tp
+    G = pf.system.gen + pf.system.inf_src
+    N = pf.system.bus
 
+    logger.info(" - Decision variables of active power and reactive power for generators")
+    pf.model.vPG = pyo.Var(G, T, 
+                           within=pyo.Reals, 
+                           bounds=lambda m, g, t: (g.minimum_active_power_MW, g.maximum_active_power_MW) )
+    pf.model.vQG = pyo.Var(G, T,
+                            within=pyo.Reals, 
+                            bounds=lambda m, g, t: (g.minimum_reactive_power_MVAR, g.maximum_reactive_power_MVAR) )
+    logger.info(f"   Size: {len(pf.model.vPG) + len(pf.model.vQG)} variables")
+
+    
 

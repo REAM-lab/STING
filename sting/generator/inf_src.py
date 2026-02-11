@@ -20,6 +20,6 @@ logger = logging.getLogger(__name__)
 # ----------------
 # Main classes     
 # ----------------
-@dataclass(slots=True)
+@dataclass(slots=True, eq=False)
 class InfiniteSource2(Generator):
-    pass
+    type: str = "inf"

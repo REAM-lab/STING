@@ -486,5 +486,57 @@ def upload_built_capacities_from_csv(system, input_directory: str,  make_non_exp
     else:
         logger.warning(f"No file named 'bus_built_capacity.csv' found in {input_directory}. Skipping upload of built bus capacities.")
 
+def construct_ac_power_flow_model(pf):
+
+    N = pf.system.bus
+    T = pf.system.tp
+    L = pf.system.line_pi
+    load = pf.system.load
     
-                        
+    logger.info(" - Decision variables of bus voltages")
+    pf.model.vVMAG = pyo.Var(N, T, 
+                             within=pyo.NonNegativeReals,
+                             bounds=lambda m, n, t: (n.v_min, n.v_max))
+    
+    pf.model.vANGLE = pyo.Var(N, T, 
+                              within=pyo.Reals,
+                              bounds=lambda m, n, t: (- np.pi / 2, + np.pi / 2))
+    
+    logger.info(f"   Size: {len(pf.model.vVMAG) + len(pf.model.vANGLE)} variables")
+
+    slack_bus = next((n for n in N if n.bus_type == 'slack'), None)
+    if slack_bus is None:
+        slack_bus = N[0]
+    pf.model.vANGLE[slack_bus, :].fix(0.0)
+
+    logger.info(" - Power flow per bus expressions")
+    Y = build_admittance_matrix_from_lines(len(N), L)
+    Ymag = np.abs(Y)
+    Yangle = np.angle(Y)
+    G = Y.real
+    B = Y.imag
+
+    bus_neighbors = {n.id: [N[k] for k in np.nonzero(B[n.id, :])[0] if k != n.id] for n in N}
+
+    match pf.model_settings.power_flow_equation_type:
+        case 'polar':
+            pf.model.ePflowAtBus = pyo.Expression(N, T, 
+                        expr=lambda m, n, t: n.base_power_MVA * m.vVMAG[n, t] * sum(m.vVMAG[k, t] * Ymag[n.id, k.id]
+                        * pyo.cos(Yangle[n.id, k.id] - m.vANGLE[n, t] + m.vANGLE[k, t]) for k in bus_neighbors[n.id]
+                        ))
+            pf.model.eQflowAtBus = pyo.Expression(N, T,
+                        expr=lambda m, n, t: -1 * n.base_power_MVA * m.vVMAG[n, t] * sum( m.vVMAG[k, t] * Ymag[n.id, k.id]
+                        * pyo.sin(Yangle[n.id, k.id] - m.vANGLE[n, t] + m.vANGLE[k, t]) for k in bus_neighbors[n.id]
+                        ))
+        case 'rectangular':
+            pf.model.ePflowAtBus = pyo.Expression(N, T,
+                        expr=lambda m, n, t: n.base_power_MVA * m.vVMAG[n, t] * sum( m.vVMAG[k, t] 
+                                            * ( G[n.id, k.id] * pyo.cos(m.vANGLE[n, t] - m.vANGLE[k, t]) 
+                                               + B[n.id, k.id] * pyo.sin(m.vANGLE[n, t] - m.vANGLE[k, t]) ) 
+                                               for k in bus_neighbors[n.id]))
+            
+            pf.model.eQflowAtBus = pyo.Expression(N, T,
+                        expr = lambda m, n, t: n.base_power_MVA * m.vVMAG[n, t] * sum( m.vVMAG[k, t]
+                                            * (G[n.id, k.id] * pyo.sin(m.vANGLE[n, t] - m.vANGLE[k, t])
+                                               - B[n.id, k.id] * pyo.cos(m.vANGLE[n, t] - m.vANGLE[k, t]) )
+                                               for k in bus_neighbors[n.id]))

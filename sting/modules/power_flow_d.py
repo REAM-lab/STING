@@ -26,12 +26,16 @@ import sting.system.selections as sl
 import sting.bus.bus as bus
 import sting.generator.generator as generator
 import sting.generator.storage as storage
+from sting.utils.data_tools import timeit
 
 logger = logging.getLogger(__name__)
 
 # -----------
 # Sub-classes 
 # -----------
+class ModelSettings(NamedTuple):
+     pass
+
 class SolverSettings(NamedTuple):
     """
     Settings for the solver for the capacity expansion model.
@@ -49,16 +53,71 @@ class ACPowerFlow:
     Class for AC power flow model.
     """
     system: System
-    simplified_system: System = None
+    model: pyo.ConcreteModel = None
+    model_settings: ModelSettings = None
+    solver_settings: SolverSettings = None
+    output_directory: str = None
 
     def __post_init__(self):
-        attrs = ["name", "bus", "bus_id", "minimum_active_power_MW", "maximum_active_power_MW", "minimum_reactive_power_MVAR", "maximum_reactive_power_MVAR"]
-        generators = self.system.generators.to_table_pl(*attrs)
+        logger.info("\n>> Starting AC power flow...\n")
+        self.set_settings()
+        self.construct()
 
-        self.simplified_system = System()
+    def set_settings(self):
 
-        for row in generators.iter_rows(named=True):
-                component = generator.Generator(**row)
-                self.simplified_system.add(component)
+        if self.model_settings is None:
+            self.model_settings = ModelSettings()
+        else:
+            self.model_settings = ModelSettings(**self.model_settings)
 
-        print("ok")
+        logger.info(f"Model settings: {self.model_settings}")
+
+        if self.solver_settings is None:
+            self.solver_settings = SolverSettings()
+        else:
+            self.solver_settings = SolverSettings(**self.solver_settings)
+
+        logger.info(f"Solver settings: {self.solver_settings}")
+
+    def set_output_folder(self):
+        """
+        Set up the output folder for storing results.
+        """
+        if self.output_directory is None:
+            self.output_directory = os.path.join(self.system.case_directory, "outputs", "ac_power_flow")
+        os.makedirs(self.output_directory, exist_ok=True)
+
+    @timeit    
+    def construct(self):
+        """
+        Construction of the optimization model for capacity expansion.
+        """
+        
+        # Create Pyomo model
+        self.model = pyo.ConcreteModel()
+
+        # Construct empty lists for costs
+        self.model.cost_components_per_tp = []
+
+        # Construct modules
+        generator.construct_ac_power_flow_model(self)
+
+        """
+        storage.construct_ac_power_flow_model(self)
+        bus.construct_ac_power_flow_model(self)
+
+        # Define objective function
+        logger.info("> Initializing construction of objective function ...")
+        start_time = time.time()
+
+        def eCostPerTp_rule(m, t):
+            return sum( getattr(m, tp_cost.name)[t] for tp_cost in m.cost_components_per_tp)
+        
+        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=eCostPerTp_rule)
+        self.model.eTotalCost = pyo.Expression(expr= sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.tp))
+        
+        self.model.rescaling_factor_obj = pyo.Param(initialize=1) 
+
+        self.model.obj = pyo.Objective(expr= self.model.rescaling_factor_obj * self.model.eTotalCost, sense=pyo.minimize)
+        logger.info(f"> Completed in {time.time() - start_time:.2f} seconds. \n")
+        """
