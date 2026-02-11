@@ -43,6 +43,7 @@ class Generator:
     bus_id: int = None
     expand_capacity: bool = None
     component_id: str = None
+    forced_dispatch_MW: float = None
 
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
@@ -106,6 +107,11 @@ def construct_capacity_expansion_model(system, model, model_settings):
 
     model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
     logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")
+
+    logger.info(" - Constraints on forced dispatch requirements specified for certain generators")
+    forced_dispatch_gens = [g for g in G if g.forced_dispatch_MW is not None]
+    model.cForcedDispatch = pyo.Constraint(forced_dispatch_gens, S, T, rule=lambda m, g, s, t: m.vGEN[g, s, t] == g.forced_dispatch_MW)
+    logger.info(f"   Size: {len(model.cForcedDispatch)} constraints")
 
     logger.info(" - Expressions for dispatch at any bus")
     gens_at_bus = defaultdict(list)

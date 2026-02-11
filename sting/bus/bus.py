@@ -322,7 +322,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
 
     # Export line capacities 
     if hasattr(model, 'vCAPL'):
-        pyovariable_to_df(model.vCAPL, 
+        vCAPL_df = pyovariable_to_df(model.vCAPL, 
                             dfcol_to_field={'line': 'name'}, 
                             value_name='built_capacity_MW', 
                             csv_filepath=os.path.join(output_directory, 'line_built_capacity.csv'))
@@ -359,6 +359,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                       l.to_bus, 
                                       s.name, 
                                       t.name, 
+                                      l.cap_existing_power_MW if l.cap_existing_power_MW is not None else float('inf'),
                                       pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t] - model.vFLOW_SENT_AT_TO_BUS[l, s, t] * l.efficiency),
                                       pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t] * l.efficiency - model.vFLOW_SENT_AT_TO_BUS[l, s, t]),
                                       pyo.value(model.vFLOW_SENT_AT_FROM_BUS[l, s, t]), 
@@ -371,6 +372,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                      'to_bus', 
                                      'scenario', 
                                      'timepoint', 
+                                     'existing_capacity_MW',
                                      'net_flow_leaving_from_bus_MW', 
                                      'net_flow_arriving_at_to_bus_MW',
                                      'flow_sent_at_from_bus_MW',
@@ -378,6 +380,14 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                      'flow_sent_at_from_bus_times_efficiency_MW',
                                      'flow_sent_at_to_bus_MW'],
                             orient= 'row')
+        
+        if hasattr(model, 'vCAPL'):
+            df = df.join(vCAPL_df.select(['line', 'built_capacity_MW']), on='line', how='left', maintain_order='left')
+        else:
+            df = df.with_columns(pl.lit(0).alias('built_capacity_MW'))
+
+        df = df.with_columns((pl.col('existing_capacity_MW') + pl.col('built_capacity_MW')).alias('total_capacity_MW'))
+        
         df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
 
