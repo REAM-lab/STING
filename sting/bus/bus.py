@@ -208,9 +208,14 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             logger.info(f"   Size: {len(model.cFlowPerNonExpLine)} constraints")
 
         if model_settings.power_flow == 'transport':
-            model.cFlowPerNonExpLine1 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
-            model.cFlowPerNonExpLine2 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW)
+            #model.vB_FLOW_SENT_AT_FROM_BUS = pyo.Var(L_cap_constrained, S, T, domain=pyo.Binary)
+            #model.vB_FLOW_SENT_AT_TO_BUS = pyo.Var(L_cap_constrained, S, T, domain=pyo.Binary)
+
+            model.cFlowPerNonExpLine1 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW * m.vB_FLOW_SENT_AT_FROM_BUS[l, s, t])
+            model.cFlowPerNonExpLine2 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW * m.vB_FLOW_SENT_AT_TO_BUS[l, s, t])
             model.cFlowPerNonExpLine3 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] + m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
+            #model.cFlowPerNonExpLine3 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vB_FLOW_SENT_AT_FROM_BUS[l, s, t] + m.vB_FLOW_SENT_AT_TO_BUS[l, s, t] <= 1)
+            
             logger.info(f"   Size: {len(model.cFlowPerNonExpLine1) + len(model.cFlowPerNonExpLine2) + len(model.cFlowPerNonExpLine3)} constraints")
 
     if model_settings.kron_equivalent_flow_constraints and (model_settings.line_capacity == False):
@@ -345,14 +350,17 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
 
     # Export LMPs
     if hasattr(model, 'dual'): 
-        df = pl.DataFrame( data = [ (n.name, 
+        try:
+            df = pl.DataFrame( data = [ (n.name, 
                                  s.name, 
                                  t.name, 
                                  (model.dual[model.cEnergyBalance[n, s, t]] * model.rescaling_factor_cEnergyBalance)/(model.rescaling_factor_obj * t.weight) 
                                  ) for n in system.bus for s in system.sc for t in system.tp],
                         schema= ['bus', 'scenario', 'timepoint', 'local_marginal_price_USDperMWh'],
                         orient= 'row')
-        df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+            df.write_csv(os.path.join(output_directory, 'local_marginal_prices.csv'))
+        except:
+            logger.warning("Could not export LMPs. This may be due to the solver not providing dual values")
 
 
     # Export line flows and losses   
