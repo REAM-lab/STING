@@ -211,8 +211,8 @@ def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_s
             #model.vB_FLOW_SENT_AT_FROM_BUS = pyo.Var(L_cap_constrained, S, T, domain=pyo.Binary)
             #model.vB_FLOW_SENT_AT_TO_BUS = pyo.Var(L_cap_constrained, S, T, domain=pyo.Binary)
 
-            model.cFlowPerNonExpLine1 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW * m.vB_FLOW_SENT_AT_FROM_BUS[l, s, t])
-            model.cFlowPerNonExpLine2 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW * m.vB_FLOW_SENT_AT_TO_BUS[l, s, t])
+            model.cFlowPerNonExpLine1 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
+            model.cFlowPerNonExpLine2 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] <= l.cap_existing_power_MW)
             model.cFlowPerNonExpLine3 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vFLOW_SENT_AT_TO_BUS[l, s, t] + m.vFLOW_SENT_AT_FROM_BUS[l, s, t] <= l.cap_existing_power_MW)
             #model.cFlowPerNonExpLine3 = pyo.Constraint(L_cap_constrained, S, T, rule=lambda m, l, s, t: m.vB_FLOW_SENT_AT_FROM_BUS[l, s, t] + m.vB_FLOW_SENT_AT_TO_BUS[l, s, t] <= 1)
             
