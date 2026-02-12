@@ -309,7 +309,7 @@ def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_d
                                   t.name, 
                                   pyo.value(model.eGenAtBus[n, s, t]),
                                   pyo.value(model.eNetDischargeAtBus[n, s, t]),
-                                  pyo.value(model.vSHED[n, s, t]) if hasattr(model, 'vSHED') else 0.0,
+                                  pyo.value(model.vSHED[n, s, t]) if ((hasattr(model, 'vSHED')) and ((n, s, t) in model.vSHED)) else 0,
                                   model.load_lookup.get((n.name, s.name, t.name), 0.0),
                                   pyo.value(model.eFlowAtBus[n, s, t])) for n in system.bus for s in system.sc for t in system.tp],
                         schema= ['bus', 'scenario', 'timepoint', 'generator_dispatch_MW', 'storage_dispatch_MW', 'load_shedding_MW', 'load_MW', 'net_line_leaving_flow_MW'],
