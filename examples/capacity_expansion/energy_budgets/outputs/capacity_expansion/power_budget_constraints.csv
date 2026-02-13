@@ -1,0 +1,4 @@
+scenario,budget_region,budget_term,timepoint,budget_constraint_power_GW,dispatched_power_GW
+sc1,hydro_zone,hydro_basic,tp_1,0.6,0.5100000000000005
+sc1,hydro_zone,hydro_basic,tp_2,0.6,0.5899999999999997
+sc1,hydro_zone,hydro_basic,tp_3,0.6,0.6000000000000001
