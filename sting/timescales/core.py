@@ -1,16 +1,7 @@
 # ----------------------
 # Import python packages
 # ----------------------
-import numpy as np
 from dataclasses import dataclass, field
-from typing import Optional
-import pyomo.environ as pyo
-
-# ------------------
-# Import sting code
-# ------------------
-from sting.utils.dynamical_systems import DynamicalVariables
-
 
 # ----------------
 # Main classes
@@ -28,7 +19,7 @@ class Scenario:
 @dataclass(slots=True)
 class Timepoint:
     name: str
-    timeseries: str
+    timeseries: str = None
     id: int = None
     timeseries_id: int = None
     weight: float = None
@@ -36,17 +27,22 @@ class Timepoint:
     prev_timepoint_id: int = None
 
     def post_system_init(self, system):
-        timeseries = next((p for p in system.ts if p.name == self.timeseries))
-        self.timeseries_id = timeseries.id
-        self.duration_hr = timeseries.timepoint_duration_hr
-        self.weight = self.duration_hr * timeseries.timeseries_scale_to_period
+        
+        if self.timeseries is not None:
+            timeseries = next((p for p in system.ts if p.name == self.timeseries))
+            self.timeseries_id = timeseries.id
+            self.duration_hr = timeseries.timepoint_duration_hr
+            self.weight = self.duration_hr * timeseries.timeseries_scale_to_period
 
-        tps_in_ts = next((ts for ts in system.ts if ts.id == self.timeseries_id)).timepoint_ids
-        if self.id == tps_in_ts[0]:
-            self.prev_timepoint_id = tps_in_ts[-1]
+            tps_in_ts = next((ts for ts in system.ts if ts.id == self.timeseries_id)).timepoint_ids
+            if self.id == tps_in_ts[0]:
+                self.prev_timepoint_id = tps_in_ts[-1]
+            else:
+                self.prev_timepoint_id = self.id - 1
         else:
-            self.prev_timepoint_id = self.id - 1
-
+            self.weight = 1
+            self.duration_hr = 1
+            
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
@@ -61,7 +57,7 @@ class Timeseries:
     timepoint_duration_hr: float
     number_of_timepoints: int
     timeseries_scale_to_period: float
-    timepoint_ids: Optional[list[int]] = field(default=None, init=False)
+    timepoint_ids: list[int] = None
     start: str = None
     end: str = None
     period : str = None

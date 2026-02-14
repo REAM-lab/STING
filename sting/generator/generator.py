@@ -2,7 +2,7 @@
 # Import python packages
 # --------------
 from dataclasses import dataclass, field
-from typing import ClassVar
+from typing import ClassVar, NamedTuple
 import pyomo.environ as pyo
 import polars as pl
 import os
@@ -12,22 +12,35 @@ import logging
 # -------------
 # Import sting code
 # --------------
+from sting.modules.power_flow.utils import ACPowerFlowSolution
 from sting.utils.data_tools import pyovariable_to_df, timeit
 
 logger = logging.getLogger(__name__)
 
 # ----------------
+# Sub-classes
+# ----------------
+class PowerFlowVariables(NamedTuple):
+    p_bus: float
+    q_bus: float
+    vmag_bus: float
+    vphase_bus: float
+
+# ----------------
 # Main classes     
 # ----------------
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Generator:
     id: int = field(default=0, init=False)
     name: str
     bus: str 
-    minimum_active_power_MW: float = None
-    maximum_active_power_MW: float = None
-    minimum_reactive_power_MVAR: float = None
-    maximum_reactive_power_MVAR: float = None
+    minimum_active_power_MW: float = field(default=None, kw_only=True)
+    maximum_active_power_MW: float = field(default=None, kw_only=True)
+    minimum_reactive_power_MVAR: float = field(default=None, kw_only=True)
+    maximum_reactive_power_MVAR: float = field(default=None, kw_only=True)
+    base_power_MVA: float = None
+    base_voltage_kV: float = None
+    base_frequency_Hz: float = None
     technology: str = None
     site: str = None
     cap_existing_power_MW: float = None
@@ -44,6 +57,7 @@ class Generator:
     expand_capacity: bool = None
     component_id: str = None
     forced_dispatch_MW: float = None
+    power_flow_variables: PowerFlowVariables = None
 
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
@@ -51,6 +65,14 @@ class Generator:
         if self.cap_existing_power_MW is not None and self.cap_max_power_MW is not None:
             self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 
+    def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
+        self.power_flow_variables = PowerFlowVariables(
+            p_bus=pf_solution.generator_active_dispatch[self.id, timepoint, self.type]/self.base_power_MVA,
+            q_bus=pf_solution.generator_reactive_dispatch[self.id, timepoint, self.type]/self.base_power_MVA,
+            vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
+            vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
+        )
+        
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return hash((self.id, self.type))
@@ -71,9 +93,6 @@ class CapacityFactor:
     capacity_factor: float
     technology: str = None
 
-
-def construct_ac_power_flow(acopf):
-    pass
 
 @timeit
 def construct_capacity_expansion_model(system, model, model_settings):
@@ -242,10 +261,15 @@ def construct_ac_power_flow_model(pf):
 
     pf.model.cost_components_per_tp.append(pf.model.eGenCostPerTp)
 
+@timeit
 def export_results_ac_power_flow(pf):
+    """Export generator dispatch results to CSV files."""
+
+    G = pf.system.generators.to_list()
+    T = pf.system.tp
 
     # Export generator dispatch results
-    df = pl.DataFrame(data = [ (g.name, g.type, g.name, t.name, pyo.value(pf.model.vPG[g, t]), pyo.value(pf.model.vQG[g, t])) for g in pf.system.gen for t in pf.system.tp],
+    df = pl.DataFrame(data = [ (g.id, g.type, g.name, t.name, pyo.value(pf.model.vPG[g, t]), pyo.value(pf.model.vQG[g, t])) for g in G for t in T],
                         schema = ['id', 'type', 'generator', 'timepoint', 'active_power_MW', 'reactive_power_MVAR'],
                         orient = 'row')
     df.write_csv(os.path.join(pf.output_directory, 'generator_dispatch.csv'))

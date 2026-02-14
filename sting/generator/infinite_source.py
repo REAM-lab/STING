@@ -3,26 +3,27 @@ This module implements an infinite source that incorporates:
 - Stiff voltage source: a voltage source with constant frequency and constant voltage.
 - Series RL branch: It is in series with the stiff voltage source.
 """
-
+# -------------
+# Import python packages
+# --------------
 import numpy as np
 from scipy.linalg import block_diag
-from dataclasses import dataclass, field
-from typing import NamedTuple, Optional, ClassVar
+from dataclasses import dataclass
+from typing import NamedTuple
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 
+# -------------
+# Import sting code
+# -------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.modules.power_flow_d import PowerFlowSolution
+from sting.generator.generator import Generator
 
-class PowerFlowVariables(NamedTuple):
-    p_bus: float
-    q_bus: float
-    vmag_bus: float
-    vphase_bus: float
-
-
+# -------------
+# Sub-classes
+# -------------
 class InitialConditionsEMT(NamedTuple):
     v_bus_D: float
     v_bus_Q: float
@@ -40,49 +41,15 @@ class VariablesEMT(NamedTuple):
     y: DynamicalVariables
 
 
-@dataclass(slots=True)
-class InfiniteSource:
-    id: int = field(default=0, init=False)
-    name: str 
-    bus: str
-    p_min: float
-    p_max: float
-    q_min: float
-    q_max: float
-    base_power_MVA: float
-    base_voltage_kV: float
-    base_frequency_Hz: float
+@dataclass(slots=True, kw_only=True, eq=False)
+class InfiniteSource(Generator):
     r_pu: float
     x_pu: float
-    bus_id: int = None
-    pf: Optional[PowerFlowVariables] = None
-    emt_init: Optional[InitialConditionsEMT] = None
-    ssm: Optional[StateSpaceModel] = None
+    emt_init: InitialConditionsEMT = None
+    ssm: StateSpaceModel = None
     type: str = "inf_src"
-    tags: ClassVar[list[str]] = ["generator"]
-    variables_emt: Optional[VariablesEMT] = None
-    id_variables_emt: Optional[dict] = None
-
-    def post_system_init(self, system):
-        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
-
-    def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]
-        self.pf = PowerFlowVariables(
-            p_bus=sol.p.item(),
-            q_bus=sol.q.item(),
-            vmag_bus=sol.bus_vmag.item(),
-            vphase_bus=sol.bus_vphase.item(),
-        )
-
-    def load_ac_power_flow_solution(self, power_flow_solution: PowerFlowSolution):
-        sol = power_flow_solution.generator_dispatch.loc[f"{self.type}_{self.id}"]
-        self.pf = PowerFlowVariables(
-            p_bus=sol.active_power_MW.item(),
-            q_bus=sol.reactive_power_MVAR.item(),
-            vmag_bus=sol.vmag_bus.item(),
-            vphase_bus=sol.vphase_bus.item(),
-        )
+    variables_emt: VariablesEMT = None
+    id_variables_emt: dict = None
 
     def _build_small_signal_model(self):
 
@@ -145,10 +112,10 @@ class InfiniteSource:
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 
     def _calculate_emt_initial_conditions(self):
-        vmag_bus = self.pf.vmag_bus
-        vphase_bus = self.pf.vphase_bus
-        p_bus = self.pf.p_bus
-        q_bus = self.pf.q_bus
+        vmag_bus = self.power_flow_variables.vmag_bus
+        vphase_bus = self.power_flow_variables.vphase_bus
+        p_bus = self.power_flow_variables.p_bus
+        q_bus = self.power_flow_variables.q_bus
 
         v_bus_DQ = vmag_bus * np.exp(vphase_bus * 1j * np.pi / 180)
         i_bus_DQ = ((p_bus + 1j * q_bus) / v_bus_DQ).conjugate()

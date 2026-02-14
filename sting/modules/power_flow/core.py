@@ -1,57 +1,28 @@
 # ----------------------
 # Import python packages
 # ----------------------
-from __future__ import annotations
 import polars as pl
-import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import os
 import pyomo.environ as pyo
 import time
 import logging
 from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
-import importlib
-from typing import NamedTuple
-
 from pyomo.environ import *
-from pyomo.repn import generate_standard_repn
-import math
+
 
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
-import sting.system.selections as sl
+from sting.modules.power_flow.utils import ModelSettings, SolverSettings, ACPowerFlowSolution
 import sting.bus.bus as bus
 import sting.generator.generator as generator
-import sting.generator.storage as storage
 from sting.utils.data_tools import timeit
 
 logger = logging.getLogger(__name__)
 
-# -----------
-# Sub-classes 
-# -----------
-class ModelSettings(NamedTuple):
-    generator_type_costs: str = "linear"
-    power_flow_formulation: str = "polar"
-    load_shedding: bool = True
-    write_model_file: bool = False
-
-class SolverSettings(NamedTuple):
-    """
-    Settings for the solver for the capacity expansion model.
-    """
-    solver_name: str = "ipopt"
-    tee: bool = True
-    solver_options: dict = None
-
-class PowerFlowSolution(NamedTuple):
-    generator_active_dispatch: dict
-    generator_reactive_dispatch: dict
-    bus_voltage_magnitude: dict
-    bus_voltage_angle: dict
 
 # -----------
 # Main class
@@ -66,7 +37,7 @@ class ACPowerFlow:
     model_settings: ModelSettings = None
     solver_settings: SolverSettings = None
     output_directory: str = None
-    solution: PowerFlowSolution = None
+    solution: ACPowerFlowSolution = None
 
     def __post_init__(self):
         logger.info("\n>> Starting AC power flow...\n")
@@ -164,6 +135,7 @@ class ACPowerFlow:
 
         self.export_results_to_csv()
 
+
     @timeit
     def export_results_to_csv(self):
         """
@@ -186,28 +158,7 @@ class ACPowerFlow:
 
         generator.export_results_ac_power_flow(self)
         bus.export_results_ac_power_flow(self)
-
-    def load_solution_to_system(self, directory: str = None):
-        """
-        Upload the solution of the optimization model back to the system object.
-        """
-        if directory is None:
-            directory = self.output_directory
-
-        generator_dispatch = pl.read_csv(os.path.join(directory, 'generator_dispatch.csv'),
-                                         schema_overrides={ 'id': pl.Int64,
-                                                            'type': pl.String,
-                                                            'generator': pl.String, 
-                                                            'active_power_MW': pl.Float64, 
-                                                            'reactive_power_MVAR': pl.Float64})
-        bus_voltage = pl.read_csv(os.path.join(directory, 'bus_voltage.csv'),
-                                  schema_overrides={ 'id': pl.Int64,
-                                                     'bus': pl.String, 
-                                                     'voltage_magnitude_pu': pl.Float64, 
-                                                     'voltage_angle_deg': pl.Float64})
         
-        active_generator_dispatch = dict( zip(generator_dispatch.select(['id']).iter_rows(), generator_dispatch['active_power_MW']) )
-        
-        self.solution = PowerFlowSolution(generator_dispatch=generator_dispatch, bus_voltage=bus_voltage)
 
-        self.system.apply("load_ac_power_flow_solution", self.solution)
+
+

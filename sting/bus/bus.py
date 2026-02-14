@@ -600,7 +600,7 @@ def construct_ac_power_flow_model(pf):
 def export_results_ac_power_flow(pf):
 
     # Export bus voltage magnitudes and angles
-    df = pl.DataFrame( data = [ (n.name, t.name, pyo.value(pf.model.vVMAG[n, t]), pyo.value(pf.model.vANGLE[n, t] * 180/np.pi)) for n in pf.system.bus for t in pf.system.tp],
+    df = pl.DataFrame( data = [ (n.id, n.name, t.name, pyo.value(pf.model.vVMAG[n, t]), pyo.value(pf.model.vANGLE[n, t] * 180/np.pi)) for n in pf.system.bus for t in pf.system.tp],
                         schema= ['id', 'bus', 'timepoint', 'voltage_magnitude_pu', 'voltage_angle_deg'],
                         orient= 'row')
     df.write_csv(os.path.join(pf.output_directory, 'bus_voltage.csv'))

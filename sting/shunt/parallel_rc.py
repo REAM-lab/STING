@@ -10,6 +10,7 @@ import os
 
 # Import sting code
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.modules.power_flow.utils import ACPowerFlowSolution
 
 
 class PowerFlowVariables(NamedTuple):
@@ -53,6 +54,15 @@ class ShuntParallelRC:
         sol = power_flow_instance.shunts.loc[f"{self.type}_{self.id}"]
         self.pf = PowerFlowVariables(
             vmag_bus=sol.bus_vmag.item(), vphase_bus=sol.bus_vphase.item()
+        )
+
+    def post_system_init(self, system):
+        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
+
+    def load_ac_power_flow_solution(self,  timepoint: str, pf_solution: ACPowerFlowSolution):
+        self.pf = PowerFlowVariables(
+            vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
+            vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
         )
 
     def _calculate_emt_initial_conditions(self):

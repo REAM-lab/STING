@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Import sting code
 # ------------------
 from sting.system.core import System
-from sting.modules.power_flow import PowerFlow
+from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt import SimulationEMT
 from sting.modules.small_signal_modeling import SmallSignalModel
 from sting.modules.capacity_expansion import CapacityExpansion
@@ -39,7 +39,7 @@ def run_acopf(case_directory = os.getcwd()):
 
     return sys
 
-def run_ssm(case_directory = os.getcwd()):
+def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
     """
     Routine to construct the system and its small-signal model from a case study directory.
     """
@@ -47,8 +47,8 @@ def run_ssm(case_directory = os.getcwd()):
     sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
-    pf = PowerFlow(system=sys)
-    pf.run_acopf()
+    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    pf.solve()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)

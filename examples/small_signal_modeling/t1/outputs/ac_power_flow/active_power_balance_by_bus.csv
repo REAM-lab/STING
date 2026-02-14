@@ -1,0 +1,3 @@
+bus,timepoint,generator_dispatch_MW,load_shedding_MW,load_MW,net_line_leaving_flow_MW
+lima,timepoint_1,5.000842627243225,-9.99090909090909e-9,0.0,5.000842617252305
+chile,timepoint_1,5.017184508118725,-9.99090909090909e-9,0.0,5.017184498127826

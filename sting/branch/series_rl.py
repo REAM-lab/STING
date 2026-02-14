@@ -10,6 +10,7 @@ import os
 
 # Import sting code
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.modules.power_flow.utils import ACPowerFlowSolution
 
 
 class PowerFlowVariables(NamedTuple):
@@ -57,6 +58,9 @@ class BranchSeriesRL:
     from_bus_id: int = None
     to_bus_id: int = None
 
+    def post_system_init(self, system):
+        self.from_bus_id = next((n for n in system.bus if n.name == self.from_bus)).id
+        self.to_bus_id = next((n for n in system.bus if n.name == self.to_bus)).id
 
     def _load_power_flow_solution(self, power_flow_instance):
         sol = power_flow_instance.branches.loc[f"{self.type}_{self.id}"]
@@ -67,6 +71,15 @@ class BranchSeriesRL:
             vphase_to_bus=sol.to_bus_vphase.item(),
         )
 
+    def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
+        self.pf = PowerFlowVariables(
+            vmag_from_bus=pf_solution.bus_voltage_magnitude[self.from_bus_id, timepoint],
+            vphase_from_bus=pf_solution.bus_voltage_angle[self.from_bus_id, timepoint],
+            vmag_to_bus=pf_solution.bus_voltage_magnitude[self.to_bus_id, timepoint],
+            vphase_to_bus=pf_solution.bus_voltage_angle[self.to_bus_id, timepoint],
+        )
+        print('ok')
+        
     def _calculate_emt_initial_conditions(self):
         
         r = self.r_pu
@@ -117,7 +130,7 @@ class BranchSeriesRL:
         D = np.zeros((2, 4))
 
         u = DynamicalVariables(
-            name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_D"],
+            name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_Q"],
             component=f"se_rl_{self.id}",
             type=["grid", "grid", "grid", "grid"],
             init=[
