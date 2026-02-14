@@ -1,16 +1,11 @@
 # -----------------------
 # Import Python packages
 # -----------------------
-import pandas as pd
 import importlib
 import os
 import itertools
 from typing import get_type_hints
 from dataclasses import fields
-import numpy as np 
-from more_itertools import transpose
-from scipy.linalg import block_diag
-from scipy.integrate import solve_ivp
 import polars as pl
 import time
 import logging
@@ -26,8 +21,6 @@ from sting.bus.bus import Bus
 from sting.line.core import decompose_lines
 from sting.utils.data_tools import timeit, convert_class_instance_to_dictionary
 # from sting.shunt.core import combine_shunts
-from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 import sting.system.selections as sl
 import sting.bus.bus as bus
 import sting.generator.generator as generator
@@ -227,6 +220,7 @@ class System:
 
         eng.quit()
 
+    # TODO: This should be added to it's own module
     @timeit
     def group_by_zones(self, components_to_clone: list[str] = None):
         """
@@ -359,161 +353,9 @@ class System:
         return self.query(sl.branches())
     
 
-    # ------------------------------------------------------------
-    # Small-Signal Modeling
-    # ------------------------------------------------------------
     def clean_up(self):
         """
         Apply any component clean up needed prior to methods like power flow.
         """
         decompose_lines(self)
         #TODO: I think combine_shunts(self) is untested
-
-    def construct_ssm(self, pf_instance):
-        """
-        Create each components SSM given a power flow solution
-        """
-        # Build each components SSM
-        self.apply("_load_power_flow_solution", pf_instance)
-        self.apply("_calculate_emt_initial_conditions")
-        self.apply("_build_small_signal_model")
-
-        # Construct the component connection matrices for the system model
-        F, G, H, L = get_ccm_matrices(self, "ssm", 2)
-
-        T = build_ccm_permutation(self)
-        T = block_diag(T, np.eye(F.shape[0] - T.shape[0]))
-
-        F = T @ F
-        G = T @ G
-
-        self.connections = F, G, H, L
-
-    def interconnect(self):
-        """
-        Return a state-space model of all interconnected components
-        """
-        # Get components in order of generators, then shunts, then branches
-        generators, = self.generators.select("ssm")
-        shunts, = self.shunts.select("ssm")
-        branches, = self.branches.select("ssm")
-
-        models = itertools.chain(generators, shunts, branches)
-     
-        # Input of system are device inputs according to defined G matrix
-        u = lambda stacked_u: stacked_u[stacked_u.type == "device"]
-
-        # Output of system are all outputs according to defined H matrix
-        y = lambda stacked_y: stacked_y
-                
-        # Then interconnect models
-        return StateSpaceModel.from_interconnected(models, self.connections, u, y)
-    
-    # ------------------------------------------------------------
-    # EMT simulation
-    # ------------------------------------------------------------
-
-    def define_emt_variables(self):
-        """
-        Define EMT variables for all components in the system
-        """
-        self.apply("define_variables_emt")
-
-        generators, = self.generators.select("var_emt")
-        shunts, = self.shunts.select("var_emt")
-        branches, = self.branches.select("var_emt")
-
-        variables_emt = itertools.chain(generators, shunts, branches)
-
-        fields = ["x", "u", "y"]
-        selection = [[getattr(c, f) for f in fields] for c in variables_emt]
-        stack = dict(zip(fields, transpose(selection)))
-
-        u = sum(stack["u"], DynamicalVariables(name=[]))
-        y = sum(stack["y"], DynamicalVariables(name=[]))
-        x = sum(stack["x"], DynamicalVariables(name=[]))
-
-        ud = u[u.type == "device"]
-        ug = u[u.type == "grid"]
-
-        u = ud + ug
-        unique_components = np.unique(x.component)
-        components_emt = [list(item.rpartition('_')[::2]) for item in unique_components]
-
-        for c in components_emt:
-            c.append([i for i, var in enumerate(x) if var.component == f"{c[0]}_{c[1]}"])
-            c.append((u.component == f"{c[0]}_{c[1]}") & (u.type == "grid"))
-        # [['inf_src', '1', [...]], ['inf_src', '2', [...]], ['pa_rc', '1', [...]], ['pa_rc', '2', [...]], ['se_rl', '1', [...]]]
-
-        self.components_emt = components_emt
-        self.x_emt = x
-        self.u_emt = u
-        self.y_emt = y
-
-        self.ccm_matrices = get_ccm_matrices(self, "var_emt", 3)
-
-
-    def sim_emt(self, t_max, inputs):
-        """
-        Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
-        """
-        
-        F, G, H, L = self.ccm_matrices
-        
-        def system_ode(t, x, ud):
-
-            angle_sys = x[-1]  # last state is system angle
-
-            y_stack = []
-
-            for component_type, component_idx, x_idx, _ in self.components_emt:
-                component = getattr(self, component_type)[int(component_idx)-1]
-                x_vals= x[x_idx]
-                y = getattr(component, "_get_output_emt")(t, x_vals, ud)
-                y_stack.extend(y)
-
-            y_stack = np.array(y_stack).flatten()
-
-            ustack = F @ y_stack 
-
-            dx = []
-        
-            for component_type, component_idx, x_idx, ug_idx in self.components_emt:
-                component = getattr(self, component_type)[int(component_idx)-1]
-                x_vals= x[x_idx]
-                ud_vals = ud.get(f"{component_type}_{component_idx}", 0)
-                ug_vals = ustack[ug_idx]
-                dx_comp = getattr(component, "_get_derivative_state_emt")(t, x_vals, ud_vals, ug_vals, angle_sys)
-                dx.extend(dx_comp)
-
-            d_angle_sys = 2 * np.pi * 60 # rad/s
-            dx.append(d_angle_sys)
-
-            dx = np.array(dx).flatten()
-
-            return dx
-        
-        x_init = self.x_emt.init
-        x_init = np.append(x_init, [0.0])  # initial system angle
-
-        solution = solve_ivp(system_ode, 
-                        [0, t_max], # timeperiod 
-                        x_init, # initial conditions
-                        dense_output=True,  
-                        args=(inputs, ),
-                        method='Radau', 
-                        max_step=0.001)
-        
-        return solution
-        
-
-        
-
-    # ------------------------------------------------------------
-    # Model Reduction (TBD?)
-    # ------------------------------------------------------------
-    def create_zone(self, c_names):
-        pass
-
-    def permute(self, index):
-        pass
