@@ -17,8 +17,22 @@ from sting.modules.power_flow_d import ACPowerFlow
 # Specify path of the case study directory
 case_dir = Path(__file__).resolve().parent
 
+ipopt_solver_settings = {
+                "solver_name": "mosek_direct",
+                "tee": True,
+                "solver_options": {},
+            }
+model_settings = {
+        "generator_type_costs": "linear",
+        "load_shedding": False}
+
 # Construct system and small-signal model
 sys = System.from_csv(case_directory=case_dir)
 
 acopf = ACPowerFlow(system=sys)
+acopf.solve()
+acopf.load_solution_to_system()
+
+
+
 print('ok')

@@ -1,3 +1,3 @@
-name,bus,minimum_active_power_MW,maximum_active_power_MW
-gen3,lima,1,2
-gen4,chile,2,4
+name,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,cost_variable_USDperMWh
+gen3,lima,1.5,2,-10,10,0
+gen4,chile,0,4,-10,10,0

@@ -206,18 +206,46 @@ def upload_built_capacities_from_csv(system, input_directory: str,  make_non_exp
 def construct_ac_power_flow_model(pf):
 
     T = pf.system.tp
-    #G = pf.system.gen + pf.system.inf_src 
     G = pf.system.generators.to_list()
     N = pf.system.bus
 
     logger.info(" - Decision variables of active power and reactive power for generators")
     pf.model.vPG = pyo.Var(G, T, 
                            within=pyo.Reals, 
-                           bounds=lambda m, g, t: (g.minimum_active_power_MW, g.maximum_active_power_MW) )
+                           bounds=lambda m, g, t: (0, 10) )
     pf.model.vQG = pyo.Var(G, T,
                             within=pyo.Reals, 
-                            bounds=lambda m, g, t: (g.minimum_reactive_power_MVAR, g.maximum_reactive_power_MVAR) )
+                            bounds=lambda m, g, t: (-10, 10) )
     logger.info(f"   Size: {len(pf.model.vPG) + len(pf.model.vQG)} variables")
 
-    
+    logger.info(" - Expressions for dispatch of active power at any bus")
+    gens_at_bus = defaultdict(list)
+    for g in G:
+        gens_at_bus[g.bus_id].append(g)
+    pf.model.eActiveDispatchAtBus = pyo.Expression(N, T, rule=lambda m, n, t: sum(m.vPG[g, t] for g in gens_at_bus[n.id]))
+    logger.info(f"   Size: {len(pf.model.eActiveDispatchAtBus)} expressions")
 
+    logger.info(" - Expressions for dispatch of reactive power at any bus")
+    pf.model.eReactiveDispatchAtBus = pyo.Expression(N, T, rule=lambda m, n, t: sum(m.vQG[g, t] for g in gens_at_bus[n.id]))
+    logger.info(f"   Size: {len(pf.model.eReactiveDispatchAtBus)} expressions")
+
+    logger.info(" - Expressions for generation cost per timepoint")
+    if pf.model_settings.generator_type_costs == "quadratic":
+        pf.model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
+                        sum(g.c2_USDperMWh2 * m.vPG[g, t]* m.vPG[g, t] + g.c1_USDperMWh * m.vPG[g, t] + g.c0_USD for g in G) )
+    elif pf.model_settings.generator_type_costs == "linear":
+        pf.model.eGenCostPerTp = pyo.Expression(T, rule=lambda m, t: 
+                        sum(g.cost_variable_USDperMWh * m.vPG[g, t] for g in G) )
+    else:
+        raise ValueError("model_settings['generator_type_costs'] must be either 'quadratic' or 'linear'.")
+    logger.info(f"   Size: {len(pf.model.eGenCostPerTp)} expressions")
+
+    pf.model.cost_components_per_tp.append(pf.model.eGenCostPerTp)
+
+def export_results_ac_power_flow(pf):
+
+    # Export generator dispatch results
+    df = pl.DataFrame(data = [ (g.name, g.type, g.name, t.name, pyo.value(pf.model.vPG[g, t]), pyo.value(pf.model.vQG[g, t])) for g in pf.system.gen for t in pf.system.tp],
+                        schema = ['id', 'type', 'generator', 'timepoint', 'active_power_MW', 'reactive_power_MVAR'],
+                        orient = 'row')
+    df.write_csv(os.path.join(pf.output_directory, 'generator_dispatch.csv'))

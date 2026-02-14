@@ -14,6 +14,7 @@ import os
 
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.utils.transformations import dq02abc, abc2dq0
+from sting.modules.power_flow_d import PowerFlowSolution
 
 class PowerFlowVariables(NamedTuple):
     p_bus: float
@@ -72,6 +73,15 @@ class InfiniteSource:
             q_bus=sol.q.item(),
             vmag_bus=sol.bus_vmag.item(),
             vphase_bus=sol.bus_vphase.item(),
+        )
+
+    def load_ac_power_flow_solution(self, power_flow_solution: PowerFlowSolution):
+        sol = power_flow_solution.generator_dispatch.loc[f"{self.type}_{self.id}"]
+        self.pf = PowerFlowVariables(
+            p_bus=sol.active_power_MW.item(),
+            q_bus=sol.reactive_power_MVAR.item(),
+            vmag_bus=sol.vmag_bus.item(),
+            vphase_bus=sol.vphase_bus.item(),
         )
 
     def _build_small_signal_model(self):
