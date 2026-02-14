@@ -27,7 +27,8 @@ class EnergyBudget:
     id: int = field(default=-1, init=False)
     budget_region: str
     budget_term: str
-    budget_constraint_GWh: float
+    budget_constraint_energy_GWh: float = None
+    budget_constraint_power_GW: float = None
     generators: list[Generator] = None
     timepoints: list[Timepoint] = None
 
@@ -42,7 +43,7 @@ class EnergyBudget:
         return self.id
     
     def __repr__(self):
-        return f"EnergyBudget(id={self.id}, budget_region='{self.budget_region}', budget_term='{self.budget_term}', budget_constraint_GWh={self.budget_constraint_GWh})"
+        return f"EnergyBudget(id={self.id}, budget_region='{self.budget_region}', budget_term='{self.budget_term}', budget_constraint_energy_GWh={self.budget_constraint_energy_GWh})"
     
     def post_system_init(self, system):
         
@@ -69,25 +70,88 @@ class EnergyBudget:
 @timeit
 def construct_capacity_expansion_model(system, model: pyo.ConcreteModel, model_settings: dict):
     """Construction of energy budget constraints."""
+    
+    # Constraints enforcing the maximum POWER that can be dispatched by a group of generators at
+    # EACH timepoint in a budget term. These constraints are UNWEIGHTED.
+    logger.info(" - Constraint for power budget")
+    def cPowerBudget_rule(m, b, t, s):
+        #b, t = budget_tuple 
+        # Converting GW to MW (but splitting the conversion over the both sides of the 
+        # inequality for better numerical conditioning).
+        return  0.01 * sum(m.vGEN[g, s, t] for g in b.generators) <= (b.budget_constraint_power_GW*10)
+    
+    # Flatten power budgets into a tuple for every timepoint
+    power_budgets = []
+    for b in system.energy_budget:
+        # Skip any budgets without a power constraint
+        if b.budget_constraint_power_GW is None:
+            continue
+        for t in b.timepoints:
+            power_budgets.append((b, t))
 
+    model.cPowerBudget = pyo.Constraint(power_budgets, system.sc, rule=cPowerBudget_rule)
+    logger.info(f"   Size: {len(model.cPowerBudget)} constraints")
+
+    # Constraints enforcing the total ENERGY that can be dispatched by a group of generators
+    # SUMMED over all timepoint in a budget term. These constraints are WEIGHTED.
     logger.info(" - Constraint for energy budget")
-    def cEnergyBudget_rule(m, eb, s):
-        return  0.01 * sum(m.vGEN[g, s, t] * t.weight for g in eb.generators for t in eb.timepoints) <= (eb.budget_constraint_GWh * 10)  # convert GWh to MWh
+    def cEnergyBudget_rule(m, b, s):
+        return  0.01 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 10)
 
-    model.cEnergyBudget = pyo.Constraint(system.energy_budget, system.sc, rule=cEnergyBudget_rule)
+    energy_budgets = [b for b in system.energy_budget if (b.budget_constraint_energy_GWh is not None)]  
+    model.cEnergyBudget = pyo.Constraint(energy_budgets, system.sc, rule=cEnergyBudget_rule)
+
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")
 
 @timeit
 def export_results_capacity_expansion(system, model: pyo.ConcreteModel, output_directory: str):
     """Export energy budget results to CSV files."""
+    # Write power budget constraints to CSV
+    if hasattr(model, "cPowerBudget"):
+        power_budgets_file = os.path.join(output_directory, "power_budget_constraints.csv")
+        (pl.DataFrame(
+            data=((
+                sc.name, 
+                b.budget_region, 
+                b.budget_term, 
+                t.name, 
+                b.budget_constraint_power_GW, 
+                1e-1 * pyo.value(model.cPowerBudget[b, t, sc])) 
+                    for b, t, sc in model.cPowerBudget),
+            schema=[
+                "scenario",
+                "budget_region", 
+                "budget_term", 
+                "timepoint",
+                "budget_constraint_power_GW",
+                "dispatched_power_GW"
+            ],
+            orient="row")
+        .write_csv(power_budgets_file))
+    
+    # Write energy budget constraint to CSV
+    if hasattr(model, "cEnergyBudget"):
+        energy_budgets_file = os.path.join(output_directory, "energy_budget_constraints.csv")
+        (pl.DataFrame(
+            data=((
+                sc.name, 
+                b.budget_region, 
+                b.budget_term, 
+                b.budget_constraint_energy_GWh, 
+                1e-1 * pyo.value(model.cEnergyBudget[b, sc]))
+                    for b, sc in model.cEnergyBudget),
+            schema=[
+                "scenario",
+                "budget_region", 
+                "budget_term", 
+                "budget_constraint_energy_GWh",
+                "dispatched_energy_GWh"
+            ],
+            orient="row")
+            .write_csv(energy_budgets_file))
 
-    df = pl.DataFrame(data = ((sc.name, eb.budget_region, eb.budget_term, pyo.value(model.cEnergyBudget[eb, sc]) * 1/1000, eb.budget_constraint_GWh) 
-                                for eb in system.energy_budget for sc in system.sc),
-                        schema=['scenario', 'budget_region', 'budget_term', 'constraint_left_hand_side_GWh', 'constraint_right_hand_side_GWh'])
-
-    df.write_csv(os.path.join(output_directory, "energy_budget_constraints.csv"))
-
-    # [!] WARNING [!] The `_cache_initialized` attribute is GLOBAL to all instances of energy budgets.
+    # [!] WARNING [!] The `_cache_initialized` attribute is GLOBAL to ALL EnergyBudget instances.
     # In order to run more than one capacity expansion model in the same python session we need to 
-    # set this  this attribute back to False (so that new input datasets are read).
+    # set this attribute back to False (so that new input datasets will be read).
+    # Note: This is somewhat dangerous behavior and should be fixed in later updates.
     EnergyBudget._cache_initialized = False
