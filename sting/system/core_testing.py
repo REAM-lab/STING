@@ -53,7 +53,7 @@ class System:
             self.case_directory = os.getcwd()
             logger.info(f"> No case directory provided. Set to current directory: {self.case_directory}")
 
-        for component in fields(self):
+        #for component in fields(self):
             
         for component in fields(self):
             if getattr(self, component.name) is None:
