@@ -4,7 +4,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
 
 - AC Power Flow
 - Stochastic capacity expansion
-- Kron Reduction
+- Kron reduction
 - Large-scale model reduction
 - Small-signal modeling
 - Electromagnetic simulation
@@ -28,7 +28,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
 
 ## Requirements
 
-Most of modules require solvers to solve optimization models, even small-signal modeling requires to solve optimal power flow. Make sure you have a solver installed in your
+Most of modules require solvers to solve optimization models, even small-signal modeling requires a solver to solve optimal power flow. Make sure you have a solver installed in your
 computer. Here, we show a list of solvers we have used:
 
 - Ipopt
