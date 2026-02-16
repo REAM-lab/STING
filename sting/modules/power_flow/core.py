@@ -15,9 +15,9 @@ from pyomo.environ import *
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
 from sting.modules.power_flow.utils import ModelSettings, SolverSettings, ACPowerFlowSolution
-import sting.bus.bus as bus
+import sting.bus.ac_power_flow as bus
 import sting.generator.generator as generator
 from sting.utils.data_tools import timeit
 
@@ -91,8 +91,8 @@ class ACPowerFlow:
         def eCostPerTp_rule(m, t):
             return sum( getattr(m, tp_cost.name)[t] for tp_cost in m.cost_components_per_tp)
         
-        self.model.eCostPerTp = pyo.Expression(self.system.tp, expr=eCostPerTp_rule)
-        self.model.eTotalCost = pyo.Expression(expr= sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.tp))
+        self.model.eCostPerTp = pyo.Expression(self.system.timepoints, expr=eCostPerTp_rule)
+        self.model.eTotalCost = pyo.Expression(expr= sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.timepoints))
         
         self.model.rescaling_factor_obj = pyo.Param(initialize=1) 
 

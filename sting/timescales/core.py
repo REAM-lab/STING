@@ -3,24 +3,29 @@
 # ----------------------
 from dataclasses import dataclass, field
 
+# ------------------
+# Import sting code
 # ----------------
+from sting.system.component import Component
+
+# -----------------
 # Main classes
 # ----------------
 @dataclass(slots=True)
-class Scenario:
-    name: str
+class Scenario(Component):
+    #name: str
     probability: float
-    id: int = None
+    #id: int = None
 
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id
 
 @dataclass(slots=True)
-class Timepoint:
-    name: str
+class Timepoint(Component):
+    #name: str
     timeseries: str = None
-    id: int = None
+    #id: int = None
     timeseries_id: int = None
     weight: float = None
     duration_hr: float = None   
@@ -51,9 +56,9 @@ class Timepoint:
         return f"Timepoint(id={self.id}, name='{self.name}', timeseries='{self.timeseries}')"
 
 @dataclass(slots=True)
-class Timeseries:
-    id: int = field(default=-1, init=False)
-    name: str
+class Timeseries(Component):
+    #id: int = field(default=-1, init=False)
+    #name: str
     timepoint_duration_hr: float
     number_of_timepoints: int
     timeseries_scale_to_period: float

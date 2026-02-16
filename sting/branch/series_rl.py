@@ -9,16 +9,8 @@ from plotly.subplots import make_subplots
 import os
 
 # Import sting code
+from sting.branch.core import Branch
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.modules.power_flow.utils import ACPowerFlowSolution
-
-
-class PowerFlowVariables(NamedTuple):
-    vmag_from_bus: float
-    vphase_from_bus: float
-    vmag_to_bus: float
-    vphase_to_bus: float
-
 
 class InitialConditionsEMT(NamedTuple):
     vmag_from_bus: float
@@ -38,48 +30,26 @@ class VariablesEMT(NamedTuple):
     y: DynamicalVariables
 
 @dataclass(slots=True)
-class BranchSeriesRL:
-    id: int = field(default=-1, init=False)
-    name: str 
-    from_bus: str
-    to_bus: str
-    base_power_MVA: float
-    base_voltage_kV: float
-    base_frequency_Hz: float
+class BranchSeriesRL(Branch):
+    #id: int = field(default=-1, init=False)
+    #name: str 
+    #from_bus: str
+    #to_bus: str
+    #base_power_MVA: float
+    #base_voltage_kV: float
+    #base_frequency_Hz: float
     r_pu: float
     x_pu: float
-    tags: ClassVar[list[str]] = ["branch"]
-    pf: Optional[PowerFlowVariables] = None
-    emt_init: Optional[InitialConditionsEMT] = None
-    type: str = "se_rl"
-    ssm: Optional[StateSpaceModel] = None
-    variables_emt: Optional[VariablesEMT] = None
-    id_variables_emt: Optional[dict] = None
+    #tags: ClassVar[list[str]] = ["branch"]
+    #pf: Optional[PowerFlowVariables] = None
+    emt_init: InitialConditionsEMT = None
+    #type: str = "se_rl"
+    ssm: StateSpaceModel = None
+    variables_emt: VariablesEMT = None
+    id_variables_emt: dict = None
     from_bus_id: int = None
     to_bus_id: int = None
-
-    def post_system_init(self, system):
-        self.from_bus_id = next((n for n in system.bus if n.name == self.from_bus)).id
-        self.to_bus_id = next((n for n in system.bus if n.name == self.to_bus)).id
-
-    def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.branches.loc[f"{self.type}_{self.id}"]
-        self.pf = PowerFlowVariables(
-            vmag_from_bus=sol.from_bus_vmag.item(),
-            vphase_from_bus=sol.from_bus_vphase.item(),
-            vmag_to_bus=sol.to_bus_vmag.item(),
-            vphase_to_bus=sol.to_bus_vphase.item(),
-        )
-
-    def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
-        self.pf = PowerFlowVariables(
-            vmag_from_bus=pf_solution.bus_voltage_magnitude[self.from_bus_id, timepoint],
-            vphase_from_bus=pf_solution.bus_voltage_angle[self.from_bus_id, timepoint],
-            vmag_to_bus=pf_solution.bus_voltage_magnitude[self.to_bus_id, timepoint],
-            vphase_to_bus=pf_solution.bus_voltage_angle[self.to_bus_id, timepoint],
-        )
-        print('ok')
-        
+      
     def _calculate_emt_initial_conditions(self):
         
         r = self.r_pu
@@ -159,7 +129,7 @@ class BranchSeriesRL:
 
         x = DynamicalVariables(
             name=["i_br_a", "i_br_b", "i_br_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[i_br_a, i_br_b, i_br_c],
         )
 
@@ -167,14 +137,14 @@ class BranchSeriesRL:
         u = DynamicalVariables(
             name=["v_from_bus_a", "v_from_bus_b", "v_from_bus_c", 
                   "v_to_bus_a", "v_to_bus_b", "v_to_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid", "grid", "grid", "grid", "grid"],
         )
 
         # Outputs
         y = DynamicalVariables(
             name=["i_br_a", "i_br_b", "i_br_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
         )
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
@@ -227,7 +197,7 @@ class BranchSeriesRL:
         fig.update_xaxes(title_text='Time [s]', row=1, col=2)
         fig.update_yaxes(title_text='i_br_Q [p.u.]', row=1, col=2)
 
-        name = f"{self.type}_{self.id}"
+        name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
                             title_x=0.5,
                             showlegend = False,

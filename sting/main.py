@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
+from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt import SimulationEMT
-from sting.modules.small_signal_modeling import SmallSignalModel
+from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.modules.capacity_expansion import CapacityExpansion
 from sting.modules.kron_reduction import KronReduction
 from sting.utils.data_tools import setup_logging_file
@@ -49,6 +50,10 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
     pf.solve()
+
+    # Break down lines into branches and shunts for small-signal modeling
+    sys_modifier = SystemModifier(system=sys)
+    sys_modifier.decompose_lines()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)

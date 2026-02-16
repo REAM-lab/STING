@@ -12,9 +12,11 @@ import logging
 # -------------
 # Import sting code
 # --------------
+from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
 from sting.utils.data_tools import pyovariable_to_df, timeit
 
+# Set up logging
 logger = logging.getLogger(__name__)
 
 # ----------------
@@ -30,9 +32,9 @@ class PowerFlowVariables(NamedTuple):
 # Main classes     
 # ----------------
 @dataclass(slots=True, kw_only=True)
-class Generator:
-    id: int = field(default=0, init=False)
-    name: str
+class Generator(Component):
+    #id: int = field(default=0, init=False)
+    #name: str
     bus: str 
     minimum_active_power_MW: float = field(default=None, kw_only=True)
     maximum_active_power_MW: float = field(default=None, kw_only=True)
@@ -52,7 +54,7 @@ class Generator:
     c2_USDperMWh2: float = None
     emission_rate_tonneCO2perMWh: float = None
     tags: ClassVar[list[str]] = ["generator"]
-    type: str = "gen"
+    #type: str = "gen"
     bus_id: int = None
     expand_capacity: bool = None
     component_id: str = None
@@ -60,26 +62,26 @@ class Generator:
     power_flow_variables: PowerFlowVariables = None
 
     def post_system_init(self, system):
-        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
+        self.bus_id = next((n for n in system.buses if n.name == self.bus)).id
 
         if self.cap_existing_power_MW is not None and self.cap_max_power_MW is not None:
             self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
 
     def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
         self.power_flow_variables = PowerFlowVariables(
-            p_bus=pf_solution.generator_active_dispatch[self.id, timepoint, self.type]/self.base_power_MVA,
-            q_bus=pf_solution.generator_reactive_dispatch[self.id, timepoint, self.type]/self.base_power_MVA,
+            p_bus=pf_solution.generator_active_dispatch[self.id, timepoint, self.type_]/self.base_power_MVA,
+            q_bus=pf_solution.generator_reactive_dispatch[self.id, timepoint, self.type_]/self.base_power_MVA,
             vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
             vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
         )
         
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
-        return hash((self.id, self.type))
+        return hash((self.id, self.type_))
     
-    def __eq__(self, value):
+    def __eq__(self, value: Component):
         """Equality based on id attribute, which must be unique for each instance."""
-        return self.id == value.id and self.type == value.type
+        return self.id == value.id and self.type_ == value.type_
     
     def __repr__(self):
         return f"Generator(id={self.id}, name='{self.name}', bus='{self.bus}')"
@@ -224,9 +226,9 @@ def upload_built_capacities_from_csv(system, input_directory: str,  make_non_exp
         
 def construct_ac_power_flow_model(pf):
 
-    T = pf.system.tp
-    G = pf.system.generators.to_list()
-    N = pf.system.bus
+    T = pf.system.timepoints
+    G = pf.system.gens.to_list()
+    N = pf.system.buses
 
     logger.info(" - Decision variables of active power and reactive power for generators")
     pf.model.vPG = pyo.Var(G, T, 
@@ -265,11 +267,11 @@ def construct_ac_power_flow_model(pf):
 def export_results_ac_power_flow(pf):
     """Export generator dispatch results to CSV files."""
 
-    G = pf.system.generators.to_list()
-    T = pf.system.tp
+    G = pf.system.gens.to_list()
+    T = pf.system.timepoints
 
     # Export generator dispatch results
-    df = pl.DataFrame(data = [ (g.id, g.type, g.name, t.name, pyo.value(pf.model.vPG[g, t]), pyo.value(pf.model.vQG[g, t])) for g in G for t in T],
+    df = pl.DataFrame(data = [ (g.id, g.type_, g.name, t.name, pyo.value(pf.model.vPG[g, t]), pyo.value(pf.model.vQG[g, t])) for g in G for t in T],
                         schema = ['id', 'type', 'generator', 'timepoint', 'active_power_MW', 'reactive_power_MVAR'],
                         orient = 'row')
     df.write_csv(os.path.join(pf.output_directory, 'generator_dispatch.csv'))

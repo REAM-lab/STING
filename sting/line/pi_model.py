@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
+from sting.system.component import Component
 
 @dataclass(slots=True)
-class LinePiModel:
-    id: int = field(default=-1, init=False)
-    name: str 
+class LinePiModel(Component):
+    #id: int = field(default=-1, init=False)
+    #name: str 
     from_bus: str
     to_bus: str
     r_pu: float
@@ -27,8 +28,8 @@ class LinePiModel:
     efficiency: float = None
 
     def post_system_init(self, system):
-        self.from_bus_id = next((n for n in system.bus if n.name == self.from_bus)).id
-        self.to_bus_id = next((n for n in system.bus if n.name == self.to_bus)).id
+        self.from_bus_id = next((n for n in system.buses if n.name == self.from_bus)).id
+        self.to_bus_id = next((n for n in system.buses if n.name == self.to_bus)).id
     
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""

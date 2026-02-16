@@ -1,10 +1,8 @@
-from collections import namedtuple
 from more_itertools import transpose
 from itertools import tee
 from typing import Iterable, Any
 import pandas as pd
 import polars as pl
-import copy
 
 class Stream:
     def __init__(self, iterator: Iterable[Any], index_map: dict):
@@ -106,41 +104,3 @@ class Stream:
         return df
 
 
-# ------------------------------------------------------------
-# Common selections
-# ------------------------------------------------------------
-
-def find_tagged(system, tag_name):
-    """
-    Return a list of all components tagged with a specific 
-    tag name.
-    """
-    # List of all components with the given tag name
-    tagged_components = []
-    # Scan over all component types
-    for name in system.components["type"]:
-        component_list = getattr(system, name)
-        # If the component is tagged with the current tag name 
-        # add it to the running list
-        if  (len(component_list) > 0 and 
-            hasattr(component_list[0], "tags") and 
-            (tag_name in component_list[0].tags)):
-            tagged_components.append(name)
-
-    return tagged_components
-
-def generators():
-    """Query over all generators in the system"""
-    return lambda system: find_tagged(system, "generator")
-
-def shunts():
-    """Query over all shunts in the system"""
-    return lambda system: find_tagged(system, "shunt")
-
-def branches():
-    """Query over all branches in the system"""
-    return lambda system: find_tagged(system, "branch")
-
-def lines():
-    """Query over all lines in the system"""
-    return lambda system: find_tagged(system, "line")

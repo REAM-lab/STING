@@ -14,10 +14,10 @@ import polars as pl
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
 import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, modal_analisis
-from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
+from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation
 from sting.modules.power_flow.utils import ACPowerFlowSolution
 
 # -----------
@@ -57,7 +57,7 @@ class SmallSignalModel:
 
     def __post_init__(self):
         self.set_output_folder()
-        self.system.clean_up()
+        #self.system.clean_up()
         self.get_components()
         self.load_ac_power_flow_solution()
         self.construct_components_ssm()
@@ -103,7 +103,7 @@ class SmallSignalModel:
                                           bus_voltage_angle=bus_voltage_angle)
 
         if timepoint is None:
-            t = self.system.tp[0]
+            t = self.system.timepoints[0]
         
         self.apply("load_ac_power_flow_solution", t.name, solution)
 
@@ -119,7 +119,7 @@ class SmallSignalModel:
                 and hasattr(component, "_calculate_emt_initial_conditions") 
                 and hasattr(component, "_build_small_signal_model")
                 ):
-                components.append(ComponentSSM(type = component.type, id = component.id))
+                components.append(ComponentSSM(type = component.type_, id = component.id))
         
         self.components = components
 
@@ -160,7 +160,7 @@ class SmallSignalModel:
         """
 
         # Get components in order of generators, then shunts, then branches
-        generators, = self.system.generators.select("ssm")
+        generators, = self.system.gens.select("ssm")
         shunts, = self.system.shunts.select("ssm")
         branches, = self.system.branches.select("ssm")
 

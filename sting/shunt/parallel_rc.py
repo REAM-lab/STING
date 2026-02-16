@@ -1,21 +1,20 @@
+# -----------------------
 # Import python packages
+# -----------------------
 import numpy as np
-from dataclasses import dataclass, field
-from typing import NamedTuple, Optional, ClassVar
+from dataclasses import dataclass
+from typing import NamedTuple, ClassVar
 from sting.utils.transformations import dq02abc, abc2dq0
 import copy
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 
+# -----------------------
 # Import sting code
+# -----------------------
+from sting.shunt.core import Shunt
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.modules.power_flow.utils import ACPowerFlowSolution
-
-
-class PowerFlowVariables(NamedTuple):
-    vmag_bus: float
-    vphase_bus: float
 
 
 class InitialConditionsEMT(NamedTuple):
@@ -32,38 +31,23 @@ class VariablesEMT(NamedTuple):
     y: DynamicalVariables
 
 @dataclass
-class ShuntParallelRC:
-    id: int = field(default=-1, init=False)
-    name: str
-    bus: str
-    base_power_MVA: float
-    base_voltage_kV: float
-    base_frequency_Hz: float
+class ShuntParallelRC(Shunt):
+    #id: int = field(default=-1, init=False)
+    #name: str
+    #bus: str
+    #base_power_MVA: float
+    #base_voltage_kV: float
+    #base_frequency_Hz: float
     g_pu: float
     b_pu: float
     bus_id: int = None
-    pf: Optional[PowerFlowVariables] = None
-    emt_init: Optional[InitialConditionsEMT] = None
-    ssm: Optional[StateSpaceModel] = None
-    type: str = "pa_rc"
+    #pf: Optional[PowerFlowVariables] = None
+    emt_init: InitialConditionsEMT = None
+    ssm: StateSpaceModel = None
+    #type: str = "pa_rc"
     tags: ClassVar[list[str]] = ["shunt"]
-    variables_emt: Optional[VariablesEMT] = None
-    id_variables_emt: Optional[dict] = None
-
-    def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.shunts.loc[f"{self.type}_{self.id}"]
-        self.pf = PowerFlowVariables(
-            vmag_bus=sol.bus_vmag.item(), vphase_bus=sol.bus_vphase.item()
-        )
-
-    def post_system_init(self, system):
-        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
-
-    def load_ac_power_flow_solution(self,  timepoint: str, pf_solution: ACPowerFlowSolution):
-        self.pf = PowerFlowVariables(
-            vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
-            vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
-        )
+    variables_emt: VariablesEMT = None
+    id_variables_emt: dict = None
 
     def _calculate_emt_initial_conditions(self):
         

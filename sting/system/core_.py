@@ -22,14 +22,13 @@ import copy
 # -----------------------
 from sting import __logo__
 from sting import data_files
-from sting.bus.bus import Bus
-from sting.line.core import decompose_lines
+from sting.bus.core import Bus
 from sting.utils.data_tools import timeit, convert_class_instance_to_dictionary
 # from sting.shunt.core import combine_shunts
 from sting.utils.graph_matrices import get_ccm_matrices, build_ccm_permutation
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 import sting.system.selections as sl
-import sting.bus.bus as bus
+import sting.bus.core as core
 import sting.generator.generator as generator
 import sting.generator.storage as storage
 
@@ -298,7 +297,7 @@ class System:
         """
         generator.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
         storage.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
-        bus.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
+        core.upload_built_capacities_from_csv(self, built_capacity_directory, make_non_expandable)
 
     # ------------------------------------------------------------
     # Component Management + Searching

@@ -1,27 +1,48 @@
-from sting.shunt.parallel_rc import ShuntParallelRC
+# -------------
+# Import python packages
+# --------------
+from dataclasses import dataclass, field
+from typing import ClassVar, NamedTuple
+import pyomo.environ as pyo
+import polars as pl
+import os
+from collections import defaultdict
+import logging
 
+# -------------
+# Import sting code
+# --------------
+from sting.system.component import Component
+from sting.modules.power_flow.utils import ACPowerFlowSolution
+from sting.utils.data_tools import pyovariable_to_df, timeit
 
-def combine_shunts(system):
+logger = logging.getLogger(__name__)
 
-    print("> Reduce shunts to have one shunt per bus:")
+# ----------------
+# Sub-classes
+# ----------------
+class PowerFlowVariables(NamedTuple):
+    vmag_bus: float
+    vphase_bus: float
 
-    shunt_df = (system.shunts
-        .to_table("bus_id", "g", "b")
-        .reset_index(drop=True)
-        .pivot_table(index="bus_id", values=["g", "b"], aggfunc="sum")
-    )
+# ----------------
+# Main classes     
+# ----------------
+@dataclass(slots=True, kw_only=True)
+class Shunt(Component):
+    bus: str
+    base_power_MVA: float
+    base_voltage_kV: float
+    base_frequency_Hz: float
+    type: str = "shunt"
+    tags: ClassVar[list[str]] = ["shunt"]
+    pf: PowerFlowVariables = None
 
-    shunt_df["r"] = 1 / shunt_df["g"]
-    shunt_df["c"] = 1 / shunt_df["b"]
-    shunt_df["id"] = range(len(shunt_df))
-    shunt_df.drop(columns=["b", "g"], inplace=True)
+    def post_system_init(self, system):
+        self.bus_id = next((n for n in system.buses if n.name == self.bus)).id
 
-    # Clear all existing parallel RC shunts
-    system.pa_rc = []
-
-    # Add each effective/combined parallel RC shunt to the pa_rc components
-    for _, row in shunt_df.iterrows():
-        shunt = ShuntParallelRC(**row.to_dict())
-        system.add(shunt)
-
-    print("\t- New list of parallel RC components created ... ok\n")
+    def load_ac_power_flow_solution(self,  timepoint: str, pf_solution: ACPowerFlowSolution):
+        self.pf = PowerFlowVariables(
+            vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
+            vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
+        )

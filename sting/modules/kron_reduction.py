@@ -22,7 +22,7 @@ from pyomo.common.tee import capture_output
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
 from sting.line.pi_model import LinePiModel
 from sting.modules.capacity_expansion import KronVariables
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines, build_network_graph_from_lines

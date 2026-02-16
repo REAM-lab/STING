@@ -21,9 +21,9 @@ import math
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
 import sting.system.selections as sl
-import sting.bus.bus as bus
+import sting.bus.core as core
 import sting.generator.generator as generator
 import sting.generator.storage as storage
 from sting.utils.data_tools import timeit
@@ -156,7 +156,7 @@ class CapacityExpansion:
         # Construct modules
         generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings, self.kron_variables)
+        core.construct_capacity_expansion_model(self.system, self.model, self.model_settings, self.kron_variables)
 
         if self.model_settings.policies is not None:
             for policy in self.model_settings.policies:
@@ -240,7 +240,7 @@ class CapacityExpansion:
 
         generator.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         storage.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-        bus.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        core.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
         if self.model_settings.policies is not None:
             for policy in self.model_settings.policies:

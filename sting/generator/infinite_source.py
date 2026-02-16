@@ -47,7 +47,7 @@ class InfiniteSource(Generator):
     x_pu: float
     emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
-    type: str = "inf_src"
+    #type: str = "inf_src"
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
 
@@ -86,7 +86,7 @@ class InfiniteSource(Generator):
 
         u = DynamicalVariables(
             name=["v_bus_D", "v_bus_Q", "v_ref_d", "v_ref_q"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid", "device", "device"],
             init=[v_bus_D, v_bus_Q, v_int_d, v_int_q],
         )
@@ -96,7 +96,7 @@ class InfiniteSource(Generator):
 
         y = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[i_bus_D, i_bus_Q],
         )
 
@@ -105,7 +105,7 @@ class InfiniteSource(Generator):
 
         x = DynamicalVariables(
             name=["i_bus_d", "i_bus_q"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[i_bus_d, i_bus_q],
         )
 
@@ -151,7 +151,7 @@ class InfiniteSource(Generator):
         
         x = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c", "angle_ref"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[i_bus_a, i_bus_b, i_bus_c, angle_ref],
         )
 
@@ -165,7 +165,7 @@ class InfiniteSource(Generator):
 
         u = DynamicalVariables(
             name=["v_ref_d", "v_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["device", "device", "grid", "grid", "grid"],
             init=[v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c],
         )
@@ -173,7 +173,7 @@ class InfiniteSource(Generator):
         # Outputs
         y = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
         )
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
@@ -226,7 +226,7 @@ class InfiniteSource(Generator):
         fig.update_xaxes(title_text='Time [s]', row=1, col=2)
         fig.update_yaxes(title_text='i_bus_q [p.u.]', row=1, col=2)
 
-        name = f"{self.type}_{self.id}"
+        name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
                             title_x=0.5,
                             showlegend = False,

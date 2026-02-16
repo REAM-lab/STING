@@ -14,10 +14,10 @@ from plotly.subplots import make_subplots
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system.core_testing import System
 import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables
-from sting.utils.graph_matrices import get_ccm_matrices
+from sting.modules.small_signal_modeling.utils import get_ccm_matrices
 
 # -----------
 # Sub-classes

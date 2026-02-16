@@ -1,8 +1,8 @@
 name,component,type,init
-i_bus_d,inf_src_0,"",0.05186117548896708
-i_bus_q,inf_src_0,"",0.0689103170162199
-i_bus_d,inf_src_1,"",0.05091674117605039
-i_bus_q,inf_src_1,"",0.06251597019318135
+i_bus_d,infinite_sources_0,"",0.05186117548896708
+i_bus_q,infinite_sources_0,"",0.0689103170162199
+i_bus_d,infinite_sources_1,"",0.05091674117605039
+i_bus_q,infinite_sources_1,"",0.06251597019318135
 v_bus_D,pa_rc_0,"",1.0
 v_bus_Q,pa_rc_0,"",0.0
 v_bus_D,pa_rc_1,"",1.0017997952644437

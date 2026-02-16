@@ -22,7 +22,8 @@ sys = System.from_csv(case_directory=case_dir)
 #acopf.solve()
 #acopf.load_solution_to_system()
 
-#main.run_ssm(case_directory=case_dir)
+main.run_ssm(case_directory=case_dir)
 
+#sys.gens
 
 print('ok')
