@@ -106,8 +106,6 @@ class SmallSignalModel:
 
         # Print modal analysis
         if perform_analysis:
-            self.model.modal_analysis()
-
             modal_analisis(self.model.A, show=True)
 
         # Export small-signal model to CSV files
