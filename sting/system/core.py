@@ -172,7 +172,7 @@ class System:
         # Get the component type (for example, "generators") 
         component_type = self.class_to_type[type(component)]
         # Get the list of components of that type, for example self.generators
-        component_list = getattr(self, component_type)
+        component_list: list[Component] = getattr(self, component_type)
         # Assign the component a 0-based index value
         component.id = len(component_list)
         # Assign type attribute to the component, for example "infinite_sources"
@@ -234,8 +234,7 @@ class System:
     # ------------------------------------------------------------
     def find_tagged(self, tag_name: str) -> list[str]:
         """
-        Return a list of all components tagged with a specific 
-        tag name.
+        Return a list of all components tagged with a specific tag name.
         """
         # List of all components with the given tag name
         tagged_components = []
@@ -252,6 +251,7 @@ class System:
         return tagged_components
 
     def __repr__(self):
+        """Return a string representation of the system, showing the number of components of each type."""
         lines_to_display = []
 
         lines_to_display.append(f"System: ")
