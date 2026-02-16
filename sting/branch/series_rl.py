@@ -1,7 +1,7 @@
 # Import python packages
 from dataclasses import dataclass, field
 from sting.utils.transformations import dq02abc, abc2dq0
-from typing import NamedTuple, Optional, ClassVar
+from typing import NamedTuple
 import numpy as np
 import copy
 import plotly.graph_objects as go
@@ -31,19 +31,9 @@ class VariablesEMT(NamedTuple):
 
 @dataclass(slots=True)
 class BranchSeriesRL(Branch):
-    #id: int = field(default=-1, init=False)
-    #name: str 
-    #from_bus: str
-    #to_bus: str
-    #base_power_MVA: float
-    #base_voltage_kV: float
-    #base_frequency_Hz: float
     r_pu: float
     x_pu: float
-    #tags: ClassVar[list[str]] = ["branch"]
-    #pf: Optional[PowerFlowVariables] = None
     emt_init: InitialConditionsEMT = None
-    #type: str = "se_rl"
     ssm: StateSpaceModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None

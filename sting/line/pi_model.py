@@ -5,8 +5,6 @@ from sting.system.component import Component
 
 @dataclass(slots=True)
 class LinePiModel(Component):
-    #id: int = field(default=-1, init=False)
-    #name: str 
     from_bus: str
     to_bus: str
     r_pu: float

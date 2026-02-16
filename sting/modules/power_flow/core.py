@@ -15,10 +15,10 @@ from pyomo.environ import *
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core_testing import System
+from sting.system.core import System
 from sting.modules.power_flow.utils import ModelSettings, SolverSettings, ACPowerFlowSolution
-import sting.bus.ac_power_flow as bus
-import sting.generator.generator as generator
+import sting.bus.shared.ac_power_flow as bus
+import sting.generator.shared.ac_power_flow as generator
 from sting.utils.data_tools import timeit
 
 logger = logging.getLogger(__name__)
@@ -82,8 +82,8 @@ class ACPowerFlow:
         self.model.cost_components_per_tp = []
 
         # Construct modules
-        generator.construct_ac_power_flow_model(self)
-        bus.construct_ac_power_flow_model(self)
+        generator.construct_ac_power_flow_model(self.system, self.model, self.model_settings)
+        bus.construct_ac_power_flow_model(self.system, self.model, self.model_settings)
 
         # Construct objective function
         start_time = time.time()
@@ -156,8 +156,8 @@ class ACPowerFlow:
                               'cost' : [  pyo.value(self.model.eTotalCost)]})
         costs.write_csv(os.path.join(self.output_directory, 'costs_summary.csv'))
 
-        generator.export_results_ac_power_flow(self)
-        bus.export_results_ac_power_flow(self)
+        generator.export_results_ac_power_flow(self.system, self.model, self.output_directory)
+        bus.export_results_ac_power_flow(self.system, self.model, self.output_directory)
         
 
 

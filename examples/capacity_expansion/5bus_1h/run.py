@@ -4,6 +4,9 @@ The data parameters and model settings are configured so that the capacity expan
 The objective function for the bus-level model value must be 17479.90 USD.
 The objective function for the zonal model value must be 14810 USD. 
 
+Author: Paul Serna-Torre
+Date: 2026-02-15
+
 %   Based on data from ...
 %     F.Li and R.Bo, "Small Test Systems for Power System Economic Studies",
 %     Proceedings of the 2010 IEEE Power & Energy Society General Meeting
@@ -35,7 +38,6 @@ model_settings = {
         "kron_equivalent_flow_constraints": False,
         "bus_max_flow_expansion": False,
         "bus_max_flow": False,
-        "policies": [],
     }
 
 gurobi_solver_settings = {
@@ -49,6 +51,7 @@ gurobi_solver_settings = {
 
 main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
 
-main.run_zonal_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings, components_to_clone=['cf', 'tp', 'ts', 'sc'])
+main.run_zonal_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings, 
+                     components_to_clone=['capacity_factors', 'timepoints', 'timeseries', 'scenarios'])
 
 print('ok')

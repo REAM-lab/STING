@@ -711,3 +711,2093 @@ Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_opt
 > Completed in 0.00 seconds. 
 
 > Solving capacity expansion model...
+2026-02-15 18:13:57
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timepoints', 'scenarios', 'timeseries']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+2026-02-15 18:14:26
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timepoints', 'scenarios', 'timeseries']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+2026-02-15 18:19:25
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+2026-02-15 18:21:15
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+Rule failed when generating expression for Constraint cEnergyBalance with index (Bus(id=0, bus='north'), Scenario(id=0, name='sc1', type_='scenarios', probability=1.0), Timepoint(id=0, name='1', timeseries='winter')):
+AttributeError: 'ConcreteModel' object has no attribute 'eGenAtBus'
+Constructing component 'cEnergyBalance' from data=None failed:
+    AttributeError: 'ConcreteModel' object has no attribute 'eGenAtBus'
+2026-02-15 18:22:31
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+2026-02-15 18:23:10
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'capacity_factors', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+2026-02-15 18:23:50
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'capacity_factors', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+2026-02-15 18:26:03
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'capacity_factors', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.19 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 19.999999999999996. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+2026-02-15 18:26:34
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'capacity_factors', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 19.999999999999996. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+2026-02-15 18:27:34
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System created with attributes: ['case_directory', 'components', 'type_to_class', 'class_to_type', 'generators', 'capacity_factors', 'storage', 'infinite_sources', 'buses', 'loads', 'lines', 'branch_series_rl', 'shunt_parallel_rl', 'timeseries', 'timepoints', 'scenarios']
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, policies=[], write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 19.999999999999996. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.09 seconds.
+
+2026-02-15 19:53:56
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.04 seconds.
+
+2026-02-15 20:18:25
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.05 seconds.
+
+2026-02-15 20:18:35
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.08 seconds.
+
+2026-02-15 20:27:51
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.08 seconds.
+
+2026-02-15 20:35:51
+   ______   __ 
+  / __/ /__/ /_  _____ _
+ _\ \/ __/ _// \/ / _ `/
+/___/__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.05 seconds.
+
+2026-02-15 20:38:25
+   ____  __   __ 
+  / __/_/ /___/ /_  _____ _
+ _\ \/_   __// _// \/ / _ `/
+/___/ /__///  /_/\_/\_, /
+       /         /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus ...
+ - 'generators.csv' ... 
+   Added 2 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'buses.csv' ... 
+   Added 2 'buses' 
+ - 'loads.csv' ... 
+   Added 2 'loads' 
+ - 'lines.csv' ... 
+   Added 1 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='transport', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 2 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 2 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 2 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 2 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of line flows
+   Size: 2 variables
+ - Maximum flow constraints per line
+   Size: 3 constraints
+ - Energy balance at each bus
+   Size: 2 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 100.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cEnergyBalance[Bus(id=0, bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=lower
+     - Maximum RHS: 20000.0
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=0, name='gas_gen', bus='north'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.5
+       Variable=vGEN[Generator(id=1, name='diesel_gen', bus='south'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 7               
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 4               
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 1
+Eliminator terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 0                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 0                 successes              : 0               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 2.0000000000e+01    nrm: 1e+04    Viol.  con: 2e-17    var: 0e+00  
+  Dual.    obj: 2.0000000000e+01    nrm: 5e+01    Viol.  con: 0e+00    var: 0e+00  
+> Time spent by solver: 0.02 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 1999.9999999999995. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/2bus/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+
+>> Run completed in 0.04 seconds.
+

@@ -1,6 +1,6 @@
-id,name,bus_type,zone,kron_removable_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,max_flow_MW,v_min,v_max,p_load,q_load
-0,1,slack,center,,,,,2400.0,,,0.0,0.0
-1,2,PQ,north,,,,,1400.0,,,0.0,0.0
-2,3,PQ,south,,,,,2000.0,,,0.0,0.0
-3,4,PQ,south,,,,,2240.0,,,0.0,0.0
-4,5,PQ,south,,,,,1240.0,,,0.0,0.0
+id,name,type_,bus_type,zone,kron_removable_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,latitude,longitude,max_flow_MW,minimum_voltage_pu,maximum_voltage_pu
+0,1,buses,slack,center,,,,,,,2400.0,,
+1,2,buses,PQ,north,,,,,,,1400.0,,
+2,3,buses,PQ,south,,,,,,,2000.0,,
+3,4,buses,PQ,south,,,,,,,2240.0,,
+4,5,buses,PQ,south,,,,,,,1240.0,,

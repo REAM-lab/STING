@@ -1,2 +1,2 @@
-id,name,timepoint_duration_hr,number_of_timepoints,timeseries_scale_to_period,start,end,period,timepoint_selection_method
-0,winter,1.0,1,1.0,,,,
+id,name,type_,timepoint_duration_hr,number_of_timepoints,timeseries_scale_to_period,start,end,period,timepoint_selection_method
+0,winter,timeseries,1.0,1,1.0,,,,

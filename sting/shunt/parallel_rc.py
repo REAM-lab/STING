@@ -32,19 +32,11 @@ class VariablesEMT(NamedTuple):
 
 @dataclass
 class ShuntParallelRC(Shunt):
-    #id: int = field(default=-1, init=False)
-    #name: str
-    #bus: str
-    #base_power_MVA: float
-    #base_voltage_kV: float
-    #base_frequency_Hz: float
     g_pu: float
     b_pu: float
     bus_id: int = None
-    #pf: Optional[PowerFlowVariables] = None
     emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
-    #type: str = "pa_rc"
     tags: ClassVar[list[str]] = ["shunt"]
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None

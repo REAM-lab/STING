@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 # ----------------
 @dataclass(slots=True)
 class Bus(Component):
-    #id: int = field(default=-1, init=False)
-    #name: str
     bus_type: str = None
     zone: str = None
     kron_removable_bus: bool = None
@@ -61,11 +59,9 @@ class Bus(Component):
 
 @dataclass(slots=True, kw_only=True)
 class Load(Component):
-    #id: int = field(default=-1, init=False)
     bus: str
     timepoint: str
     load_MW: float
-    name: str = 'unnamed_load'
     scenario: str = None
     load_MVAR: float = None
 

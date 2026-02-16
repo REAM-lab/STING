@@ -7,6 +7,8 @@ all hydro generators cannot dispatch more than 600MW in total at any hour)
 and a 1.7GWh energy constraint (i.e., over the 3 timepoints hydro energy cannot 
 dispatch more than 1.7GW). Both constraints are binding in this example.
 
+Objective function value: 97567.5626
+
 Author: Adam Sedlak
 Date: 2026-02-13
 """
@@ -33,8 +35,6 @@ model_settings = {
         "line_capacity_expansion": False,
         "line_capacity": True,
         "power_flow": "dc",
-        "policies": [
-            "sting.policies.energy_budgets"]
     }
 
 sys = main.run_capex(

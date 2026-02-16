@@ -1,5 +1,5 @@
-id,name,from_bus,to_bus,r_pu,x_pu,g_pu,b_pu,expand_capacity,cap_existing_power_MW,cost_fixed_power_USDperkW,angle_max_deg,angle_min_deg,base_power_MVA,base_voltage_kV,base_frequency_Hz,decomposed,from_bus_id,to_bus_id
-0,1,center,north,0.00281,0.0281,0.0,0.00712,False,400.0,0.0,360.0,-360.0,,,,False,2,1
-1,2,center,south,0.00304,0.0304,0.0,0.00658,False,1000.0,0.0,360.0,-360.0,,,,False,2,0
-2,3,center,south,0.00064,0.0064,0.0,0.03126,False,1000.0,0.0,360.0,-360.0,,,,False,2,0
-3,4,north,south,0.00108,0.0108,0.0,0.01852,False,1000.0,0.0,360.0,-360.0,,,,False,1,0
+id,name,type_,from_bus,to_bus,r_pu,x_pu,g_pu,b_pu,expand_capacity,cap_existing_power_MW,cost_fixed_power_USDperkW,angle_max_deg,angle_min_deg,base_power_MVA,base_voltage_kV,base_frequency_Hz,decomposed,from_bus_id,to_bus_id,efficiency
+0,1,lines,center,north,0.00281,0.0281,0.0,0.00712,False,400.0,0.0,360.0,-360.0,,,,False,1,0,
+1,2,lines,center,south,0.00304,0.0304,0.0,0.00658,False,1000.0,0.0,360.0,-360.0,,,,False,1,2,
+2,3,lines,center,south,0.00064,0.0064,0.0,0.03126,False,1000.0,0.0,360.0,-360.0,,,,False,1,2,
+3,4,lines,north,south,0.00108,0.0108,0.0,0.01852,False,1000.0,0.0,360.0,-360.0,,,,False,0,2,

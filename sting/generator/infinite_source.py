@@ -19,7 +19,7 @@ import os
 # -------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.generator.generator import Generator
+from sting.generator.core import Generator
 
 # -------------
 # Sub-classes
@@ -47,7 +47,6 @@ class InfiniteSource(Generator):
     x_pu: float
     emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
-    #type: str = "inf_src"
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
 

@@ -1,5 +1,10 @@
 """
 This script runs the capacity expansion model using transport model for a 2-bus system.
+Objective function value: 2000.
+
+Author: Paul Serna-Torre
+Date: 2026-02-15
+
 """
 
 # Import Python standard and third-party packages
@@ -22,7 +27,6 @@ model_settings = {
         "line_capacity_expansion": False,
         "line_capacity": True,
         "power_flow": "transport",
-        "policies": [],
     }
 
 gurobi_solver_settings = {
@@ -34,6 +38,6 @@ gurobi_solver_settings = {
 			           'Method': 2},
 }
 
-main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
+capex, system = main.run_capex(case_dir, solver_settings=mosek_solver_settings, model_settings=model_settings)
 
 print('ok')

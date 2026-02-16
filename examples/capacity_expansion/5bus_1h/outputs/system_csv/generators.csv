@@ -1,6 +1,6 @@
-id,name,bus,technology,site,cap_existing_power_MW,cap_max_power_MW,cost_fixed_power_USDperkW,cost_variable_USDperMWh,c0_USD,c1_USDperMWh,c2_USDperMWh2,emission_rate_tonneCO2perMWh,bus_id,expand_capacity
-0,1,center,gas,cf_one,40.0,40.0,0.0,0.0,0.0,14.0,0.0,,2,False
-1,2,center,gas,cf_one,170.0,170.0,0.0,0.0,0.0,15.0,0.0,,2,False
-2,3,south,gas,cf_one,520.0,520.0,0.0,0.0,0.0,30.0,0.0,,0,False
-3,4,south,gas,cf_one,200.0,200.0,0.0,0.0,0.0,40.0,0.0,,0,False
-4,5,south,gas,cf_one,600.0,600.0,0.0,0.0,0.0,10.0,0.0,,0,False
+id,name,type_,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,technology,site,cap_existing_power_MW,cap_max_power_MW,cost_fixed_power_USDperkW,cost_variable_USDperMWh,c0_USD,c1_USDperMWh,c2_USDperMWh2,emission_rate_tonneCO2perMWh,bus_id,expand_capacity,component_id,forced_dispatch_MW
+0,1,generators,center,,,,,,,,gas,cf_one,40.0,40.0,0.0,0.0,0.0,14.0,0.0,,1,False,,
+1,2,generators,center,,,,,,,,gas,cf_one,170.0,170.0,0.0,0.0,0.0,15.0,0.0,,1,False,,
+2,3,generators,south,,,,,,,,gas,cf_one,520.0,520.0,0.0,0.0,0.0,30.0,0.0,,2,False,,
+3,4,generators,south,,,,,,,,gas,cf_one,200.0,200.0,0.0,0.0,0.0,40.0,0.0,,2,False,,
+4,5,generators,south,,,,,,,,gas,cf_one,600.0,600.0,0.0,0.0,0.0,10.0,0.0,,2,False,,

@@ -34,7 +34,6 @@ class Shunt(Component):
     base_power_MVA: float
     base_voltage_kV: float
     base_frequency_Hz: float
-    type: str = "shunt"
     tags: ClassVar[list[str]] = ["shunt"]
     pf: PowerFlowVariables = None
 

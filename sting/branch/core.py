@@ -1,12 +1,8 @@
 # -------------
 # Import python packages
 # --------------
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import ClassVar, NamedTuple
-import pyomo.environ as pyo
-import polars as pl
-import os
-from collections import defaultdict
 import logging
 
 # -------------
@@ -37,7 +33,6 @@ class Branch(Component):
     base_power_MVA: float
     base_voltage_kV: float
     base_frequency_Hz: float
-    type: str = "branch"
     tags: ClassVar[list[str]] = ["branch"]
     pf: PowerFlowVariables = None
 

@@ -1,6 +1,6 @@
-id,bus,scenario,timepoint,load_MW
-0,center,sc1,1,0.0
-1,north,sc1,1,300.0
-2,south,sc1,1,300.0
-3,south,sc1,1,400.0
-4,south,sc1,1,0.0
+id,name,type_,bus,timepoint,load_MW,scenario,load_MVAR
+0,,loads,center,1,0.0,sc1,
+1,,loads,north,1,300.0,sc1,
+2,,loads,south,1,300.0,sc1,
+3,,loads,south,1,400.0,sc1,
+4,,loads,south,1,0.0,sc1,

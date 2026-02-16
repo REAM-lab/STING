@@ -14,7 +14,7 @@ import polars as pl
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core_testing import System
+from sting.system.core import System
 import sting.system.selections as sl
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, modal_analisis
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation

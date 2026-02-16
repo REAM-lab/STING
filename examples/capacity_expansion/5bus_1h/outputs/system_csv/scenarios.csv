@@ -1,2 +1,2 @@
-id,name,probability
-0,sc1,1.0
+id,name,type_,probability
+0,sc1,scenarios,1.0

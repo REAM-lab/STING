@@ -2,7 +2,7 @@ from sting.utils.graph_matrices import build_generation_connection_matrix, build
 import numpy as np
 from scipy.linalg import block_diag
 
-from sting.system.core_testing import System
+from sting.system.core import System
 
 def get_ccm_matrices(system: System, attribute: str, dimI: int):
     """ """

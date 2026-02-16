@@ -14,29 +14,35 @@ logger = logging.getLogger(__name__)
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core_testing import System
+from sting.system.core import System
 from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
-from sting.modules.simulation_emt import SimulationEMT
+from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
-from sting.modules.capacity_expansion import CapacityExpansion
-from sting.modules.kron_reduction import KronReduction
+from sting.modules.capacity_expansion.core import CapacityExpansion
+from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.data_tools import setup_logging_file
 
-from sting.policies.energy_budgets import EnergyBudget
 # ----------------
 # Main functions
 # ----------------
-def run_acopf(case_directory = os.getcwd()):
+def run_acopf(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
     """
     Routine to run AC optimal power flow from a case study directory.
     """
+    start_time = time.time()
+    
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
     # Load system from CSV files
     sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
-    pf = PowerFlow(system=sys)
-    pf.run_acopf()
+    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    pf.solve()
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
     return sys
 
@@ -44,6 +50,11 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     """
     Routine to construct the system and its small-signal model from a case study directory.
     """
+    start_time = time.time()
+
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
     # Load system from CSV files
     sys = System.from_csv(case_directory=case_directory)
 
@@ -59,9 +70,11 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     ssm = SmallSignalModel(system=sys)
     ssm.construct_system_ssm()
 
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+
     return sys, ssm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd()):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
@@ -70,8 +83,12 @@ def run_emt(t_max, inputs, case_directory=os.getcwd()):
     sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
-    pf = PowerFlow(system=sys)
-    pf.run_acopf()
+    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    pf.solve()
+
+    # Break down lines into branches and shunts for small-signal modeling
+    sys_modifier = SystemModifier(system=sys)
+    sys_modifier.decompose_lines()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -83,12 +100,12 @@ def run_emt(t_max, inputs, case_directory=os.getcwd()):
     return sys
 
 
-
 def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
     start_time = time.time()
+
     # Set up logging to file
     setup_logging_file(case_directory)
 
@@ -96,7 +113,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     system = System.from_csv(case_directory=case_directory)
     
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=system , model_settings=model_settings, solver_settings=solver_settings)
+    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings)
     capex.solve()  
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
@@ -163,7 +180,8 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
     system = System.from_csv(case_directory=case_directory)
     
     # Perform manual zonal grouping
-    zonal_system = system.group_by_zones(components_to_clone=components_to_clone)
+    sys_modifier = SystemModifier(system=system)
+    zonal_system = sys_modifier.group_by_zones(components_to_clone=components_to_clone)
 
     # Save zonal system to CSV files
     zonal_system.write_csv(types = [int, float, str, bool])
@@ -199,11 +217,12 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
         built_capacity_directory = os.path.join(case_directory, "outputs", "capacity_expansion")
 
     # Upload built capacities
-    system.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
+    sys_modifier = SystemModifier(system=system)
+    sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
                                             make_non_expandable=make_non_expandable)
 
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=system , model_settings=model_settings, solver_settings=solver_settings,
+    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings,
                               output_directory=output_directory)
 
     # Solve capacity expansion

@@ -2,7 +2,10 @@
 This script runs the capacity expansion model for the 5-bus case study with 1-hour time resolution,
 and then runs a cost production model with the built capacities from the capacity expansion model. 
 The data parameters and model settings are configured so that the capacity expansion is actually cost production model.
-The cost per timepoint for both runs be 17479.90 USD.
+The cost per timepoint for both runs be 17479.8969 USD.
+
+Author: Paul Serna-Torre
+Date: 2026-02-15
 
 %   Based on data from ...
 %     F.Li and R.Bo, "Small Test Systems for Power System Economic Studies",
@@ -36,8 +39,7 @@ model_settings = {
         "line_capacity": True,
         "kron_equivalent_flow_constraints": False,
         "bus_max_flow_expansion": False,
-        "bus_max_flow": False,
-        "policies": [],
+        "bus_max_flow": False
     }
 
 gurobi_solver_settings = {
@@ -64,7 +66,6 @@ model_settings = {
         "kron_equivalent_flow_constraints": False,
         "bus_max_flow_expansion": False, # No expansion in bus max flow
         "bus_max_flow": False,
-        "policies": [],
     }
 
 # Run cost production with built capacities from the capacity expansion run

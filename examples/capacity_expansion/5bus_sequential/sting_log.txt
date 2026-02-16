@@ -12473,3 +12473,981 @@ Could not load duals, i.e., shadow prices, from solver.
 
 >> Run completed in 0.07 seconds.
 
+2026-02-15 20:00:22
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+ - 'generators.csv' ... 
+   Added 5 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'storage.csv' ... 
+   Added 1 'storage' 
+ - 'buses.csv' ... 
+   Added 5 'buses' 
+ - 'loads.csv' ... 
+   Added 5 'loads' 
+ - 'lines.csv' ... 
+   Added 6 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=True, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='dc', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 5 generators
+ - Decision variables of capacity expansion for generators
+   Size: 5 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 5 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: -188.03963729706305
+       Constraint=cEnergyBalance[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vTHETA[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cMaxDispatch[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper
+     - Maximum RHS: 600.0
+       Constraint=cCapGenNonVar[Generator(id=4, name='5', bus='5')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 400.0
+       Variable=vCAP[Generator(id=3, name='4', bus='4')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 25              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 18              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 4               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 8                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 10                after factor           : 10              
+Factor     - dense dim.             : 0                 flops                  : 1.00e+02        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   6.0e+02  4.0e+02  1.6e+02  0.00e+00   9.385424073e+02   7.762745216e+02   2.6e-01  0.00  
+1   1.3e+02  8.7e+01  3.6e+01  -9.91e-01  3.196335151e+03   3.037620512e+03   5.7e-02  0.00  
+2   9.0e+00  6.0e+00  2.5e+00  -9.54e-01  3.856673463e+04   3.845798105e+04   3.9e-03  0.00  
+3   3.6e+00  2.4e+00  9.8e-01  -9.82e-01  8.684316398e+03   8.571563981e+03   1.6e-03  0.00  
+4   3.4e+00  2.3e+00  9.2e-01  -9.02e-01  1.132815806e+04   1.121908265e+04   1.5e-03  0.00  
+5   6.9e-01  4.6e-01  1.9e-01  -9.01e-01  3.886258921e+04   3.889687291e+04   3.0e-04  0.00  
+6   7.9e-02  5.3e-02  2.2e-02  -5.25e-01  1.272207414e+05   1.274782304e+05   3.5e-05  0.00  
+7   2.1e-03  1.4e-03  5.8e-04  5.66e-01   1.733188922e+05   1.733356516e+05   9.4e-07  0.00  
+8   5.7e-06  3.8e-06  1.5e-06  1.01e+00   1.749694974e+05   1.749695403e+05   2.5e-09  0.00  
+9   5.8e-10  3.8e-10  1.1e-10  1.00e+00   1.749737678e+05   1.749737678e+05   2.5e-13  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7497376779e+05    nrm: 5e+02    Viol.  con: 6e-08    var: 0e+00  
+  Dual.    obj: 1.7497376779e+05    nrm: 6e+04    Viol.  con: 3e-08    var: 1e-06  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7497376822e+05    nrm: 5e+02    Viol.  con: 7e-13    var: 0e+00  
+  Dual.    obj: 1.7497376822e+05    nrm: 6e+04    Viol.  con: 0e+00    var: 9e-10  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17497376.82230642. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.10 seconds.
+
+2026-02-15 20:00:22
+2026-02-15 20:00:22
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+> Initializing system ...
+System initialization completed.
+System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+ - 'generators.csv' ... 
+ - 'generators.csv' ... 
+   Added 5 'generators' 
+   Added 5 'generators' 
+ - 'capacity_factors.csv' ... 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+   Added 1 'capacity_factors' 
+ - 'storage.csv' ... 
+ - 'storage.csv' ... 
+   Added 1 'storage' 
+   Added 1 'storage' 
+ - 'buses.csv' ... 
+ - 'buses.csv' ... 
+   Added 5 'buses' 
+   Added 5 'buses' 
+ - 'loads.csv' ... 
+ - 'loads.csv' ... 
+   Added 5 'loads' 
+   Added 5 'loads' 
+ - 'lines.csv' ... 
+ - 'lines.csv' ... 
+   Added 6 'lines' 
+   Added 6 'lines' 
+ - 'timeseries.csv' ... 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+> Completed in: 0.00 seconds. 
+
+2026-02-15 20:02:31
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+ - 'generators.csv' ... 
+   Added 5 'generators' 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+ - 'storage.csv' ... 
+   Added 1 'storage' 
+ - 'buses.csv' ... 
+   Added 5 'buses' 
+ - 'loads.csv' ... 
+   Added 5 'loads' 
+ - 'lines.csv' ... 
+   Added 6 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.01 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='quadratic', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=True, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='dc', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 5 generators
+ - Decision variables of capacity expansion for generators
+   Size: 5 variables
+ - Decision variables of dispatch
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+   Size: 5 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 2 variables
+ - Decision variables of state of charge
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of bus angles
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Maximum flow constraints per line
+   Size: 6 constraints
+ - Energy balance at each bus
+   Size: 5 constraints
+> Completed in 0.01 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 0 constraints
+ - Constraint for energy budget
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: -188.03963729706305
+       Constraint=cEnergyBalance[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vTHETA[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.0
+       Constraint=cMaxDispatch[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper
+     - Maximum RHS: 600.0
+       Constraint=cCapGenNonVar[Generator(id=4, name='5', bus='5')]  
+       Bound=upper 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 400.0
+       Variable=vCAP[Generator(id=3, name='4', bus='4')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+MOSEK warning 500 (MSK_RES_WRN_LICENSE_EXPIRE): The license expires in 3 days.
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 25              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 18              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Eliminator started.
+Freed constraints in eliminator : 4
+Eliminator terminated.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 0
+Eliminator terminated.
+Eliminator - tries                  : 2                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 4               
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 8                 conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 10                after factor           : 10              
+Factor     - dense dim.             : 0                 flops                  : 1.00e+02        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   6.0e+02  4.0e+02  1.6e+02  0.00e+00   9.385424073e+02   7.762745216e+02   2.6e-01  0.00  
+1   1.3e+02  8.7e+01  3.6e+01  -9.91e-01  3.196335151e+03   3.037620512e+03   5.7e-02  0.00  
+2   9.0e+00  6.0e+00  2.5e+00  -9.54e-01  3.856673463e+04   3.845798105e+04   3.9e-03  0.00  
+3   3.6e+00  2.4e+00  9.8e-01  -9.82e-01  8.684316398e+03   8.571563981e+03   1.6e-03  0.00  
+4   3.4e+00  2.3e+00  9.2e-01  -9.02e-01  1.132815806e+04   1.121908265e+04   1.5e-03  0.00  
+5   6.9e-01  4.6e-01  1.9e-01  -9.01e-01  3.886258921e+04   3.889687291e+04   3.0e-04  0.00  
+6   7.9e-02  5.3e-02  2.2e-02  -5.25e-01  1.272207414e+05   1.274782304e+05   3.5e-05  0.00  
+7   2.1e-03  1.4e-03  5.8e-04  5.66e-01   1.733188922e+05   1.733356516e+05   9.4e-07  0.00  
+8   5.7e-06  3.8e-06  1.5e-06  1.01e+00   1.749694974e+05   1.749695403e+05   2.5e-09  0.00  
+9   5.8e-10  3.8e-10  1.1e-10  1.00e+00   1.749737678e+05   1.749737678e+05   2.5e-13  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.00    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7497376779e+05    nrm: 5e+02    Viol.  con: 6e-08    var: 0e+00  
+  Dual.    obj: 1.7497376779e+05    nrm: 6e+04    Viol.  con: 3e-08    var: 1e-06  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 1.7497376822e+05    nrm: 5e+02    Viol.  con: 7e-13    var: 0e+00  
+  Dual.    obj: 1.7497376822e+05    nrm: 6e+04    Viol.  con: 0e+00    var: 9e-10  
+> Time spent by solver: 0.05 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17497376.82230642. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.10 seconds.
+
+2026-02-15 20:02:31
+2026-02-15 20:02:31
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+   ______  [93m __ [0m
+  / __/ /_[93m_/ /[0m_  _____ _
+ _\ \/ __[93m/ _/[0m/ \/ / _ `/
+/___/__/[93m//  [0m/_/\_/\_, /
+       [93m/   [0m      /___/  
+
+Version: 0.1.0 (2025-11-12)
+========================================
+
+> Initializing system ...
+> Initializing system ...
+System initialization completed.
+System initialization completed.
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+> Loading system components from CSV files from /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential ...
+ - 'generators.csv' ... 
+ - 'generators.csv' ... 
+   Added 5 'generators' 
+   Added 5 'generators' 
+ - 'capacity_factors.csv' ... 
+ - 'capacity_factors.csv' ... 
+   Added 1 'capacity_factors' 
+   Added 1 'capacity_factors' 
+ - 'storage.csv' ... 
+ - 'storage.csv' ... 
+   Added 1 'storage' 
+   Added 1 'storage' 
+ - 'buses.csv' ... 
+ - 'buses.csv' ... 
+   Added 5 'buses' 
+   Added 5 'buses' 
+ - 'loads.csv' ... 
+ - 'loads.csv' ... 
+   Added 5 'loads' 
+   Added 5 'loads' 
+ - 'lines.csv' ... 
+ - 'lines.csv' ... 
+   Added 6 'lines' 
+   Added 6 'lines' 
+ - 'timeseries.csv' ... 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+ - 'timepoints.csv' ... 
+   Added 1 'timepoints' 
+   Added 1 'timepoints' 
+ - 'scenarios.csv' ... 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+   Added 1 'scenarios' 
+> Post system initialization completed in 0.00 seconds.
+> Post system initialization completed in 0.00 seconds.
+> Completed in: 0.00 seconds. 
+
+> Completed in: 0.00 seconds. 
+
+> Initializing upload built capacities from a previous capex solution ... 
+> Initializing upload built capacities from a previous capex solution ... 
+> Updated existing capacities for 5 generators based on input file /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion/generator_built_capacity.csv
+> Updated existing capacities for 5 generators based on input file /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion/generator_built_capacity.csv
+> Updated existing capacities for 0 storage units based on input file /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion/storage_built_capacity.csv
+> Updated existing capacities for 0 storage units based on input file /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion/storage_built_capacity.csv
+No file named 'line_built_capacity.csv' found in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion. Skipping upload of built line capacities.
+No file named 'line_built_capacity.csv' found in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion. Skipping upload of built line capacities.
+No file named 'bus_built_capacity.csv' found in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion. Skipping upload of built bus capacities.
+No file named 'bus_built_capacity.csv' found in /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/capacity_expansion. Skipping upload of built bus capacities.
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+
+>> Starting capacity expansion...
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='dc', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=False, single_storage_injection=False, generation_capacity_expansion=False, storage_capacity_expansion=False, line_capacity_expansion=False, line_capacity=True, power_flow='dc', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+Solver settings: SolverSettings(solver_name='gurobi', tee=True, solver_options={'BarHomogeneous': 1, 'FeasibilityTol': 1e-05, 'CrossOver': 0, 'Method': 2}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+ - Set of capacity-expandable generators
+   Size: 0 generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+   Size: 0 variables
+ - Decision variables of dispatch
+ - Decision variables of dispatch
+   Size: 5 variables
+   Size: 5 variables
+ - Constraints on capacity expansion for generators
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 5 constraints
+   Size: 5 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+ - Expressions for dispatch at any bus
+   Size: 5 expressions
+   Size: 5 expressions
+ - Expressions for emission per timepoint per scenario expression
+ - Expressions for emission per timepoint per scenario expression
+   Size: 1 expressions
+   Size: 1 expressions
+ - Expressions for generation cost per timepoint
+ - Expressions for generation cost per timepoint
+   Size: 1 expressions
+   Size: 1 expressions
+ - Expressions for generation cost per period
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+ - Decision variables of discharge and charge
+   Size: 2 variables
+   Size: 2 variables
+ - Decision variables of state of charge
+ - Decision variables of state of charge
+   Size: 1 variables
+   Size: 1 variables
+ - Set of capacity-expandable storage units
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+   Size: 0 variables
+ - Constraints on power capacity expansion
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+   Size: 0 constraints
+ - Constraints on storage dispatch
+ - Constraints on storage dispatch
+   Size: 2 constraints
+   Size: 2 constraints
+ - Constraints on maximum state of charge
+ - Constraints on maximum state of charge
+   Size: 1 constraints
+   Size: 1 constraints
+ - Constraints on evolution of state of charge across timepoints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 6 constraints
+   Size: 6 constraints
+ - Expressions for storage cost per timepoint
+ - Expressions for storage cost per timepoint
+   Size: 1 expressions
+   Size: 1 expressions
+ - Expression for storage cost per period
+ - Expression for storage cost per period
+   Size: 1 expressions
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Load data processing
+ - Decision variables of bus angles
+ - Decision variables of bus angles
+   Size: 5 variables
+   Size: 5 variables
+ - Power flow per bus expressions
+ - Power flow per bus expressions
+ - Maximum flow constraints per line
+ - Maximum flow constraints per line
+   Size: 6 constraints
+   Size: 6 constraints
+ - Energy balance at each bus
+ - Energy balance at each bus
+   Size: 5 constraints
+   Size: 5 constraints
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+> Initializing construction of energy budget constraints ... 
+ - Annual carbon policy constraint
+ - Annual carbon policy constraint
+   Size: 0 constraints
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+ - Constraint for power budget
+   Size: 0 constraints
+   Size: 0 constraints
+ - Constraint for energy budget
+ - Constraint for energy budget
+   Size: 0 constraints
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+     - Minimum coefficient: 0.01
+       Constraint=cEnergyBalance[Bus(id=0, bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Constraint=cEnergyBalance[Bus(id=0, bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+       Variable=vGEN[Generator(id=0, name='1', bus='1'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: -188.03963729706305
+     - Maximum coefficient: -188.03963729706305
+       Constraint=cEnergyBalance[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Constraint=cEnergyBalance[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Variable=vTHETA[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+       Variable=vTHETA[Bus(id=4, bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')] 
+
+  - RHS extremes:
+  - RHS extremes:
+     - Minimum RHS: 0.0
+     - Minimum RHS: 0.0
+       Constraint=cMaxDispatch[Generator(id=3, name='4', bus='4'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Constraint=cMaxDispatch[Generator(id=3, name='4', bus='4'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper
+       Bound=upper
+     - Maximum RHS: 46650.51537309484
+     - Maximum RHS: 46650.51537309484
+       Constraint=cMaxDispatch[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Constraint=cMaxDispatch[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]  
+       Bound=upper 
+
+       Bound=upper 
+
+  - Objective coefficient extremes:
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.1
+     - Minimum coefficient: 0.1
+       Variable=vGEN[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+       Variable=vGEN[Generator(id=4, name='5', bus='5'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+     - Maximum coefficient: 0.4
+     - Maximum coefficient: 0.4
+       Variable=vGEN[Generator(id=3, name='4', bus='4'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+       Variable=vGEN[Generator(id=3, name='4', bus='4'),Scenario(id=0, name='sc1', type_='scenarios', probability=1.0),Timepoint(id=0, name='1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+> Solving capacity expansion model...
+Set parameter Username
+Set parameter Username
+Academic license - for non-commercial use only - expires 2026-12-23
+Academic license - for non-commercial use only - expires 2026-12-23
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpmbu3a_f4.pyomo.lp
+Read LP format model from file /var/folders/g0/dqv0hkx15ylc7p0dmzlbtf5m0000gp/T/tmpmbu3a_f4.pyomo.lp
+Reading time = 0.00 seconds
+Reading time = 0.00 seconds
+x1: 26 rows, 12 columns, 48 nonzeros
+x1: 26 rows, 12 columns, 48 nonzeros
+Set parameter BarHomogeneous to value 1
+Set parameter BarHomogeneous to value 1
+Set parameter FeasibilityTol to value 1e-05
+Set parameter FeasibilityTol to value 1e-05
+Set parameter Crossover to value 0
+Set parameter Crossover to value 0
+Set parameter Method to value 2
+Set parameter Method to value 2
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (mac64[arm] - Darwin 25.2.0 25C56)
+
+
+CPU model: Apple M2 Ultra
+CPU model: Apple M2 Ultra
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+Thread count: 24 physical cores, 24 logical processors, using up to 24 threads
+
+
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Optimize a model with 26 rows, 12 columns and 48 nonzeros
+Model fingerprint: 0xc2909948
+Model fingerprint: 0xc2909948
+Coefficient statistics:
+Coefficient statistics:
+  Matrix range     [1e-02, 2e+02]
+  Matrix range     [1e-02, 2e+02]
+  Objective range  [1e-01, 4e-01]
+  Objective range  [1e-01, 4e-01]
+  Bounds range     [0e+00, 0e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [2e+00, 5e+04]
+  RHS range        [2e+00, 5e+04]
+Presolve removed 9 rows and 21 columns
+Presolve removed 9 rows and 21 columns
+Presolve time: 0.00s
+Presolve time: 0.00s
+Presolved: 3 rows, 5 columns, 9 nonzeros
+Presolved: 3 rows, 5 columns, 9 nonzeros
+Ordering time: 0.00s
+Ordering time: 0.00s
+
+
+Barrier statistics:
+Barrier statistics:
+ AA' NZ     : 3.000e+00
+ AA' NZ     : 3.000e+00
+ Factor NZ  : 6.000e+00
+ Factor NZ  : 6.000e+00
+ Factor Ops : 1.400e+01 (less than 1 second per iteration)
+ Factor Ops : 1.400e+01 (less than 1 second per iteration)
+ Threads    : 1
+ Threads    : 1
+
+
+                  Objective                Residual
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   4.35560184e+02  1.74798969e+02  8.22e-02 5.41e-13  7.01e-02     0s
+   0   4.35560184e+02  1.74798969e+02  8.22e-02 5.41e-13  7.01e-02     0s
+   1   1.75395733e+02  1.74799441e+02  1.88e-04 2.20e-02  1.85e-03     0s
+   1   1.75395733e+02  1.74799441e+02  1.88e-04 2.20e-02  1.85e-03     0s
+   2   1.74798970e+02  1.74798969e+02  9.79e-11 2.36e-08  1.99e-09     0s
+   2   1.74798970e+02  1.74798969e+02  9.79e-11 2.36e-08  1.99e-09     0s
+
+
+Barrier solved model in 2 iterations and 0.00 seconds (0.00 work units)
+Barrier solved model in 2 iterations and 0.00 seconds (0.00 work units)
+Optimal objective 1.74798970e+02
+Optimal objective 1.74798970e+02
+
+
+Could not load duals, i.e., shadow prices, from solver.
+Could not load duals, i.e., shadow prices, from solver.
+> Time spent by solver: 0.31 seconds.
+> Time spent by solver: 0.31 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 17479.89692543603. 
+
+> Objective value: 17479.89692543603. 
+
+> Initializing export all results to CSV files ... 
+> Initializing export all results to CSV files ... 
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/cost_production
+- Directory: /Users/psernatorre/Documents/sting/examples/capacity_expansion/5bus_sequential/outputs/cost_production
+> Initializing generator results to CSV files ... 
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Initializing storage results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.34 seconds.
+
+
+>> Run completed in 0.34 seconds.
+

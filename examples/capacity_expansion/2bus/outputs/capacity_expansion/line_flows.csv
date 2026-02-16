@@ -1,2 +1,2 @@
 line,from_bus,to_bus,scenario,timepoint,existing_capacity_MW,net_flow_leaving_from_bus_MW,net_flow_arriving_at_to_bus_MW,flow_sent_at_from_bus_MW,flow_sent_at_to_bus_times_efficiency_MW,flow_sent_at_from_bus_times_efficiency_MW,flow_sent_at_to_bus_MW,built_capacity_MW,total_capacity_MW
-line,north,south,sc1,1,100.0,100.0,100.0,100.0,0.0,100.0,0.0,0,100.0
+line,north,south,sc1,1,100.0,100.0,100.0,100.0,-0.0,100.0,-0.0,0,100.0

@@ -14,6 +14,6 @@ class SystemComponent(NamedTuple):
 @dataclass(slots=True, kw_only=True)
 class Component:
     id: int = 0
-    name: str
-    type_: str = 'component'
+    name: str = None
+    type_: str = None
 
