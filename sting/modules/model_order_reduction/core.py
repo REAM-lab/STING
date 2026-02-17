@@ -29,31 +29,6 @@ class ReducedOrderModel:
 
     def connect_subsystems(self):
         """
-        Now we have eliminated extra outputs from each subsystem but there are no 
-        internal connections within subsystems. Here we remove all inputs and 
-        outputs from each subsystem that have no contribution to y_C.
-        
-        Recall from CCM that
-            u_B = F * y_B + G * u_C
-            y_C = H * y_B + L * u_C
-        
-        Specifically, we construct two more maskings for u_B and y_B. These
-        correspond to inputs and outputs that have no contribution to u_C or y_C,
-        and thus can be eliminated from each subsystem without any effect on the 
-        fully interconnected dynamics of G_C(s). We the matrix construct X to 
-        mask u_B such that u_B(mask) = X * u_B meaning
-            X * u_B = (X*F) * y_B + (X*G) * u_B
-        and the matrix Y to mask y_B such that y_B(mask) = Y * y_B meaning
-            u_B = (F*Y) * y_B + G * u_C
-            y_C = (H*Y) * y_B + L * u_C
-        """
-    
-
-    
-
-
-
-    """
     function [c, s] = eliminate_outputs(c, s)
     At this point we have simply grouped the components to be ordered by each
     subsystem. There are no internal connections within subsystems. For each
@@ -106,3 +81,4 @@ class ReducedOrderModel:
     c.L = Z*c.L;
     end    
     """
+        pass

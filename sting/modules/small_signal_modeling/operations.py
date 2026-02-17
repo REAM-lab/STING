@@ -3,19 +3,19 @@
 # -----------------------
 import logging
 from dataclasses import dataclass
-from itertools import groupby
+from itertools import groupby, transpose
 import copy
 
 import numpy as np
 from scipy.linalg import block_diag
-from scipy.sparse import bsr_array
 # -----------------------
 # Import sting code
 # -----------------------
+from sting.generator.linear_system import LinearSystem
 from sting.modules.small_signal_modeling.core import SmallSignalModel, ComponentSSM
 from sting.utils.dynamical_systems import StateSpaceModel
 from sting.system.core import System
-from sting.utils.data_tools import mat2cell
+from sting.utils.data_tools import mat2cell, cell2mat
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -40,54 +40,73 @@ class SSMGroupBy:
         # Get all of the system's components
         components = [getattr(self.model.system, c.type)[c.idx] for c in self.model.components]
 
-        for key, group in groupby(components, key=lambda c: c.zone):
-            # For each collection of components in the same zone create a new SSM
+        for key, subsystem in groupby(components, key=lambda c: c.zone):
+            # For each collection of components in the same zone, create a new SSM
             system = System(case_directory=self.model.system.case_directory)
-            components, models  = [], [] # The indexing and SSM of each component
+            components, models  = [], []
 
-            for component in group:
+            for component in subsystem:
                 system.add(component)
                 components.append(ComponentSSM(component.type, component.id))
                 models.append(component.ssm)
             
-            self.subsystems[key] = SmallSignalModel(
-                system=system,
-                components=components,
-                model=StateSpaceModel.from_stacked(models)
-            )
-
-            
+            self.subsystems[key] = SmallSignalModel(system=system, components=components, model=StateSpaceModel.from_stacked(models))
 
 
-    def interconnect(self):
+    def interconnect(self) -> SmallSignalModel:
         """
-        TODO: Treat empty zones differently
+        Now we have grouped each subsystem but there are no 
+        internal connections within subsystems. Here we remove all inputs and 
+        outputs from each subsystem that have no contribution to y_C.
+        
+        Recall from CCM that
+            u_B = F * y_B + G * u_C
+            y_C = H * y_B + L * u_C
+        
+        Specifically, we construct two more maskings for u_B and y_B. These
+        correspond to inputs and outputs that have no contribution to u_C or y_C,
+        and thus can be eliminated from each subsystem without any effect on the 
+        fully interconnected dynamics of G_C(s). We the matrix construct X to 
+        mask u_B such that u_B(mask) = X * u_B meaning
+            X * u_B = (X*F) * y_B + (X*G) * u_B
+        and the matrix Y to mask y_B such that y_B(mask) = Y * y_B meaning
+            u_B = (F*Y) * y_B + G * u_C
+            y_C = (H*Y) * y_B + L * u_C
         """
+        new_system = System(case_directory=self.model.system.case_directory)
+        new_components = []
 
-        z = len(self.subsystems)
-
+        # State-space models and interconnection matrices
+        (F,G,H,L) = self.model.ccm_matrices  
         # Number of stacked inputs and outputs in each zone
         y_stack = [len(ssm.model.y) for ssm in self.subsystems.values()]
         u_stack = [len(ssm.model.u) for ssm in self.subsystems.values()]
 
         # Block partition the CCM matrices
         (F,G,H,L) = self.model.ccm_matrices
-        # F = mat2cell(F, u_stack, y_stack)
-        # G = mat2cell(G, u_stack, None)
-        # H = mat2cell(H, None, y_stack)
+        F_cell = mat2cell(F, u_stack, y_stack)
+        G_cell = mat2cell(G, u_stack, None)
+        H_cell = mat2cell(H, None, y_stack)
 
-       
+        for i, (key, sub_model) in enumerate(self.subsystems.items()):
+            # If component is not assigned to a zone, directly transfer it 
+            # to the new system (and do not interconnect components).
+            if key == "":
+                for c in sub_model.components:
+                    new_system.add(getattr(self.model.system, c.type)[c.idx])
+                    new_components.append(c)
 
-        for i, (zone, model) in enumerate(self.subsystems.items()):
+                continue
+
             # j is the set of all zone indices excluding zone i
-            j = list(range(z))
+            j = list(range(len(self.subsystems)))
             j.remove(i)
 
             # Inputs in u_B with outputs from another subsystem
-            u_B, _ = np.nonzero(np.hstack((G[i], F[i, j])))
+            u_B, _ = np.nonzero(np.hstack((cell2mat(G_cell[i]), cell2mat(F_cell[i, j]))))
             u_B = list(set(u_B))
             # Outputs in y_B with contributions from u_B or y_c
-            _, y_B = np.nonzero(np.vstack((H[i], F[j, i])))
+            _, y_B = np.nonzero(np.vstack((cell2mat(H_cell[i]), cell2mat(F_cell[j, i]))))
             y_B = list(set(y_B))
             
             m, n = len(u_B), len(y_B)
@@ -100,37 +119,28 @@ class SSMGroupBy:
             Y_i = np.zeros((n, w))
             Y_i[range(n), y_B] = 1
 
-
-            #X_i = full(sparse(1:m, u_B, ones(1,m), m, height(F{i,i})))
-            #X_i = bsr_array((np.ones(m), (range(m), u_B)), shape=(m, h)).toarray().T
-            
-            # Y_i = full(sparse(y_B, 1:n, ones(1,n), width(F{i,i}), n))
-            #Y_i = bsr_array((np.ones(n), (y_B, range(n))), shape=(w, n)).toarray().T
-
-            # S_i = [zeros(n,m), Y_i'; 
-            #     X_i'      , F{i,i}];
-            # s.sys{i} = lft(S_i, s.sys{i});
-
-            model.ccm_matrices = (F[i, i], X_i, Y_i, np.zeros(n, m))
-            model.construct_system_ssm(write_csv=False, perform_analysis=False)
-
             # Connect all components within the subsystem
+            sub_model.ccm_matrices = (F[i, i], X_i, Y_i, np.zeros(n, m))
+            #TODO: Make sure inputs and outputs are being defined correctly in this step
+            sub_model.construct_system_ssm(write_csv=False, perform_analysis=False)
+            
+            # Add a zone level model to the system
+            linear_system = LinearSystem(sub_model.ssm)
+            new_system.add(linear_system) 
+            new_components.append(ComponentSSM(linear_system.type, linear_system.id))
 
-
-
-        X = block_diag(X{:});
-        Y = block_diag(Y{:});
-        diagF = block_diag(*(F[i,i] for i in range(z)))
-
-        c.F = X*(c.F-diagF)*Y;
-        c.G = X*c.G;
-        c.H = c.H*Y;
+        # Update the system-level interconnection matrices
+        diagF, diagG, diagH, _ = transpose([s.ccm_matrices for s in self.subsystems.values()])
+        W = block_diag(*diagF)
+        X = block_diag(*diagG)
+        Y = block_diag(*diagH)
         
-        # Create an empty system
+        F = X @ (F - W) @ Y
+        G = X @ G
+        H = H @ Y
 
-        # For each group in groups
-        # stack all SSMs if key is not "" and create a subsystem/zone component
-            # remove all components from the system
-            # add those components to the zone model?
-        # if key is ""
-        # add each of those indivdual components to the system
+        return SmallSignalModel(
+            system=new_system, 
+            components=new_components, 
+            F=F, G=G, H=H, L=L, 
+            output_directory=self.model.output_directory)
