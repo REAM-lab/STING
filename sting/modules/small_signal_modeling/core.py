@@ -43,19 +43,23 @@ class ComponentSSM(NamedTuple):
     type: str
     id: int
 
+# Component connection matrices
+# Note: Using a NamedTuple to avoid accessing each element by it's index in a list
+ConnectionMatrices = NamedTuple("ConnectionMatrices", ["F", "G", "H", "L"])
+
 # ----------------
 # Main class
 # ----------------
 @dataclass(slots=True)
 class SmallSignalModel:
     system: System 
-    components: list[ComponentSSM] = field(init=False)
-    model: StateSpaceModel = field(init=False)
+    components: list[ComponentSSM] = None
+    model: StateSpaceModel = None
     # Component connection matrices
-    F: np.ndarray = field(init=False)
-    G: np.ndarray = field(init=False)
-    L: np.ndarray = field(init=False)
-    H: np.ndarray = field(init=False)
+    F: np.ndarray = None
+    G: np.ndarray = None
+    L: np.ndarray = None
+    H: np.ndarray = None
     output_directory: str = None
 
     def __post_init__(self):
@@ -124,27 +128,26 @@ class SmallSignalModel:
 
     def load_components(self):
         """
-        Get components that qualified for building the system-scale small-signal model.
-        Not all components in system, e.g., bus, line_pi, etc., participate in small-signal modeling.         
+        Get components that qualified for building the system-scale small-signal model. 
+        Components should be sorted in the order in which the interconnection 
+        matrices are constructed (i.e., generators, shunts, branches).        
         """
-
-        # Get components that qualified for building the system-scale small-signal model. 
-        # Components should be sorted in the order in which the interconnection 
-        # matrices are constructed (i.e., generators, shunts, branches).
-        ssm_components = itertools.chain(self.system.generators, self.system.shunts, self.system.branches)
-        self.components = [ComponentSSM(type=c.type, id=c.id) for c in ssm_components]
+        if self.components is None:
+            ssm_components = itertools.chain(self.system.generators, self.system.shunts, self.system.branches)
+            self.components = [ComponentSSM(type=c.type, id=c.id) for c in ssm_components]
 
     def construct_ccm_matrices(self):
         """
         Initialize the CCM matrices in dq frame for the small-signal modeling.
         """
-        self.F, self.G, self.H, self.L = get_ccm_matrices(self.system, attribute="ssm", dimI=2)
-        # Permute the F and G 
-        T = build_ccm_permutation(self.system)
-        T = block_diag(T, np.eye(self.F.shape[0] - T.shape[0]))
+        if all([X is None for X in self.ccm_matrices]):
+            self.F, self.G, self.H, self.L = get_ccm_matrices(self.system, attribute="ssm", dimI=2)
+            # Permute the F and G 
+            T = build_ccm_permutation(self.system)
+            T = block_diag(T, np.eye(self.F.shape[0] - T.shape[0]))
 
-        self.F = T @ self.F
-        self.G = T @ self.G
+            self.F = T @ self.F
+            self.G = T @ self.G
 
     def construct_components_ssm(self):
         """
@@ -174,10 +177,14 @@ class SmallSignalModel:
 
         # Export small-signal model to CSV files
         if write_csv:
-            file_path = os.path.join(self.system.case_directory, "outputs", "small_signal_model")
-            self.model.to_csv(file_path)
+            self.model.to_csv(self.output_directory)
 
-    def sort_components_by(self, by="zone"):
+    def sort_components(self, by):
+        """
+        Sort the components in the small-signal model according
+        to one of their attributes. Implicitly this will re-order
+        the inputs, outputs, and states of the resulting SSM.
+        """
         # Sort components using the attribute "by" as a sorting key
         zones = self.get_component_attribute(by)
         # Sorted ids for every component
@@ -205,17 +212,26 @@ class SmallSignalModel:
         # And sort all the components
         self.components = [self.components[i] for i in ids]
 
+    def group_by(self, by):
+        pass
+
     # --------------
     # Helpers
     # --------------
     @property
     def ccm_matrices(self):
-        return (self.F, self.G, self.H, self.L)
+        return ConnectionMatrices(self.F, self.G, self.H, self.L)
+    
+    @ccm_matrices.setter
+    def ccm_matrices(self, value):
+        if len(value) != 4:
+            raise ValueError("Exactly four connection matrices must be provided.")
+        
+        self.F, self.G, self.H, self.L = value
 
     def get_component_attribute(self, attribute):
         """Return a list of the specified attribute for every SSM component."""
         return [getattr(getattr(self.system, c.type)[c.idx], attribute) for c in self.components]
-
 
     def apply(self, method: str, *args):
         """Execute a method of all SSM components."""
