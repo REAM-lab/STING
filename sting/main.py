@@ -231,3 +231,32 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
     return capex, system
+
+
+def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+    """
+    Routine to construct the system and its small-signal model from a case study directory.
+    """
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
+    # Load system from CSV files
+    sys = System.from_csv(case_directory=case_directory)
+
+    # Run power flow
+    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    pf.solve()
+
+    # Break down lines into branches and shunts for small-signal modeling
+    sys_modifier = SystemModifier(system=sys)
+    sys_modifier.decompose_lines()
+
+    # Construct small-signal model
+    ssm = SmallSignalModel(system=sys)
+
+    new_ssm = ssm.group_by("zone").interconnect()
+
+    ssm.construct_system_ssm()
+    new_ssm.construct_system_ssm()
+
+    return new_ssm, ssm

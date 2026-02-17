@@ -26,7 +26,7 @@ class InitialConditionsEMT(NamedTuple):
 
 @dataclass(slots=True, kw_only=True, eq=False)
 class LinearSystem(Component):
-    emt_init: InitialConditionsEMT = None
+    #emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
 
 

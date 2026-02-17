@@ -3,17 +3,26 @@
 # ----------------------
 import numpy as np
 from dataclasses import dataclass, field
+from collections import namedtuple
+from collections.abc import Iterable
 from typing import NamedTuple
 import os
 from scipy.linalg import block_diag
 import itertools
 import polars as pl
+from itertools import groupby
+import copy
 
-
+from sting.generator.linear_system import LinearSystem
+#from sting.modules.small_signal_modeling.core import SmallSignalModel, ComponentSSM
+#from sting.utils.dynamical_systems import StateSpaceModel
+#from sting.system.core import System
+from sting.utils.data_tools import mat2cell, cell2mat
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
+from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, modal_analisis
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation
 from sting.modules.power_flow.utils import ACPowerFlowSolution
@@ -43,9 +52,15 @@ class ComponentSSM(NamedTuple):
     type: str
     id: int
 
-# Component connection matrices
-# Note: Using a NamedTuple to avoid accessing each element by it's index in a list
-ConnectionMatrices = NamedTuple("ConnectionMatrices", ["F", "G", "H", "L"])
+class ConnectionMatrices(NamedTuple):
+    """
+    Component connection matrices
+    Using a NamedTuple to avoid accessing each element by it's index in a list
+    """
+    F: np.ndarray
+    G: np.ndarray
+    H: np.ndarray
+    L: np.ndarray
 
 # ----------------
 # Main class
@@ -61,14 +76,16 @@ class SmallSignalModel:
     L: np.ndarray = None
     H: np.ndarray = None
     output_directory: str = None
+    post_init: bool = True
 
     def __post_init__(self):
-        self.set_output_folder()
-        #self.system.clean_up()
-        self.load_components()
-        self.load_ac_power_flow_solution()
-        self.construct_components_ssm()
-        self.construct_ccm_matrices()
+        if self.post_init:
+            self.set_output_folder()
+            #self.system.clean_up()
+            self.load_components()
+            self.load_ac_power_flow_solution()
+            self.construct_components_ssm()
+            self.construct_ccm_matrices()
 
     def set_output_folder(self):
         """
@@ -133,8 +150,8 @@ class SmallSignalModel:
         matrices are constructed (i.e., generators, shunts, branches).        
         """
         if self.components is None:
-            ssm_components = itertools.chain(self.system.generators, self.system.shunts, self.system.branches)
-            self.components = [ComponentSSM(type=c.type, id=c.id) for c in ssm_components]
+            ssm_components:Iterable[Component] = itertools.chain(self.system.gens, self.system.shunts, self.system.branches)
+            self.components = [ComponentSSM(type=c.type_, id=c.id) for c in ssm_components]
 
     def construct_ccm_matrices(self):
         """
@@ -188,7 +205,7 @@ class SmallSignalModel:
         # Sort components using the attribute "by" as a sorting key
         zones = self.get_component_attribute(by)
         # Sorted ids for every component
-        ids, _ = zip(*sorted(zip(range(len(zones)), zones)), key=lambda x: x[1])
+        ids, _ = zip(*sorted(zip(range(len(zones)), zones), key=lambda x: (1, x[1]) if (x[1] is not None) else (0, "")))
 
         # SSMs for each component
         models = self.get_component_attribute("ssm")
@@ -213,13 +230,13 @@ class SmallSignalModel:
         self.components = [self.components[i] for i in ids]
 
     def group_by(self, by):
-        pass
+        return GroupBy(self, by=by)
 
     # --------------
     # Helpers
     # --------------
     @property
-    def ccm_matrices(self):
+    def ccm_matrices(self) -> ConnectionMatrices:
         return ConnectionMatrices(self.F, self.G, self.H, self.L)
     
     @ccm_matrices.setter
@@ -231,10 +248,134 @@ class SmallSignalModel:
 
     def get_component_attribute(self, attribute):
         """Return a list of the specified attribute for every SSM component."""
-        return [getattr(getattr(self.system, c.type)[c.idx], attribute) for c in self.components]
+        return [getattr(getattr(self.system, c.type)[c.id], attribute) for c in self.components]
 
     def apply(self, method: str, *args):
         """Execute a method of all SSM components."""
         for c in self.components:
             component = getattr(self.system, c.type)[c.id]
             getattr(component, method)(*args) 
+
+
+@dataclass(slots=True)
+class GroupBy:
+    """Class to perform operations on small-signal models, such as grouping by zones"""
+
+    model: SmallSignalModel
+    by: str
+    subsystems: dict[str, SmallSignalModel] = field(init=False, default_factory=dict)
+
+    def __post_init__(self):
+
+        # Copy the full SSM (technically we don't need to copy the system)
+        self.model = copy.deepcopy(self.model)
+
+        # Sort all the components re-ordering the interconnection matrices
+        self.model.sort_components(by=self.by)
+
+        # Get all of the system's components
+        components:list[Component] = [getattr(self.model.system, c.type)[c.id] for c in self.model.components]
+
+        for key, subsystem in groupby(components, key=lambda c: c.zone):
+            # For each collection of components in the same zone, create a new SSM
+            system = System(case_directory=self.model.system.case_directory)
+            components, models  = [], []
+
+            for component in subsystem:
+                system.add(component)
+                components.append(ComponentSSM(component.type_, component.id))
+                models.append(component.ssm)
+            
+            self.subsystems[key] = SmallSignalModel(system=system, components=components, model=StateSpaceModel.from_stacked(models), post_init=False)
+
+
+    def interconnect(self) -> SmallSignalModel:
+        """
+        Now we have grouped each subsystem but there are no 
+        internal connections within subsystems. Here we remove all inputs and 
+        outputs from each subsystem that have no contribution to y_C.
+        
+        Recall from CCM that
+            u_B = F * y_B + G * u_C
+            y_C = H * y_B + L * u_C
+        
+        Specifically, we construct two more maskings for u_B and y_B. These
+        correspond to inputs and outputs that have no contribution to u_C or y_C,
+        and thus can be eliminated from each subsystem without any effect on the 
+        fully interconnected dynamics of G_C(s). We the matrix construct X to 
+        mask u_B such that u_B(mask) = X * u_B meaning
+            X * u_B = (X*F) * y_B + (X*G) * u_B
+        and the matrix Y to mask y_B such that y_B(mask) = Y * y_B meaning
+            u_B = (F*Y) * y_B + G * u_C
+            y_C = (H*Y) * y_B + L * u_C
+        """
+        s = len(self.subsystems)
+
+        new_system = System(case_directory=self.model.system.case_directory)
+        new_components = []
+
+        # State-space models and interconnection matrices
+        (F,G,H,L) = self.model.ccm_matrices  
+        # Number of stacked inputs and outputs in each zone
+        y_stack = np.cumsum([0] + [len(ssm.model.y) for ssm in self.subsystems.values()])
+        y = [range(y_stack[i-1], y_stack[i]) for i in range(1, s+1)]
+        u_stack = np.cumsum([0] + [len(ssm.model.u) for ssm in self.subsystems.values()])
+        u = [range(u_stack[i-1], u_stack[i]) for i in range(1, s+1)]
+
+        # Block partition the CCM matrices
+        (F,G,H,L) = self.model.ccm_matrices
+
+        diagF = [F[u[i], :][:, y[i]] for i in range(s)]
+        Z = F - block_diag(*diagF)
+        m, p = F.shape
+
+        w = np.unique(np.nonzero(np.hstack((G, Z)))[0])
+        v = np.unique(np.nonzero(np.vstack((H, Z)))[1])
+
+        X = np.zeros((len(w), m)) 
+        X[range(len(w)), w] = 1
+
+        Y = np.zeros((p, len(v)))
+        Y[v, range(len(v))] = 1
+
+        for i, (key, sub_model) in enumerate(self.subsystems.items()):
+            # If component is not assigned to a zone, directly transfer it 
+            # to the new system (and do not interconnect components).
+            if key is None:
+                for c in sub_model.components:
+                    new_system.add(getattr(self.model.system, c.type)[c.id])
+                    new_components.append(c)
+
+                continue
+
+            # Matrices used to connect components within each subsystem
+            X_i = X[[j for j, k in enumerate(w) if k in u[i]], :][:, u[i]]
+            Y_i = Y[:, [j for j, k in enumerate(v) if k in y[i]]][y[i], :]
+
+            # Connect all components within the subsystem
+            sub_model.ccm_matrices = (diagF[i], X_i.T, Y_i.T, np.zeros((Y_i.shape[1], X_i.shape[0])))
+            #TODO: Make sure inputs and outputs are being defined correctly in this step
+            # sub_model.construct_system_ssm(write_csv=False, perform_analysis=False)
+            models = sub_model.get_component_attribute("ssm")
+            inputs = sum([ssm.u for ssm in models], DynamicalVariables(name=[]))
+            outputs = sum([ssm.y for ssm in models], DynamicalVariables(name=[]))
+            #u = sum(ssm.u, DynamicalVariables(name=[]) for)
+            ssm = StateSpaceModel.from_interconnected(models, sub_model.ccm_matrices, y=outputs, u=inputs[[j for j, k in enumerate(w) if k in u[i]]])
+
+
+            # Add a zone level model to the system
+            linear_system = LinearSystem(ssm=ssm)
+            new_system.add(linear_system) 
+            new_components.append(ComponentSSM(linear_system.type_, linear_system.id))
+
+        # Update the system-level interconnection matrices       
+        F = X @ Z @ Y
+        G = X @ G
+        H = H @ Y
+
+        return SmallSignalModel(
+            system=new_system, 
+            components=new_components, 
+            F=F, G=G, H=H, L=L, 
+            output_directory=self.model.output_directory,
+            post_init=False)

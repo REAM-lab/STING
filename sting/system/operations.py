@@ -50,6 +50,7 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     r_pu=line.r_pu,
                     x_pu=line.x_pu,
+                    zone=line.zone
                 )
 
             from_shunt = ShuntParallelRC(
@@ -61,6 +62,8 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     g_pu= line.g_pu,
                     b_pu= line.b_pu,
+                    # Shunts inherit their zone from buses
+                    zone=self.system.buses[line.from_bus_id].zone
                 )
 
             to_shunt = ShuntParallelRC(
@@ -72,6 +75,7 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     g_pu= line.g_pu,
                     b_pu= line.b_pu,
+                    zone=self.system.buses[line.to_bus_id].zone
                 )
 
             # Add shunts and branch to system

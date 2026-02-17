@@ -124,9 +124,9 @@ def csv_to_matrix(filepath):
 def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
     """Python clone of MATLAB mat2cell"""
     if m is None:
-        m = A.shape[0]
+        m = [A.shape[0]]
     if n is None:
-        n = A.shape[1]
+        n = [A.shape[1]]
 
     # Create a list of lists to hold the sub-arrays
     cell_array = np.empty((len(m), len(n)), dtype=object)
