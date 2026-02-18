@@ -1,0 +1,5 @@
+name,component,type,init
+v_bus_D,infinite_sources_1,grid,1.0017997952644437
+v_bus_Q,infinite_sources_1,grid,-0.000040210676785013255
+v_ref_d,infinite_sources_1,device,0.9917540276124067
+v_ref_q,infinite_sources_1,device,1.8795360582693318e-18

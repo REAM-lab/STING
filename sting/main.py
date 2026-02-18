@@ -253,9 +253,6 @@ def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
-
-    new_ssm = ssm.group_by("zone").interconnect()
-
     ssm.construct_system_ssm()
 
     from sting.utils.data_tools import matrix_to_csv
@@ -268,18 +265,20 @@ def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     y_B = [str(i) for i in sum([x.y for x in models], DynamicalVariables(name=[])).to_list()]
     y_C = [str(i) for i in ssm.model.y.to_list()]
-    os.makedirs(os.path.join(case_directory, "connection_matrices"), exist_ok=True)
-    matrix_to_csv(matrix=ssm.F, filepath=os.path.join(case_directory, "connection_matrices", "F.csv"), index=u_B, columns=y_B)
-    matrix_to_csv(matrix=ssm.G, filepath=os.path.join(case_directory, "connection_matrices", "G.csv"), index=u_B, columns=u_C)
-    matrix_to_csv(matrix=ssm.H, filepath=os.path.join(case_directory, "connection_matrices", "H.csv"), index=y_C, columns=y_B)
-    matrix_to_csv(matrix=ssm.L, filepath=os.path.join(case_directory, "connection_matrices", "L.csv"), index=y_C, columns=u_C)
+    os.makedirs(os.path.join(case_directory, "outputs", "connection_matrices"), exist_ok=True)
+    matrix_to_csv(matrix=ssm.F, filepath=os.path.join(case_directory, "outputs","connection_matrices", "F.csv"), index=u_B, columns=y_B)
+    matrix_to_csv(matrix=ssm.G, filepath=os.path.join(case_directory,"outputs", "connection_matrices", "G.csv"), index=u_B, columns=u_C)
+    matrix_to_csv(matrix=ssm.H, filepath=os.path.join(case_directory, "outputs","connection_matrices", "H.csv"), index=y_C, columns=y_B)
+    matrix_to_csv(matrix=ssm.L, filepath=os.path.join(case_directory,"outputs", "connection_matrices", "L.csv"), index=y_C, columns=u_C)
 
 
     # new_ssm.construct_system_ssm()
-    
+    new_ssm = ssm.group_by("zone").interconnect()
     new_ssm = StateSpaceModel.from_interconnected(new_ssm.get_component_attribute("ssm"), new_ssm.ccm_matrices, u=lambda x: x[:4], y=lambda x: x)
     modal_analisis(new_ssm.A, show=True)
 
+    os.makedirs(os.path.join(case_directory, "outputs","permuted_state_space_model"), exist_ok=True)
+    new_ssm.to_csv(os.path.join(case_directory, "outputs", "permuted_state_space_model"))
     
 
 
