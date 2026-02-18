@@ -379,3 +379,100 @@ class GroupBy:
             F=F, G=G, H=H, L=L, 
             output_directory=self.model.output_directory,
             post_init=False)
+    
+    def interconnect__(self) -> SmallSignalModel:
+        """
+        Now we have grouped each subsystem but there are no 
+        internal connections within subsystems. Here we remove all inputs and 
+        outputs from each subsystem that have no contribution to y_C.
+        
+        Recall from CCM that
+            u_B = F * y_B + G * u_C
+            y_C = H * y_B + L * u_C
+        
+        Specifically, we construct two more maskings for u_B and y_B. These
+        correspond to inputs and outputs that have no contribution to u_C or y_C,
+        and thus can be eliminated from each subsystem without any effect on the 
+        fully interconnected dynamics of G_C(s). We the matrix construct X to 
+        mask u_B such that u_B(mask) = X * u_B meaning
+            X * u_B = (X*F) * y_B + (X*G) * u_B
+        and the matrix Y to mask y_B such that y_B(mask) = Y * y_B meaning
+            u_B = (F*Y) * y_B + G * u_C
+            y_C = (H*Y) * y_B + L * u_C
+        """
+        new_system = System(case_directory=self.model.system.case_directory)
+        new_components = []
+
+        # State-space models and interconnection matrices
+        (F,G,H,L) = self.model.ccm_matrices  
+        # Number of stacked inputs and outputs in each zone
+        y_stack = [len(ssm.model.y) for ssm in self.subsystems.values()]
+        u_stack = [len(ssm.model.u) for ssm in self.subsystems.values()]
+
+        # Block partition the CCM matrices
+        (F,G,H,L) = self.model.ccm_matrices
+        F_cell = mat2cell(F, u_stack, y_stack)
+        G_cell = mat2cell(G, u_stack, None)
+        H_cell = mat2cell(H, None, y_stack)
+
+        for i, (key, sub_model) in enumerate(self.subsystems.items()):
+            # If component is not assigned to a zone, directly transfer it 
+            # to the new system (and do not interconnect components).
+            if key == "":
+                for c in sub_model.components:
+                    new_system.add(getattr(self.model.system, c.type)[c.idx])
+                    new_components.append(c)
+
+                continue
+
+            # j is the set of all zone indices excluding zone i
+            j = list(range(len(self.subsystems)))
+            j.remove(i)
+
+            # Inputs in u_B with outputs from another subsystem
+            u_B, _ = np.nonzero(np.hstack((G_cell[i][0], F_cell[i, j][0])))
+            u_B = list(set(u_B)) # np.unique?
+            # Outputs in y_B with contributions from u_B or y_c
+            _, y_B = np.nonzero(np.vstack((H_cell[0][i], F_cell[j, i][0])))
+            y_B = list(set(y_B))
+            
+            m, n = len(u_B), len(y_B)
+            h, w = F_cell[i, i].shape
+
+            # Matrices used to connect components within each subsystem
+            X_i = np.zeros((h, m))
+            X_i[u_B, range(m)] = 1
+
+            Y_i = np.zeros((n, w))
+            Y_i[range(n), y_B] = 1
+
+            # Connect all components within the subsystem
+            sub_model.ccm_matrices = (F_cell[i, i], X_i, Y_i, np.zeros((n, m)))
+            #TODO: Make sure inputs and outputs are being defined correctly in this step
+            #sub_model.construct_system_ssm(write_csv=False, perform_analysis=False)
+            models = sub_model.get_component_attribute("ssm")
+            inputs = sum([ssm.u for ssm in models], DynamicalVariables(name=[]))
+            outputs = sum([ssm.y for ssm in models], DynamicalVariables(name=[]))
+            #u = sum(ssm.u, DynamicalVariables(name=[]) for)
+            ssm = StateSpaceModel.from_interconnected(models, sub_model.ccm_matrices, y=outputs, u=inputs[u_B])
+            
+            # Add a zone level model to the system
+            linear_system = LinearSystem(ssm=ssm)
+            new_system.add(linear_system) 
+            new_components.append(ComponentSSM(linear_system.type_, linear_system.id))
+
+        # Update the system-level interconnection matrices
+        diagF, diagG, diagH, _ = zip(*[s.ccm_matrices for s in self.subsystems.values()])
+        W = block_diag(*diagF)
+        X = block_diag(*diagG)
+        Y = block_diag(*diagH)
+        
+        F = X.T @ (F - W) @ Y.T
+        G = X.T @ G
+        H = H @ Y.T
+
+        return SmallSignalModel(
+            system=new_system, 
+            components=new_components, 
+            F=F, G=G, H=H, L=L, 
+            output_directory=self.model.output_directory, post_init=False)

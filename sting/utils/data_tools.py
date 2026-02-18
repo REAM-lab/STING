@@ -146,6 +146,8 @@ def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
 
 def cell2mat(C):
     """Python clone of MATLAB cell2mat"""
+    if len(C) == 1:
+        return np.vstack(C)
     return np.vstack([np.hstack(row) for row in C])
 
 
