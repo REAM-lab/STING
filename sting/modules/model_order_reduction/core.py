@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 from typing import Literal
 
-from scipy.linalg import eig
+from scipy.linalg import eig, solve
 import numpy as np
 
 
@@ -46,7 +46,7 @@ class SingularPerturbation:
         is used to ensure that the returned model is real valued.
         """
         d, V = eig(sys.A)
-
+        n = len(d)
         # Sort eigenstates from slowest to fastest 
         idx = np.argsort(np.abs(d))
         # Reorder eigenvectors and eigenvalues as needed
@@ -56,7 +56,7 @@ class SingularPerturbation:
         # Construct transform T such that J = invT * A * T yields the
         # *real* Jordan form of A
         i = 0
-        while i <= len(d):
+        while i <= n:
             # Split complex eigenvalues into real components
             if d[i].imag != 0:
                 T[:, i] = T[:, i].real
@@ -65,4 +65,4 @@ class SingularPerturbation:
             else:
                 i = i + 1
 
-        # TODO: obj.tsys{k} = ss2ss(sys, eye(size(T)) / T);
+        return sys.coordinate_transform(invT=T, T=solve(T, np.eye(n)))

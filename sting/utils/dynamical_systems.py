@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 from more_itertools import transpose
-from scipy.linalg import eigvals, block_diag
+from scipy.linalg import eigvals, block_diag, solve
 from scipy.integrate import solve_ivp
 from dataclasses import dataclass
 from sting.utils.matrix_tools import matrix_to_csv, csv_to_matrix
@@ -436,3 +436,11 @@ class StateSpaceModel:
             print(df_to_print.to_markdown(**print_settings))
 
         return df
+    
+    def coordinate_transform(self, T:np.ndarray, invT:np.ndarray): #-> StateSpaceModel:
+        """Perform a coordinate transformation z = Tx (analogous to MATLAB ss2ss)"""
+        A_t = invT @ self.A @ T
+        B_t = invT @ self.B
+        C_t = self.C @ T
+        return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D)
+          
