@@ -14,7 +14,7 @@ import logging
 from sting.system.core import System
 from sting.policies.energy_budgets.core import EnergyBudget
 from sting.timescales.core import Timepoint, Scenario
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 
 # Set up logging
 logger = logging.getLogger(__name__)

@@ -14,7 +14,8 @@ from sting.bus.core import Bus
 from sting.generator.core import Generator, CapacityFactor
 from sting.timescales.core import Timepoint, Scenario
 from sting.system.core import System
-from sting.utils.data_tools import timeit, pyovariable_to_df
+from sting.utils.pyomo_tools import pyovariable_to_df
+from sting.utils.runtime_tools import timeit
 from sting.modules.capacity_expansion.utils import ModelSettings
 
 # Set up logging

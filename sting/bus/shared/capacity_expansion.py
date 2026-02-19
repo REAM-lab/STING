@@ -13,7 +13,8 @@ import logging
 # ---------------
 from sting.system.core import System
 from sting.modules.capacity_expansion.utils import ModelSettings, KronVariables
-from sting.utils.data_tools import pyovariable_to_df, timeit
+from sting.utils.pyomo_tools import pyovariable_to_df
+from sting.utils.runtime_tools import timeit
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
 from sting.bus.utils import load_as_dict
 

@@ -11,7 +11,7 @@ import logging
 # Import sting code
 # ---------------
 from sting.system.core import System
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 from sting.modules.power_flow.utils import ModelSettings
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines
 from sting.bus.utils import load_as_dict

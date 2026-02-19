@@ -18,4 +18,5 @@ class Component:
     id: int = 0
     name: str = None
     type_: str = None
+    zone: str = None
 

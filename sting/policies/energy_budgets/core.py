@@ -14,7 +14,7 @@ import logging
 from sting.system.component import Component
 from sting.generator.core import Generator
 from sting.timescales.core import Timepoint
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 
 # Set up logging
 logger = logging.getLogger(__name__)

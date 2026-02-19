@@ -15,7 +15,7 @@ import sting.storage.shared.capacity_expansion as storage_capex
 from sting.bus.core import Bus
 from sting.branch.series_rl import BranchSeriesRL
 from sting.shunt.parallel_rc import ShuntParallelRC
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     r_pu=line.r_pu,
                     x_pu=line.x_pu,
+                    zone=line.zone
                 )
 
             from_shunt = ShuntParallelRC(
@@ -61,6 +62,8 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     g_pu= line.g_pu,
                     b_pu= line.b_pu,
+                    # Shunts inherit their zone from buses
+                    zone=self.system.buses[line.from_bus_id].zone
                 )
 
             to_shunt = ShuntParallelRC(
@@ -72,6 +75,7 @@ class SystemModifier:
                     base_frequency_Hz=line.base_frequency_Hz,
                     g_pu= line.g_pu,
                     b_pu= line.b_pu,
+                    zone=self.system.buses[line.to_bus_id].zone
                 )
 
             # Add shunts and branch to system

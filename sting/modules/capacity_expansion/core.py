@@ -15,7 +15,7 @@ import math
 # ------------------
 # Import sting code
 # ------------------
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 from sting.system.core import System
 from sting.timescales.core import Timepoint
 from sting.modules.capacity_expansion.utils import ModelSettings, SolverSettings, KronVariables

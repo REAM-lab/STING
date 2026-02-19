@@ -19,7 +19,7 @@ from sting.system.core import System
 from sting.modules.power_flow.utils import ModelSettings, SolverSettings, ACPowerFlowSolution
 import sting.bus.shared.ac_power_flow as bus
 import sting.generator.shared.ac_power_flow as generator
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 
 logger = logging.getLogger(__name__)
 
