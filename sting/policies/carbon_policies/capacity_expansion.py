@@ -12,7 +12,7 @@ import logging
 from sting.system.core import System
 from sting.policies.carbon_policies.core import CarbonPolicy
 from sting.timescales.core import Scenario
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 from sting.modules.capacity_expansion.utils import ModelSettings
 
 # Set up logging

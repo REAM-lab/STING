@@ -15,7 +15,7 @@ import sting.storage.shared.capacity_expansion as storage_capex
 from sting.bus.core import Bus
 from sting.branch.series_rl import BranchSeriesRL
 from sting.shunt.parallel_rc import ShuntParallelRC
-from sting.utils.data_tools import timeit
+from sting.utils.runtime_tools import timeit
 
 # Set up logger
 logger = logging.getLogger(__name__)

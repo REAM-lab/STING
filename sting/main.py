@@ -5,12 +5,6 @@ import os
 import logging
 import time
 
-logging.basicConfig(level=logging.INFO,
-                        format='%(message)s')
-
-logger = logging.getLogger(__name__)
-
-
 # ------------------
 # Import sting code
 # ------------------
@@ -22,7 +16,14 @@ from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.modules.small_signal_modeling.operations import GroupBy
 from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.kron_reduction.core import KronReduction
-from sting.utils.data_tools import setup_logging_file
+from sting.utils.runtime_tools import setup_logging_file
+
+logging.basicConfig(level=logging.INFO,
+                        format='%(message)s')
+
+logger = logging.getLogger(__name__)
+
+
 
 # ----------------
 # Main functions

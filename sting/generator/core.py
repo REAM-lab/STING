@@ -14,7 +14,7 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.data_tools import pyovariable_to_df, timeit
+from sting.utils.runtime_tools import timeit
 
 # Set up logging
 logger = logging.getLogger(__name__)

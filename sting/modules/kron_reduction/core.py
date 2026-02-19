@@ -21,7 +21,8 @@ from sting.system.core import System
 from sting.line.pi_model import LinePiModel
 from sting.modules.capacity_expansion.utils import KronVariables
 from sting.utils.graph_matrices import build_admittance_matrix_from_lines, build_network_graph_from_lines
-from sting.utils.data_tools import mat2cell, timeit, matrix_to_csv
+from sting.utils.runtime_tools import timeit
+from sting.utils.matrix_tools import  mat2cell, matrix_to_csv
 
 # Logger
 logger = logging.getLogger(__name__)

@@ -10,16 +10,15 @@ from scipy.linalg import block_diag
 import itertools
 import polars as pl
 
-from sting.utils.data_tools import matrix_to_csv
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
 from sting.system.component import Component
-from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, modal_analisis
+from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.data_tools import block_permute
+from sting.utils.matrix_tools import block_permute, matrix_to_csv
 
 # -----------
 # Sub-classes
