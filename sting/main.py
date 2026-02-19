@@ -19,6 +19,7 @@ from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
+from sting.modules.small_signal_modeling.operations import GroupBy
 from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.data_tools import setup_logging_file
@@ -255,40 +256,17 @@ def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     ssm = SmallSignalModel(system=sys)
     ssm.construct_system_ssm()
 
-    new_ssm = ssm.group_by("zone").interconnect()
-    # Update outputs dir
-    new_ssm.output_directory = os.path.join(new_ssm.output_directory, os.pardir, "permuted_state_space_model")
-    # Create new SSM
-    new_ssm.construct_system_ssm()
+    # Interconnect all components in the same zone
+    zonal_ssm = GroupBy(ssm, "zone").interconnect()
+    # Interconnect all zonal models
+    zonal_ssm.construct_system_ssm(write_csv=False)
 
-    """from sting.utils.data_tools import matrix_to_csv
-
-    models = ssm.get_component_attribute("ssm")
-
-    from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, modal_analisis
-    u_B = [str(i) for i in sum([x.u for x in models], DynamicalVariables(name=[])).to_list()]
-    u_C = [str(i) for i in ssm.model.u.to_list()]
-
-    y_B = [str(i) for i in sum([x.y for x in models], DynamicalVariables(name=[])).to_list()]
-    y_C = [str(i) for i in ssm.model.y.to_list()]
-    os.makedirs(os.path.join(case_directory, "outputs", "connection_matrices"), exist_ok=True)
-    matrix_to_csv(matrix=ssm.F, filepath=os.path.join(case_directory, "outputs","connection_matrices", "F.csv"), index=u_B, columns=y_B)
-    matrix_to_csv(matrix=ssm.G, filepath=os.path.join(case_directory,"outputs", "connection_matrices", "G.csv"), index=u_B, columns=u_C)
-    matrix_to_csv(matrix=ssm.H, filepath=os.path.join(case_directory, "outputs","connection_matrices", "H.csv"), index=y_C, columns=y_B)
-    matrix_to_csv(matrix=ssm.L, filepath=os.path.join(case_directory,"outputs", "connection_matrices", "L.csv"), index=y_C, columns=u_C)
-
-
-    # new_ssm.construct_system_ssm()
-    new_ssm = ssm.group_by("zone").interconnect()
-    new_ssm = StateSpaceModel.from_interconnected(new_ssm.get_component_attribute("ssm"), new_ssm.ccm_matrices, u=lambda x: x[:4], y=lambda x: x)
-    modal_analisis(new_ssm.A, show=True)
-
-    os.makedirs(os.path.join(case_directory, "outputs","permuted_state_space_model"), exist_ok=True)
-    new_ssm.to_csv(os.path.join(case_directory, "outputs", "permuted_state_space_model"))"""
+    # Manually write CSVs (to ensure non-conflicting paths)
+    output_dir = os.path.join(zonal_ssm.output_directory, os.pardir)
     
+    zonal_ssm.model.to_csv(
+        filepath=os.path.join(output_dir, "zonal_small_signal_model"))
+    zonal_ssm.write_csv_ccm_matrices(
+        output_dir=os.path.join(output_dir, "zonal_component_connection_matrices"))
 
-
-
-
-
-    return new_ssm, ssm
+    return ssm, zonal_ssm

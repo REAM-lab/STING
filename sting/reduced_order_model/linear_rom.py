@@ -1,7 +1,5 @@
 """
-This module implements an infinite source that incorporates:
-- Stiff voltage source: a voltage source with constant frequency and constant voltage.
-- Series RL branch: It is in series with the stiff voltage source.
+
 """
 # -------------
 # Import python packages
@@ -25,8 +23,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class LinearSystem(Component):
-    #emt_init: InitialConditionsEMT = None
+class LinearROM(Component):
     ssm: StateSpaceModel = None
 
 
