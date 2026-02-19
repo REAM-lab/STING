@@ -255,7 +255,13 @@ def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     ssm = SmallSignalModel(system=sys)
     ssm.construct_system_ssm()
 
-    from sting.utils.data_tools import matrix_to_csv
+    new_ssm = ssm.group_by("zone").interconnect()
+    # Update outputs dir
+    new_ssm.output_directory = os.path.join(new_ssm.output_directory, os.pardir, "permuted_state_space_model")
+    # Create new SSM
+    new_ssm.construct_system_ssm()
+
+    """from sting.utils.data_tools import matrix_to_csv
 
     models = ssm.get_component_attribute("ssm")
 
@@ -278,7 +284,7 @@ def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     modal_analisis(new_ssm.A, show=True)
 
     os.makedirs(os.path.join(case_directory, "outputs","permuted_state_space_model"), exist_ok=True)
-    new_ssm.to_csv(os.path.join(case_directory, "outputs", "permuted_state_space_model"))
+    new_ssm.to_csv(os.path.join(case_directory, "outputs", "permuted_state_space_model"))"""
     
 
 

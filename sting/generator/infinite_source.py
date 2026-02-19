@@ -84,10 +84,10 @@ class InfiniteSource(Generator):
         v_int_d, v_int_q = self.emt_init.v_int_d, self.emt_init.v_int_q
 
         u = DynamicalVariables(
-            name=["v_bus_D", "v_bus_Q", "v_ref_d", "v_ref_q"],
+            name=["v_ref_d", "v_ref_q", "v_bus_D", "v_bus_Q"],
             component=f"{self.type_}_{self.id}",
-            type=["grid", "grid", "device", "device"],
-            init=[v_bus_D, v_bus_Q, v_int_d, v_int_q],
+            type=["device", "device", "grid", "grid"],
+            init=[v_int_d, v_int_q, v_bus_D, v_bus_Q],
         )
 
         # Outputs
