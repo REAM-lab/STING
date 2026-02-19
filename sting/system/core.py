@@ -180,6 +180,8 @@ class System:
         component.type_ = component_type
         # Add the component to the list
         component_list.append(component)
+
+        return component.id
         
     def _generator(self, names) -> itertools.chain:
         # Collect all lists of components in the component_types

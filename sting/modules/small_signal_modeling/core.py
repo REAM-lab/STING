@@ -206,7 +206,7 @@ class SmallSignalModel:
         ids, _ = zip(*sorted(zip(range(len(zones)), zones), key=lambda x: (1, x[1]) if (x[1] is not None) else (0, "")))
 
         # SSMs for each component
-        models = self.get_component_attribute("ssm")
+        models:list[StateSpaceModel] = self.get_component_attribute("ssm")
 
         # Total number of inputs/outputs for each component 
         y_stack = [len(ssm.y) for ssm in models]
@@ -276,15 +276,15 @@ class GroupBy:
 
         for key, subsystem in groupby(components, key=lambda c: getattr(c, self.by)):
             # For each collection of components in the same zone, create a new SSM
-            system = System(case_directory=self.model.system.case_directory)
+            #system = System(case_directory=self.model.system.case_directory)
             components, models  = [], []
 
             for component in subsystem:
-                system.add(component)
+                #system.add(component)
                 components.append(ComponentSSM(component.type_, component.id))
                 models.append(component.ssm)
             
-            self.subsystems[key] = SmallSignalModel(system=system, components=components, model=StateSpaceModel.from_stacked(models), post_init=False)
+            self.subsystems[key] = SmallSignalModel(system=self.model.system, components=components, model=StateSpaceModel.from_stacked(models), post_init=False)
 
 
     def interconnect(self) -> SmallSignalModel:
@@ -345,8 +345,8 @@ class GroupBy:
             # to the new system (and do not interconnect components).
             if key is None:
                 for c in sub_model.components:
-                    new_system.add(getattr(self.model.system, c.type)[c.id])
-                    new_components.append(c)
+                    id = new_system.add(getattr(self.model.system, c.type)[c.id])
+                    new_components.append(ComponentSSM(c.type, id=id))
 
                     _u, _y = diagF[i].shape
 

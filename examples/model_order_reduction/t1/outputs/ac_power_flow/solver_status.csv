@@ -2,4 +2,4 @@ attribute,value
 solver_name,ipopt
 solver_status,ok
 termination_condition,optimal
-time_spent_seconds,0.03705191612243652
+time_spent_seconds,0.031516313552856445
