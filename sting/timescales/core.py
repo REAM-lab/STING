@@ -15,6 +15,9 @@ from sting.system.component import Component
 class Scenario(Component):
     probability: float
 
+    def __repr__(self):
+        return f"Scenario(id={self.id}, name='{self.name}')"
+    
     def __hash__(self):
         """Hash based on id attribute, which must be unique for each instance."""
         return self.id

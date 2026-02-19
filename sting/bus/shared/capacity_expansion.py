@@ -207,7 +207,10 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
         logger.info(f"   Size: {len(model.cDiffAngle)} constraints")
 
     logger.info(" - Energy balance at each bus")
-    model.rescaling_factor_cEnergyBalance = pyo.Param(initialize=1e-2) 
+    if model_settings.power_flow == 'dc':
+        model.rescaling_factor_cEnergyBalance = pyo.Param(initialize=1e-2)
+    else:
+        model.rescaling_factor_cEnergyBalance = pyo.Param(initialize=1.0) 
     model.cEnergyBalance = pyo.Constraint(N, S, T,
                                          rule=lambda m, n, s, t: 
                             (m.eGenAtBus[n, s, t] 

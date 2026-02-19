@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @timeit
 def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel, model_settings: ModelSettings):
-    """Construction of energy budget constraints."""
+    """Construction of carbon policy constraints."""
 
     logger.info(" - Annual carbon policy constraint")
     def cAnnualCarbonCap_rule(m: pyo.ConcreteModel, carbon_policy: CarbonPolicy, scenario: Scenario):
