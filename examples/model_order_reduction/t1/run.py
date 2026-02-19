@@ -44,6 +44,6 @@ case_dir = Path(__file__).resolve().parent
 # Construct system and small-signal model
 sys = System.from_csv(case_directory=case_dir)
 
-main.run_ssm(case_directory=case_dir)
+main.run_mor(case_directory=case_dir)
 
 print('ok')

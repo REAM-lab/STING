@@ -24,6 +24,7 @@ from sting.bus.core import Bus, Load
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
+from sting.reduced_order_model.linear_rom import LinearROM
 from sting.line.pi_model import LinePiModel
 from sting.branch.series_rl import BranchSeriesRL
 from sting.shunt.parallel_rc import ShuntParallelRC
@@ -33,7 +34,7 @@ from sting.policies.energy_budgets.core import EnergyBudget
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
+logger.info(__logo__) # print logo when a System instance is created
 
 @dataclass(slots=True)
 class System:
@@ -49,6 +50,7 @@ class System:
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
+    linear_roms: list[LinearROM] = None
     buses: list[Bus] = None
     loads: list[Load] = None
     lines: list[LinePiModel] = None
@@ -63,7 +65,6 @@ class System:
     def __post_init__(self):
 
         logger.info(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}") # Print datetime
-        logger.info(__logo__) # print logo when a System instance is created
         logger.info("> Initializing system ...")
 
         if self.case_directory is None:
@@ -179,6 +180,8 @@ class System:
         component.type_ = component_type
         # Add the component to the list
         component_list.append(component)
+
+        return component.id
         
     def _generator(self, names) -> itertools.chain:
         # Collect all lists of components in the component_types

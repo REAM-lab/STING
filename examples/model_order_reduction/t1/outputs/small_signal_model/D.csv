@@ -1,0 +1,11 @@
+Index,"('infinite_sources_0', 'v_ref_d')","('infinite_sources_0', 'v_ref_q')","('infinite_sources_1', 'v_ref_d')","('infinite_sources_1', 'v_ref_q')"
+"('infinite_sources_0', 'i_bus_D')",0.0,0.0,0.0,0.0
+"('infinite_sources_0', 'i_bus_Q')",0.0,0.0,0.0,0.0
+"('infinite_sources_1', 'i_bus_D')",0.0,0.0,0.0,0.0
+"('infinite_sources_1', 'i_bus_Q')",0.0,0.0,0.0,0.0
+"('pa_rc_0', 'v_bus_D')",0.0,0.0,0.0,0.0
+"('pa_rc_0', 'v_bus_Q')",0.0,0.0,0.0,0.0
+"('pa_rc_1', 'v_bus_D')",0.0,0.0,0.0,0.0
+"('pa_rc_1', 'v_bus_Q')",0.0,0.0,0.0,0.0
+"('se_rl_0', 'i_br_D')",0.0,0.0,0.0,0.0
+"('se_rl_0', 'i_br_Q')",0.0,0.0,0.0,0.0

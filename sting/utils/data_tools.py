@@ -102,12 +102,17 @@ def convert_class_instance_to_dictionary(instance: object, excluded_attributes=N
 
 
 def matrix_to_csv(filepath: str, matrix: np.ndarray, index: list, columns: list):
-    df = pl.DataFrame(matrix, schema=columns)
-    df = df.with_columns(
-                        pl.Series(name="Index", values=index)).select(
-                        # Reorder columns to place the 'Index' first
-                        ["Index"] + columns
-        )
+    """Write a numpy matrix to a tabular CSV with labeled rows and columns"""
+    # Cast index and columns to strings (if they are not strings already)
+    index = [str(s) for s in index if not isinstance(s, str)]
+    columns = [str(s) for s in columns if not isinstance(s, str)]
+
+    df = (
+        pl.DataFrame(matrix, schema=columns)
+        .with_columns(pl.Series(name="Index", values=index))
+        # Reorder columns to place the 'Index' first    
+        .select(["Index"] + columns)
+    )
     df.write_csv(filepath)
 
 
@@ -123,6 +128,11 @@ def csv_to_matrix(filepath):
 
 def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
     """Python clone of MATLAB mat2cell"""
+    if m is None:
+        m = [A.shape[0]]
+    if n is None:
+        n = [A.shape[1]]
+
     # Create a list of lists to hold the sub-arrays
     cell_array = np.empty((len(m), len(n)), dtype=object)
 
@@ -141,6 +151,8 @@ def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
 
 def cell2mat(C):
     """Python clone of MATLAB cell2mat"""
+    if len(C) == 1:
+        return np.vstack(C)
     return np.vstack([np.hstack(row) for row in C])
 
 
