@@ -1,0 +1,2 @@
+name,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,cost_variable_USDperMWh,r_pu,x_pu
+gen1,lima,-200,200,-500,500,1.00E+02,2.30E+02,60,0,0.01,0.5

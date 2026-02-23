@@ -6,16 +6,14 @@ from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
 import itertools
 from more_itertools import transpose
-from typing import NamedTuple, Optional, ClassVar
+from typing import NamedTuple
 import os
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 # ------------------
 # Import sting code
 # ------------------
 from sting.system.core import System
-import sting.system.selections as sl
+from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices
 
@@ -30,19 +28,6 @@ class VariablesEMT(NamedTuple):
     u: DynamicalVariables
     y: DynamicalVariables
 
-class ComponentEMT(NamedTuple):
-    """
-    A component of the system that participates in simulation.
-
-    #### Attributes:
-    - type: `str`
-            inf_src, se_rl, pa_rc, ... etc. 
-    - idx: `int`
-            Index of the component in its corresponding list in the system.
-    """
-    type: str
-    id: int
-
 # ----------------
 # Main class
 # ----------------
@@ -54,7 +39,7 @@ class SimulationEMT:
     #### Attributes:
     - system: `System`
             The system to be simulated.
-    - components: `list[ComponentEMT]`
+    - components: `list[Component]`
             List of components that participate in the EMT simulation.
     - variables: `VariablesEMT`
             All variables used for simulation.
@@ -62,15 +47,24 @@ class SimulationEMT:
             List of CCM matrices in abc frame.
     """
     system: System
-    components: list[ComponentEMT] = field(init=False)
+    components: list[Component] = field(init=False)
     variables: VariablesEMT = field(init=False)
     ccm_abc_matrices: list[np.ndarray] = field(init=False)
+    output_directory: str = None
 
     def __post_init__(self):
         self.get_components()
         self.get_variables()
         self.assign_idx()
         self.get_ccm_matrices()
+    
+    def set_output_folder(self):
+        """
+        Set up the output folder for storing results.
+        """
+        if self.output_directory is None:
+            self.output_directory = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
+        os.makedirs(self.output_directory, exist_ok=True)
 
     def get_components(self):
         """
@@ -78,7 +72,7 @@ class SimulationEMT:
         Not all components in system, e.g., bus, line_pi, etc., participate in EMT simulation.         
         """
 
-        components = []
+        components: list[Component] = []
         for component in self.system:
             if (    hasattr(component, "id_variables_emt") 
                 and hasattr(component, "define_variables_emt")
@@ -86,7 +80,7 @@ class SimulationEMT:
                 and hasattr(component, "get_output_emt")
                 and hasattr(component, "plot_results_emt")
                 ):
-                components.append(ComponentEMT(type = component.type, id = component.id))
+                components.append(Component(type_ = component.type_, id = component.id))
         
         self.components = components
     
@@ -96,7 +90,7 @@ class SimulationEMT:
         Apply a method to the components for EMT simulation.
         """
         for c in self.components:
-               component = getattr(self.system, c.type)[c.id]
+               component = getattr(self.system, c.type_)[c.id]
                getattr(component, method)(*args)
 
     def get_variables(self):
@@ -105,7 +99,7 @@ class SimulationEMT:
         """
         self.apply("define_variables_emt")
 
-        generators, = self.system.generators.select("variables_emt")
+        generators, = self.system.gens.select("variables_emt")
         shunts, = self.system.shunts.select("variables_emt")
         branches, = self.system.branches.select("variables_emt")
 
@@ -136,8 +130,8 @@ class SimulationEMT:
 
         x, u, y = self.variables
         for c in self.components:
-                component = getattr(self.system, c.type)[c.id]
-                id = f"{c.type}_{c.id}"
+                component = getattr(self.system, c.type_)[c.id]
+                id = f"{c.type_}_{c.id}"
                 setattr(component, "id_variables_emt", {    "x": x.component == id, 
                                                             "u": u.component == id,
                                                             "y": y.component == id  })
@@ -147,7 +141,7 @@ class SimulationEMT:
         Get the CCM matrices in abc frame for the EMT simulation.
         """
         
-        self.ccm_abc_matrices = get_ccm_matrices(self.system, "variables_emt", 3)
+        self.ccm_abc_matrices = get_ccm_matrices(self.system, attribute="variables_emt", dimI=3)
     
 
     def get_input_vector(self, u_signals, t):
@@ -170,7 +164,7 @@ class SimulationEMT:
         """
 
         for c in self.components:
-            component = getattr(self.system, c.type)[c.id]
+            component = getattr(self.system, c.type_)[c.id]
             variables = getattr(component, "variables_emt")
             idx = getattr(component, "id_variables_emt")
             value = numerical_vector[idx[var_type]]
@@ -197,7 +191,7 @@ class SimulationEMT:
             self.set_value(t, x, "x")
 
             for c in self.components:
-                component = getattr(self.system, c.type)[c.id]
+                component = getattr(self.system, c.type_)[c.id]
                 variables = getattr(component, "variables_emt")
                 idx = getattr(component, "id_variables_emt")
                 
@@ -216,7 +210,7 @@ class SimulationEMT:
             self.set_value(t, ustack, "u")
 
             for c in self.components:
-                component = getattr(self.system, c.type)[c.id]
+                component = getattr(self.system, c.type_)[c.id]
                 variables = getattr(component, "variables_emt")
                 idx = getattr(component, "id_variables_emt")
 
@@ -262,8 +256,7 @@ class SimulationEMT:
         print(output_dir, end='')
 
         for c in components:
-            component = getattr(self.system, c.type)[c.id]
+            component = getattr(self.system, c.type_)[c.id]
             getattr(component, "plot_results_emt")(output_dir)
     
-        print("... ok.")
         

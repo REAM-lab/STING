@@ -24,6 +24,7 @@ from sting.bus.core import Bus, Load
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
+from sting.generator.gfmi_c import GFMIc
 from sting.reduced_order_model.linear_rom import LinearROM
 from sting.line.pi_model import LinePiModel
 from sting.branch.series_rl import BranchSeriesRL
@@ -50,6 +51,7 @@ class System:
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
+    gfmi_c: list[GFMIc] = None
     linear_roms: list[LinearROM] = None
     buses: list[Bus] = None
     loads: list[Load] = None

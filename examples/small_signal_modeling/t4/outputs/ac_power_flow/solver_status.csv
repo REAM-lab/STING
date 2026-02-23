@@ -1,0 +1,5 @@
+attribute,value
+solver_name,ipopt
+solver_status,ok
+termination_condition,optimal
+time_spent_seconds,0.022343873977661133

@@ -14,7 +14,7 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.runtime_tools import timeit
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -27,6 +27,11 @@ class PowerFlowVariables(NamedTuple):
     q_bus: float
     vmag_bus: float
     vphase_bus: float
+
+class VariablesEMT(NamedTuple):
+    x: DynamicalVariables
+    u: DynamicalVariables
+    y: DynamicalVariables
 
 # ----------------
 # Main classes     
@@ -57,6 +62,9 @@ class Generator(Component):
     component_id: str = None
     forced_dispatch_MW: float = None
     power_flow_variables: PowerFlowVariables = None
+    ssm: StateSpaceModel = None
+    variables_emt: VariablesEMT = None
+    id_variables_emt: dict = None
 
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.buses if n.name == self.bus)).id

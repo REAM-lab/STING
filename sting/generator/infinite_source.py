@@ -40,15 +40,14 @@ class VariablesEMT(NamedTuple):
     u: DynamicalVariables
     y: DynamicalVariables
 
-
+# -------------
+# Main class
+# -------------
 @dataclass(slots=True, kw_only=True, eq=False)
 class InfiniteSource(Generator):
     r_pu: float
     x_pu: float
     emt_init: InitialConditionsEMT = None
-    ssm: StateSpaceModel = None
-    variables_emt: VariablesEMT = None
-    id_variables_emt: dict = None
 
     def _build_small_signal_model(self):
 

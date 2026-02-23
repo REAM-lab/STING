@@ -18,17 +18,11 @@ from dataclasses import dataclass, field
 # Import sting code
 # ------------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.generator.core import Generator
 
 # -----------
 # Sub-classes
 # -----------
-class PowerFlowVariables(NamedTuple):
-    p_bus: float
-    q_bus: float
-    vmag_bus: float
-    vphase_bus: float
-
-
 class InitialConditionsEMT(NamedTuple):
     vmag_bus: float
     vphase_bus: float
@@ -55,17 +49,8 @@ class InitialConditionsEMT(NamedTuple):
 # -----------
 # Main class
 # -----------
-@dataclass(slots=True)
-class GFMIc:
-    id: int = field(default=-1, init=False)
-    bus: str
-    p_min: float
-    p_max: float
-    q_min: float
-    q_max: float
-    base_power_MVA: float
-    base_voltage_kV: float
-    base_frequency_Hz: float
+@dataclass(slots=True, kw_only=True, eq=False)
+class GFMIc(Generator):
     rf1_pu: float
     xf1_pu: float
     rsh_pu: float
@@ -84,13 +69,7 @@ class GFMIc:
     kp_vc_pu: float
     ki_vc_puHz: float
     v_dc_pu: float
-    bus_id: int = None
-    name: str = field(default_factory=str)
-    type: str = "gfmi_c"
-    pf: Optional[PowerFlowVariables] = None
     emt_init: Optional[InitialConditionsEMT] = None
-    ssm: Optional[StateSpaceModel] = None
-    tags: ClassVar[list[str]] = ["generator"]
 
     @property
     def rf2_pu(self):
@@ -104,23 +83,11 @@ class GFMIc:
     def wbase(self):
         return 2 * np.pi * self.base_frequency_Hz
     
-    def post_system_init(self, system):
-        self.bus_id = next((n for n in system.bus if n.name == self.bus)).id
-
-    def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]
-        self.pf = PowerFlowVariables(
-            p_bus=sol.p.item(),
-            q_bus=sol.q.item(),
-            vmag_bus=sol.bus_vmag.item(),
-            vphase_bus=sol.bus_vphase.item(),
-        )
-
     def _calculate_emt_initial_conditions(self):
-        vmag_bus = self.pf.vmag_bus
-        vphase_bus = self.pf.vphase_bus
-        p_bus = self.pf.p_bus
-        q_bus = self.pf.q_bus
+        vmag_bus = self.power_flow_variables.vmag_bus
+        vphase_bus = self.power_flow_variables.vphase_bus
+        p_bus = self.power_flow_variables.p_bus
+        q_bus = self.power_flow_variables.q_bus
 
         # Voltage in the end of the LCL filter
         v_bus_DQ = vmag_bus * np.exp(vphase_bus * np.pi / 180 * 1j)
@@ -308,6 +275,4 @@ class GFMIc:
                                     )
 
         # Generate small-signal model
-        ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type}_{self.id}")
-
-        self.ssm = ssm
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")

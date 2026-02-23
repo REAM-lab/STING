@@ -1,13 +1,27 @@
+# ---------------------------------------
+# Import standard and third-party packages
+# ----------------------------------------
+
+import logging
+from matplotlib.pyplot import plot
 import numpy as np
 import os
-import pandas as pd
 from more_itertools import transpose
-from scipy.linalg import eigvals, block_diag, solve
+from scipy.linalg import eigvals, block_diag
 from scipy.integrate import solve_ivp
 from dataclasses import dataclass
+import polars as pl
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# --------------
+# Import sting code
+# --------------
 from sting.utils.matrix_tools import matrix_to_csv, csv_to_matrix
 from typing import Self, Callable
-import polars as pl
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 # A regular class, as dataclasses don't inherently support properties 
 # in a way that automatically maps to backing fields.
@@ -338,12 +352,22 @@ class StateSpaceModel:
     def __repr__(self):
         return "StateSpaceModel with %d inputs, %d outputs, and %d states." % self.shape
     
-    def sim(self, tps, u_func, x0 = None, ode_method= 'Radau', ode_max_step = 0.01):
+    def simulate(
+            self, 
+            t_max: float, 
+            inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
+            x0: list[float] = None, 
+            settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
+            output_directory: str = os.getcwd(), 
+            plot: bool = True):
 
         if x0 is None:
-            x0 = np.zeros_like(self.x.init)
+            x0 = self.x.init
 
-        def state_space_ode(t, x, u_func):
+        if inputs is None:
+            inputs = {}
+
+        def state_space_ode(t: float, x: np.ndarray,  inputs: dict[str, dict[str, Callable[[float], float]]]):
             """
             Defines the right-hand side of the state-space differential equation.
 
@@ -352,40 +376,52 @@ class StateSpaceModel:
             x (np.ndarray): Current state vector.
             A (np.ndarray): State matrix.
             B (np.ndarray): Input matrix.
-            u_func (callable): Function that returns the input vector u at time t.
+            inputs (dict): Dictionary of input functions indexed by component and name.
 
             Returns:
             np.ndarray: Time derivative of the state vector (dx/dt).
             """
 
-            u = u_func(t)
+            u = [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
             return self.A @ x + self.B @ u
-        
-        t_in = tps[0]
-        t_fin = tps[-1]
-        sol = solve_ivp(
+               
+        solution = solve_ivp(
                         fun=state_space_ode,
-                        t_span=[t_in, t_fin],
+                        t_span=[0, t_max],
                         y0=x0,
-                        args=(u_func,),
-                        method = ode_method,
-                        max_step = ode_max_step,
-                        dense_output=True # To get a continuous solution for plotting
-                        )
-        interp_sol = sol.sol(tps)
+                        dense_output=settings['dense_output'],  
+                        args=(inputs, ),
+                        method=settings['method'], 
+                        max_step=settings['max_step'])
+                        
+        # Define timepoints that will be used to evaluate the solution of the ODEs
+        if settings['dense_output']:
+            tps = np.linspace(0, t_max, 500)
+            solution = solution.sol(tps)
 
-        return interp_sol
+        if plot:
+            self.plot_simulation(output_directory=output_directory, tps=tps, solution=solution)
+        
+        return tps, solution
     
-    def modal_analysis(
-        self,
-        show: bool = False,
-        print_settings: dict = {
-            "index": True,
-            "tablefmt": "grid",
-            "numalign": "right",
-            "floatfmt": ".3f",
-        },
-    ):
+    def plot_simulation(self, output_directory: str, tps: np.ndarray, solution):
+
+        number_of_states = self.shape[2]
+        nrows = int(np.ceil(number_of_states / 2))
+        ncols = 2 if number_of_states > 1 else 1
+
+        fig = make_subplots(rows=nrows, cols=ncols)
+
+        for i in range(number_of_states):
+            row = i // ncols + 1
+            col = i % ncols + 1
+            fig.add_trace(go.Scatter(x=tps, y=solution[i]), row=row, col=col)
+            fig.update_xaxes(title_text='Time [s]', row=row, col=col)
+            fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
+        
+        fig.write_html(os.path.join(output_directory, "simulation.html"))
+    
+    def modal_analysis(self):
         """
         Computes eigenvalues, natural frequency, damping ratio, time constant. It also has the option to display a
         pretty table when the function is executed.
@@ -396,8 +432,6 @@ class StateSpaceModel:
 
         show (Boolean): True (print table), False (do not print). By default is False.
 
-        print_settings (dict): setting applied to tabulate package to print the pandas dataframe.
-
         Returns:
         -------
 
@@ -405,35 +439,24 @@ class StateSpaceModel:
         """
 
         eigenvalues = eigvals(self.A)
+        real_parts = np.real(eigenvalues)
+        imag_parts = np.imag(eigenvalues)
 
-        df = pd.DataFrame(data=eigenvalues, columns=["eigenvalue"])
-        df["real"] = df.apply(lambda row: row["eigenvalue"].real, axis=1)
-        df["imag"] = df.apply(lambda row: row["eigenvalue"].imag, axis=1)
-        df["natural_frequency"] = df.apply(
-            lambda row: abs(row["eigenvalue"] / (2 * np.pi)), axis=1
-        )
-        df["damping_ratio"] = df.apply(
-            lambda row: -row["eigenvalue"].real / (abs(row["eigenvalue"])), axis=1
-        )
-        df["time_constant"] = df.apply(lambda row: -1 / row["eigenvalue"].real, axis=1)
-        df = df.sort_values(by="real", ascending=False, ignore_index=True)
+        df = pl.DataFrame(data=(real_parts, imag_parts), schema=["real", "imag"])
+        df = df.with_columns( ((pl.col("real")**2 + pl.col("imag")**2).sqrt()).alias("magnitude") )        
+        df = df.with_columns( (pl.col("magnitude")/(2*np.pi)).alias("natural_frequency_hz") )
+        df = df.with_columns( (-pl.col("real")/pl.col("magnitude")).alias("damping_ratio_pu") )
+        df = df.with_columns( (-1/pl.col("real")).alias("time_constant_seconds") )
+        df = df.drop("magnitude")
+        df = df.sort("real", descending=True)     
 
-        if show:
-            df_to_print = df.copy()
-            df_to_print = df_to_print[
-                ["real", "imag", "damping_ratio", "natural_frequency", "time_constant"]
-            ]
-            df_to_print.rename(
-                columns={
-                    "real": "Eigenvalue \n real part",
-                    "imag": "Eigenvalue \n imaginary part",
-                    "damping_ratio": "Damping \n ratio [p.u.]",
-                    "natural_frequency": "Natural \n frequency [Hz]",
-                    "time_constant": "Time \n constant [s]",
-                },
-                inplace=True,
-            )
-            print(df_to_print.to_markdown(**print_settings))
+        df_to_print = df.with_columns(pl.col("real").round(3), 
+                                      pl.col("imag").round(3), 
+                                      pl.col("natural_frequency_hz").round(3), 
+                                      pl.col("damping_ratio_pu").round(3), 
+                                      pl.col("time_constant_seconds").round(4)) 
+        logger.info("Modal analysis results:")
+        logger.info(df_to_print)   
 
         return df
     

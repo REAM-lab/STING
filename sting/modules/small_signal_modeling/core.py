@@ -9,6 +9,9 @@ import os
 from scipy.linalg import block_diag
 import itertools
 import polars as pl
+from typing import Callable
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ------------------
 # Import sting code
@@ -73,7 +76,6 @@ class SmallSignalModel:
     def __post_init__(self):
         if self.post_init:
             self.set_output_folder()
-            #self.system.clean_up()
             self.load_components()
             self.load_ac_power_flow_solution()
             self.construct_components_ssm()
@@ -180,13 +182,44 @@ class SmallSignalModel:
 
         # Print modal analysis
         if perform_analysis:
-            self.model.modal_analysis(show=True)
+            self.model.modal_analysis()
 
         # Export small-signal model to CSV files
         if write_csv:
             self.model.to_csv(self.output_directory)
             self.write_csv_ccm_matrices()
 
+    def simulate_ssm(self, t_max: float, inputs: dict[str, dict[str, Callable[[float], float]]] = None, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
+        """Simulate the small-signal model under a given input profile."""
+        
+        x0 = np.zeros_like(self.model.x.init)
+        tps, solution = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, output_directory=self.output_directory, plot=False)
+
+        # Add the initial conditions back to the solution (for plotting purposes)
+        for i in range(len(self.model.x.init)):
+            solution[i] = solution[i] + self.model.x.init[i]
+        
+        components_to_plot = np.unique(self.model.x.component) # Get the components in the same order as solution vector
+        i = 0 # Initialize counter 
+
+        # Make a html file for each component. Each file plots the states corresponding to each component.
+        for component in components_to_plot:
+            number_of_states = sum(self.model.x.component == component)
+            nrows = int(np.ceil(number_of_states / 2))
+            ncols = 2 if number_of_states > 1 else 1
+            fig = make_subplots(rows=nrows, cols=ncols)
+            for j in range(number_of_states):
+                row = j // ncols + 1
+                col = j % ncols + 1
+                fig.add_trace(go.Scatter(x=tps, y=solution[i]), row=row, col=col)
+                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
+                fig.update_yaxes(title_text=self.model.x.name[i], row=row, col=col)
+                i += 1
+
+            fig.update_layout(title_text = component, title_x=0.5, showlegend = False)
+            fig.write_html(os.path.join(self.output_directory, f"{component}.html"))
+            
+    
     def sort_components(self, by):
         """
         Sort the components in the small-signal model according

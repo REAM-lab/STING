@@ -13,7 +13,7 @@ import os
 # -----------------------
 # Import sting code
 # -----------------------
-from sting.shunt.core import Shunt
+from sting.shunt.core import Shunt, VariablesEMT
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 
@@ -25,29 +25,19 @@ class InitialConditionsEMT(NamedTuple):
     i_bus_D: float
     i_bus_Q: float
 
-class VariablesEMT(NamedTuple):
-    x: DynamicalVariables
-    u: DynamicalVariables
-    y: DynamicalVariables
-
-@dataclass
+@dataclass(slots=True, kw_only=True, eq=False)
 class ShuntParallelRC(Shunt):
     g_pu: float
     b_pu: float
-    bus_id: int = None
     emt_init: InitialConditionsEMT = None
-    ssm: StateSpaceModel = None
-    tags: ClassVar[list[str]] = ["shunt"]
-    variables_emt: VariablesEMT = None
-    id_variables_emt: dict = None
 
     def _calculate_emt_initial_conditions(self):
         
         g = self.g_pu
         b = self.b_pu
 
-        vmag_bus = self.pf.vmag_bus
-        vphase_bus = self.pf.vphase_bus
+        vmag_bus = self.power_flow_variables.vmag_bus
+        vphase_bus = self.power_flow_variables.vphase_bus
 
         v_bus_DQ = vmag_bus * np.exp(vphase_bus * 1j * np.pi / 180)
         i_bus_DQ = v_bus_DQ * g + v_bus_DQ * (1j * b)
@@ -105,21 +95,21 @@ class ShuntParallelRC(Shunt):
 
         x = DynamicalVariables(
             name=["v_bus_a", "v_bus_b", "v_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[v_bus_a, v_bus_b, v_bus_c],
         )
 
         # Inputs
         u = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid", "grid"],
         )
 
         # Outputs
         y = DynamicalVariables(
             name=["v_bus_a", "v_bus_b", "v_bus_c"],
-            component=f"{self.type}_{self.id}",
+            component=f"{self.type_}_{self.id}",
         )
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
@@ -155,7 +145,7 @@ class ShuntParallelRC(Shunt):
         # Get state values
         v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
         time = self.variables_emt.x.time
-        angle_ref =  2 * np.pi * self.fbase * time
+        angle_ref =  2 * np.pi * self.base_frequency_Hz * time
 
         # Transform abc to dq0
         v_bus_D, v_bus_Q, _ = zip(*map(abc2dq0, v_bus_a, v_bus_b, v_bus_c, angle_ref))
@@ -171,7 +161,7 @@ class ShuntParallelRC(Shunt):
         fig.update_xaxes(title_text='Time [s]', row=1, col=2)
         fig.update_yaxes(title_text='v_bus_Q [p.u.]', row=1, col=2)
 
-        name = f"{self.type}_{self.id}"
+        name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
                             title_x=0.5,
                             showlegend = False,
