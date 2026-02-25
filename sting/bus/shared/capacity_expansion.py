@@ -325,7 +325,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                                      'flow_sent_at_to_bus_MW'],
                             orient= 'row')
         
-        if hasattr(model, 'vCAPL'):
+        if hasattr(model, 'vCAPL') and len(vCAPL_df) > 0:
             df = df.join(vCAPL_df.select(['line', 'built_capacity_MW']), on='line', how='left', maintain_order='left')
         else:
             df = df.with_columns(pl.lit(0).alias('built_capacity_MW'))

@@ -7,10 +7,10 @@ from sting.system.component import Component
 class LinePiModel(Component):
     from_bus: str
     to_bus: str
-    r_pu: float
-    x_pu: float
-    g_pu: float
-    b_pu: float
+    r_pu: float = None
+    x_pu: float = None
+    g_pu: float = None
+    b_pu: float = None
     expand_capacity: bool = False
     cap_existing_power_MW: float = None
     cost_fixed_power_USDperkW: float = 0.0
