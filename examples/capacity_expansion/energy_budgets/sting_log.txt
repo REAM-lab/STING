@@ -4145,3 +4145,235 @@ Basic solution summary
 
 >> Run completed in 0.20 seconds.
 
+2026-02-26 12:01:15
+> Initializing system ...
+ System initialization completed.
+> Loading system components from CSV files from /Users/adamsedlak/Documents/Python/STING/examples/capacity_expansion/energy_budgets ...
+ - 'generators.csv' ... 
+   Added 5 'generators' 
+ - 'buses.csv' ... 
+   Added 5 'buses' 
+ - 'loads.csv' ... 
+   Added 15 'loads' 
+ - 'lines.csv' ... 
+   Added 6 'lines' 
+ - 'timeseries.csv' ... 
+   Added 1 'timeseries' 
+ - 'timepoints.csv' ... 
+   Added 3 'timepoints' 
+ - 'scenarios.csv' ... 
+   Added 1 'scenarios' 
+ - 'energy_budgets.csv' ... 
+   Added 1 'energy_budgets' 
+> Post system initialization completed in 0.01 seconds.
+> Completed in: 0.02 seconds. 
+
+
+>> Starting capacity expansion...
+
+Model settings: ModelSettings(generator_type_costs='linear', load_shedding=True, single_storage_injection=False, generation_capacity_expansion=True, storage_capacity_expansion=True, line_capacity_expansion=False, line_capacity=True, power_flow='dc', bus_max_flow_expansion=False, bus_max_flow=False, angle_difference_limits=False, write_model_file=False, kron_equivalent_flow_constraints=False)
+Solver settings: SolverSettings(solver_name='mosek_direct', tee=True, solver_options={'MSK_DPAR_INTPNT_TOL_PFEAS': '1e-5'}) 
+
+> Initializing construction of the optimization model for capacity expansion ... 
+> Initializing construction of generator variables, constraints, and costs ... 
+ - Set of capacity-expandable generators
+   Size: 0 generators
+ - Decision variables of capacity expansion for generators
+   Size: 0 variables
+ - Decision variables of dispatch
+   Size: 15 variables
+ - Constraints on capacity expansion for generators
+   Size: 0 constraints
+ - Constraints on dispatch based on capacity factors and existing/built capacity
+   Size: 15 constraints
+ - Constraints on forced dispatch requirements specified for certain generators
+   Size: 0 constraints
+ - Expressions for dispatch at any bus
+   Size: 15 expressions
+ - Expressions for emission per timepoint per scenario expression
+   Size: 3 expressions
+ - Expressions for generation cost per timepoint
+   Size: 3 expressions
+ - Expressions for generation cost per period
+> Completed in 0.00 seconds. 
+
+> Initializing construction of storage variables, constraints, and costs ... 
+ - Decision variables of discharge and charge
+   Size: 0 variables
+ - Decision variables of state of charge
+   Size: 0 variables
+ - Set of capacity-expandable storage units
+   Size: 0 storage units
+ - Decision variables of power and energy capacity expansion
+   Size: 0 variables
+ - Constraints on power capacity expansion
+   Size: 0 constraints
+ - Constraints on storage dispatch
+   Size: 0 constraints
+ - Constraints on maximum state of charge
+   Size: 0 constraints
+ - Constraints on evolution of state of charge across timepoints
+   Size: 15 constraints
+ - Expressions for storage cost per timepoint
+   Size: 3 expressions
+ - Expression for storage cost per period
+   Size: 1 expressions
+> Completed in 0.00 seconds. 
+
+> Initializing construction of transmission variables, constraints, and costs for capacity expansion model ... 
+ - Load data processing
+ - Decision variables of load shedding
+   Size: 15 variables
+ - Decision variables of bus angles
+   Size: 15 variables
+ - Power flow per bus expressions
+ - Maximum flow constraints per line
+   Size: 18 constraints
+ - Energy balance at each bus
+   Size: 15 constraints
+ - Load shedding cost expressions
+   Size: 3 expressions
+> Completed in 0.01 seconds. 
+
+> Initializing construction of carbon policy constraints ... 
+ - Annual carbon policy constraint
+   Size: 0 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of energy budget constraints ... 
+ - Constraint for power budget
+   Size: 3 constraints
+ - Constraint for energy budget
+   Size: 1 constraints
+> Completed in 0.00 seconds. 
+
+> Initializing construction of objective function ...
+> Completed in 0.00 seconds. 
+
+> Completed in 0.01 seconds. 
+
+> Initializing inspection of coefficients in the model ... 
+  - Matrix coefficient extremes:
+     - Minimum coefficient: 0.01
+       Constraint=cMaxDispatch[Generator(id=0, name='gas_1', bus='1'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]  
+       Variable=vGEN[Generator(id=0, name='gas_1', bus='1'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]
+     - Maximum coefficient: -188.03963729706305
+       Constraint=cEnergyBalance[Bus(id=4, bus='5'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]  
+       Variable=vTHETA[Bus(id=4, bus='5'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')] 
+
+  - RHS extremes:
+     - Minimum RHS: 0.017
+       Constraint=cEnergyBudget[EnergyBudget(id=0, budget_region='hydro_zone', budget_term='hydro_basic', budget_constraint_energy_GWh=1.7),Scenario(id=0, name='sc1')]  
+       Bound=upper
+     - Maximum RHS: -10.0
+       Constraint=cFlowPerNonExpLine[LinePiModel(id=1, from_bus='1', to_bus='4'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]  
+       Bound=lower 
+
+  - Objective coefficient extremes:
+     - Minimum coefficient: 0.01
+       Variable=vGEN[Generator(id=4, name='hydro_3', bus='5'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]
+     - Maximum coefficient: 50.0
+       Variable=vSHED[Bus(id=0, bus='1'),Scenario(id=0, name='sc1'),Timepoint(id=0, name='tp_1', timeseries='winter')]
+> Completed in 0.00 seconds. 
+
+> Solving capacity expansion model...
+Problem
+  Name                   :                 
+  Objective sense        : minimize        
+  Type                   : LO (linear optimization problem)
+  Constraints            : 53              
+  Affine conic cons.     : 0               
+  Disjunctive cons.      : 0               
+  Cones                  : 0               
+  Scalar variables       : 46              
+  Matrix variables       : 0               
+  Integer variables      : 0               
+
+Optimizer started.
+Presolve started.
+Linear dependency checker started.
+Linear dependency checker terminated.
+Eliminator started.
+Freed constraints in eliminator : 6
+Eliminator terminated.
+Eliminator - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - tries                  : 1                 time                   : 0.00            
+Lin. dep.  - primal attempts        : 1                 successes              : 1               
+Lin. dep.  - dual attempts          : 0                 successes              : 0               
+Lin. dep.  - primal deps.           : 0                 dual deps.             : 0               
+Presolve terminated. Time: 0.00    
+Optimizer  - threads                : 24              
+Optimizer  - solved problem         : the primal      
+Optimizer  - Constraints            : 22              
+Optimizer  - Cones                  : 0               
+Optimizer  - Scalar variables       : 49                conic                  : 0               
+Optimizer  - Semi-definite variables: 0                 scalarized             : 0               
+Factor     - setup time             : 0.00            
+Factor     - dense det. time        : 0.00              GP order time          : 0.00            
+Factor     - nonzeros before factor : 85                after factor           : 87              
+Factor     - dense dim.             : 0                 flops                  : 8.77e+02        
+ITE PFEAS    DFEAS    GFEAS    PRSTATUS   POBJ              DOBJ              MU       TIME  
+0   5.2e+02  6.8e+03  1.6e+04  0.00e+00   1.454138719e+04   -1.191622373e+03  2.3e+00  0.00  
+1   3.7e+01  4.8e+02  1.1e+03  -9.89e-01  1.400245941e+04   -5.930010131e+02  1.6e-01  0.00  
+2   8.7e+00  1.2e+02  2.7e+02  -8.22e-01  6.907314648e+03   -4.395029738e+03  3.8e-02  0.00  
+3   3.0e+00  3.9e+01  9.1e+01  -5.21e-01  5.597060919e+03   -2.086636378e+03  1.3e-02  0.00  
+4   2.6e-01  3.5e+00  8.0e+00  6.65e-02   1.611887233e+03   5.076566490e+02   1.2e-03  0.00  
+5   5.7e-02  7.5e-01  1.7e+00  9.57e-01   1.138657566e+03   8.974946086e+02   2.5e-04  0.00  
+6   1.1e-02  1.5e-01  3.4e-01  9.99e-01   1.012945840e+03   9.652084041e+02   4.9e-05  0.00  
+7   2.3e-03  3.1e-02  7.1e-02  1.00e+00   9.823826725e+02   9.724474797e+02   1.0e-05  0.00  
+8   1.2e-03  1.5e-02  3.6e-02  1.00e+00   9.795323180e+02   9.745183324e+02   5.2e-06  0.00  
+9   2.0e-04  2.6e-03  6.0e-03  1.00e+00   9.764332491e+02   9.755974105e+02   8.6e-07  0.00  
+10  1.2e-05  1.6e-04  3.7e-04  1.00e+00   9.757151432e+02   9.756628353e+02   5.3e-08  0.00  
+11  1.9e-09  2.5e-08  5.7e-08  1.00e+00   9.756756332e+02   9.756756250e+02   8.3e-12  0.00  
+Basis identification started.
+Basis identification initialization started.
+Basis identification initialization terminated. Time: 0.00
+Primal basis identification phase started.
+Primal basis identification phase terminated. Time: 0.00
+Dual basis identification phase started.
+Dual basis identification phase terminated. Time: 0.00
+Initialization.                            Time: 0.00        
+Primal.          Iterations: 0             Time: 0.00        
+Dual.            Iterations: 0             Time: 0.00        
+Optimization.    Iterations: 0             Time: 0.00        
+Basis identification terminated. Time: 0.00
+Optimizer terminated. Time: 0.01    
+
+
+Interior-point solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 9.7567563317e+02    nrm: 5e+02    Viol.  con: 8e-09    var: 0e+00  
+  Dual.    obj: 9.7567562498e+02    nrm: 6e+04    Viol.  con: 3e-07    var: 3e-08  
+
+Basic solution summary
+  Problem status  : PRIMAL_AND_DUAL_FEASIBLE
+  Solution status : OPTIMAL
+  Primal.  obj: 9.7567562669e+02    nrm: 5e+02    Viol.  con: 4e-15    var: 0e+00  
+  Dual.    obj: 9.7567562669e+02    nrm: 6e+04    Viol.  con: 1e-12    var: 9e-11  
+> Time spent by solver: 0.21 seconds.
+> Solver finished with status: ok, termination condition: optimal.
+> Objective value: 97567.56266917972. 
+
+> Initializing export all results to CSV files ... 
+- Directory: /Users/adamsedlak/Documents/Python/STING/examples/capacity_expansion/energy_budgets/outputs/capacity_expansion
+> Initializing generator results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing storage results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing transmission results to CSV files ... 
+> Completed in 0.01 seconds. 
+
+> Initializing export carbon policy results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Initializing export energy budget results to CSV files ... 
+> Completed in 0.00 seconds. 
+
+> Completed in 0.02 seconds. 
+
+
+>> Run completed in 0.26 seconds.
+

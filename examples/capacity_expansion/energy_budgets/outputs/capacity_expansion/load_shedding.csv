@@ -10,7 +10,7 @@ bus,scenario,timepoint,load_shedding_MW
 3,sc1,tp_3,0.0
 4,sc1,tp_1,0.0
 4,sc1,tp_2,0.0
-4,sc1,tp_3,10.000000000000314
+4,sc1,tp_3,10.000000000000465
 5,sc1,tp_1,0.0
 5,sc1,tp_2,0.0
 5,sc1,tp_3,0.0

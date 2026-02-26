@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel, model_settings: dict):
     """Construction of energy budget constraints."""
     
+    S: list[Scenario] = system.scenarios
+    B: list[EnergyBudget] = system.energy_budgets
+    # Intermediate variable for each energy budget of the total dispatched energy in GWh
+    # Used to decouple the large RHS constraint coefficient (of total allowable energy dispatch)
+    # from the small matrix coefficients in summing power.  
+    model.vAUX_ENERGY_BUDGET = pyo.Var(S, B, within=pyo.NonNegativeReals)
+
     # Constraints enforcing the maximum POWER that can be dispatched by a group of generators at
     # EACH timepoint in a budget term. These constraints are UNWEIGHTED.
     logger.info(" - Constraint for power budget")
@@ -46,16 +53,15 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
 
     # Constraints enforcing the total ENERGY that can be dispatched by a group of generators
     # SUMMED over all timepoint in a budget term. These constraints are WEIGHTED.
-    logger.info(" - Constraint for energy budget")
-    def cEnergyBudget_rule(m: pyo.ConcreteModel, b: EnergyBudget, s: Scenario):
-        if b.budget_constraint_energy_GWh > 1000:
-            # Scale large energy budgets by 1e-02 on both sides (assumes large budgets have larger weights)
-            return 1e-04 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 0.1)
-        else:
-            return 0.01 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 10)
 
-    energy_budgets = [b for b in system.energy_budgets if (b.budget_constraint_energy_GWh is not None)]  
-    model.cEnergyBudget = pyo.Constraint(energy_budgets, system.scenarios, rule=cEnergyBudget_rule)
+    logger.info(" - Constraint for energy budget")
+    # Enforce that the auxiliary variable equals total energy dispatched in GWh
+    model.cAuxEnergyBudget = pyo.Constraint(
+        B, S, 
+        rule=lambda m, b, s: 1e-2 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) == 10 * m.vAUX_ENERGY_BUDGET[s, b])
+    # Enforce that total energy dispatched in GWh is less than budget (using 1e-2 to scale large RHS values)
+    model.cEnergyBudget = pyo.Constraint(
+        B, S, rule=lambda m, b, s: 1e-2 * m.vAUX_ENERGY_BUDGET[s, b] <= 1e-2 * b.budget_constraint_energy_GWh)
 
     logger.info(f"   Size: {len(model.cEnergyBudget)} constraints")
 
@@ -94,7 +100,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                 b.budget_region, 
                 b.budget_term, 
                 b.budget_constraint_energy_GWh, 
-                1e-1 * pyo.value(model.cEnergyBudget[b, sc]))
+                1e2 * pyo.value(model.cEnergyBudget[b, sc]))
                     for b, sc in model.cEnergyBudget),
             schema=[
                 "scenario",

@@ -57,7 +57,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
                     return m.vGEN[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
         else:
                 if g.cap_existing_power_MW > 100:
-                    return 1e-2 * m.vGEN[g, s, t] <= ( 1e-2 * (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+                    return 1e-2 * m.vGEN[g, s, t] <= 1e-2 * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
                 else:
                     return m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
 
