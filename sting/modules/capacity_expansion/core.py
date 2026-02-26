@@ -219,7 +219,7 @@ class CapacityExpansion:
         max_coef_info = None
 
         min_rhs = math.inf
-        max_rhs = -math.inf
+        max_rhs = 0
 
         min_rhs_info = None
         max_rhs_info = None
