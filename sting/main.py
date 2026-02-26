@@ -235,9 +235,9 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     return capex, system
 
 
-def run_mor(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+def run_mor_setup(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
     """
-    Routine to construct the system and its small-signal model from a case study directory.
+    Routine to construct the system and its small-signal model that can be used with model reduction methods.
     """
     # Set up logging to file
     setup_logging_file(case_directory)

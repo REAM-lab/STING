@@ -77,7 +77,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     
     logger.info(" - Constraints on maximum state of charge")
     model.cMaxSOC = pyo.Constraint(E, S, T, rule=lambda m, e, s, t: 
-                        m.vSOC[e, s, t] <= (m.vECAP[e] if e in expandable_ess else 0) + e.cap_existing_energy_MWh)
+                        1e-2 * m.vSOC[e, s, t] <=  (1e-2 * m.vECAP[e] if e in expandable_ess else 0) + 1e-2 * e.cap_existing_energy_MWh)
     logger.info(f"   Size: {len(model.cMaxSOC)} constraints")
 
     # SOC in the next time is a function of SOC in the previous time
