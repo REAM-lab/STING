@@ -48,11 +48,11 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     # SUMMED over all timepoint in a budget term. These constraints are WEIGHTED.
     logger.info(" - Constraint for energy budget")
     def cEnergyBudget_rule(m: pyo.ConcreteModel, b: EnergyBudget, s: Scenario):
-        #if b.budget_constraint_energy_GWh > 1000:
+        if b.budget_constraint_energy_GWh > 1000:
             # Scale large energy budgets by 1e-02 on both sides (assumes large budgets have larger weights)
-        #    return 1e-04 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 0.1)
-        #else:
-        return 0.01 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 10)
+            return 1e-04 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 0.1)
+        else:
+            return 0.01 * sum(m.vGEN[g, s, t] * t.weight for g in b.generators for t in b.timepoints) <= (b.budget_constraint_energy_GWh * 10)
 
     energy_budgets = [b for b in system.energy_budgets if (b.budget_constraint_energy_GWh is not None)]  
     model.cEnergyBudget = pyo.Constraint(energy_budgets, system.scenarios, rule=cEnergyBudget_rule)
