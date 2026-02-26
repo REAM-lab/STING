@@ -243,7 +243,7 @@ class CapacityExpansion:
 
             if c.lower is not None:
                 v = abs(pyo.value(c.lower))
-                if v < min_rhs:
+                if v < min_rhs and v != 0:
                     min_rhs = v
                     min_rhs_info = (pyo.value(c.lower), c.name, "lower")
                 if v > max_rhs:
@@ -253,7 +253,7 @@ class CapacityExpansion:
 
             if c.upper is not None:
                 v = abs(pyo.value(c.upper))
-                if v < min_rhs:
+                if v < min_rhs and v != 0:
                     min_rhs = v
                     min_rhs_info = (pyo.value(c.upper), c.name, "upper")
                 if v > max_rhs:

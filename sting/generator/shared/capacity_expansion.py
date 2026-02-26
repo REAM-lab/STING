@@ -51,12 +51,15 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
         if g.site != "no_capacity_factor":
-                if g. cap_existing_power_MW > 0 and g.cap_existing_power_MW <= 1e3 and g.cap_existing_power_MW < 10:
+                if g.cap_existing_power_MW > 0 and g.cap_existing_power_MW <= 1e3 and g.cap_existing_power_MW < 10:
                     return 1e2 * m.vGEN[g, s, t] <= 1e2 * cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
                 else:
                     return m.vGEN[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
         else:
-                return  m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+                if g.cap_existing_power_MW > 100:
+                    return 1e-2 * m.vGEN[g, s, t] <= ( 1e-2 * (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+                else:
+                    return m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
 
     model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
     logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")
