@@ -67,6 +67,7 @@ class System:
     def __post_init__(self):
 
         logger.info(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}") # Print datetime
+        logger.info(__logo__)
         logger.info("> Initializing system ...")
 
         if self.case_directory is None:
