@@ -186,12 +186,13 @@ def upload_built_capacities_from_csv(system: System, input_directory: str, make_
     storage_built_power_capacity = dict(storage_built_capacity.select("storage", "built_power_capacity_MW").iter_rows())
     storage_built_energy_capacity = dict(storage_built_capacity.select("storage", "built_energy_capacity_MWh").iter_rows())
 
-    storage_to_update = [s for s in system.storage if ((s.name in storage_built_power_capacity) and (storage_built_power_capacity[s.name] > threshold_MW))]
+    storage_to_update = [s for s in system.storage if (s.name in storage_built_power_capacity)]
 
     if storage_to_update:
         for stor in storage_to_update:
-            stor.cap_existing_energy_MWh += storage_built_energy_capacity[stor.name]
-            stor.cap_existing_power_MW += storage_built_power_capacity[stor.name]    
+            if storage_built_power_capacity[stor.name] > threshold_MW:
+                stor.cap_existing_energy_MWh += storage_built_energy_capacity[stor.name]
+                stor.cap_existing_power_MW += storage_built_power_capacity[stor.name]    
             if make_non_expandable:
                 stor.expand_capacity = False
             else:

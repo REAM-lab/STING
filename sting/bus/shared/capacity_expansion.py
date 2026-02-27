@@ -407,7 +407,8 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     
         if lines_to_update:
             for l in lines_to_update:
-                l.cap_existing_power_MW += line_built_capacity[l.name]
+                if line_built_capacity[l.name] > threshold_MW:
+                    l.cap_existing_power_MW += line_built_capacity[l.name]
                 if make_non_expandable:
                     l.expand_capacity = False
 
@@ -420,11 +421,12 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
                                          schema_overrides={'bus': pl.String, 'built_capacity_MW': pl.Float64})
         bus_built_capacity = dict(bus_built_capacity.select("bus", "built_capacity_MW").iter_rows())
 
-        buses_to_update = [n for n in system.buses if (n.name in bus_built_capacity) and (bus_built_capacity[n.name] > threshold_MW)]
+        buses_to_update = [n for n in system.buses if n.name in bus_built_capacity]
        
         if buses_to_update:
             for n in buses_to_update:
-                n.max_flow_MW += bus_built_capacity[n.name]
+                if bus_built_capacity[n.name] > threshold_MW:
+                    n.max_flow_MW += bus_built_capacity[n.name]
         
         logger.info(f"> Updated existing capacities for {len(buses_to_update)} buses based on input file {os.path.join(input_directory, 'bus_built_capacity.csv')}")  
     else:

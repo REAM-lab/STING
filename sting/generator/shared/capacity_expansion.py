@@ -149,11 +149,12 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     generator_built_capacity = dict(generator_built_capacity.select("generator", "built_capacity_MW").iter_rows())
 
     G: list[Generator] = system.gens.to_list()
-    gens_to_update = [g for g in G if g.name in generator_built_capacity and generator_built_capacity[g.name] > threshold_MW]
+    gens_to_update = [g for g in G if g.name in generator_built_capacity]
 
     if gens_to_update:
         for g in gens_to_update:
-            g.cap_existing_power_MW += generator_built_capacity[g.name]
+            if generator_built_capacity[g.name] > threshold_MW:
+                g.cap_existing_power_MW += generator_built_capacity[g.name]
             if make_non_expandable:
                 g.expand_capacity = False
             else:
