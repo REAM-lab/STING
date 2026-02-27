@@ -202,7 +202,7 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
 
 def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None, solver_settings=None,
                                  output_directory=None,
-                                 built_capacity_directory=None, make_non_expandable=False):
+                                 built_capacity_directory=None, make_non_expandable=False, print_system_with_built_capacities=False):
     """
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
@@ -222,6 +222,9 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     sys_modifier = SystemModifier(system=system)
     sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
                                             make_non_expandable=make_non_expandable)
+    
+    if print_system_with_built_capacities:
+        system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
 
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings,
