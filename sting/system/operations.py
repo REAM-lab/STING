@@ -174,7 +174,7 @@ class SystemModifier:
         return zonal_system
     
     @timeit
-    def upload_built_capacities_from_csv(self, built_capacity_directory: str,  make_non_expandable: bool = True):
+    def upload_built_capacities_from_csv(self, built_capacity_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
         """
         Upload built capacities from a previous capex solution. 
         
@@ -188,6 +188,6 @@ class SystemModifier:
                     only make non-expandable those units for which the uploaded built capacity is greater or equal to the maximum capacity. 
 
         """
-        gen_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable)
-        storage_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable)
-        bus_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable)
+        gen_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)
+        storage_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)
+        bus_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)

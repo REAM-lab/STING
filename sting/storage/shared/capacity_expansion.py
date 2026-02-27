@@ -172,7 +172,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                                             pyo.value(model.eStorTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'storage_costs_summary.csv'))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str, make_non_expandable: bool = True):
+def upload_built_capacities_from_csv(system: System, input_directory: str, make_non_expandable: bool = True, threshold_MW: float = 1e-1):
     """Upload built capacities from a previous capex solution. """
     
     if not os.path.exists(os.path.join(input_directory, "storage_built_capacity.csv")):
@@ -186,7 +186,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str, make_
     storage_built_power_capacity = dict(storage_built_capacity.select("storage", "built_power_capacity_MW").iter_rows())
     storage_built_energy_capacity = dict(storage_built_capacity.select("storage", "built_energy_capacity_MWh").iter_rows())
 
-    storage_to_update = [s for s in system.storage if s.name in storage_built_power_capacity]
+    storage_to_update = [s for s in system.storage if ((s.name in storage_built_power_capacity) and (storage_built_power_capacity[s.name] > threshold_MW))]
 
     if storage_to_update:
         for stor in storage_to_update:

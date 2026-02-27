@@ -137,8 +137,8 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                                             pyo.value(model.eGenTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True):
-    """Upload built capacities from a previous capex solution. """
+def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+    """Upload built capacities from a previous capex solution."""
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
         logger.warning(f"No file named 'generator_built_capacity.csv' found in {input_directory}. Skipping upload of built capacities.")
@@ -149,7 +149,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     generator_built_capacity = dict(generator_built_capacity.select("generator", "built_capacity_MW").iter_rows())
 
     G: list[Generator] = system.gens.to_list()
-    gens_to_update = [g for g in G if g.name in generator_built_capacity]
+    gens_to_update = [g for g in G if g.name in generator_built_capacity and generator_built_capacity[g.name] > threshold_MW]
 
     if gens_to_update:
         for g in gens_to_update:
