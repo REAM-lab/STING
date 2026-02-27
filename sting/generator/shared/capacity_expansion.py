@@ -44,22 +44,28 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     logger.info(f"   Size: {len(model.vGEN)} variables")
 
     logger.info(" - Constraints on capacity expansion for generators")   
-    model.cCapGenNonVar = pyo.Constraint(expandable_gens, rule=lambda m, g: m.vCAP[g] <= g.cap_max_power_MW - g.cap_existing_power_MW)
+    model.cCapGenNonVar = pyo.Constraint(expandable_gens, rule=lambda m, g: m.vCAP[g] <= (g.cap_max_power_MW - g.cap_existing_power_MW))
     logger.info(f"   Size: {len(model.cCapGenNonVar)} constraints")
 
     logger.info(" - Constraints on dispatch based on capacity factors and existing/built capacity")
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
-        if g.site != "no_capacity_factor":
-                if g.cap_existing_power_MW > 0 and g.cap_existing_power_MW <= 1e3 and g.cap_existing_power_MW < 10:
-                    return 1e2 * m.vGEN[g, s, t] <= 1e2 * cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
-                else:
-                    return m.vGEN[g, s, t] <= cf_lookup[(g.site, s.name, t.name)] * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+
+        # Generator capacity factor and nameplate power capacity
+        capacity_factor = cf_lookup.get((g.site, s.name, t.name), 1)
+        nameplate = (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW
+
+        x = (g.cap_existing_power_MW * capacity_factor)
+        if x <= 1:
+            scalefactor = 100
+        elif x <= 10:
+            scalefactor = 10
+        elif x <= 100:
+            scalefactor = 1
         else:
-                if g.cap_existing_power_MW > 100:
-                    return 1e-2 * m.vGEN[g, s, t] <= 1e-2 * ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
-                else:
-                    return m.vGEN[g, s, t] <= ( (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+            scalefactor = 0.1
+
+        return scalefactor * m.vGEN[g, s, t] <= scalefactor * capacity_factor *  nameplate
 
     model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
     logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")
