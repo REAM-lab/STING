@@ -11,7 +11,7 @@ import logging
 # --------------
 from sting.system.core import System
 from sting.policies.carbon_policies.core import CarbonPolicy
-from sting.timescales.core import Scenario
+from sting.timescales.core import Scenario, Timepoint
 from sting.utils.runtime_tools import timeit
 from sting.modules.capacity_expansion.utils import ModelSettings
 
@@ -22,11 +22,23 @@ logger = logging.getLogger(__name__)
 def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel, model_settings: ModelSettings):
     """Construction of carbon policy constraints."""
 
+    S: list[Scenario] = system.scenarios
+    T: list[Timepoint] = system.timepoints
+    # Intermediate variable for each carbon budget of the total emission per day scaled by 1e-2
+    # Used to decouple the large RHS constraint coefficient (of total carbon budget)
+    # from the small matrix coefficients in summing emissions. Additionally, the constraint now 
+    # looks temporally sparse to the optimizer
+    model.vAUX_CARBON_BUDGET = pyo.Var(S, T, within=pyo.NonNegativeReals)
+
+    def cAuxCarbonCap_rule(m: pyo.ConcreteModel, scenario: Scenario, timepoint: Timepoint):
+        return 1e-02 * m.eEmissionsPerScPerTp[scenario, timepoint] == m.vAUX_CARBON_BUDGET[scenario, timepoint]
+    
     logger.info(" - Annual carbon policy constraint")
     def cAnnualCarbonCap_rule(m: pyo.ConcreteModel, carbon_policy: CarbonPolicy, scenario: Scenario):
-        return  0.01 * sum(m.eEmissionsPerScPerTp[scenario, t] * t.weight for t in system.timepoints) <= carbon_policy.carbon_cap_tonneCO2peryear * 0.01
+        return  1e-03 * sum(m.vAUX_CARBON_BUDGET[scenario, t] * t.weight for t in system.timepoints) <= 1e-05 * carbon_policy.carbon_cap_tonneCO2peryear 
         
-    model.cAnnualCarbonCap = pyo.Constraint(system.carbon_policies, system.scenarios, rule=cAnnualCarbonCap_rule)
+    model.cAuxCarbonCap = pyo.Constraint(S, T, rule=cAuxCarbonCap_rule)
+    model.cAnnualCarbonCap = pyo.Constraint(system.carbon_policies, S, rule=cAnnualCarbonCap_rule)
     logger.info(f"   Size: {len(model.cAnnualCarbonCap)} constraints")
 
 
@@ -41,7 +53,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                 sc.name, 
                 cp.id, 
                 cp.carbon_cap_tonneCO2peryear,
-                100 * pyo.value(model.cAnnualCarbonCap[cp, sc]))
+                1e5 * pyo.value(model.cAnnualCarbonCap[cp, sc]))
                     for cp, sc in model.cAnnualCarbonCap),
             schema=[
                 "scenario",
