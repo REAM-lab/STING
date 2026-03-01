@@ -31,7 +31,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     model.vAUX_CARBON_BUDGET = pyo.Var(S, T, within=pyo.NonNegativeReals)
 
     def cAuxCarbonCap_rule(m: pyo.ConcreteModel, scenario: Scenario, timepoint: Timepoint):
-        return 1e-02 * m.eEmissionsPerScPerTp[scenario, timepoint] == m.vAUX_CARBON_BUDGET[scenario, timepoint]
+        return m.eEmissionsPerScPerTp[scenario, timepoint] == 1e-02 * m.vAUX_CARBON_BUDGET[scenario, timepoint]
     
     logger.info(" - Annual carbon policy constraint")
     def cAnnualCarbonCap_rule(m: pyo.ConcreteModel, carbon_policy: CarbonPolicy, scenario: Scenario):
@@ -53,7 +53,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                 sc.name, 
                 cp.id, 
                 cp.carbon_cap_tonneCO2peryear,
-                1e5 * pyo.value(model.cAnnualCarbonCap[cp, sc]))
+                1e8 * pyo.value(model.cAnnualCarbonCap[cp, sc])) # To recover original units scale by: 1e8 = 1e5 * 1e3
                     for cp, sc in model.cAnnualCarbonCap),
             schema=[
                 "scenario",
