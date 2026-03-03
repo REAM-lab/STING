@@ -1,8 +1,0 @@
-type,class,module,input_csv
-gfli_a,GFLIa,sting.generator.gfli_a,gfli_a.csv
-gfli_b,GFLIb,sting.generator.gfli_b,gfli_b.csv
-inf_src,InfiniteSource,sting.generator.infinite_source,infinite_source.csv
-line_pi,LinePiModel,sting.line.pi_model,line_pi.csv
-se_rl,BranchSeriesRL,sting.branch.series_rl,series_rl.csv
-pa_rc,ShuntParallelRC,sting.shunt.parallel_rc,parallel_rc.csv
-bus,Bus,sting.bus.bus,bus.csv

@@ -1,0 +1,6 @@
+﻿name,technology,bus,site,c2_USDperMWh2,c1_USDperMWh,c0_USD,cost_fixed_power_USDperkW,cap_existing_power_MW,cap_max_power_MW,cost_variable_USDperMWh
+1,gas,1,cf_one,0,14,0,14,0,40,14
+2,gas,1,cf_one,0,15,0,15,0,170,15
+3,gas,3,cf_one,0,30,0,30,0,520,30
+4,gas,4,cf_one,0,40,0,40,0,200,40
+5,gas,5,cf_one,0,10,0,10,0,600,10

@@ -1,0 +1,4 @@
+bus,scenario,timepoint,dispatch_MW
+south,sc1,1,790.0
+center,sc1,1,210.0
+north,sc1,1,0.0

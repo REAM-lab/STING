@@ -1,0 +1,4 @@
+bus,scenario,timepoint,net_discharge_MW
+south,sc1,1,0.0
+center,sc1,1,0.0
+north,sc1,1,0.0

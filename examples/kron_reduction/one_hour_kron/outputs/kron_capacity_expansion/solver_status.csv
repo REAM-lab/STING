@@ -1,0 +1,5 @@
+attribute,value
+SolverName,mosek_direct
+SolverStatus,ok
+TerminationCondition,optimal
+TimeSpent_seconds,6.034795045852661

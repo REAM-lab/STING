@@ -1,0 +1,2 @@
+,from_bus_id,from_bus,to_bus,to_bus_id,r_pu,x_pu,from_bus_vmag,to_bus_vmag,from_bus_vphase,to_bus_vphase,p,plosses,q,qlosses
+se_rl_0,0,north,south,1,0.01,0.2,1.0,1.1037048052538914,0.0,7.392353488655026,-4.801786663782298,0.3079725390434546,2.7821032942484223,6.159450780869093

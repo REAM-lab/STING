@@ -1,201 +1,192 @@
+# -----------------------
 # Import Python packages
-import pandas as pd
-import importlib
+# -----------------------
 import os
 import itertools
 from typing import get_type_hints
-from dataclasses import fields
+from dataclasses import dataclass, fields
+import polars as pl
+import time
+import logging
+import datetime
 
-# Import source packages
+# -----------------------
+# Import sting code
+# -----------------------
 from sting import __logo__
-from sting import data_files
-from sting.line.core import decompose_lines
-from sting.utils import data_tools
-
-# from sting.shunt.core import combine_shunts
-from sting.utils.graph_matrices import get_ccm_matrices
-from sting.utils.dynamical_systems import StateSpaceModel
 import sting.system.selections as sl
 
+# -----------------------
+# Import sting components
+# -----------------------
+from sting.system.component import Component, SystemComponent
+from sting.bus.core import Bus, Load
+from sting.generator.core import Generator, CapacityFactor
+from sting.storage.core import Storage
+from sting.generator.infinite_source import InfiniteSource
+from sting.generator.gfmi_c import GFMIc
+from sting.reduced_order_model.linear_rom import LinearROM
+from sting.line.pi_model import LinePiModel
+from sting.branch.series_rl import BranchSeriesRL
+from sting.shunt.parallel_rc import ShuntParallelRC
+from sting.timescales.core import Scenario, Timepoint, Timeseries
+from sting.policies.carbon_policies.core import CarbonPolicy
+from sting.policies.energy_budgets.core import EnergyBudget
 
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.info(__logo__) # print logo when a System instance is created
+
+@dataclass(slots=True)
 class System:
-    """
-    A power system object comprised of multiple components. 
 
-    A list components of all possible are components within the system
-    can be supplied during initialization. If no such list is supplied, 
-    the power system will be initialized to accommodate all components 
-    in ./data_files/components_metadata.csv.
-    """
-    # ------------------------------------------------------------
-    # Construction + Read/Write
-    # ------------------------------------------------------------
-    def __init__(self, components=None):
-        """
-        Create attributes for the system that correspond to different types of components
-        For example: if we type sys = System(), then sys will have the attributes
-        sys.gfli_a, sys.gfmi_c, etc, and each of them initialized with empty lists []. 
-        Each of these component types are by default given in the file components_metadata.csv.
+    # Settings and metadata
+    case_directory: str = None
+    components: list[SystemComponent] = None 
+    type_to_class: dict[str, type] = None
+    class_to_type: dict[type, str] = None
 
-        ### Inputs:
-        - self (System instance)
-        - components (list): Type of components, for example components=['gfli_a', 'gfmi_c'].
+    # Components
+    generators: list[Generator] = None
+    capacity_factors: list[CapacityFactor] = None
+    storage: list[Storage] = None
+    infinite_sources: list[InfiniteSource] = None
+    gfmi_c: list[GFMIc] = None
+    linear_roms: list[LinearROM] = None
+    buses: list[Bus] = None
+    loads: list[Load] = None
+    lines: list[LinePiModel] = None
+    branch_series_rl: list[BranchSeriesRL] = None
+    shunt_parallel_rl: list[ShuntParallelRC] = None
+    timeseries: list[Timeseries] = None
+    timepoints: list[Timepoint] = None
+    scenarios: list[Scenario] = None
+    energy_budgets: list[EnergyBudget] = None
+    carbon_policies: list[CarbonPolicy] = None
 
-        ### Outputs:
-        - self.components (dataframe): Stores the list of components, modules, classes and csv files.
-        - self.class_to_str (dict): Maps class with type for each component. For example, InfiniteSource => inf_src
-        """
+    def __post_init__(self):
 
-        print(__logo__) # print logo when a System instance is created
-        print("> System initialization", end=" ")
+        logger.info(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}") # Print datetime
+        logger.info(__logo__)
+        logger.info("> Initializing system ...")
 
-        # Get components_metadata.csv as a dataframe.
-        # This file contains information of the lists of components that integrate the system
-        data_dir = os.path.dirname(data_files.__file__) # get directory of data_files
-        filepath = os.path.join(data_dir, "components_metadata.csv") # get directory 
-        self.components = pd.read_csv(filepath) # get list of components as dataframe
+        if self.case_directory is None:
+            self.case_directory = os.getcwd()
+            logger.info(f"> No case directory provided. Set to current directory: {self.case_directory}")
 
-        # If components are given, only use the relevant meta-data
-        if components:
-            active_components = self.components["type"].isin(components)
-            self.components = self.components[active_components]
+        non_components = ['case_directory', 'components', 'type_to_class', 'class_to_type'] # define attributes that are not grid components
+        
+        # Store the names of the component attributes in self.components
+        self.components = [SystemComponent(type_=f.name, class_=f.type.__args__[0]) for f in fields(self) if f.name not in non_components]
 
-        # Mapping of a components class to its string representation
-        self.class_to_str = dict(zip(self.components["class"], self.components["type"]))
+        # Build type_to_class and class_to_type dictionaries for mapping between component type names and their classes
+        self.type_to_class = {c.type_: c.class_ for c in self.components}
+        self.class_to_type = {c.class_: c.type_ for c in self.components}
 
-        # Create a new attribute (an empty list) for each component type 
-        for component_name in self.components["type"]:
-            setattr(self, component_name, [])
+        # Initialize component attributes to empty lists if they are None    
+        for c in self.components:
+            if getattr(self, c.type_) is None:
+                setattr(self, c.type_, [])
 
-        print("... ok.")
+        logger.info(f" System initialization completed.")
 
     @classmethod
-    def from_csv(cls, case_dir=os.getcwd(), components=None):
+    def from_csv(cls, case_directory = None) -> 'System':
         """
+        Read of component data from csv files and post system initialization.
+
         Add components from csv files. Each csv file has components of the same type.
         For example: gfli_a.csv contains ten gflis, but from the same type gfli_a.
         Each row of gfli_a.csv is a gfli_a that will be added to the system attribute gfli_a. 
         
         ### Inputs:
-        - cls (System class)
-        - case_dir (str): Directory of the case study. 
+        - cls: `System` 
+        - case_directory: `str` 
+                        Directory of the case study. 
                         This directory has a folder "inputs" that has the csv files. 
                         By default it is current directory where we execute sting.
-        - components (list): Type of components, for example components=['gfli_a', 'gfmi_c'].
-        
         ### Outputs:
-        - self (System instance): it contains the components that have data from csv files.
+        - self: `System`
+                    It contains the components that have data from csv files.
         """
+        full_start_time = time.time()
 
-        # Get directory of the folder "inputs"
-        inputs_dir = os.path.join(case_dir, "inputs") 
+        self = cls(case_directory=case_directory) # Create instance of System.
+        logger.info(f"> Loading system components from CSV files from {self.case_directory} ...") 
 
-        # Create instance System.
-        self = cls(components=components) 
+        for c in self.components:# For example, "generators", "infinite_sources", etc.
+            csv_filename = f"{c.type_}.csv"
+            filepath = os.path.join(self.case_directory, "inputs", csv_filename) # For example, "./case_directory/inputs/generators.csv"
 
-        print("> Load components via CSV files from:")
-
-        for _, c_name, c_class, c_module, filename in self.components.itertuples(
-            name=None
-        ):
-            # Expected file with components, for example: gfli_a.csv, or inf_src.csv
-            filepath = os.path.join(inputs_dir, filename)
-
-            # If no such file exits, continue. For example, 
-            # if there is no gfli_a.csv, then the sys.gfli_a = []
             if not os.path.exists(filepath):
                 continue
+            
+            # Read only 1 row to check column names, do not treat the first row as headers (header=None)
+            df = pl.read_csv(filepath, n_rows=1, has_header=False)
+            columns_csv = df.row(0)
 
-            # Import module (.py file). For example import sting.generator.gfli_a
-            class_module = importlib.import_module(c_module) 
-
-            # Import class. For example, GFLI_a
-            component_class = getattr(class_module, c_class)
-
-            # Get a dictionary that maps fields of class with their corresponding types
-            class_param_types = get_type_hints(component_class)
-            #parameters_dtypes = {
-            #    key: value
-            #    for key, value in parameters_dtypes.items()
-            #    if value.__module__ == "builtins"
-            #}
-
-            # Read only 1 row, do not treat the first row as headers (header=None)
-            df = pd.read_csv(filepath, nrows=1, header=None)
-            csv_header = df.iloc[0].tolist()
-
-            # Filter out the pairs (key, value) from class_param_types 
-            # that are not in csv header
-            param_types = {
-                key: value
-                for key, value in class_param_types.items()
-                if key in csv_header
-            }
+            # Get the type of the component list, for example Generator, and then get the type hints of that class
+            class_attribute_types = get_type_hints(c.class_) # For example, get_type_hints(Generator)
+            
+            # Filter out the pairs (key, value) from class_attribute_types that are not in columns_csv
+            attributes_to_type = {key: value for key, value in class_attribute_types.items() if key in columns_csv}
 
             # Read components csv
-            print(f"\t- '{filepath}'", end=" ")
-            df = pd.read_csv(filepath, dtype=param_types)
+            df = pl.read_csv(filepath, schema_overrides=attributes_to_type)
 
             # Create a component for each row (i.e., component) in the csv
-            for row in df.itertuples(index=False):
-                component = component_class(**row._asdict())
+            for row in df.iter_rows(named=True):
+                component_instance = c.class_(**row) # For example, Generator(**row)
                 # Add the component to the system
-                self.add(component)
+                self.add(component_instance)
 
-            print("... ok.")
+            logger.info(f" - '{csv_filename}' ... ")
+            logger.info(f"   Added {df.height} '{c.type_}' ")
+
+        start_time = time.time()
+        self.apply("post_system_init", self)
+        logger.info(f"> Post system initialization completed in {time.time() - start_time:.2f} seconds.")
+        logger.info(f"> Completed in: {time.time() - full_start_time:.2f} seconds. \n")
 
         return self
+    
+    def write_csv(self, types = [int, float, str, bool], output_directory=None):
+        """Export system components to csv files."""
 
-    def to_csv(self, output_dir=None):
-        # TODO: This is untested
-        for name in self.components["type"]:
-          lst = getattr(self, name)
+        if output_directory is None:
+            output_directory = os.path.join(self.case_directory, "outputs", "system_csv")
+        
+        os.makedirs(output_directory, exist_ok=True)
+
+        for (type_, _) in self.components:
+          lst = getattr(self, type_)
+          csv_filename = f"{type_}.csv"
           if lst:
               # Assumes each component is a dataclass with fields
               cols = fields(lst[0])
-              df = self.query(name).to_table(cols)
-              df.to_csv(os.path.join(output_dir, self.components["input_csv"]))
-
-    def to_matlab(self, session_name=None, export=None, excluded_attributes=None):
-        # TODO: Not sure if this has been tested
-        import matlab.engine
-
-        if export is None:
-            export = list(self.class_to_str.values())
-
-        current_matlab_sessions = matlab.engine.find_matlab()
-
-        if not session_name in current_matlab_sessions:
-            print("> Initiate Matlab session, as a session was not founded or entered.")
-            eng = matlab.engine.start_matlab()
-        else:
-            eng = matlab.engine.connect_matlab(session_name)
-            print(f"> Connect to Matlab session: {session_name} ... ok.")
-
-        for typ in export :
-            components = getattr(self, typ)
-
-            components_dict = [
-                data_tools.convert_class_instance_to_dictionary(i, excluded_attributes=excluded_attributes) for i in components
-            ]
-            eng.workspace[typ] = components_dict
-
-        eng.quit()
+              cols = [c.name for c in cols if c.type in types]
+              df = self.query([type_]).to_table(*cols, index = 'id', index_name = 'id') # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
+              df.to_csv(os.path.join(output_directory, csv_filename))
 
     # ------------------------------------------------------------
     # Component Management + Searching
     # ------------------------------------------------------------
-    def add(self, component):
+    def add(self, component: Component):
         """Add a new component to the system."""
-        # Get the component string representation (InfiniteSource -> inf_src)
-        component_attr = self.class_to_str[type(component).__name__]
-        component_list = getattr(self, component_attr)
-        # Assign the component a 1-based index value
-        component.idx = len(component_list) + 1
+        # Get the component type (for example, "generators") 
+        component_type = self.class_to_type[type(component)]
+        # Get the list of components of that type, for example self.generators
+        component_list: list[Component] = getattr(self, component_type)
+        # Assign the component a 0-based index value
+        component.id = len(component_list)
+        # Assign type attribute to the component, for example "infinite_sources"
+        component.type_ = component_type
         # Add the component to the list
         component_list.append(component)
+
+        return component.id
         
-    def _generator(self, names):
+    def _generator(self, names) -> itertools.chain:
         # Collect all lists of components in the component_types
         all_components = [getattr(self, name) for name in names]
          # Yield all components following the order in component_types
@@ -205,22 +196,23 @@ class System:
         """
         Return a Stream over a set of component types. Analogous to FROM in 
         SQL, specifying which tables to access data from. For example, 
-        "FROM gfmi_a, inf_src SELECT idx" would be written as:
-        >>> power_sys.query("gfmi_a", "inf_src").select("idx")
+        "FROM gfmi_a, inf_src SELECT id" would be written as:
+        >>> power_sys.query("gfmi_a", "inf_src").select("id")
         
         If no tables are provided runs a Stream over all components.
         """
         if not args:
-            return sl.Stream(self, index_map=self.class_to_str)
+            return sl.Stream(self, index_map=self.class_to_type)
         # Unpack all args calling on self if they are a function
-        names = [arg(self) if callable(arg) else [arg] for arg in args]
+        names = [arg(self) if callable(arg) else arg for arg in args]
         # Flatten the list of component types to query from
         names = itertools.chain(*names)
 
-        return sl.Stream(self._generator(names), index_map=self.class_to_str)
+        return sl.Stream(self._generator(names), index_map=self.class_to_type)
 
     def __iter__(self):
-        return self._generator(self.components["type"])
+        """Iterate over all components in the system."""
+        return self._generator([c.type_ for c in self.components])
     
     def apply(self, method, *args):
         """Call a given method on all components with the method."""
@@ -229,58 +221,49 @@ class System:
                 getattr(component, method)(*args)
 
     @property
-    def generators(self):
-        return self.query(sl.generators())
+    def gens(self):
+        """Return a lazy Stream (like list) of all components with the tag "generator"."""
+        return self.query(self.find_tagged("generator"))
 
     @property
     def shunts(self):
-        return self.query(sl.shunts())
+        """Return a lazy Stream (like list) of all components with the tag "shunt"."""
+        return self.query(self.find_tagged("shunt"))
 
     @property
     def branches(self):
-        return self.query(sl.branches())
-
+        """Return a lazy Stream (like list) of all components with the tag "branch"."""
+        return self.query(self.find_tagged("branch"))
+    
     # ------------------------------------------------------------
-    # Small-Signal Modeling
+    # Common selections
     # ------------------------------------------------------------
-    def clean_up(self):
+    def find_tagged(self, tag_name: str) -> list[str]:
         """
-        Apply any component clean up needed prior to methods like power flow.
+        Return a list of all components tagged with a specific tag name.
         """
-        decompose_lines(self)
-        #TODO: I think combine_shunts(self) is untested
+        # List of all components with the given tag name
+        tagged_components = []
 
-    def construct_ssm(self, pf_instance):
-        """
-        Create each components SSM given a power flow solution
-        """
-        # Build each components SSM
-        self.apply("_load_power_flow_solution", pf_instance)
-        self.apply("_calculate_emt_initial_conditions")
-        self.apply("_build_small_signal_model")
+        # Scan over all component types
+        for (type_, _) in self.components:
+            component_list = getattr(self, type_)
+            # If the component is tagged with the current tag name, add it to the running list
+            if  (len(component_list) > 0 and 
+                hasattr(component_list[0], "tags") and 
+                (tag_name in component_list[0].tags)):
+                tagged_components.append(type_)
 
-        # Construct the component connection matrices for the system model
-        self.connections = get_ccm_matrices(self)
+        return tagged_components
 
-    def interconnect(self):
-        """
-        Return a state-space model of all interconnected components
-        """
-        # Get components in order of generators, then shunts, then branches
-        generators, = self.generators.select("ssm")
-        shunts, = self.shunts.select("ssm")
-        branches, = self.branches.select("ssm")
+    def __repr__(self):
+        """Return a string representation of the system, showing the number of components of each type."""
+        lines_to_display = []
 
-        models = itertools.chain(generators, shunts, branches)
+        lines_to_display.append(f"System: ")
 
-        # Then interconnect models
-        return StateSpaceModel.from_interconnected(models, self.connections)
+        for (c_type, _) in self.components:
+            if len(getattr(self, c_type)) > 0:
+                lines_to_display.append(f"  - {c_type}: {len(getattr(self, c_type))}")
 
-    # ------------------------------------------------------------
-    # Model Reduction (TBD?)
-    # ------------------------------------------------------------
-    def create_zone(self, c_names):
-        pass
-
-    def permute(self, index):
-        pass
+        return "\n".join(lines_to_display)

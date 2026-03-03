@@ -4,16 +4,22 @@ This module implements a GFLI that incorporates:
 - Current controller: A dq-based frame PI controller
 - PLL: A basic implementation
 """
-
-# Import standard python packages
+# ----------------------
+# Import python packages
+# ----------------------
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, ClassVar
 import scipy.linalg 
 
-# Import sting packages
+# ------------------
+# Import sting code
+# ------------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
+# -----------
+# Sub-classes
+# -----------
 class PowerFlowVariables(NamedTuple):
     p_bus: float
     q_bus: float
@@ -42,11 +48,14 @@ class InitialConditionsEMT(NamedTuple):
     v_vsc_mag: float
     v_vsc_DQ_phase: float
 
-
+# -----------
+# Main class
+# -----------
 @dataclass(slots=True)
 class GFLIa:
-    idx: int = field(default=-1, init=False)
-    bus_idx: str
+    id: int = field(default=-1, init=False)
+    bus: str
+    bus_id: int = None
     p_min: float
     p_max: float
     q_min: float
@@ -91,9 +100,12 @@ class GFLIa:
     @property
     def wbase(self):
         return 2 * np.pi * self.fbase
+    
+    def assign_bus_id(self, buses: list):
+        self.bus_id = next((n for n in buses if n.id == self.bus_id)).id
 
     def _load_power_flow_solution(self, power_flow_instance):
-        sol = power_flow_instance.generators.loc[f"{self.type}_{self.idx}"]
+        sol = power_flow_instance.generators.loc[f"{self.type}_{self.id}"]
         self.pf = PowerFlowVariables(
                                     p_bus=sol.p.item(),
                                     q_bus=sol.q.item(),
@@ -201,22 +213,20 @@ class GFLIa:
         components = [pi_controller, lcl_filter, pll]
         connections = [Fccm, Gccm, Hccm, Lccm]
 
-        # Generate small-signal model
-        ssm = StateSpaceModel.from_interconnected(components, connections)
-
+        # Inputs and outputs
         v_bus_D, v_bus_Q= self.emt_init.v_bus_D, self.emt_init.v_bus_Q
-        ssm.u = DynamicalVariables(
-                                    name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
-                                    component=f"{self.type}_{self.idx}",
-                                    type=["device", "device", "grid", "grid"],
-                                    init=[i_bus_d, i_bus_q, v_bus_D, v_bus_Q])
+        u = DynamicalVariables(
+                                name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
+                                type=["device", "device", "grid", "grid"],
+                                init=[i_bus_d, i_bus_q, v_bus_D, v_bus_Q])
 
         i_bus_D, i_bus_Q= self.emt_init.i_bus_D, self.emt_init.i_bus_Q
-        ssm.y = DynamicalVariables(
-                                    name=['i_bus_D', 'i_bus_Q'],
-                                    component=f"{self.type}_{self.idx}",
-                                    init=[i_bus_D, i_bus_Q])
+        y = DynamicalVariables(
+                                name=['i_bus_D', 'i_bus_Q'],
+                                init=[i_bus_D, i_bus_Q])
 
+        # Generate small-signal model
+        ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type}_{self.id}")
 
         self.ssm = ssm  
 

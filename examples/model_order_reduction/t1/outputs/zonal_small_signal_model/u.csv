@@ -1,0 +1,5 @@
+name,component,type,init
+v_ref_d,infinite_sources_1,device,0.9917540276124067
+v_ref_q,infinite_sources_1,device,1.8795360582693318e-18
+v_ref_d,infinite_sources_0,device,0.9657090864866837
+v_ref_q,infinite_sources_0,device,-3.351955489316367e-18

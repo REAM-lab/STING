@@ -1,0 +1,4 @@
+from_bus,to_bus,calculated_capacity_MW
+1,3,100.0
+1,4,100.0
+3,4,100.0

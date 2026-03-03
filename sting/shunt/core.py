@@ -1,27 +1,53 @@
-from sting.shunt.parallel_rc import ShuntParallelRC
+# -------------
+# Import python packages
+# --------------
+from dataclasses import dataclass
+from typing import ClassVar, NamedTuple
+import logging
+
+# -------------
+# Import sting code
+# --------------
+from sting.system.component import Component
+from sting.modules.power_flow.utils import ACPowerFlowSolution
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+
+logger = logging.getLogger(__name__)
+
+# ----------------
+# Sub-classes
+# ----------------
+class PowerFlowVariables(NamedTuple):
+    vmag_bus: float
+    vphase_bus: float
+
+class VariablesEMT(NamedTuple):
+    x: DynamicalVariables
+    u: DynamicalVariables
+    y: DynamicalVariables
+
+# ----------------
+# Main classes     
+# ----------------
+@dataclass(slots=True, kw_only=True)
+class Shunt(Component):
+    bus: str
+    base_power_MVA: float
+    base_voltage_kV: float
+    base_frequency_Hz: float
+    tags: ClassVar[list[str]] = ["shunt"]
+    bus_id: int = None
+    power_flow_variables: PowerFlowVariables = None
+    ssm: StateSpaceModel = None
+    variables_emt: VariablesEMT = None
+    id_variables_emt: dict = None
 
 
-def combine_shunts(system):
+    def post_system_init(self, system):
+        self.bus_id = next((n for n in system.buses if n.name == self.bus)).id
 
-    print("> Reduce shunts to have one shunt per bus:")
-
-    shunt_df = (system.shunts
-        .to_table("bus_idx", "g", "b")
-        .reset_index(drop=True)
-        .pivot_table(index="bus_idx", values=["g", "b"], aggfunc="sum")
-    )
-
-    shunt_df["r"] = 1 / shunt_df["g"]
-    shunt_df["c"] = 1 / shunt_df["b"]
-    shunt_df["idx"] = range(len(shunt_df))
-    shunt_df.drop(columns=["b", "g"], inplace=True)
-
-    # Clear all existing parallel RC shunts
-    system.pa_rc = []
-
-    # Add each effective/combined parallel RC shunt to the pa_rc components
-    for _, row in shunt_df.iterrows():
-        shunt = ShuntParallelRC(**row.to_dict())
-        system.add(shunt)
-
-    print("\t- New list of parallel RC components created ... ok\n")
+    def load_ac_power_flow_solution(self,  timepoint: str, pf_solution: ACPowerFlowSolution):
+        self.power_flow_variables = PowerFlowVariables(
+            vmag_bus=pf_solution.bus_voltage_magnitude[self.bus_id, timepoint],
+            vphase_bus=pf_solution.bus_voltage_angle[self.bus_id, timepoint],
+        )

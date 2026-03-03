@@ -24,10 +24,15 @@ setup(
         "gamspy",
         "importlib",
         "pandas",
+        "polars",
         "numpy",
         "scipy",
         "tabulate",
         "matplotlib",
-        "matlabengine==25.1.2",
+        #"matlabengine==25.1.2",
+        "plotly",
+        "pyomo",
+        "networkx",
+        "control"
     ],
 )
