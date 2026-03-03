@@ -137,7 +137,7 @@ class CapacityExpansion:
         self.model.eCostPerPeriod = pyo.Expression(expr=eCostPerPeriod_rule)
         self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.timepoints))
         
-        self.model.rescaling_factor_obj = pyo.Param(initialize=1e-4)  # To reduce range of objective function values.
+        self.model.rescaling_factor_obj = pyo.Param(initialize=1e-2)  # To reduce range of objective function values.
 
         self.model.obj = pyo.Objective(expr= self.model.rescaling_factor_obj * self.model.eTotalCost, sense=pyo.minimize)
         logger.info(f"> Completed in {time.time() - start_time:.2f} seconds. \n")
