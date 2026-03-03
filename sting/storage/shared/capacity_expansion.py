@@ -42,7 +42,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     logger.info(f"   Size: {len(model.vSOC)} variables")
 
     logger.info(" - Set of capacity-expandable storage units")
-    expandable_ess = [e for e in E if (e.expand_capacity and model_settings.storage_capacity_expansion)]
+    expandable_ess = [e for e in E if (model_settings.storage_capacity_expansion and e.expand_capacity and e.cap_max_power_MW < float('inf'))]
     logger.info(f"   Size: {len(expandable_ess)} storage units")
 
     logger.info(" - Decision variables of power and energy capacity expansion")

@@ -32,7 +32,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     N: list[Bus] = system.buses
 
     logger.info(" - Set of capacity-expandable generators")
-    expandable_gens = [g for g in G if (g.expand_capacity and model_settings.generation_capacity_expansion)]
+    expandable_gens = [g for g in G if (model_settings.generation_capacity_expansion and g.expand_capacity and g.cap_max_power_MW < float('inf'))]
     logger.info(f"   Size: {len(expandable_gens)} generators")
 
     logger.info(" - Decision variables of capacity expansion for generators")
