@@ -52,7 +52,7 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
 
         # Generator capacity factor and nameplate power capacity
-        capacity_factor = cf_lookup.get((g.site, s.name, t.name), 1)
+        capacity_factor = cf_lookup[(g.site, s.name, t.name)] if (g.site != "no_capacity_factor") else 1
         nameplate = (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW
 
         x = (g.cap_existing_power_MW * capacity_factor)
