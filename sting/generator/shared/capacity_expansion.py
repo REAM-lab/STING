@@ -52,7 +52,14 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
 
         # Generator capacity factor and nameplate power capacity
-        capacity_factor = cf_lookup.get((g.site, s.name, t.name), 1)
+        if g.site == 'no_capacity_factor' or g.site is None:
+            capacity_factor = 1
+        else:
+            capacity_factor = cf_lookup.get((g.site, s.name, t.name), None)
+            if capacity_factor is None:
+                logger.info(f"The site {g.site} for generator {g.name} does not have a corresponding capacity factor for scenario {s.name} and timepoint {t.name}. Check capacity_factors.csv")
+                raise ValueError(f"Check capacity_factors.csv")
+
         nameplate = (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW
 
         x = (g.cap_existing_power_MW * capacity_factor)
