@@ -47,16 +47,20 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     model.cCapGenNonVar = pyo.Constraint(expandable_gens, rule=lambda m, g: m.vCAP[g] <= (g.cap_max_power_MW - g.cap_existing_power_MW))
     logger.info(f"   Size: {len(model.cCapGenNonVar)} constraints")
 
-    logger.info(" - Constraints on dispatch based on capacity factors and existing/built capacity")
+    logger.info(" - Constraints on dispatch for non-variable generators (capacity factor of 1)")
+    gens_no_capacity_factor = [g for g in G if g.site == 'no_capacity_factor' or g.site is None]
+    model.cMaxDispatchNoCf = pyo.Constraint(gens_no_capacity_factor, S, T, rule=lambda m, g, s, t: m.vGEN[g, s, t] <= (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+    logger.info(f"   Size: {len(model.cMaxDispatchNoCf)} constraints")
+
+    logger.info(" - Constraints on dispatch for variable generators")
+    gens_with_capacity_factor = [g for g in G if g.site != 'no_capacity_factor' and g.site is not None]
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
+
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
 
         # Generator capacity factor and nameplate power capacity
-        if g.site == 'no_capacity_factor' or g.site is None:
-            capacity_factor = 1
-        else:
-            capacity_factor = cf_lookup.get((g.site, s.name, t.name), None)
-            if capacity_factor is None:
+        capacity_factor = cf_lookup.get((g.site, s.name, t.name), None)
+        if capacity_factor is None:
                 logger.info(f"The site {g.site} for generator {g.name} does not have a corresponding capacity factor for scenario {s.name} and timepoint {t.name}. Check capacity_factors.csv")
                 raise ValueError(f"Check capacity_factors.csv")
 
@@ -74,8 +78,8 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
 
         return scalefactor * m.vGEN[g, s, t] <= scalefactor * capacity_factor *  nameplate
 
-    model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
-    logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")
+    model.cMaxDispatchCf = pyo.Constraint(gens_with_capacity_factor, S, T, rule=max_dispatch_rule)
+    logger.info(f"   Size: {len(model.cMaxDispatchCf)} constraints")
 
     logger.info(" - Constraints on forced dispatch requirements specified for certain generators")
     forced_dispatch_gens = [g for g in G if g.forced_dispatch_MW is not None]

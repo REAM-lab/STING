@@ -102,7 +102,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     return sys
 
 
-def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None):
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
@@ -115,7 +115,7 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     system = System.from_csv(case_directory=case_directory)
     
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings)
+    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings, output_directory=output_directory)
     capex.solve()  
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 

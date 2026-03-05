@@ -45,9 +45,10 @@ class CapacityExpansion:
 
         logger.info("\n>> Starting capacity expansion...\n")
         self.set_settings()
+        self.set_output_folder()
         self.construct()
         self.inspect_coefficients()
-        self.set_output_folder()
+        
 
     def set_settings(self):
 
