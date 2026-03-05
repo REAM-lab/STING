@@ -24,6 +24,7 @@ import sting.generator.shared.capacity_expansion as generator
 import sting.storage.shared.capacity_expansion as storage
 import sting.policies.carbon_policies.capacity_expansion as carbon_policies
 import sting.policies.energy_budgets.capacity_expansion as energy_budgets
+import sting.policies.transmission_expansion_constraint.capacity_expansion as transmission_capacity
 
 
 # Set up logging
@@ -123,6 +124,7 @@ class CapacityExpansion:
         # Construct modules for policies, if any
         carbon_policies.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         energy_budgets.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
+        transmission_capacity.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
 
         # Define objective function
         logger.info("> Initializing construction of objective function ...")
@@ -206,6 +208,7 @@ class CapacityExpansion:
 
         carbon_policies.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         energy_budgets.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        transmission_capacity.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
     @timeit
     def inspect_coefficients(self):

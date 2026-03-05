@@ -32,6 +32,7 @@ from sting.shunt.parallel_rc import ShuntParallelRC
 from sting.timescales.core import Scenario, Timepoint, Timeseries
 from sting.policies.carbon_policies.core import CarbonPolicy
 from sting.policies.energy_budgets.core import EnergyBudget
+from sting.policies.transmission_expansion_constraint.core import TransmissionExpansionConstraint
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class System:
     scenarios: list[Scenario] = None
     energy_budgets: list[EnergyBudget] = None
     carbon_policies: list[CarbonPolicy] = None
+    transmission_expansion_constraints: list[TransmissionExpansionConstraint] = None
 
     def __post_init__(self):
 

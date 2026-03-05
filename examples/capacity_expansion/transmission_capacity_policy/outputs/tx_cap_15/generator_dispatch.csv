@@ -1,0 +1,16 @@
+generator,scenario,timepoint,dispatch_MW
+gas_1,sc1,tp_1,0.0
+gas_1,sc1,tp_2,0.0
+gas_1,sc1,tp_3,0.0
+gas_2,sc1,tp_1,0.0
+gas_2,sc1,tp_2,30.108153078203003
+gas_2,sc1,tp_3,15.108153078202955
+hydro_1,sc1,tp_1,317.8114478114479
+hydro_1,sc1,tp_2,238.3935304234805
+hydro_1,sc1,tp_3,138.3935304234806
+hydro_2,sc1,tp_1,97.87878787878782
+hydro_2,sc1,tp_2,400.0
+hydro_2,sc1,tp_3,400.0
+hydro_3,sc1,tp_1,24.309764309764336
+hydro_3,sc1,tp_2,54.89184692179701
+hydro_3,sc1,tp_3,49.89184692179702

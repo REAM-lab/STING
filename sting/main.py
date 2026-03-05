@@ -9,6 +9,7 @@ import time
 # Import sting code
 # ------------------
 from sting.system.core import System
+from sting.system.component import Component
 from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
@@ -102,7 +103,8 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     return sys
 
 
-def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None, log_filename: str = None):
+def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None, log_filename: str = None,
+              components_to_add: list[Component] = None):
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
@@ -113,6 +115,12 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
 
     # Load system from CSV files
     system = System.from_csv(case_directory=case_directory)
+
+    # Add any additional components to the system if specified (e.g., for policy scenarios). Useful for sensitivity analysis.
+    if components_to_add is not None:
+        for component in components_to_add:
+            system.add(component)
+        logger.info(f"> Added {len(components_to_add)} extra components to the system.")
     
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings, output_directory=output_directory)
