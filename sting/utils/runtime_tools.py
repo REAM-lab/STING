@@ -5,10 +5,12 @@ import time
 from typing import Callable
 import pathlib as Path
 
-def setup_logging_file(case_directory: str):
+def setup_logging_file(case_directory: str, filename: str = None) -> logging.FileHandler:
     """Setup file logging to the specified case directory."""
 
-    file_path = os.path.join(case_directory, "sting_log.txt")
+    if filename is None:
+        filename = "sting_log.txt"
+    file_path = os.path.join(case_directory, filename)
     Path.Path(file_path).touch(exist_ok=True) 
     file_handler = logging.FileHandler(file_path)
     file_handler.setLevel(logging.INFO)
