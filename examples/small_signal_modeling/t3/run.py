@@ -1,4 +1,4 @@
-# In progress - March 5, 2026 - Ruth !!!!!
+# In progress - March 5, 2026 - Ruth 
 
 # Import Python standard and third-party packages
 from pathlib import Path
@@ -19,7 +19,7 @@ def step2(t): # no perturbation
 
 # Specify inputs to excite - any constant input does not need to be specified 
 # NB: input is a perturbation from the nominal value 
-inputs = {'infinite_sources_0': {'v_ref_d': step2}, 
+inputs = {'infinite_sources_0': {'v_ref_d': step1}, 
           'gfmi_e_0': {'p_ref': step2, 
                        'q_ref': step2,
                        'v_ref': step2,
@@ -27,9 +27,10 @@ inputs = {'infinite_sources_0': {'v_ref_d': step2},
                        'v_s': step2, 
                        'Pload': step2}}
 
-t_max = 1.0
+t_max = 2.0
 
 _, ssm = main.run_ssm(case_directory=case_dir)
+
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)

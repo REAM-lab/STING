@@ -405,7 +405,6 @@ class GFMIe(Generator):
         v_lcl_sh_dq = v_lcl_sh_DQ * np.exp(-angle_ref * np.pi / 180 * 1j)
         
         # DC-side initial conditions 
-        
         v_dc = self.v_dc_ref
         duty_cycle = (v_dc - self.v_s)/v_dc 
         p_vsc = (v_vsc_dq*np.conjugate(i_vsc_dq)).real # power at converter terminals 
@@ -430,7 +429,7 @@ class GFMIe(Generator):
             v_ref=v_ref,
             angle_ref=angle_ref,
             v_vsc_d=v_vsc_dq.real,
-            v_vsc_q = v_vsc_dq.imag, # added 
+            v_vsc_q=v_vsc_dq.imag, # added 
             i_vsc_d=i_vsc_dq.real,
             i_vsc_q=i_vsc_dq.imag,
             i_bus_d=i_bus_dq.real,
@@ -475,6 +474,7 @@ class GFMIe(Generator):
          
         v_vsc_d = self.emt_init.v_vsc_d
 
+        # DC side 
         v_dc, i_dc, i_L, x1, x2, i_load, v_dc_f_L = self.emt_init.v_dc, self.emt_init.i_dc, self.emt_init.i_L, self.emt_init.x_1, self.emt_init.x_2, self.emt_init.i_load, self.emt_init.v_dc_f_L   
         
         x = DynamicalVariables(
@@ -517,24 +517,24 @@ class GFMIe(Generator):
         # Get input values (external inputs)
         p_ref, q_ref, v_ref, v_dc_ref, v_s, Pload, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value 
 
-        # convert relevant quantities to dq 
+        # convert relevant quantities to dq (ibr frame)
         v_sh_d, v_sh_q, _ = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle_pc) # for power controller 
         i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, angle_pc) # for power controller 
-
-        # Calculate DC-side current using current vsc voltage and current  
-        # need to calculate v_vsc_dq, because it is an algebraic state so is not available in our state vector 
         i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)
-        i_vsc_dq = i_vsc_d + 1j*i_vsc_q
-        v_sh_dq = v_sh_d + 1j*v_sh_q 
-        v_vsc_dq = v_sh_dq + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_dq
+
+        # # # Calculate DC-side current using current vsc voltage and current  
+        # # # need to calculate v_vsc_dq, because it is an algebraic state so is not available in our state vector 
+        
+        # i_vsc_dq = i_vsc_d + 1j*i_vsc_q
+        # v_sh_dq = v_sh_d + 1j*v_sh_q 
+        # v_vsc_dq = v_sh_dq + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_dq
         
 
         # Do Q-V droop 
-        v_sh_mag = (v_sh_d**2+v_sh_q**2)**0.5 # current voltage mag 
         v_sh_mag_ref = v_ref - self.droop_q_pu*(q_pc - q_ref) # droop on error from ref 
         
         # NB updating algebraic states!
-        v_vsc_d = gamma + self.kp_vc_pu*(v_sh_mag_ref - v_sh_mag) # update 
+        v_vsc_d = gamma + self.kp_vc_pu*(v_sh_mag_ref - (v_sh_d**2 + v_sh_q**2)**0.5) # update 
         v_vsc_q = 0.0 # update 
         
         # convert to abc to feed into filter dynamics 
@@ -542,7 +542,6 @@ class GFMIe(Generator):
         
         # Load control - updating algebraic states!
         i_load = Pload/v_dc_f_L
-        
         i_dc = (v_vsc_d*i_vsc_d + v_vsc_q*i_vsc_q)/v_dc
         
         
@@ -614,24 +613,24 @@ class GFMIe(Generator):
             wb = self.wbase
             r1 = rf1 
             r2 = rf2 
-            l1 = xf1/wb #todo check 
-            l2 = xf2/wb
+            x1 = xf1 
+            x2 = xf2 
 
             # Inputs 
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c = internal_inputs
 
             # Define ODEs that describe the dynamics of the LCL filter
-            di_vsc_a = wb/l1 *(v_vsc_a - v_sh_a - r1 * i_vsc_a)
-            di_vsc_b = wb/l1 *(v_vsc_b - v_sh_b - r1 * i_vsc_b)
-            di_vsc_c = wb/l1 *(v_vsc_c - v_sh_c - r1 * i_vsc_c)
+            di_vsc_a = wb/x1 *(v_vsc_a - v_sh_a - r1 * i_vsc_a)
+            di_vsc_b = wb/x1 *(v_vsc_b - v_sh_b - r1 * i_vsc_b)
+            di_vsc_c = wb/x1 *(v_vsc_c - v_sh_c - r1 * i_vsc_c)
 
             dv_sh_a = wb/csh * (-v_sh_a/rsh + i_vsc_a - i_bus_a)
             dv_sh_b = wb/csh * (-v_sh_b/rsh + i_vsc_b - i_bus_b)
             dv_sh_c = wb/csh * (-v_sh_c/rsh + i_vsc_c - i_bus_c)
 
-            di_bus_a = wb/l2 *(v_sh_a - v_bus_a - r2 * i_bus_a)
-            di_bus_b = wb/l2 *(v_sh_b - v_bus_b - r2 * i_bus_b)
-            di_bus_c = wb/l2 *(v_sh_c - v_bus_c - r2 * i_bus_c)
+            di_bus_a = wb/x2 *(v_sh_a - v_bus_a - r2 * i_bus_a)
+            di_bus_b = wb/x2 *(v_sh_b - v_bus_b - r2 * i_bus_b)
+            di_bus_c = wb/x2 *(v_sh_c - v_bus_c - r2 * i_bus_c)
 
             return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
         
@@ -669,6 +668,7 @@ class GFMIe(Generator):
             d_v_dc_f_L = (1/Tvdc_load)*(v_dc - v_dc_f_L)
             
             return [d_i_Lf, d_v_dcf, d_i_dcf, d_i_load_f, d_x_1, d_x_2, d_i_L, d_v_dc, d_v_dc_f_L]
+            #return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 
         dy_pc = power_controller_dynamics([angle_pc, w_pc, p_pc, q_pc], [v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref])
@@ -691,7 +691,6 @@ class GFMIe(Generator):
         angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, v_dc_f_L = self.variables_emt.x.value 
         
         tps = self.variables_emt.x.time
-        p_ref, q_ref, v_ref, v_dc_ref, v_s, Pload, v_bus_a, v_bus_b, v_bus_c, = self.variables_emt.u.value
         
         # Transform abc to dq0
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)])
@@ -699,7 +698,7 @@ class GFMIe(Generator):
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle_pc)])
         
         fig = make_subplots(
-            rows=7, cols=2,
+            rows=10, cols=2,
             horizontal_spacing=0.15,
             vertical_spacing=0.05,
         )
@@ -768,6 +767,38 @@ class GFMIe(Generator):
                     row=7, col=2)
         fig.update_xaxes(title_text='Time [s]', row=7, col=2)
         fig.update_yaxes(title_text='i_L [p.u.]', row=7, col=2)
+        
+        
+        fig.add_trace(go.Scatter(x=tps, y=v_dcf, mode='lines', line=dict(color='red', dash='solid')),
+                    row=8, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=8, col=1)
+        fig.update_yaxes(title_text='v_dcf [p.u.]', row=8, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_Lf, mode='lines', line=dict(color='red', dash='solid')),
+                    row=8, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=8, col=2)
+        fig.update_yaxes(title_text='i_Lf [p.u.]', row=8, col=2)
+        
+        
+        fig.add_trace(go.Scatter(x=tps, y=i_dcf, mode='lines', line=dict(color='red', dash='solid')),
+                    row=9, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=9, col=1)
+        fig.update_yaxes(title_text='i_dcf [p.u.]', row=9, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=x1, mode='lines', line=dict(color='red', dash='solid')),
+                    row=9, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=9, col=2)
+        fig.update_yaxes(title_text='x1 [p.u.]', row=9, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=x2, mode='lines', line=dict(color='red', dash='solid')),
+                    row=10, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=10, col=1)
+        fig.update_yaxes(title_text='x2 [p.u.]', row=10, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_dc_f_L, mode='lines', line=dict(color='red', dash='solid')),
+                    row=10, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=10, col=2)
+        fig.update_yaxes(title_text='v_dc_f_L [p.u.]', row=10, col=2)
 
         name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
