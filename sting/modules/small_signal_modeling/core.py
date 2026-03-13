@@ -295,4 +295,5 @@ class SmallSignalModel:
         """Execute a method of all SSM components."""
         for c in self.components:
             component = getattr(self.system, c.type)[c.id]
-            getattr(component, method)(*args) 
+            if hasattr(component, method):
+                getattr(component, method)(*args) 

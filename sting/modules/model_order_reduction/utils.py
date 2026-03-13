@@ -27,3 +27,10 @@ def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     ss_r = StateSpaceModel(A=A_r, B=B_r, C=C_r, D=D_r)
 
     return ss_r
+
+#@dataclass
+class Grammian:
+    pass
+
+    # For each component, if it has a grammian compute it
+    # If there's a system level grammian 
