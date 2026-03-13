@@ -20,9 +20,9 @@ def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
 
     # Substituting QSS model into slow dynamics
     A_r = A[0,0] - A[0,1]@invA_11@A[1,0]
-    B_r = B[0] - A[0,1]@invA_11@B[1]
-    C_r = C[0] - C[1]@invA_11@A[1,0]
-    D_r = ss.D - C[1]@invA_11@B[1]
+    B_r = B[0,0] - A[0,1]@invA_11@B[1,0]
+    C_r = C[0,0] - C[0,1]@invA_11@A[1,0]
+    D_r = ss.D - C[0,1]@invA_11@B[1,0]
 
     ss_r = StateSpaceModel(A=A_r, B=B_r, C=C_r, D=D_r)
 

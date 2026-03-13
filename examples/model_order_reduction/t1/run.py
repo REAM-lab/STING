@@ -37,6 +37,9 @@ from pathlib import Path
 # Import sting package
 from sting import main
 from sting.system.core import System
+from sting.modules.model_order_reduction.core import SingularPerturbation, LinearSystem
+
+import os
 
 # Specify path of the case study directory
 case_dir = Path(__file__).resolve().parent
@@ -44,6 +47,44 @@ case_dir = Path(__file__).resolve().parent
 # Construct system and small-signal model
 sys = System.from_csv(case_directory=case_dir)
 
-main.run_mor(case_directory=case_dir)
+ssm, zone_ssm = main.run_mor_setup(case_directory=case_dir)
+
+fom = LinearSystem(state_space=zone_ssm.system.linear_roms[0].ssm)
+
+modal_reduction = SingularPerturbation(r=4, reduction_basis="eigen")
+
+rom = modal_reduction.reduce(fom)
+
+# Validate that we removed the correct eigenvalues
+ax = fom.state_space.plot_eigenvalues(marker="o", label="FOM")
+ax = rom.plot_eigenvalues(ax=ax, marker="^", label="ROM")
+ax.set_xscale("symlog")
+ax.legend()
+import pylab as plt
+plt.savefig(os.path.join(case_dir, "outputs", "eigenvalues.pdf"))
+
+# Replace the linear ROM in the system (check the sigma plots)
+from control import singular_values_plot
+
+from sting.reduced_order_model.linear_rom import LinearROM
+zone_ssm.system.linear_roms[0] = LinearROM(ssm=rom)
+
+#r_ssm = .construct_system_ssm()
+
+
+# State-space model for each component
+models = zone_ssm.get_component_attribute("ssm")
+     
+from sting.utils.dynamical_systems import StateSpaceModel
+# Then interconnect models
+r_sys = StateSpaceModel.from_interconnected(models, zone_ssm.ccm_matrices, u=None, y=None)
+
+
+
+singular_values_plot(ssm.model.to_python_control(), label="FOM", omega=[1e1, 1e4])
+
+singular_values_plot(r_sys.to_python_control(), label="ROM", color="r", ls="--", omega=[1e1, 1e4])
+#plt.ylim(1, 3)
+plt.savefig(os.path.join(case_dir, "outputs", "sigmaplot.pdf"))
 
 print('ok')

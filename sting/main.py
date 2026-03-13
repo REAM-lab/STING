@@ -281,5 +281,15 @@ def run_mor_setup(case_directory = os.getcwd(), model_settings=None, solver_sett
         filepath=os.path.join(output_dir, "zonal_small_signal_model"))
     zonal_ssm.write_csv_ccm_matrices(
         output_dir=os.path.join(output_dir, "zonal_component_connection_matrices"))
+    
+    from control import singular_values_plot
+    import pylab as plt
+    import matplotlib
+    matplotlib.use('Agg')
+
+    # Check the system singular values
+    singular_values_plot(ssm.model.to_python_control(), color="C0", ls="-", label="Original", omega=[1e-2, 1e5])
+    singular_values_plot(zonal_ssm.model.to_python_control(), color="C1", ls="--", label="Zonal", omega=[1e-2, 1e5])
+    plt.savefig(os.path.join(output_dir, "sigmaplot.pdf"))
 
     return ssm, zonal_ssm

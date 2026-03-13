@@ -32,11 +32,11 @@ class SingularPerturbation:
                 ss = sys.state_space
 
         # Compute the ROM
-        ss_r = singular_perturbation(sys=ss, r=self.r)
+        ss_r = singular_perturbation(ss=ss, r=self.r)
         
         return ss_r
         
-    def _to_eigenbasis(ss:StateSpaceModel) -> StateSpaceModel:
+    def _to_eigenbasis(self, ss:StateSpaceModel) -> StateSpaceModel:
         """
         Perform a similarity transform to convert a linear state-space
         into it's modal basis. 
@@ -56,7 +56,7 @@ class SingularPerturbation:
         # Construct transform T such that J = invT * A * T yields the
         # *real* Jordan form of A
         i = 0
-        while i <= n:
+        while i < n:
             # Split complex eigenvalues into real components
             if d[i].imag != 0:
                 T[:, i] = T[:, i].real
@@ -65,7 +65,9 @@ class SingularPerturbation:
             else:
                 i = i + 1
 
-        return ss.coordinate_transform(invT=T, T=solve(T, np.eye(n)))
+        T = T.real
+
+        return ss.coordinate_transform(T=T, invT=solve(T, np.eye(n)))
     
 @dataclass(slots=True)
 class BalancedTruncation:
