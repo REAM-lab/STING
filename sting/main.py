@@ -19,6 +19,7 @@ from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
 from sting.utils.dynamical_systems import StateSpaceModel
+from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
@@ -249,7 +250,7 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
 
 
 def run_model_reduction(
-        reductions:dict,
+        reductions:dict[str, Reducer],
         case_directory=os.getcwd(), 
         model_settings=None, 
         solver_settings=None,
@@ -268,25 +269,28 @@ def run_model_reduction(
     # Construct the full-order small-signal model
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
-    fom = SmallSignalModel(system=sys) # full-order model (FOM)
-    fom.construct_system_ssm(write_csv=True)
+    ssm = SmallSignalModel(system=sys)
+    # Interconnect all components in the same zone
+    ssm = ssm.group_by("zone").interconnect(reductions)
 
+    # Construct a state-space model of the full-order model (FOM)
+    models = ssm.get_component_attribute("ssm")
+    fom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_full_order"))
+    ssm.model = fom
 
-    # Interconnect all components in the same zone 
-    rom = GroupBy(fom, by="zone").interconnect(reductions=reductions) # reduced-order model (ROM)
-    rom.output_directory = os.path.join(case_directory, "outputs", "rom_small_signal_model")
+    # Perform any system-level operations required by each reduction method
+    for reducer in reductions.values():
+        for operation in reducer.system_operations:
+            operation(ssm)
+
+    # Construct all ROMs
+    ssm.apply("_construct_rom")
+
+    # Switch to using the reduced-order model(s) and create a reduced-order model (ROM)
+    ssm.apply("set_using", to="reduced_order_model")
+    models = ssm.get_component_attribute("ssm")
+    rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_reduced_order"))
     
-    # Scan reductions to see if we need to compute any system level grams
-    # TODO: Something like this Gramians(system=zone_ssm)
-    
-    # Construct all reduced-order models
-    rom.apply("_construct_rom")
-
-    # Construct system-level model
-    models = rom.get_component_attribute("ssm")
-    rom.model = StateSpaceModel.from_interconnected(models, rom.ccm_matrices, u=None, y=None)
-    rom.model.to_csv(rom.output_directory)
-    output_dir = os.path.join(rom.output_directory, os.pardir,"rom_component_connection_matrices")
-    rom.write_csv_ccm_matrices(output_dir)
-
-    return fom, rom
+    return ssm, fom, rom

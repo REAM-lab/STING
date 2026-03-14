@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
-class GroupBy:
+class SmallSignalModelGroupBy:
     """Class to perform operations on small-signal models, such as grouping by zones"""
 
     model: SmallSignalModel

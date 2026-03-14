@@ -1,7 +1,12 @@
 import numpy as np
-from scipy.linalg import solve
+from scipy.linalg import solve, eig
+from typing import Literal
+from dataclasses import dataclass, field
+from control import gram, StateSpace
+from warnings import warn
 
 from sting.utils.dynamical_systems import StateSpaceModel
+from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.utils.matrix_tools import mat2cell
 
 def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
@@ -29,8 +34,89 @@ def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     return ss_r
 
 #@dataclass
+@dataclass(slots=True)
 class Grammian:
-    pass
+    # TODO: I think this should be like an ACOPF solution class
+    # Look at other models to implement
+    state_space: StateSpace = None
 
-    # For each component, if it has a grammian compute it
-    # If there's a system level grammian 
+    type: Literal["controllability", "observability"]
+    subsystem: np.ndarray = None
+    lyapunov: np.ndarray = None
+    # structured: Not implemented
+    # riccati: Not implemented
+
+    def __getitem__(self, key):
+        assert (key in {"subsystem", "lyapunov"})
+        W = getattr(self, key)
+
+        if (W is None) and (key == "subsystem"):
+            W = gram(self.state_space, self.type[0])
+            self.subsystem = W
+        
+        return W
+    
+
+@dataclass(slots=True)
+class BlockGramian:
+    method: Literal["lyapunov", "structured"]
+    type: Literal["controllability", "observability"]
+
+    def compute(self, ssm:SmallSignalModel):
+
+        # Compute a gramian using the specified method
+        W = getattr(self, "_"+self.method)(ssm)
+        
+        # If W is NOT positive definite AND the smallest eigenvalue is 10^12
+        # times smaller than the largest introduce a regularization term to W.
+        eigenvalues = eig(W)
+        min_ev = -min(eigenvalues)
+        max_ev = max(eigenvalues)
+        if (max_ev/min_ev >= 1e12) and (max_ev > 0):
+            W = W + 2*min_ev*np.eye(W.size[0])
+
+        # Pass the gramian solution to each of the components
+        #TODO: X = block_index(X, sys_order);
+
+    def _lyapunov(self, ssm:SmallSignalModel) -> np.ndarray:
+         # Compute the Gramian of the *system-level* state-space model
+        sys = ssm.model.to_python_control()
+        W = gram(sys=sys, type=self.type[0])
+        return W
+
+    def _structured(self, ssm:SmallSignalModel) -> np.ndarray:
+        """
+        TODO: Implement this LMI
+
+        [A,B,C,D] = ssdata(sys_c);
+
+        % If using observability gramian create the dual system
+        if type == 'o'
+            temp = {A', C', B'};
+            [A, B, C] = temp{:};
+        end
+
+        % Build a block diagonal sdpvar
+        X = cell(1, size(conponentModel));
+        for k=1:size(conponentModel)
+            X{k} = sdpvar(sys_order(k), sys_order(k), ...
+                'symmetric');
+        end
+        X = blkdiag(X{:});
+
+        % Minimize Trace(P) s.t. Lyapunov equation
+        LMI = [X >= 0, A'*X+X*A + B*B' <= 0];
+        % Assumes MOSEK optimizer is installed
+        opt = sdpsettings('verbose', 1, 'solver', 'mosek');
+        sol = optimize(LMI, [], opt);
+
+        if sol.problem > 0
+            error("Solver failed with value %g. " + ...
+                "\n1 - The LMI is infeasible." + ...
+                "\n2 - The LMI is unbounded.", sol.problem)
+        end
+
+        X = value(X);
+        """
+        pass
+
