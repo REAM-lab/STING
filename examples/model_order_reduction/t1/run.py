@@ -49,35 +49,38 @@ reductions = {
     "zone_1":  SingularPerturbation(r=4, basis="eigen")
 }
 
-ssm, fom, rom_mr = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+ssm, fom, open_mr = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
 
 
 reductions = {
-    "zone_1":  BalancedTruncation(r=4, gramian_c="subsystem", gramian_o="subsystem", method="truncate")
+    "zone_1":  BalancedTruncation(r=4, gramian_c="subsystem", gramian_o="subsystem", method="singular perturbation")
 }
+_, _, open_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
 
-_, _, rom_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
-
-
+reductions = {
+    "zone_1":  BalancedTruncation(r=4, gramian_c="lyapunov", gramian_o="lyapunov", method="singular perturbation")
+}
+_, _, closed_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
 
 red = "#BB5566"
 yellow = "#DDAA33"
 dark_blue = "#004488"
 light_blue = "#6699CC"
 
-# Compare the eigenvalues of the FOM and ROM
+# Compare the eigenvalues of the FOM and ROMs
 ax = fom.plot_eigenvalues(marker="x", label="Full-order model", color="gray")
-ax = rom_mr.plot_eigenvalues(ax=ax, marker="^", label="Modal Reduction", color=red)
-ax = rom_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction", color=light_blue)
+ax = open_mr.plot_eigenvalues(ax=ax, marker="^", label="Modal Reduction", color=red)
+ax = open_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (open)", color=light_blue)
+ax = closed_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (closed)", color=dark_blue)
 ax.set_xscale("symlog")
 ax.legend()
-
 plt.savefig(os.path.join(case_dir, "outputs", "eigenvalues.pdf"))
 
-# Compare the sigmaplots of the FOM and ROM
+# Compare the sigmaplots of the FOM and ROMs
 singular_values_plot(fom.to_python_control(), label="Full-order model", color="gray", omega=[1e1, 1e4])
-singular_values_plot(rom_mr.to_python_control(), label="Modal Reduction", color=red, ls="--", omega=[1e1, 1e4])
-singular_values_plot(rom_br.to_python_control(), label="Balanced Reduction", color=light_blue, ls="--", omega=[1e1, 1e4])
+singular_values_plot(open_mr.to_python_control(), label="Modal Reduction", color=red, ls="-.", omega=[1e1, 1e4])
+singular_values_plot(open_br.to_python_control(), label="Balanced Reduction (open)", color=light_blue, ls="--", omega=[1e1, 1e4])
+singular_values_plot(closed_br.to_python_control(), label="Balanced Reduction (closed)", color=dark_blue, ls="--", omega=[1e1, 1e4])
 plt.ylim(1e-1, 1e2)
 plt.savefig(os.path.join(case_dir, "outputs", "sigmaplot.pdf"))
 

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import solve, eig
+from scipy.linalg import solve, eigvals
 from typing import Literal
 from dataclasses import dataclass, field
 from control import gram
@@ -47,7 +47,7 @@ class BlockGramian:
         
         # If W is NOT positive definite AND the smallest eigenvalue is 10^12
         # times smaller than the largest introduce a regularization term to W.
-        eigenvalues = eig(W)
+        eigenvalues = eigvals(W)
         min_ev = -min(eigenvalues)
         max_ev = max(eigenvalues)
         if (max_ev/min_ev >= 1e12) and (max_ev > 0):
@@ -59,7 +59,7 @@ class BlockGramian:
         # Assign block elements in W it each component
         for c in ssm.components:
             component = getattr(ssm.system, c.type)[c.id]
-            n = component.ssm.A.size[0]
+            n = component.ssm.A.shape[0]
             stop += n
 
             if hasattr(component, "W_"+self.type[0]):

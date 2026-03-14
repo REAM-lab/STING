@@ -14,6 +14,7 @@ from sting.utils.dynamical_systems import StateSpaceModel
 from sting.modules.model_order_reduction.utils import singular_perturbation
 from sting.reduced_order_model.linear_rom import LinearROM
 from sting.modules.model_order_reduction.core import Reducer
+from sting.modules.model_order_reduction.utils import BlockGramian
 
 @dataclass(slots=True)
 class SingularPerturbation(Reducer):
@@ -92,8 +93,14 @@ class BalancedTruncation(Reducer):
     gramian_o: Literal["subsystem", "lyapunov", "structured", "riccati"] = "lyapunov"
 
     def __post_init__(self):
-        # TODO: set block gramian reduction
-        self.system_operations = []
+
+        if self.gramian_c in {"lyapunov", "structured"}:
+            gramian_operator= BlockGramian(method=self.gramian_c, type="controllability")
+            self.system_operations.append(gramian_operator)
+        
+        if self.gramian_o in {"lyapunov", "structured"}:
+            gramian_operator= BlockGramian(method=self.gramian_o, type="observability")
+            self.system_operations.append(gramian_operator)
 
     def reduce(self, sys:LinearROM):
         

@@ -281,7 +281,7 @@ def run_model_reduction(
     # Perform any system-level operations required by each reduction method
     for reducer in reductions.values():
         for operation in reducer.system_operations:
-            operation(ssm)
+            operation.solve(ssm)
 
     # Construct all ROMs
     ssm.apply("_construct_rom")
