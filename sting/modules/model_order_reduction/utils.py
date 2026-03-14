@@ -2,12 +2,13 @@ import numpy as np
 from scipy.linalg import solve, eig
 from typing import Literal
 from dataclasses import dataclass, field
-from control import gram, StateSpace
+from control import gram
 from warnings import warn
 
 from sting.utils.dynamical_systems import StateSpaceModel
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.utils.matrix_tools import mat2cell
+from sting.system.component import Component
 
 def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     """
@@ -32,29 +33,6 @@ def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     ss_r = StateSpaceModel(A=A_r, B=B_r, C=C_r, D=D_r)
 
     return ss_r
-
-#@dataclass
-@dataclass(slots=True)
-class Grammian:
-    # TODO: I think this should be like an ACOPF solution class
-    # Look at other models to implement
-    state_space: StateSpace = None
-
-    type: Literal["controllability", "observability"]
-    subsystem: np.ndarray = None
-    lyapunov: np.ndarray = None
-    # structured: Not implemented
-    # riccati: Not implemented
-
-    def __getitem__(self, key):
-        assert (key in {"subsystem", "lyapunov"})
-        W = getattr(self, key)
-
-        if (W is None) and (key == "subsystem"):
-            W = gram(self.state_space, self.type[0])
-            self.subsystem = W
-        
-        return W
     
 
 @dataclass(slots=True)
@@ -62,7 +40,7 @@ class BlockGramian:
     method: Literal["lyapunov", "structured"]
     type: Literal["controllability", "observability"]
 
-    def compute(self, ssm:SmallSignalModel):
+    def solve(self, ssm:SmallSignalModel):
 
         # Compute a gramian using the specified method
         W = getattr(self, "_"+self.method)(ssm)
@@ -75,8 +53,21 @@ class BlockGramian:
         if (max_ev/min_ev >= 1e12) and (max_ev > 0):
             W = W + 2*min_ev*np.eye(W.size[0])
 
-        # Pass the gramian solution to each of the components
-        #TODO: X = block_index(X, sys_order);
+        
+        start, stop = 0, 0
+
+        # Assign block elements in W it each component
+        for c in ssm.components:
+            component = getattr(ssm.system, c.type)[c.id]
+            n = component.ssm.A.size[0]
+            stop += n
+
+            if hasattr(component, "W_"+self.type[0]):
+                W_i = W[start:stop, start:stop]
+                gramian = getattr(component, "W_"+self.type[0])
+                setattr(gramian, self.method, W_i)
+
+            start += n
 
     def _lyapunov(self, ssm:SmallSignalModel) -> np.ndarray:
          # Compute the Gramian of the *system-level* state-space model

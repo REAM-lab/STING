@@ -97,16 +97,8 @@ class BalancedTruncation(Reducer):
 
     def reduce(self, sys:LinearROM):
         
-        if (self.gramian_c == "subsystem") and (sys.W_c.subsystem is None):
-            ss = sys.full_order_model.to_python_control()
-            sys.W_c.subsystem = gram(ss, "c")
-
-        if (self.gramian_o == "subsystem") and (sys.W_o.subsystem is None):
-            ss = sys.full_order_model.to_python_control()
-            sys.W_o.subsystem = gram(ss, "o")
-
-        R = cholesky(sys.W_c, lower=True)
-        L = cholesky(sys.W_o, lower=False)
+        R = cholesky(sys.W_c[self.gramian_c], lower=True)
+        L = cholesky(sys.W_o[self.gramian_o], lower=False)
 
         U, sigma, Vh = svd(L @ R)
         V = Vh.T
@@ -115,7 +107,7 @@ class BalancedTruncation(Reducer):
             case "truncate":
                 U_r = U[:, :self.r]
                 S_r = np.diag(sigma[:self.r]**(-0.5))
-                V_r = V[:, self.r]
+                V_r = V[:, :self.r]
 
                 # Reduced similarity transformation matrices (T_r is not square)
                 T = R @ V_r @ S_r

@@ -14,7 +14,6 @@ from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
-from sting.modules.small_signal_modeling.operations import GroupBy
 from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
@@ -288,7 +287,7 @@ def run_model_reduction(
     ssm.apply("_construct_rom")
 
     # Switch to using the reduced-order model(s) and create a reduced-order model (ROM)
-    ssm.apply("set_using", to="reduced_order_model")
+    ssm.apply("set_using", "reduced_order_model")
     models = ssm.get_component_attribute("ssm")
     rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
     fom.to_csv(os.path.join(case_directory, "outputs", "ssm_reduced_order"))

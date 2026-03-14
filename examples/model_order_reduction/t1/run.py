@@ -38,7 +38,7 @@ from control import singular_values_plot
 
 # Import sting package
 from sting import main
-from sting.modules.model_order_reduction.core import SingularPerturbation
+from sting.modules.model_order_reduction.reductions import SingularPerturbation, BalancedTruncation
 
 import os
 
@@ -49,21 +49,36 @@ reductions = {
     "zone_1":  SingularPerturbation(r=4, basis="eigen")
 }
 
-fom, rom = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+ssm, fom, rom_mr = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
 
+
+reductions = {
+    "zone_1":  BalancedTruncation(r=4, gramian_c="subsystem", gramian_o="subsystem", method="truncate")
+}
+
+_, _, rom_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
+
+
+red = "#BB5566"
+yellow = "#DDAA33"
+dark_blue = "#004488"
+light_blue = "#6699CC"
 
 # Compare the eigenvalues of the FOM and ROM
-ax = fom.model.plot_eigenvalues(marker="o", label="FOM")
-ax = rom.model.plot_eigenvalues(ax=ax, marker="^", label="ROM", color="r")
+ax = fom.plot_eigenvalues(marker="x", label="Full-order model", color="gray")
+ax = rom_mr.plot_eigenvalues(ax=ax, marker="^", label="Modal Reduction", color=red)
+ax = rom_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction", color=light_blue)
 ax.set_xscale("symlog")
 ax.legend()
 
 plt.savefig(os.path.join(case_dir, "outputs", "eigenvalues.pdf"))
 
 # Compare the sigmaplots of the FOM and ROM
-singular_values_plot(fom.model.to_python_control(), label="FOM", omega=[1e1, 1e4])
-singular_values_plot(rom.model.to_python_control(), label="ROM", color="r", ls="--", omega=[1e1, 1e4])
-
+singular_values_plot(fom.to_python_control(), label="Full-order model", color="gray", omega=[1e1, 1e4])
+singular_values_plot(rom_mr.to_python_control(), label="Modal Reduction", color=red, ls="--", omega=[1e1, 1e4])
+singular_values_plot(rom_br.to_python_control(), label="Balanced Reduction", color=light_blue, ls="--", omega=[1e1, 1e4])
+plt.ylim(1e-1, 1e2)
 plt.savefig(os.path.join(case_dir, "outputs", "sigmaplot.pdf"))
 
 print('ok')
