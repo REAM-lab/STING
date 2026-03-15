@@ -3,7 +3,8 @@
 # ----------------------
 from typing import Literal
 from dataclasses import dataclass
-from control import gram
+from pymor.reductors.h2 import IRKAReductor
+from pymor.models.iosys import LTIModel
 
 from scipy.linalg import eig, solve, cholesky, svd
 import numpy as np
@@ -138,5 +139,12 @@ class BalancedTruncation(Reducer):
         sys.T_r = T
         sys.reduced_order_model = sys_r
 
-class IRKA:
-    pass
+@dataclass(slots=True)
+class IRKA(Reducer):
+    r: int 
+
+    def reduce(self, sys:LinearROM):
+        irka = IRKAReductor(fom=sys.full_order_model.to_pymor())
+        rom = irka.reduce(self.r)
+        A,B,C,D,_ = rom.to_matrices()
+        sys.reduced_order_model = StateSpaceModel(A,B,C,D)

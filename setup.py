@@ -33,6 +33,7 @@ setup(
         "plotly",
         "pyomo",
         "networkx",
-        "control"
+        "control",
+        "pymor"
     ],
 )

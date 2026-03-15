@@ -38,7 +38,7 @@ from control import singular_values_plot
 
 # Import sting package
 from sting import main
-from sting.modules.model_order_reduction.reductions import SingularPerturbation, BalancedTruncation
+from sting.modules.model_order_reduction.reductions import SingularPerturbation, BalancedTruncation, IRKA
 
 import os
 
@@ -62,6 +62,12 @@ reductions = {
 }
 _, _, closed_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
 
+
+reductions = {
+    "zone_1":  IRKA(r=4)
+}
+_, _, open_ki = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
 red = "#BB5566"
 yellow = "#DDAA33"
 dark_blue = "#004488"
@@ -72,15 +78,18 @@ ax = fom.plot_eigenvalues(marker="x", label="Full-order model", color="gray")
 ax = open_mr.plot_eigenvalues(ax=ax, marker="^", label="Modal Reduction", color=red)
 ax = open_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (open)", color=light_blue)
 ax = closed_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (closed)", color=dark_blue)
+ax = open_ki.plot_eigenvalues(ax=ax, marker="s", label="IRKA", color=yellow)
 ax.set_xscale("symlog")
 ax.legend()
 plt.savefig(os.path.join(case_dir, "outputs", "eigenvalues.pdf"))
 
 # Compare the sigmaplots of the FOM and ROMs
 singular_values_plot(fom.to_python_control(), label="Full-order model", color="gray", omega=[1e1, 1e4])
-singular_values_plot(open_mr.to_python_control(), label="Modal Reduction", color=red, ls="-.", omega=[1e1, 1e4])
+singular_values_plot(open_mr.to_python_control(), label="Modal Reduction", color=red, ls=":", omega=[1e1, 1e4])
 singular_values_plot(open_br.to_python_control(), label="Balanced Reduction (open)", color=light_blue, ls="--", omega=[1e1, 1e4])
 singular_values_plot(closed_br.to_python_control(), label="Balanced Reduction (closed)", color=dark_blue, ls="--", omega=[1e1, 1e4])
+singular_values_plot(open_ki.to_python_control(), label="IRKA", color=yellow, ls="-.", omega=[1e1, 1e4])
+
 plt.ylim(1e-1, 1e2)
 plt.savefig(os.path.join(case_dir, "outputs", "sigmaplot.pdf"))
 

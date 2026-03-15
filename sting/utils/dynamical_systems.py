@@ -10,6 +10,7 @@ from more_itertools import transpose
 from scipy.linalg import eigvals, block_diag
 from scipy.integrate import solve_ivp
 from control import ss
+from pymor.models.iosys import LTIModel
 
 import pylab as plt
 import matplotlib
@@ -492,4 +493,7 @@ class StateSpaceModel:
     def to_python_control(self):
         """Returns a python-controls state-space model"""
         return ss(self.A, self.B, self.C, self.D)
+    
+    def to_pymor(self):
+        return LTIModel.from_matrices(A=self.A, B=self.B, C=self.C, D=self.D)
           
