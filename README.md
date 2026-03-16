@@ -24,21 +24,25 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
     (.venv)$ pip install -e .  
     ```
 
-2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for differents modules. Find the file run.py and execute it.
+2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for different modules. Find the file `run.py` and execute it.
 
-## Requirements
+### Solvers
 
-Most of modules require solvers to solve optimization models, even small-signal modeling requires a solver to solve optimal power flow. Make sure you have a solver installed in your
-computer. Here, we show a list of solvers we have used:
+Most of modules require commercial or open-source solvers to run various optimization models. Even small-signal modeling requires a solver to run optimal power flow. Make sure you have a solver installed in your computer. We are currently offering support for the following solvers:
 
-- Ipopt
-- Gurobi
-- Mosek 
+| Solver | How to install      | Use                |
+|--------|---------------------|--------------------|
+| IPOPT  | `pip install ipopt` | AC OPF             |
+| Gurobi | `pip install ipopt` | Capacity expansion |
+| MOSEK  | `pip install mosek` | Capacity expansion |
 
-## EMT simulation with SPS (Deprecated)
+### SLICOT
 
-Currently, we are offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. The idea is to replace these EMT models with pure Python scripts for EMT simulation.
-We are working on it. Make sure that you have MATLAB R2025a.
+Some of our model reduction algorithms use the `slycot` python wrapper for FORTRAN SLICOT routines. Please refer to the `slycot` documentation for full installation instructions
+#### OSX 
+For Mac users your can build `slycot` with support from brew. Run `brew install gcc` and then add `slycot` in your virtual environment with pip, `pip install slycot`.
 
-1. **Open SPS library**: Go to the folder sps_library. Open the library, and make sure that it is open
-while you are running EMT simulation with our testcases.
+
+> [!IMPORTANT]
+> **EMT simulation with SPS (Deprecated)**: We are currently offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. Unfortunately [MATLAB has dropped support for the SPS library](https://www.mathworks.com/matlabcentral/answers/2180147-unable-to-find-the-specialized-power-systems-group-in-simscape-electrical-in-newer-version-r2025b) in versions after 2025a. As such, we are actively working to replace these EMT models with pure Python scripts for EMT simulation.
+>1. **Open SPS library**: Make sure that you have MATLAB R2025a. Go to the folder `sps_library`. Open the library, and make sure that it is open while you are running EMT simulation with our testcases.

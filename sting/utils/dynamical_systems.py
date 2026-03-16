@@ -1,18 +1,24 @@
 # ---------------------------------------
 # Import standard and third-party packages
 # ----------------------------------------
-
-import logging
-from matplotlib.pyplot import plot
-import numpy as np
 import os
+from dataclasses import dataclass
+import logging
+import numpy as np
+import polars as pl
 from more_itertools import transpose
 from scipy.linalg import eigvals, block_diag
 from scipy.integrate import solve_ivp
-from dataclasses import dataclass
-import polars as pl
-import plotly.graph_objects as go
+from control import ss
+from pymor.models.iosys import LTIModel
+
+import pylab as plt
+import matplotlib
+matplotlib.use("Agg")
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+
 
 # --------------
 # Import sting code
@@ -317,9 +323,6 @@ class StateSpaceModel:
 
         return cls(A=A, B=B, C=C, D=D, x=x, y=y, u=u)
 
-    def coordinate_transform(self, invT, T):
-        pass
-
     def to_csv(self, filepath):
         
         # Create output directory if it doesn't exist
@@ -456,9 +459,29 @@ class StateSpaceModel:
                                       pl.col("damping_ratio_pu").round(3), 
                                       pl.col("time_constant_seconds").round(4)) 
         logger.info("Modal analysis results:")
-        logger.info(df_to_print)   
+        logger.info(df_to_print)
 
         return df
+    
+    def plot_eigenvalues(self, ax=None, **kwargs):
+        eigenvalues = eigvals(self.A)
+        real_parts = np.real(eigenvalues)
+        imag_parts = np.imag(eigenvalues)
+
+        if ax is None:
+            _, ax = plt.subplots(1,1, figsize=(8, 6))
+
+        ax.scatter(x=real_parts, y=imag_parts, **kwargs)
+
+        # Check if the x-axis label is empty and set it
+        if not ax.get_xlabel():
+            ax.set_xlabel(r'$\Re(\lambda)$') #
+
+        # Check if the y-axis label is empty and set it
+        if not ax.get_ylabel():
+            ax.set_ylabel(r'$\Im(\lambda)$') #
+
+        return ax
     
     def coordinate_transform(self, T:np.ndarray, invT:np.ndarray): #-> StateSpaceModel:
         """Perform a coordinate transformation z = Tx (analogous to MATLAB ss2ss)"""
@@ -466,4 +489,11 @@ class StateSpaceModel:
         B_t = invT @ self.B
         C_t = self.C @ T
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D)
+    
+    def to_python_control(self):
+        """Returns a python-controls state-space model"""
+        return ss(self.A, self.B, self.C, self.D)
+    
+    def to_pymor(self):
+        return LTIModel.from_matrices(A=self.A, B=self.B, C=self.C, D=self.D)
           

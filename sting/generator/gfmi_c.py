@@ -15,6 +15,7 @@ from typing import NamedTuple, Optional
 from dataclasses import dataclass
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import os
 
 # ------------------
 # Import sting code
@@ -333,6 +334,37 @@ class GFMIc(Generator):
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
 
     def get_derivative_state_emt(self):
+        """
+        It returns a vector with the differential equations that describe the dynamics of the GFMI-VSM.
+        This model includes: power controller, voltage controller, and LCL filter.
+        """    
+        # Get state values 
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
+        
+        # Get input values (external inputs)
+        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+
+        # convert relevant quantities to dq 
+        v_sh_d, v_sh_q, _ = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle_pc) # for power controller 
+        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, angle_pc) # for power controller 
+
+        # Calculate DC-side current using current vsc voltage and current  
+        # need to calculate v_vsc_dq, because it is an algebraic state so is not available in our state vector 
+        i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)
+        i_vsc_dq = i_vsc_d + 1j*i_vsc_q
+        v_sh_dq = v_sh_d + 1j*v_sh_q 
+        v_vsc_dq = v_sh_dq + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_dq
+        
+        # Do Q-V droop 
+        v_sh_mag = (v_sh_d**2+v_sh_q**2)**0.5 # current voltage mag 
+        v_sh_mag_ref = v_ref - self.droop_q_pu*(q_pc - q_ref) # droop on error from ref 
+        
+        # NB updating algebraic states!
+        v_vsc_d = gamma + self.kp_vc_pu*(v_sh_mag_ref - v_sh_mag) # update 
+        v_vsc_q = 0.0 # update 
+
+        # convert to abc to feed into filter dynamics 
+        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, angle_pc) # correct to use this angle?
 
         def power_controller_dynamics(y, internal_inputs):
             """
@@ -351,7 +383,7 @@ class GFMIc(Generator):
             wb = self.wbase  # nominal frequency of the system
 
             # Define measured active and reactive power at timepoint "t"
-            v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref, q_ref, v_ref = internal_inputs
+            v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref = internal_inputs
 
             # Define ODEs that describe the dynamics of the power controller
             d_angle_pc = wb * w_pc
@@ -360,7 +392,6 @@ class GFMIc(Generator):
             d_q_pc = 1/tau_pc * (- q_pc - v_sh_d * i_bus_q + v_sh_q * i_bus_d)
             
             return [d_angle_pc, d_w_pc, d_p_pc, d_q_pc]
-
 
         def voltage_controller_dynamics(y, internal_inputs):
             """
@@ -422,61 +453,12 @@ class GFMIc(Generator):
             di_bus_c = wb/l2 *(v_sh_c - v_bus_c - r2 * i_bus_c)
 
             return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+          
+        d_angle_pc, d_w_pc, d_p_pc, d_q_pc = power_controller_dynamics([angle_pc, w_pc, p_pc, q_pc], [v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref])
 
-        """
-        It returns a vector with the differential equations that describe the dynamics of the GFMI-VSM.
-        This model includes: power controller, voltage controller, and LCL filter.
-        """
-        y = self.variables_emt.x.value
-
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13]
-
-        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
-
-        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, angle_pc)
-        v_sh_d, v_sh_q, _ = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle_pc)
-        i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)
-        i_bus_d, i_bus_q , _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, angle_pc)
-
-        v_sh_mag_ref = v_ref - self.droop_q_pu * (q_pc - q_ref)
-        v_vsc_d = gamma + self.kp_vc_pu * (v_sh_mag_ref - (v_sh_d**2 + v_sh_q**2)**0.5)
-        v_vsc_q = 0  
-
-        Fccm = np.vstack((  np.hstack((np.zeros((2,9)), np.eye(2))), # v_sh_dq
-                            np.hstack((np.zeros((2,7)), np.eye(2), np.zeros((2,2)))), # i_bus_dq
-                            np.zeros((3,11)), # p_ref, q_ref, v_ref
-                            np.hstack( ( [0, 0, 1], np.zeros((8, )) )), # v_sh_ref
-                            np.hstack( ( np.zeros((2, 9)),  np.eye(2))), # v_sh_d, q
-                            np.hstack( ( np.zeros((2,3)), np.eye(2), np.zeros((2,6))) ), # v_vsc_dq
-                            np.hstack( ( [0], np.zeros((10, )) )), # v_bus_d
-                            np.hstack( ( [0], np.zeros((10, )) )), # v_bus_q
-                            np.hstack( ( [0, 1], np.zeros((9, )))) # w
-                            )) 
-        Gccm = np.vstack((  np.zeros((4,5)) ,
-                            np.hstack( (np.eye(3), np.zeros((3,2)))),
-                            np.zeros((5,5)),
-                            np.hstack( (np.zeros((3,)), [1, 0])),
-                            np.hstack( (np.zeros((3,)), [0, 1])),
-                            np.zeros((5, ))))
-                
-        u = [p_ref, q_ref, v_ref, v_bus_d, v_bus_q]
-        y_stack = [angle_pc, w_pc, v_sh_mag_ref, v_vsc_d, v_vsc_q, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q]
-        y_stack = np.array(y_stack)
-        u = np.array(u)
+        d_gamma = voltage_controller_dynamics([gamma], [v_sh_mag_ref, v_sh_d, v_sh_q])
             
-        u_stack = Fccm @ y_stack + Gccm @ u
-
-        u_stack1 = u_stack[0:7]  # for power controller
-        u_stack2 = u_stack[7:10]  # for voltage controller
-        #u_stack3 = u_stack[10:15]  # for LCL filter
-
-        d_angle_pc, d_w_pc, d_p_pc, d_q_pc = power_controller_dynamics(y, u_stack1)
-
-        d_gamma = voltage_controller_dynamics(y[4:5], u_stack2)
-            
-        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, angle_pc)
-        u_stack3 = [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c]
-        di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c = lcl_filter_dynamics(y[5:], u_stack3)
+        di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
 
         return [d_angle_pc, d_w_pc, d_p_pc, d_q_pc, d_gamma, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
     
@@ -491,33 +473,76 @@ class GFMIc(Generator):
         Plot EMT simulation results
         """
 
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
-        i_bus_d, i_bus_q, _ = zip(*map(abc2dq0, i_bus_a, i_bus_b, i_bus_c, angle_pc))
-        t = self.variables_emt.x.time
-
-        fig = make_subplots(rows=6, cols=2)
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
         
-        fig.add_trace(go.Scatter(x=t, y=angle_pc), row=1, col=1)
-        fig.update_yaxes(title_text='angle_pc [rad]', row=1, col=1)
+        tps = self.variables_emt.x.time
+        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c, = self.variables_emt.u.value
+        
+        # Transform abc to dq0
+        i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)])
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle_pc)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle_pc)])
+        
+        fig = make_subplots(
+            rows=7, cols=2,
+            horizontal_spacing=0.15,
+            vertical_spacing=0.05,
+        )
+
+        fig.add_trace(go.Scatter(x=tps, y=w_pc, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=1)
         fig.update_xaxes(title_text='Time [s]', row=1, col=1)
+        fig.update_yaxes(title_text='Frequency pc [p.u.]', row=1, col=1)
 
-        fig.add_trace(go.Scatter(x=t, y=w_pc), row=1, col=2)
-        fig.update_yaxes(title_text='w_pc [p.u.]', row=1, col=2)
+        fig.add_trace(go.Scatter(x=tps, y=angle_pc * 180 / np.pi, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=2)
         fig.update_xaxes(title_text='Time [s]', row=1, col=2)
+        fig.update_yaxes(title_text='Angle pc [deg]', row=1, col=2)
 
-        fig.add_trace(go.Scatter(x=t, y=p_pc), row=2, col=1)
-        fig.update_yaxes(title_text='p_pc [p.u.]', row=2, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=p_pc, name="p_pc", mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=1)
         fig.update_xaxes(title_text='Time [s]', row=2, col=1)
+        fig.update_yaxes(title_text='Active Power pc [p.u.]', row=2, col=1)
 
-        fig.add_trace(go.Scatter(x=t, y=i_bus_d), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=1, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=q_pc, mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=2, col=2)
+        fig.update_yaxes(title_text='Reactive Power pc [p.u.]', row=2, col=2)
 
-        fig.add_trace(go.Scatter(x=t, y=i_bus_q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=1, col=2)
+        fig.add_trace(go.Scatter(x=tps, y=gamma, mode='lines', line=dict(color='red', dash='solid')),
+                    row=3, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=3, col=1)
+        fig.update_yaxes(title_text='Gamma [p.u.]', row=3, col=1)   
 
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=1)
+        fig.update_yaxes(title_text='i_vsc_d [p.u.]', row=4, col=1) 
 
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=2)
+        fig.update_yaxes(title_text='i_vsc_q [p.u.]', row=4, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=5, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=5, col=1)
+        fig.update_yaxes(title_text='v_sh_d [p.u.]', row=5, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=5, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=5, col=2)
+        fig.update_yaxes(title_text='v_sh_q [p.u.]', row=5, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=6, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=6, col=1)
+        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=6, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=6, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=6, col=2)
+        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=6, col=2)
 
         name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
@@ -525,4 +550,9 @@ class GFMIc(Generator):
                             showlegend = False,
                             )
 
+        fig.update_layout(height=1200*2, 
+                        width=800*2, 
+                        showlegend=False,
+                        margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
+        
         fig.write_html(os.path.join(output_dir, name + ".html"))
