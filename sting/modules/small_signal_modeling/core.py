@@ -253,6 +253,11 @@ class SmallSignalModel:
         # And sort all the components
         self.components = [self.components[i] for i in ids]
 
+    def group_by(self, by):
+        # importing at runtime to avoid circular imports
+        from sting.modules.small_signal_modeling.operations import SmallSignalModelGroupBy
+        return SmallSignalModelGroupBy(model=self, by=by)
+
     def write_csv_ccm_matrices(self, output_dir=None):
         """Write CCM matrices to CSVs"""
         if output_dir is None:
@@ -295,4 +300,5 @@ class SmallSignalModel:
         """Execute a method of all SSM components."""
         for c in self.components:
             component = getattr(self.system, c.type)[c.id]
-            getattr(component, method)(*args) 
+            if hasattr(component, method):
+                getattr(component, method)(*args) 

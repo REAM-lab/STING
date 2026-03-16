@@ -33,17 +33,64 @@ You should obtain the following eigenvalues:
 
 # Import Python standard and third-party packages
 from pathlib import Path
+import pylab as plt
+from control import singular_values_plot
 
 # Import sting package
 from sting import main
-from sting.system.core import System
+from sting.modules.model_order_reduction.reductions import SingularPerturbation, BalancedTruncation, IRKA
+
+import os
 
 # Specify path of the case study directory
 case_dir = Path(__file__).resolve().parent
 
-# Construct system and small-signal model
-sys = System.from_csv(case_directory=case_dir)
+reductions = {
+    "zone_1":  SingularPerturbation(r=4, basis="eigen")
+}
 
-main.run_mor(case_directory=case_dir)
+ssm, fom, open_mr = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
+
+reductions = {
+    "zone_1":  BalancedTruncation(r=4, gramian_c="subsystem", gramian_o="subsystem", method="singular perturbation")
+}
+_, _, open_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
+reductions = {
+    "zone_1":  BalancedTruncation(r=4, gramian_c="lyapunov", gramian_o="lyapunov", method="singular perturbation")
+}
+_, _, closed_br = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
+
+reductions = {
+    "zone_1":  IRKA(r=4)
+}
+_, _, open_ki = main.run_model_reduction(case_directory=case_dir, reductions=reductions)
+
+red = "#BB5566"
+yellow = "#DDAA33"
+dark_blue = "#004488"
+light_blue = "#6699CC"
+
+# Compare the eigenvalues of the FOM and ROMs
+ax = fom.plot_eigenvalues(marker="x", label="Full-order model", color="gray")
+ax = open_mr.plot_eigenvalues(ax=ax, marker="^", label="Modal Reduction", color=red)
+ax = open_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (open)", color=light_blue)
+ax = closed_br.plot_eigenvalues(ax=ax, marker="o", label="Balanced Reduction (closed)", color=dark_blue)
+ax = open_ki.plot_eigenvalues(ax=ax, marker="s", label="IRKA", color=yellow)
+ax.set_xscale("symlog")
+ax.legend()
+plt.savefig(os.path.join(case_dir, "outputs", "eigenvalues.pdf"))
+
+# Compare the sigmaplots of the FOM and ROMs
+singular_values_plot(fom.to_python_control(), label="Full-order model", color="gray", omega=[1e1, 1e4])
+singular_values_plot(open_mr.to_python_control(), label="Modal Reduction", color=red, ls=":", omega=[1e1, 1e4])
+singular_values_plot(open_br.to_python_control(), label="Balanced Reduction (open)", color=light_blue, ls="--", omega=[1e1, 1e4])
+singular_values_plot(closed_br.to_python_control(), label="Balanced Reduction (closed)", color=dark_blue, ls="--", omega=[1e1, 1e4])
+singular_values_plot(open_ki.to_python_control(), label="IRKA", color=yellow, ls="-.", omega=[1e1, 1e4])
+
+plt.ylim(1e-1, 1e2)
+plt.savefig(os.path.join(case_dir, "outputs", "sigmaplot.pdf"))
 
 print('ok')

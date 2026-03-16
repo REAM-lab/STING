@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
-class GroupBy:
+class SmallSignalModelGroupBy:
     """Class to perform operations on small-signal models, such as grouping by zones"""
 
     model: SmallSignalModel
@@ -54,7 +54,7 @@ class GroupBy:
             self.subsystems[key] = SmallSignalModel(system=self.model.system, components=components, model=StateSpaceModel.from_stacked(models), post_init=False)
 
 
-    def interconnect(self) -> SmallSignalModel:
+    def interconnect(self, reductions:dict=None) -> SmallSignalModel:
         """
         Now we have grouped each subsystem but there are no 
         internal connections within subsystems. Here we remove all inputs and 
@@ -74,6 +74,8 @@ class GroupBy:
             u_B = (F*Y) * y_B + G * u_C
             y_C = (H*Y) * y_B + L * u_C
         """
+        if reductions is None:
+            reductions = {}
         # Number of subsystems 
         s = len(self.subsystems)
         # Create a new system to which we will add subsystem level models 
@@ -136,7 +138,8 @@ class GroupBy:
             subsystem_ssm = StateSpaceModel.from_interconnected(models, sub_model.ccm_matrices, y=outputs, u=inputs)
             
             # Add each subsystem level model to the new system and components
-            linear_system = LinearROM(ssm=subsystem_ssm)
+            reducer = reductions.get(key, None)
+            linear_system = LinearROM(name=key, reducer=reducer, full_order_model=subsystem_ssm)
             new_system.add(linear_system)
             new_components.append(ComponentSSM(linear_system.type_, linear_system.id))
 

@@ -14,10 +14,11 @@ from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
-from sting.modules.small_signal_modeling.operations import GroupBy
 from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
+from sting.utils.dynamical_systems import StateSpaceModel
+from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
@@ -247,39 +248,48 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     return capex, system
 
 
-def run_mor_setup(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+def run_model_reduction(
+        reductions:dict[str, Reducer],
+        case_directory=os.getcwd(), 
+        model_settings=None, 
+        solver_settings=None,
+        ):
     """
-    Routine to construct the system and its small-signal model that can be used with model reduction methods.
+    Routine to construct a small-signal model and then perform model order reduction (MOR)
+    on each subsystem.
     """
-    # Set up logging to file
     setup_logging_file(case_directory)
 
-    # Load system from CSV files
+    # Load system and find feasible point for SSM
     sys = System.from_csv(case_directory=case_directory)
-
-    # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
     pf.solve()
 
-    # Break down lines into branches and shunts for small-signal modeling
+    # Construct the full-order small-signal model
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
-
-    # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
-    ssm.construct_system_ssm()
-
     # Interconnect all components in the same zone
-    zonal_ssm = GroupBy(ssm, "zone").interconnect()
-    # Interconnect all zonal models
-    zonal_ssm.construct_system_ssm(write_csv=False)
+    ssm = ssm.group_by("zone").interconnect(reductions)
 
-    # Manually write CSVs (to ensure non-conflicting paths)
-    output_dir = os.path.join(zonal_ssm.output_directory, os.pardir)
+    # Construct a state-space model of the full-order model (FOM)
+    models = ssm.get_component_attribute("ssm")
+    fom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_full_order"))
+    ssm.model = fom
+
+    # Perform any system-level operations required by each reduction method
+    for reducer in reductions.values():
+        for operation in reducer.system_operations:
+            operation.solve(ssm)
+
+    # Construct all ROMs
+    ssm.apply("_construct_rom")
+
+    # Switch to using the reduced-order model(s) and create a reduced-order model (ROM)
+    ssm.apply("set_using", "reduced_order_model")
+    models = ssm.get_component_attribute("ssm")
+    rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_reduced_order"))
     
-    zonal_ssm.model.to_csv(
-        filepath=os.path.join(output_dir, "zonal_small_signal_model"))
-    zonal_ssm.write_csv_ccm_matrices(
-        output_dir=os.path.join(output_dir, "zonal_component_connection_matrices"))
-
-    return ssm, zonal_ssm
+    return ssm, fom, rom
