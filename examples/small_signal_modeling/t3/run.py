@@ -11,23 +11,26 @@ from sting.system.core import System
 case_dir = Path(__file__).resolve().parent
 
 # Construct system and small-signal model
-def step1(t): 
+def step1(t):
     return 0.1 if t >= 0.5 else 0.0
 
-def step2(t): # no perturbation  
+def step2(t):
     return 0.0
+
+def step3(t):
+    return 0.1 if t > 1.0 else 0.0 
 
 # Specify inputs to excite - any constant input does not need to be specified 
 # NB: input is a perturbation from the nominal value 
-inputs = {'infinite_sources_0': {'v_ref_d': step1}, 
+inputs = {'infinite_sources_0': {'v_ref_d': step3}, 
           'gfmi_e_0': {'p_ref': step2, 
                        'q_ref': step2,
                        'v_ref': step2,
                        'v_dc_ref': step2,
-                       'v_s': step2, 
+                       'v_s': step1, 
                        'Pload': step2}}
 
-t_max = 2.0
+t_max = 4.0
 
 _, ssm = main.run_ssm(case_directory=case_dir)
 

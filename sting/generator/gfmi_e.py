@@ -116,7 +116,6 @@ class GFMIe(Generator):
     Pload: float 
     #bus_id: int = None
     name: str = field(default_factory=str)
-    type: str = "gfmi_e"
     #pf: Optional[Power_flow_variables] = None
     emt_init: Optional[InitialConditionsEMT] = None
     ssm: Optional[StateSpaceModel] = None
@@ -358,7 +357,7 @@ class GFMIe(Generator):
                                     )
 
         # Generate small-signal model
-        ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type}_{self.id}")
+        ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
         self.ssm = ssm
 

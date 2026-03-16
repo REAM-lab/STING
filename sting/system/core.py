@@ -54,6 +54,7 @@ class System:
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
     gfmi_c: list[GFMIc] = None
+    gfmi_e: list[GFMIe] = None 
     linear_roms: list[LinearROM] = None
     buses: list[Bus] = None
     loads: list[Load] = None
