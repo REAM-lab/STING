@@ -36,7 +36,6 @@ from sting.system.core import System
 case_dir = Path(__file__).resolve().parent
 
 
-
 # Run EMT simulation
 # Construct system and small-signal model
 def step1(t):
@@ -50,9 +49,9 @@ inputs = {'infinite_sources_0': {'v_ref_d': step1},
 
 t_max = 1.0
 
+
 _, ssm = main.run_ssm(case_directory=case_dir)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
 
-print('ok')
