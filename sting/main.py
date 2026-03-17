@@ -94,6 +94,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     # Break down lines into branches and shunts for small-signal modeling
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
