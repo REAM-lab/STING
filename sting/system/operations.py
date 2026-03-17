@@ -122,6 +122,15 @@ class SystemModifier:
             .with_columns(
                 name=pl.col("bus") + pl.lit("_shunt")
             )
+            # [!] CRITICAL [!]
+            # We **must** sort the new shunts based on their bus_id in order for 
+            # the CCM to be defined correctly. This is very important.
+            # The CCM matrices are constructed assuming that shunts are ordered 
+            # according to the buses. Thus we enforce (at this step) that 
+            # the $N$ shunts in the set of all shunts $\mathcal{S}$ are assigned 
+            # to the $N$ buses using the same index. The i-th bus id == the i-th 
+            # shunt id.
+            .sort("bus_id")
         )
 
         # Total number of shunts to remove and create
