@@ -7,13 +7,12 @@
     - Core architecture, small-signal modeling
 - Adam Sedlak $^1$ (<asedlak@ucsd.edu>)
     - Model reduction
-- Patricia Hidalgo-Gonzalez$ ^1$ (<patricia.hidalgo.g@berkeley.edu>)
+- Patricia Hidalgo-Gonzalez $^1$ (<phidalgogonzalez@ucsd.edu>)
 
 
 **Organizations**
 $1$. University of California San Diego (Renewable Energy + Advanced Mathematics Lab)
 $2$. University of California Berkeley (Energy Modeling, Analysis, and Control)
-$3$. Universidad Nacional de Ingenieria, Peru (Facultad de Ingenieria Electrica y Electronica)
 
 ## Papers
-1. 
+1. Coming soon!

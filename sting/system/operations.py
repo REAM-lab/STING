@@ -120,7 +120,7 @@ class SystemModifier:
                 pl.col(shared_columns).first()
             )
             .with_columns(
-                name=pl.col("bus") + pl.lit("equ_shunt")
+                name=pl.col("bus") + pl.lit("_shunt")
             )
         )
 
