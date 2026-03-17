@@ -69,6 +69,7 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     # Break down lines into branches and shunts for small-signal modeling
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -250,7 +251,8 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
 
 def run_model_reduction(
         reductions:dict[str, Reducer],
-        case_directory=os.getcwd(), 
+        file_name,
+        case_directory=os.getcwd(),
         model_settings=None, 
         solver_settings=None,
         ):
@@ -268,28 +270,31 @@ def run_model_reduction(
     # Construct the full-order small-signal model
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
     ssm = SmallSignalModel(system=sys)
     # Interconnect all components in the same zone
-    ssm = ssm.group_by("zone").interconnect(reductions)
+    ssm = ssm.group_by("zone").interconnect()
+
+    # Add a model reduction algorithm to each subsystem
+    for subsystem in ssm.system.linear_subsystems:
+        subsystem.reducer = reductions.get(subsystem.name, None)
 
     # Construct a state-space model of the full-order model (FOM)
     models = ssm.get_component_attribute("ssm")
-    fom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
-    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_full_order"))
-    ssm.model = fom
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
 
     # Perform any system-level operations required by each reduction method
     for reducer in reductions.values():
         for operation in reducer.system_operations:
             operation.solve(ssm)
 
-    # Construct all ROMs
+    # Construct all ROMs and switch from FOM to ROM
     ssm.apply("_construct_rom")
-
-    # Switch to using the reduced-order model(s) and create a reduced-order model (ROM)
     ssm.apply("set_using", "reduced_order_model")
+
+    # Construct the state-space model
     models = ssm.get_component_attribute("ssm")
     rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
-    fom.to_csv(os.path.join(case_directory, "outputs", "ssm_reduced_order"))
+    rom.to_csv(os.path.join(case_directory, "outputs", file_name))
     
-    return ssm, fom, rom
+    return ssm, ssm.model, rom

@@ -4,6 +4,7 @@
 import logging
 from dataclasses import dataclass
 import copy
+import polars as pl
 
 # -----------------------
 # Import sting code
@@ -94,30 +95,47 @@ class SystemModifier:
         # TODO: Do the same for line with series compensation
 
     def combine_shunts(self):
-        "untested"
+        """
+        Combine all shunts at a given bus into a single "effective" shunt
+        by considering them as parallel circuits.
 
-        print("> Reduce shunts to have one shunt per bus:")
+        ASSUMPTIONS
+        1. There are only parallel RC shunts in the system
+        2. All shunts at the same `bus_id` share the same
+            - "base_power_MVA", "base_voltage_kV", "base_frequency_Hz", and "zone"
+        """
 
-        shunt_df = (self.system.shunts
-            .to_table("bus_id", "g", "b")
-            .reset_index(drop=True)
-            .pivot_table(index="bus_id", values=["g", "b"], aggfunc="sum")
+        print("> Combining shunts into one 'effective' shunt per bus:")
+
+        shared_columns = ["bus", "base_power_MVA", "base_voltage_kV", "base_frequency_Hz", "zone"]
+        # DataFrame with effective shunt parameters
+        shunt_df = (
+            self.system.query(["shunt_parallel_rc"])
+            .to_table("bus_id", "g_pu", "b_pu", *shared_columns)
+            .group_by("bus_id")
+            .agg(
+                # Conductance and susceptance can be summed when in parallel
+                pl.col("g_pu", "b_pu").sum(),
+                # Take first value among parameters that are assumed to be shared
+                pl.col(shared_columns).first()
+            )
+            .with_columns(
+                name=pl.col("bus") + pl.lit("equ_shunt")
+            )
         )
 
-        shunt_df["r"] = 1 / shunt_df["g"]
-        shunt_df["c"] = 1 / shunt_df["b"]
-        shunt_df["id"] = range(len(shunt_df))
-        shunt_df.drop(columns=["b", "g"], inplace=True)
-
+        # Total number of shunts to remove and create
+        original_n = len(self.system.shunt_parallel_rc)
+        reduced_n = shunt_df.height
         # Clear all existing parallel RC shunts
-        self.system.pa_rc = []
+        self.system.shunt_parallel_rc.clear()
 
         # Add each effective/combined parallel RC shunt to the pa_rc components
-        for _, row in shunt_df.iterrows():
-            shunt = ShuntParallelRC(**row.to_dict())
+        for row in shunt_df.iter_rows(named=True):
+            shunt = ShuntParallelRC(**row)
             self.system.add(shunt)
 
-        print("\t- New list of parallel RC components created ... ok\n")
+        print(f"\t- Removed {original_n} shunts, created {reduced_n} effective shunts... ok\n")
 
     @timeit
     def group_by_zones(self, components_to_clone: list[str] = None) -> System:
