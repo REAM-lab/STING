@@ -42,8 +42,7 @@ Some of our model reduction algorithms use the `slycot` python wrapper for FORTR
 #### OSX 
 For Mac users your can build `slycot` with support from brew. Run `brew install gcc` and then add `slycot` in your virtual environment with pip, `pip install slycot`.
 
-### EMT simulation with SPS (Deprecated)
 
-Currently, we are offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. Unfortunately [MATLAB has dropped support for the SPS library](https://www.mathworks.com/matlabcentral/answers/2180147-unable-to-find-the-specialized-power-systems-group-in-simscape-electrical-in-newer-version-r2025b) in versions after 2025a. As such, we are actively working to replace these EMT models with pure Python scripts for EMT simulation.
-
-1. **Open SPS library**: Make sure that you have MATLAB R2025a. Go to the folder `sps_library`. Open the library, and make sure that it is open while you are running EMT simulation with our testcases.
+> [!IMPORTANT]
+> **EMT simulation with SPS (Deprecated)**: We are currently offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. Unfortunately [MATLAB has dropped support for the SPS library](https://www.mathworks.com/matlabcentral/answers/2180147-unable-to-find-the-specialized-power-systems-group-in-simscape-electrical-in-newer-version-r2025b) in versions after 2025a. As such, we are actively working to replace these EMT models with pure Python scripts for EMT simulation.
+>1. **Open SPS library**: Make sure that you have MATLAB R2025a. Go to the folder `sps_library`. Open the library, and make sure that it is open while you are running EMT simulation with our testcases.

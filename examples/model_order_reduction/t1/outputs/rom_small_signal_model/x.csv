@@ -1,9 +1,0 @@
-name,component,type,init
-i_bus_d,infinite_sources_1,"",0.05091674117605039
-i_bus_q,infinite_sources_1,"",0.06251597019318135
-v_bus_D,pa_rc_1,"",1.0017997952644437
-v_bus_Q,pa_rc_1,"",-0.000040210676785013255
-x0,"","",NaN
-x1,"","",NaN
-x2,"","",NaN
-x3,"","",NaN
