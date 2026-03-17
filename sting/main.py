@@ -83,7 +83,6 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
-
     # Load system from CSV files
     sys = System.from_csv(case_directory=case_directory)
 

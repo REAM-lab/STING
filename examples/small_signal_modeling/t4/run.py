@@ -8,7 +8,9 @@ You should obtain the following eigenvalues:
 Modal analysis results:
 shape: (10, 5)
 
-└──────────┴───────────┴──────────────────────┴──────────────────┴───────────────────────┘
+Modal analysis results:
+shape: (19, 5)
+└───────────┴───────────┴──────────────────────┴──────────────────┴───────────────────────┘
 """
 
 # Import Python standard and third-party packages
