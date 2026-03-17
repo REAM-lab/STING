@@ -15,10 +15,7 @@ from sting.modules.model_order_reduction.core import Reducer
 #@dataclass
 @dataclass(slots=True)
 class Gramian:
-    # TODO: I think this should be like an ACOPF solution class
-    # Look at other models to implement
-    
-
+    """State-space model gramians factored in *upper* Cholesky W = X' X"""
     type: Literal["controllability", "observability"]
 
     state_space: StateSpace = None
@@ -32,13 +29,13 @@ class Gramian:
         W = getattr(self, key)
 
         if (W is None) and (key == "subsystem"):
-            W = gram(self.state_space, self.type[0])
+            W = gram(self.state_space, self.type[0]+"f")
             self.subsystem = W
         
         return W
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class LinearROM(Component):
+class LinearSubsystem(Component):
     
     full_order_model: StateSpaceModel
     reduced_order_model: StateSpaceModel = None

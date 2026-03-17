@@ -13,7 +13,7 @@ import numpy as np
 # ------------------
 from sting.utils.dynamical_systems import StateSpaceModel
 from sting.modules.model_order_reduction.utils import singular_perturbation
-from sting.reduced_order_model.linear_rom import LinearROM
+from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.modules.model_order_reduction.core import Reducer
 from sting.modules.model_order_reduction.utils import BlockGramian
 
@@ -22,7 +22,7 @@ class SingularPerturbation(Reducer):
     r: int 
     basis: Literal["eigen", "none"] = "eigen"
 
-    def reduce(self, sys:LinearROM):
+    def reduce(self, sys:LinearSubsystem):
         """Return a reduced-order model."""
         # Perform a coordinate transform to induce timescale separation
         match self.basis:
@@ -103,10 +103,10 @@ class BalancedTruncation(Reducer):
             gramian_operator= BlockGramian(method=self.gramian_o, type="observability")
             self.system_operations.append(gramian_operator)
 
-    def reduce(self, sys:LinearROM):
+    def reduce(self, sys:LinearSubsystem):
         
-        R = cholesky(sys.W_c[self.gramian_c], lower=True)
-        L = cholesky(sys.W_o[self.gramian_o], lower=False)
+        R = sys.W_c[self.gramian_c].T #cholesky(sys.W_c[self.gramian_c], lower=True)
+        L = sys.W_c[self.gramian_c]   #cholesky(sys.W_o[self.gramian_o], lower=False)
 
         U, sigma, Vh = svd(L @ R)
         V = Vh.T
@@ -143,8 +143,9 @@ class BalancedTruncation(Reducer):
 class IRKA(Reducer):
     r: int 
 
-    def reduce(self, sys:LinearROM):
+    def reduce(self, sys:LinearSubsystem):
         irka = IRKAReductor(fom=sys.full_order_model.to_pymor())
         rom = irka.reduce(self.r)
         A,B,C,D,_ = rom.to_matrices()
+        # assert rom0_params < self.fom.order
         sys.reduced_order_model = StateSpaceModel(A,B,C,D)
