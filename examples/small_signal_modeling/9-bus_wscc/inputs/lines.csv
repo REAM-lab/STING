@@ -1,0 +1,10 @@
+name,from_bus,to_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,r_pu,x_pu,g_pu,b_pu,zone
+4-Jan,bus_1,bus_4,1.00E+02,2.30E+02,60,0.01,0.0576,0.001,0.001,external
+7-Feb,bus_2,bus_7,1.00E+02,2.30E+02,60,0.01,0.0625,0.001,0.001,external
+9-Mar,bus_3,bus_9,1.00E+02,2.30E+02,60,0.01,0.0586,0.001,0.001,external
+5-Apr,bus_4,bus_5,1.00E+02,2.30E+02,60,0.01,0.068,0.01,0.01,external
+6-Apr,bus_4,bus_6,1.00E+02,2.30E+02,60,0.017,0.092,0.01,0.01,external
+7-May,bus_5,bus_7,1.00E+02,2.30E+02,60,0.032,0.161,0.01,0.01,external
+9-Jun,bus_6,bus_9,1.00E+02,2.30E+02,60,0.039,0.1738,0.01,0.01,
+8-Jul,bus_7,bus_8,1.00E+02,2.30E+02,60,0.0085,0.0576,0.01,0.01,external
+9-Aug,bus_8,bus_9,1.00E+02,2.30E+02,60,0.0119,0.1008,0.01,0.01,external

@@ -1,0 +1,3 @@
+%f,%s,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f
+n,name,bus,zone,p_max,p_min,q_max,q_min,sbase,vbase,fbase,vdc,rf1,lf1,cf,rshf,TXR.sbase,TXR.r1,TXR.l1,TXR.r2,TXR.l2,TXR.rm,TXR.lm,bet,kp_pll,ki_pll,kp_cc,ki_cc
+1,gfl1,5,1,10,0,10,-10,1.00E+08,4.80E+02,60,4000,0.02,0.1,10,1,1.00E+08,0.01,0.1,0.02,0.1,1000,1000,0.75,1,10,0.5,5
