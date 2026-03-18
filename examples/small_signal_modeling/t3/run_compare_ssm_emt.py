@@ -110,15 +110,15 @@ def step3(t):
 
 # Specify inputs to excite - any constant input does not need to be specified 
 # NB: input is a perturbation from the nominal value 
-inputs = {'infinite_sources_0': {'v_ref_d': step3}, 
-          'gfmi_e_0': {'p_ref': step2, 
+inputs = {'infinite_sources_0': {'v_ref_d': step1}, 
+          'gfmi_e_0': {'p_ref': step3, 
                        'q_ref': step2,
                        'v_ref': step2,
                        'v_dc_ref': step2,
-                       'v_s': step1, 
-                       'Pload': step2}}
+                       'v_s': step2, 
+                       'i_load_ref': step2}}
 
-t_max = 4.0
+t_max = 2.0
 
 # Build and perturb small-signal model 
 _, ssm = main.run_ssm(case_directory=case_dir)
@@ -146,7 +146,7 @@ x1 = sol[17,:]
 x2 = sol[18,:]
 iL = sol[19,:]
 vdc = sol[20,:]
-vdcfL = sol[21,:]
+i_load = sol[21,:]
 v_bus_D_rc0 = sol[22,:] # RC0 
 v_bus_Q_rc0 = sol[23,:] # RC0 
 v_bus_D_rc1 = sol[24,:] #RC1
@@ -187,7 +187,7 @@ x1_emt = gfm[18,:]
 x2_emt = gfm[19,:]
 iL_emt = gfm[20,:]
 vdc_emt = gfm[21,:]
-vdcfL_emt = gfm[22,:]
+i_load_emt = gfm[22,:]
 
 # convert abc to dq for plotting comparison 
 angle_pc_emt_init = sys.gfmi_e[0].emt_init.angle_ref * np.pi / 180
@@ -199,7 +199,7 @@ i_vsc_d_emt, i_vsc_q_emt, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zi
 v_sh_d_emt, v_sh_q_emt, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle_pc_emt)])
 
 fig = make_subplots(
-    rows=11, cols=2,
+    rows=12, cols=2,
     horizontal_spacing=0.15,
     vertical_spacing=0.05,
 )
@@ -208,135 +208,144 @@ r, c = 1,1 # define row, column for convenience
 # blank 
 
 r, c = 1,2 
-fig.add_trace(go.Scatter(x=tps, y=angle_pc_emt, name="angle_pc (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=angle_pc, name="angle_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=angle_pc_emt, name="angle_pc (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup='1'), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=angle_pc, name="angle_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup='1'), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='angle_pc', row=r, col=c)
 
 
 r, c = 2,1 
-fig.add_trace(go.Scatter(x=tps, y=gamma_emt, name="gamma (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=pi_vc, name="gamma (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=gamma_emt, name="gamma (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=pi_vc, name="gamma (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='gamma', row=r, col=c)
 
 r, c = 2, 2
-fig.add_trace(go.Scatter(x=tps, y=w_pc_emt, name="w_pc (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=w_pc, name="w_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=w_pc_emt, name="w_pc (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=w_pc, name="w_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='w_pc', row=r, col=c)
 
 r, c = 3,1
-fig.add_trace(go.Scatter(x=tps, y=p_pc_emt, name="p_pc (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=p_pc, name="p_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=p_pc_emt, name="p_pc (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=p_pc, name="p_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='p_pc', row=r, col=c)
 
 r, c = 3,2 
-fig.add_trace(go.Scatter(x=tps, y=q_pc_emt, name="q_pc (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=q_pc, name="q_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=q_pc_emt, name="q_pc (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=q_pc, name="q_pc (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='q_pc', row=r, col=c)
 
 r, c = 4,1 
-fig.add_trace(go.Scatter(x=tps, y=i_vsc_d_emt, name="i_vsc_d (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, name="i_vsc_d (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_vsc_d_emt, name="i_vsc_d (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, name="i_vsc_d (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='i_vsc_d', row=r, col=c)
 
 r, c = 4,2 
-fig.add_trace(go.Scatter(x=tps, y=i_vsc_q_emt, name="i_vsc_q (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, name="i_vsc_q (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_vsc_q_emt, name="i_vsc_q (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, name="i_vsc_q (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='i_vsc_q', row=r, col=c)
 
 
 r, c = 5,1 
-fig.add_trace(go.Scatter(x=tps, y=v_sh_d_emt, name="v_sh_d (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=v_sh_d, name="v_sh_d (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=v_sh_d_emt, name="v_sh_d (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=v_sh_d, name="v_sh_d (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='v_sh_d', row=r, col=c)
 
 
 r, c = 5,2 
-fig.add_trace(go.Scatter(x=tps, y=v_sh_q_emt, name="v_sh_q (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=v_sh_q, name="v_sh_q (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=v_sh_q_emt, name="v_sh_q (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=v_sh_q, name="v_sh_q (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='v_sh_q', row=r, col=c)
 
 r, c = 6,1 
-fig.add_trace(go.Scatter(x=tps, y=i_bus_d_emt, name="i_bus_d (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=i_bus_d, name="i_bus_d (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_bus_d_emt, name="i_bus_d (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_bus_d, name="i_bus_d (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='i_bus_d', row=r, col=c)
 
 r, c = 6,2 
-fig.add_trace(go.Scatter(x=tps, y=i_bus_q_emt, name="i_bus_q (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=i_bus_q, name="i_bus_q (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_bus_q_emt, name="i_bus_q (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_bus_q, name="i_bus_q (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='i_bus_q', row=r, col=c)
 
 r, c = 7,1 
-fig.add_trace(go.Scatter(x=tps, y=iLf_emt, name="iLf (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=iLf, name="iLf (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iLf_emt, name="iLf (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iLf, name="iLf (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='iLf', row=r, col=c)
 
 
 r, c = 7,2 
-fig.add_trace(go.Scatter(x=tps, y=vdcf_emt, name="vdcf (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=vdcf, name="vdcf (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=vdcf_emt, name="vdcf (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=vdcf, name="vdcf (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='vdcf', row=r, col=c)
 
 r, c = 8,1 
-fig.add_trace(go.Scatter(x=tps, y=idcf_emt, name="idcf (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=idcf, name="idcf (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=idcf_emt, name="idcf (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=idcf, name="idcf (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='idcf', row=r, col=c)
 
 r, c = 8,2 
-fig.add_trace(go.Scatter(x=tps, y=iloadf_emt, name="iloadf (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=iloadf, name="iloadf (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iloadf_emt, name="iloadf (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iloadf, name="iloadf (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='iloadf', row=r, col=c)
 
 r, c = 9,1 
-fig.add_trace(go.Scatter(x=tps, y=x1_emt, name="x1 (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=x1, name="x1 (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=x1_emt, name="x1 (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=x1, name="x1 (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='x1', row=r, col=c)
 
 r, c = 9,2 
-fig.add_trace(go.Scatter(x=tps, y=x2_emt, name="x2 (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=x2, name="x2 (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=x2_emt, name="x2 (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=x2, name="x2 (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='x2', row=r, col=c)
 
 
 r, c = 10,1 
-fig.add_trace(go.Scatter(x=tps, y=iL_emt, name="iL (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=iL, name="iL (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iL_emt, name="iL (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=iL, name="iL (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='iL', row=r, col=c)
 
 r, c = 10,2 
-fig.add_trace(go.Scatter(x=tps, y=vdc_emt, name="vdc (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=vdc, name="vdc (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=vdc_emt, name="vdc (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=vdc, name="vdc (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
 fig.update_yaxes(title_text='vdc', row=r, col=c)
 
-
 r, c = 11,1 
-fig.add_trace(go.Scatter(x=tps, y=vdcfL_emt, name="vdcfL (emt)",  mode='lines', line=dict(color='red', dash='solid')), row=r, col=c)
-fig.add_trace(go.Scatter(x=tps, y=vdcfL, name="vdcfL (ssm)",  mode='lines', line=dict(color='blue', dash='dash')), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_load_emt, name="iload (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=i_load, name="iload (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
 fig.update_xaxes(title_text='Time [s]', row=r, col=c)
-fig.update_yaxes(title_text='vdcfL', row=r, col=c)
+fig.update_yaxes(title_text='iload', row=r, col=c)
+
+r, c = 11, 2
+pload_emt = i_load_emt*vdc_emt
+pload = i_load*vdc
+fig.add_trace(go.Scatter(x=tps, y=pload_emt, name="pload (emt)",  mode='lines', line=dict(color='red', dash='solid'), legendgroup=str(r)), row=r, col=c)
+fig.add_trace(go.Scatter(x=tps, y=pload, name="pload (ssm)",  mode='lines', line=dict(color='blue', dash='dot'), legendgroup=str(r)), row=r, col=c)
+fig.update_xaxes(title_text='Time [s]', row=r, col=c)
+fig.update_yaxes(title_text='pload (calculated)', row=r, col=c)
+
+
 
 fig.update_layout(height=1200*4, 
                   width=800*2, 
-                  showlegend=True,
+                  legend_tracegroupgap=400,
                   margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
 fig.show()
-fig.write_html("examples/small_signal/t3/ssm_emt_comparison.html")
+fig.write_html("examples/small_signal_modeling/t3/ssm_emt_comparison.html")
 print('ok')
