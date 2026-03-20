@@ -199,7 +199,9 @@ class SmallSignalModel:
         for i in range(len(self.model.x.init)):
             solution[i] = solution[i] + self.model.x.init[i]
         
-        components_to_plot = np.unique(self.model.x.component) # Get the components in the same order as solution vector
+        # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.model.x.component, return_index=True)
+        components_to_plot = self.model.x.component[np.sort(comp_idx)] 
         i = 0 # Initialize counter 
 
         # Make a html file for each component. Each file plots the states corresponding to each component.
