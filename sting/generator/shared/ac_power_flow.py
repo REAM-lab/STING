@@ -28,12 +28,22 @@ def construct_ac_power_flow_model(system: System, model: pyo.ConcreteModel, mode
 
     logger.info(" - Decision variables of active power and reactive power for generators")
     model.vPG = pyo.Var(G, T, 
-                           within=pyo.Reals, 
-                           bounds=lambda m, g, t: (0, 10) )
+                           within=pyo.Reals)
     model.vQG = pyo.Var(G, T,
-                            within=pyo.Reals, 
-                            bounds=lambda m, g, t: (-10, 10) )
+                            within=pyo.Reals)
     logger.info(f"   Size: {len(model.vPG) + len(model.vQG)} variables")
+
+    logger.info(" - Constraints for generator active power dispatch limits")
+    def active_power_limits_rule(m: pyo.ConcreteModel, g: Generator, t: Timepoint):
+        return (g.minimum_active_power_MW, m.vPG[g, t], g.maximum_active_power_MW)
+    model.cActivePowerLimits = pyo.Constraint(G, T, rule=active_power_limits_rule)
+    logger.info(f"   Size: {len(model.cActivePowerLimits)} constraints")
+
+    logger.info(" - Constraints for generator reactive power dispatch limits")
+    def reactive_power_limits_rule(m: pyo.ConcreteModel, g: Generator, t: Timepoint):
+        return (g.minimum_reactive_power_MVAR, m.vQG[g, t], g.maximum_reactive_power_MVAR)
+    model.cReactivePowerLimits = pyo.Constraint(G, T, rule=reactive_power_limits_rule)
+    logger.info(f"   Size: {len(model.cReactivePowerLimits)} constraints")
 
     logger.info(" - Expressions for dispatch of active power at any bus")
     gens_at_bus = defaultdict(list)
