@@ -121,7 +121,8 @@ def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=N
     if components_to_add is not None:
         for component in components_to_add:
             system.add(component)
-        logger.info(f"> Added {len(components_to_add)} extra components to the system.")
+            logger.info(f" > Added component {component}.")
+        logger.info(f"> Added {len(components_to_add)} total extra components to the system.")
     
     # Perform capacity expansion analysis
     capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings, output_directory=output_directory)
