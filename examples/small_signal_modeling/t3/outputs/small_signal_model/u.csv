@@ -1,9 +1,0 @@
-name,component,type,init
-v_ref_d,infinite_sources_0,device,0.9657090864866837
-v_ref_q,infinite_sources_0,device,6.455596352286304e-18
-p_ref,gfmi_e_0,device,0.05036686791302277
-q_ref,gfmi_e_0,device,-0.06200046522918477
-v_ref,gfmi_e_0,device,0.990736481747031
-v_dc_ref,gfmi_e_0,device,1.0
-v_s,gfmi_e_0,device,1.0
-Pload,gfmi_e_0,device,0.0

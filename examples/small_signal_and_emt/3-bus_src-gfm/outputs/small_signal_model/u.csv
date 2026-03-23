@@ -1,0 +1,6 @@
+name,component,type,init
+v_ref_d,infinite_sources_0,device,0.9780831541664216
+v_ref_q,infinite_sources_0,device,-1.9334099698961605e-19
+p_ref,gfmi_c_0,device,0.025314800232234546
+q_ref,gfmi_c_0,device,-0.02229359922364315
+v_ref,gfmi_c_0,device,1.0018431744183656

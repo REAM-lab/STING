@@ -21,14 +21,10 @@ setup(
     python_requires=">=3.12",
     install_requires=[
         "more_itertools",
-        "importlib",
-        "pandas",
         "polars",
         "numpy",
         "scipy",
-        "tabulate",
-        "matplotlib",
-        #"matlabengine==25.1.2",
+        "matplotlib", # Can we remove?
         "plotly",
         "pyomo",
         "networkx",

@@ -14,7 +14,7 @@ import datetime
 # Import sting code
 # -----------------------
 from sting import __logo__
-import sting.system.selections as sl
+import sting.system.stream as sl
 
 # -----------------------
 # Import sting components
@@ -26,7 +26,7 @@ from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_e import GFMIe
-from sting.reduced_order_model.linear_rom import LinearROM
+from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.line.pi_model import LinePiModel
 from sting.branch.series_rl import BranchSeriesRL
 from sting.shunt.parallel_rc import ShuntParallelRC
@@ -55,12 +55,12 @@ class System:
     infinite_sources: list[InfiniteSource] = None
     gfmi_c: list[GFMIc] = None
     gfmi_e: list[GFMIe] = None
-    linear_roms: list[LinearROM] = None
+    linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None
     lines: list[LinePiModel] = None
     branch_series_rl: list[BranchSeriesRL] = None
-    shunt_parallel_rl: list[ShuntParallelRC] = None
+    shunt_parallel_rc: list[ShuntParallelRC] = None
     timeseries: list[Timeseries] = None
     timepoints: list[Timepoint] = None
     scenarios: list[Scenario] = None
@@ -169,8 +169,8 @@ class System:
               # Assumes each component is a dataclass with fields
               cols = fields(lst[0])
               cols = [c.name for c in cols if c.type in types]
-              df = self.query([type_]).to_table(*cols, index = 'id', index_name = 'id') # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
-              df.to_csv(os.path.join(output_directory, csv_filename))
+              df = self.query([type_]).to_table(*cols) # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
+              df.write_csv(os.path.join(output_directory, csv_filename))
 
     # ------------------------------------------------------------
     # Component Management + Searching
@@ -190,33 +190,29 @@ class System:
 
         return component.id
         
-    def _generator(self, names) -> itertools.chain:
-        # Collect all lists of components in the component_types
-        all_components = [getattr(self, name) for name in names]
-         # Yield all components following the order in component_types
-        return itertools.chain(*all_components)
 
-    def query(self, *args):
+    def query(self, components=None):
         """
         Return a Stream over a set of component types. Analogous to FROM in 
         SQL, specifying which tables to access data from. For example, 
         "FROM gfmi_a, inf_src SELECT id" would be written as:
-        >>> power_sys.query("gfmi_a", "inf_src").select("id")
+        >>> power_sys.query(["gfmi_a", "inf_src"]).select("id")
         
         If no tables are provided runs a Stream over all components.
         """
-        if not args:
+        if components is None:
             return sl.Stream(self, index_map=self.class_to_type)
-        # Unpack all args calling on self if they are a function
-        names = [arg(self) if callable(arg) else arg for arg in args]
-        # Flatten the list of component types to query from
-        names = itertools.chain(*names)
+        
+        # Yield all components following the order in component_types
+        component_stream = itertools.chain(*[getattr(self, c) for c in components])
 
-        return sl.Stream(self._generator(names), index_map=self.class_to_type)
+        return sl.Stream(component_stream, index_map=self.class_to_type)
 
     def __iter__(self):
         """Iterate over all components in the system."""
-        return self._generator([c.type_ for c in self.components])
+        components = [c.type_ for c in self.components]
+        component_stream = itertools.chain(*[getattr(self, c) for c in components])
+        return component_stream
     
     def apply(self, method, *args):
         """Call a given method on all components with the method."""
@@ -226,6 +222,11 @@ class System:
 
     @property
     def gens(self):
+        # TODO: We should be more explicit with these properties. It seems like bad
+        # practice to have `sys.generators` and `sys.gens` referring to two different things.
+        # This has the potential to be very confusing from the user perspective. 
+        # Perhaps we can have ccm_generators, ccm_shunts, ccm_branches (and update their tags
+        # as well tags=["ccm_generator"]). Something like this.
         """Return a lazy Stream (like list) of all components with the tag "generator"."""
         return self.query(self.find_tagged("generator"))
 

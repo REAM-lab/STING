@@ -11,4 +11,5 @@ pyenv/
 slprj/
 *.log
 *.asv
+*.html
 sting_log.txt
