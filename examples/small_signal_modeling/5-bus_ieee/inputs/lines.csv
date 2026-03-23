@@ -1,8 +1,0 @@
-name,from_bus,to_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,r_pu,x_pu,g_pu,b_pu
-1-2,richmond,sf,1.00E+02,2.30E+02,60,0.02,0.06,0.01,0.01
-1-3,richmond,berkeley,1.00E+02,2.30E+02,60,0.8,0.24,0.01,0.01
-2-3,sf,berkeley,1.00E+02,2.30E+02,60,0.06,0.25,0.01,0.01
-2-4,sf,oakland,1.00E+02,2.30E+02,60,0.06,0.18,0.01,0.01
-2-5,sf,san_jose,1.00E+02,2.30E+02,60,0.04,0.12,0.01,0.01
-3-4,berkeley,oakland,1.00E+02,2.30E+02,60,0.01,0.03,0.01,0.01
-4-5,oakland,san_jose,1.00E+02,2.30E+02,60,0.08,0.24,0.01,0.01

@@ -116,6 +116,7 @@ class SystemModifier:
             .agg(
                 # Conductance and susceptance can be summed when in parallel
                 pl.col("g_pu", "b_pu").sum(),
+                # [!] WARNING [!]
                 # Take first value among parameters that are assumed to be shared
                 pl.col(shared_columns).first()
             )

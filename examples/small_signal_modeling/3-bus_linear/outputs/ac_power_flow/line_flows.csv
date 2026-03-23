@@ -1,3 +1,0 @@
-line,from_bus,to_bus,existing_capacity_MW,active_power_from_bus_MW,reactive_power_from_bus_MVAR,active_power_to_bus_MW,reactive_power_to_bus_MVAR,active_power_loss_MW,reactive_power_loss_MVAR
-tx_1,lima,chile,inf,2.521038081956374,-4.451203406079074,-0.003251922163191892,1.1182026942411858,2.5177861597931823,-3.3330007118378884
-tx_2,chile,santiago,inf,0.003251912305956229,-1.1182027042174345,2.5280790309299106,-2.2520331431439238,2.531330943235867,-3.370235847361358
