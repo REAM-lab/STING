@@ -168,8 +168,8 @@ class System:
               # Assumes each component is a dataclass with fields
               cols = fields(lst[0])
               cols = [c.name for c in cols if c.type in types]
-              df = self.query([type_]).to_table(*cols, index = 'id', index_name = 'id') # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
-              df.to_csv(os.path.join(output_directory, csv_filename))
+              df = self.query([type_]).to_table(*cols) # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
+              df.write_csv(os.path.join(output_directory, csv_filename))
 
     # ------------------------------------------------------------
     # Component Management + Searching
