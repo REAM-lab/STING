@@ -1,4 +1,4 @@
 id,type,generator,timepoint,active_power_MW,reactive_power_MVAR
-0,infinite_sources,gen_1,hour_0,4.228389695048563,-4.372982805268045
-1,infinite_sources,gen_2,hour_0,4.188586687129259,-4.167462883342912
-2,infinite_sources,gen_3,hour_0,4.21943315263261,-4.010676160583148
+0,infinite_sources,gen_1,hour_0,1.9414725249577875,-4.139704509398806
+1,infinite_sources,gen_2,hour_0,6.0971996083888484,-3.941817390198041
+2,infinite_sources,gen_3,hour_0,4.594306490237173,-4.4458440300507585
