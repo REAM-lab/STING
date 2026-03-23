@@ -1,0 +1,12 @@
+name,component,type,init
+v_ref_d,infinite_sources_0,device,1.0288958358009221
+v_ref_q,infinite_sources_0,device,1.4085352854334203e-16
+p_ref,gfmi_c_0,device,0.8722586855003804
+q_ref,gfmi_c_0,device,0.6829551223037033
+v_ref,gfmi_c_0,device,1.2406778423106177
+p_ref,gfmi_c_1,device,0.7361476678067997
+q_ref,gfmi_c_1,device,0.6778489846973926
+v_ref,gfmi_c_1,device,1.40349722559246
+p_ref,gfmi_c_2,device,0.8361377784738278
+q_ref,gfmi_c_2,device,0.6700731844243955
+v_ref,gfmi_c_2,device,1.3806683955766954

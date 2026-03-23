@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import solve, eigvals
+from scipy.linalg import solve, eigvals, cholesky
 from typing import Literal
 from dataclasses import dataclass, field
 from control import gram
@@ -50,10 +50,12 @@ class BlockGramian:
         eigenvalues = eigvals(W)
         min_ev = -min(eigenvalues)
         max_ev = max(eigenvalues)
-        if (max_ev/min_ev >= 1e12) and (max_ev > 0):
-            W = W + 2*min_ev*np.eye(W.size[0])
 
-        
+        if min_ev == 0:
+            W = W + 1e-10*np.eye(W.shape[0])
+        elif (max_ev/min_ev >= 1e12) and (max_ev > 0):
+            W = W + 2*min_ev*np.eye(W.shape[0])
+
         start, stop = 0, 0
 
         # Assign block elements in W it each component
@@ -63,7 +65,7 @@ class BlockGramian:
             stop += n
 
             if hasattr(component, "W_"+self.type[0]):
-                W_i = W[start:stop, start:stop]
+                W_i = cholesky(W[start:stop, start:stop], lower=False)
                 gramian = getattr(component, "W_"+self.type[0])
                 setattr(gramian, self.method, W_i)
 

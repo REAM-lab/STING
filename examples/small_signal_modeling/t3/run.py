@@ -7,6 +7,11 @@ from pathlib import Path
 from sting import main
 from sting.system.core import System
 
+from sting.system.component import Component
+from sting.system.operations import SystemModifier
+from sting.modules.power_flow.core import ACPowerFlow
+from sting.modules.simulation_emt.core import SimulationEMT
+
 # Specify path of the case study directory
 case_dir = Path(__file__).resolve().parent
 
@@ -28,10 +33,17 @@ inputs = {'infinite_sources_0': {'v_ref_d': step3},
                        'v_ref': step2,
                        'v_dc_ref': step2,
                        'v_s': step1, 
-                       'Pload': step2}}
+                       'i_load_ref': step2}}
 
-t_max = 4.0
+t_max = 3.0
 
+# Load system from CSV files
+sys = System.from_csv(case_directory=case_dir)
+
+# Run power flow
+pf = ACPowerFlow(system=sys, model_settings=None, solver_settings=None)
+pf.solve()
+    
 _, ssm = main.run_ssm(case_directory=case_dir)
 
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)

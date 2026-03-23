@@ -1,0 +1,11 @@
+name,component,type,init
+i_bus_d,infinite_sources_0,"",-0.964662979278219
+i_bus_q,infinite_sources_0,"",-0.028568581494433937
+i_bus_d,infinite_sources_1,"",0.72766208102668
+i_bus_q,infinite_sources_1,"",-0.6518690890500581
+v_bus_D,pa_rc_0,"",1.0
+v_bus_Q,pa_rc_0,"",0.0
+v_bus_D,pa_rc_1,"",1.1960241954528867
+v_bus_Q,pa_rc_1,"",0.45059616370234223
+i_br_D,se_rl_0,"",-0.9086698272918832
+i_br_Q,se_rl_0,"",0.3738749943599358
