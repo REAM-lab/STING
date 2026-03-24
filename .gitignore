@@ -13,3 +13,5 @@ slprj/
 *.asv
 *.html
 sting_log.txt
+**/simulation_emt/*.csv
+**/small_signal_model/*.csv
