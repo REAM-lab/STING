@@ -79,11 +79,13 @@ class DynamicalVariables:
     
         return df
 
-    def to_timeseries(self):
+    def to_timeseries(self, csv_filepath = None):
         d = {k : self._value[i] for i, k in enumerate(self._name)}
         df = pl.DataFrame(d)
         new_col = pl.Series("time", self._time)
         df = df.insert_column(0, new_col)
+        if csv_filepath is not None:
+            df.write_csv(csv_filepath)
         return df
 
     # Name property and setter

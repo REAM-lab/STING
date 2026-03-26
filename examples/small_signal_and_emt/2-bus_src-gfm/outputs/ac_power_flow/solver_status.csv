@@ -2,8 +2,4 @@ attribute,value
 solver_name,ipopt
 solver_status,ok
 termination_condition,optimal
-<<<<<<< HEAD:examples/small_signal_modeling/t3/outputs/ac_power_flow/solver_status.csv
-time_spent_seconds,0.05982470512390137
-=======
-time_spent_seconds,0.02771782875061035
->>>>>>> origin/main:examples/small_signal_and_emt/2-bus_src-gfm/outputs/ac_power_flow/solver_status.csv
+time_spent_seconds,0.016715049743652344

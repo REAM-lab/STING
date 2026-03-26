@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
 import itertools
 from more_itertools import transpose
-from typing import NamedTuple
 import os
+import logging
 
 # ------------------
 # Import sting code
@@ -15,18 +15,12 @@ import os
 from sting.system.core import System
 from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables
+from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices
+from sting.utils.runtime_tools import timeit
 
-# -----------
-# Sub-classes
-# -----------
-class VariablesEMT(NamedTuple):
-    """
-    All variables in the system used for simulation. 
-    """
-    x: DynamicalVariables
-    u: DynamicalVariables
-    y: DynamicalVariables
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # ----------------
 # Main class
@@ -173,9 +167,10 @@ class SimulationEMT:
             setattr(var_component, "value", value)
             setattr(var_component, "time", time)
 
+    @timeit
     def sim(self, t_max, inputs, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}, components_to_plot=None):
         """
-        Simulate the EMT dynamics of the system using scipy.integrate.solve_ivp
+        Construction and solution of differential equations for EMT simulation.
         """
         
         F, G, H, L = self.ccm_abc_matrices
@@ -233,10 +228,10 @@ class SimulationEMT:
             tps = np.linspace(0, t_max, 500)
             solution = solution.sol(tps)
 
-        self.set_value(tps, solution, "x")
+        # Update the value of the EMT variables based on the solution of the ODEs
+        self.set_value(tps, solution, "x")    
 
-        print("> EMT Simulation completed.")
-
+        self.write_results_csv(components=components_to_plot)
         self.plot_results(components=components_to_plot)
 
 
@@ -245,7 +240,22 @@ class SimulationEMT:
         Plot EMT simulation results
         """
 
-        print("> Plotting EMT simulation results in ", end='')
+        if components is None:
+            components = self.components
+
+        output_dir = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
+        os.makedirs(output_dir, exist_ok=True)
+
+        logger.info(f" - Plotting EMT simulation results in {output_dir}")
+
+        for c in components:
+            component: Component = getattr(self.system, c.type_)[c.id]
+            getattr(component, "plot_results_emt")(output_dir)
+    
+    def write_results_csv(self, components = None):
+        """
+        Write EMT simulation results to output directory.
+        """
 
         if components is None:
             components = self.components
@@ -253,10 +263,10 @@ class SimulationEMT:
         output_dir = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
         os.makedirs(output_dir, exist_ok=True)
 
-        print(output_dir, end='')
+        logger.info(f" - Writing EMT simulation results in {output_dir}")
 
         for c in components:
-            component = getattr(self.system, c.type_)[c.id]
-            getattr(component, "plot_results_emt")(output_dir)
-    
-        
+            component: Component = getattr(self.system, c.type_)[c.id]
+            variables: VariablesEMT = getattr(component, "variables_emt")
+            states: DynamicalVariables = variables.x.to_timeseries(csv_filepath=os.path.join(output_dir, f"{c.type_}_{c.id}_states.csv"))
+
