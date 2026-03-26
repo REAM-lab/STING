@@ -28,13 +28,14 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
 
 ### Solvers
 
-Most of modules require commercial or open-source solvers to run various optimization models. Even small-signal modeling requires a solver to run optimal power flow. Make sure you have a solver installed in your computer. We are currently offering support for the following solvers:
+Most of modules require commercial or open-source solvers to run various optimization models. Even small-signal modeling requires a solver to run optimal power flow to find an
+equilibrium point. Beforing installing the solvers in your python environment, you should have any solver installed in your computer. Testcases are currently supported by these solvers:
 
-| Solver | How to install      | Use                |
-|--------|---------------------|--------------------|
-| IPOPT  | `pip install ipopt` | AC OPF             |
-| Gurobi | `pip install ipopt` | Capacity expansion |
-| MOSEK  | `pip install mosek` | Capacity expansion |
+| Solver | How to install in your python environment     | Use                |
+|--------|-----------------------------------------------|--------------------|
+| IPOPT  | `pip install ipopt`                           | ACOPF              |
+| Gurobi | `pip install gurobipy`                        | Capacity expansion |
+| MOSEK  | `pip install mosek`                           | Capacity expansion |
 
 ### SLICOT
 

@@ -4,7 +4,6 @@
 import numpy as np
 from dataclasses import dataclass
 from collections.abc import Iterable
-from typing import NamedTuple
 import os
 from scipy.linalg import block_diag
 import itertools
@@ -12,6 +11,7 @@ import polars as pl
 from typing import Callable
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import logging
 
 # ------------------
 # Import sting code
@@ -22,40 +22,12 @@ from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation
 from sting.modules.power_flow.utils import ACPowerFlowSolution
 from sting.utils.matrix_tools import block_permute, matrix_to_csv
+from sting.modules.small_signal_modeling.utils import ComponentSSM, ConnectionMatrices
+from sting.utils.runtime_tools import timeit
 
-# -----------
-# Sub-classes
-# -----------
-class VariablesSSM(NamedTuple):
-    """
-    All variables in the system for small-signal modeling.
-    """
-    x: DynamicalVariables
-    u: DynamicalVariables
-    y: DynamicalVariables
 
-class ComponentSSM(NamedTuple):
-    """
-    A component of the system that participates in small-signal modeling.
-
-    #### Attributes:
-    - type: `str`
-            inf_src, se_rl, pa_rc, ... etc. 
-    - idx: `int`
-            Index of the component in its corresponding list in the system.
-    """
-    type: str
-    id: int
-
-class ConnectionMatrices(NamedTuple):
-    """
-    Component connection matrices
-    Using a NamedTuple to avoid accessing each element by it's index in a list
-    """
-    F: np.ndarray
-    G: np.ndarray
-    H: np.ndarray
-    L: np.ndarray
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # ----------------
 # Main class
@@ -189,8 +161,9 @@ class SmallSignalModel:
             self.model.to_csv(self.output_directory)
             self.write_csv_ccm_matrices()
 
+    @timeit
     def simulate_ssm(self, t_max: float, inputs: dict[str, dict[str, Callable[[float], float]]] = None, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
-        """Simulate the small-signal model under a given input profile."""
+        """Construction and solution of differential equations associated to system-level small-signal model."""
         
         x0 = np.zeros_like(self.model.x.init)
         tps, solution = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, output_directory=self.output_directory, plot=False)
@@ -203,6 +176,24 @@ class SmallSignalModel:
         _, comp_idx = np.unique(self.model.x.component, return_index=True)
         components_to_plot = self.model.x.component[np.sort(comp_idx)] 
         i = 0 # Initialize counter 
+
+        logger.info(f" - Writing SSM simulation results in {self.output_directory}")
+
+        # Write the simulation results to CSV files.
+        for component in components_to_plot:
+            number_of_states = sum(self.model.x.component == component)
+            state_names = self.model.x.name[self.model.x.component == component]
+            columns_for_df = ['time'] + state_names.tolist()
+            (pl.DataFrame(
+                data=np.column_stack((tps, solution[i:i+number_of_states].T)),
+                schema=columns_for_df
+            )
+            .write_csv(os.path.join(self.output_directory, f"{component}_states.csv")))
+            i += number_of_states
+
+        logger.info(f" - Plotting SSM simulation results in {self.output_directory}")
+
+        i = 0 # Re-initialize counter to plot the results in the same order as the solution vector    
 
         # Make a html file for each component. Each file plots the states corresponding to each component.
         for component in components_to_plot:
