@@ -680,8 +680,13 @@ class GFMIe(Generator):
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle_pc)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle_pc)])
         
+        # calculate v_vsc 
+        v_sh_dq = v_sh_d + np.multiply(v_sh_q, 1j)
+        i_vsc_dq = i_vsc_d + np.multiply(i_vsc_q, 1j)
+        v_vsc_dq = v_sh_dq + np.multiply((self.rf1_pu + self.xf1_pu * 1j), i_vsc_dq)
+        
         fig = make_subplots(
-            rows=10, cols=2,
+            rows=12, cols=2,
             horizontal_spacing=0.15,
             vertical_spacing=0.05,
         )
@@ -789,6 +794,34 @@ class GFMIe(Generator):
                     row=10, col=2)
         fig.update_xaxes(title_text='Time [s]', row=10, col=2)
         fig.update_yaxes(title_text='i_load [p.u.]', row=10, col=2)
+        
+        # power comparisons (calculated)
+        p_vsc = (v_vsc_dq*np.conjugate(i_vsc_dq)).real 
+        p_load = i_load*v_dc 
+        p_ref, q_ref, v_ref, v_dc_ref, v_s, i_load_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value 
+        p_bat = i_L*v_s  
+        fig.add_trace(go.Scatter(x=tps, y=p_vsc, name="p_vsc", mode='lines', line=dict(color='red', dash='solid')),
+                    row=11, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=p_load, name="p_load", mode='lines', line=dict(color='blue', dash='solid')),
+                    row=11, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=p_bat, name="p_bat", mode='lines', line=dict(color='green', dash='solid')),
+                    row=11, col=1)
+        
+        
+        fig.update_xaxes(title_text='Time [s]', row=11, col=1)
+        fig.update_yaxes(title_text='p [p.u.]', row=11, col=1)
+        
+        # v_vsc (calculated)
+        fig.add_trace(go.Scatter(x=tps, y=v_vsc_dq.real, mode='lines', line=dict(color='red', dash='solid')),
+                    row=12, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=12, col=1)
+        fig.update_yaxes(title_text='v_vsc_d [p.u.]', row=12, col=1)
+        
+        fig.add_trace(go.Scatter(x=tps, y=v_vsc_dq.imag, mode='lines', line=dict(color='red', dash='solid')),
+                    row=12, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=12, col=2)
+        fig.update_yaxes(title_text='v_vsc_q [p.u.]', row=12, col=2)
+        
 
         name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
