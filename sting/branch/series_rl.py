@@ -91,7 +91,7 @@ class BranchSeriesRL(Branch):
 
         u = DynamicalVariables(
             name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_Q"],
-            component=f"se_rl_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid", "grid", "grid"],
             init=[
                 self.emt_init.v_from_bus_D,
@@ -103,7 +103,7 @@ class BranchSeriesRL(Branch):
 
         x = DynamicalVariables(
             name=["i_br_D", "i_br_Q"],
-            component=f"se_rl_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[self.emt_init.i_br_D, self.emt_init.i_br_Q],
         )
         y = copy.deepcopy(x)

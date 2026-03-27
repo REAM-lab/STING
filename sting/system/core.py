@@ -94,6 +94,16 @@ class System:
 
         logger.info(f" System initialization completed.")
 
+
+    @classmethod
+    def from_dataset(cls, dataset=None) -> 'System':
+        """
+        Construct a system model from a predefined dataset.
+        """
+        case_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
+        return cls.from_csv(case_directory=case_directory)
+
+
     @classmethod
     def from_csv(cls, case_directory = None) -> 'System':
         """
