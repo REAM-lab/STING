@@ -13,7 +13,7 @@ import datetime
 # -----------------------
 # Import sting code
 # -----------------------
-from sting import __logo__
+from sting.__init__ import __logo__
 import sting.system.stream as sl
 
 # -----------------------

@@ -10,6 +10,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 
+import polars as pl
+
 # -----------------------
 # Import sting code
 # -----------------------
@@ -168,3 +170,23 @@ class ShuntParallelRC(Shunt):
                             )
 
         fig.write_html(os.path.join(output_dir, name + ".html"))
+
+
+    def compare_ssm_emt(self, emt_directory, ssm_directory):
+        # Read the SSM and EMT states
+        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
+        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
+
+        # Transform EMT abc states to dq0 states
+        angle_ref =  2 * np.pi * self.base_frequency_Hz * emt["time"].to_numpy()
+        v_a, v_b, v_c = [c.to_numpy() for c in emt.select("v_bus_a", "v_bus_b", "v_bus_c")]
+        v_emt_D, v_emt_Q, _ = zip(*map(abc2dq0, v_a, v_b, v_c, angle_ref))
+
+        # Unpack the SSM dq states
+        v_ssm_D, v_ssm_Q = [c.to_numpy() for c in ssm.select("v_bus_D", "v_bus_Q")]
+
+        # Return deltas
+        return {
+            f"({self.type_}_{self.id}, v_bus_D)": (v_emt_D - v_ssm_D),
+            f"({self.type_}_{self.id}, v_bus_Q)": (v_emt_Q - v_ssm_Q)
+        }

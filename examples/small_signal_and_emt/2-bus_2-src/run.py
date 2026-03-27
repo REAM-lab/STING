@@ -28,6 +28,7 @@ shape: (10, 5)
 from pathlib import Path
 # Import sting package
 from sting import main
+from sting.system.core import System
 
 # Specify path of the case study directory
 case_dir = Path(__file__).resolve().parent
@@ -49,11 +50,24 @@ inputs = {
     }
 t_max = 1.0 # Simulation length in seconds
 
+system = System.from_dataset("2-bus_2-src")
+
 # Construct system and small-signal model
-_, ssm = main.run_ssm(case_directory=case_dir)
+sys, ssm = main.run_ssm(case_directory=case_dir, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 # Run EMT simulation
-main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
+main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max,  system=system)
+
+
+import os
+
+emt_dir = os.path.join(case_dir, "outputs", "simulation_emt")
+ssm_dir = os.path.join(case_dir, "outputs", "small_signal_model")
+
+ans = dict()
+for component in sys:
+    if hasattr(component, "compare_ssm_emt"):
+        ans |= getattr(component, "compare_ssm_emt")(emt_dir, ssm_dir)
 
 print("\nok")

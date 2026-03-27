@@ -50,7 +50,7 @@ def run_acopf(case_directory = os.getcwd(), model_settings=None, solver_settings
 
     return sys
 
-def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=None, system=None):
     """
     Routine to construct the system and its small-signal model from a case study directory.
     """
@@ -59,8 +59,11 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     # Set up logging to file
     setup_logging_file(case_directory)
 
-    # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    if system is not None:
+        sys = system
+    else:
+        # Load system from CSV files
+        sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
@@ -79,12 +82,15 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, ssm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
-    # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    if system is not None:
+        sys = system
+    else:
+        # Load system from CSV files
+        sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
