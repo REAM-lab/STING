@@ -96,12 +96,14 @@ class System:
 
 
     @classmethod
-    def from_dataset(cls, dataset=None) -> 'System':
+    def from_dataset(cls, dataset, case_directory) -> 'System':
         """
         Construct a system model from a predefined dataset.
         """
-        case_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
-        return cls.from_csv(case_directory=case_directory)
+        dataset_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
+        system = cls.from_csv(case_directory=dataset_directory)
+        system.case_directory = case_directory
+        return system
 
 
     @classmethod
