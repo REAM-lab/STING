@@ -187,6 +187,6 @@ class ShuntParallelRC(Shunt):
 
         # Return deltas
         return {
-            f"({self.type_}_{self.id}, v_bus_D)": (v_emt_D - v_ssm_D),
-            f"({self.type_}_{self.id}, v_bus_Q)": (v_emt_Q - v_ssm_Q)
+            f"({self.type_}_{self.id}, v_bus_D)": (v_emt_D, v_ssm_D),
+            f"({self.type_}_{self.id}, v_bus_Q)": (v_emt_Q, v_ssm_Q)
         }

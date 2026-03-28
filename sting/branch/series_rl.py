@@ -212,8 +212,8 @@ class BranchSeriesRL(Branch):
 
         # Return deltas
         return {
-            f"({self.type_}_{self.id}, i_br_D)": (i_emt_D - i_ssm_D),
-            f"({self.type_}_{self.id}, i_br_Q)": (i_emt_Q - i_ssm_Q)
+            f"({self.type_}_{self.id}, i_br_D)": (i_emt_D, i_ssm_D),
+            f"({self.type_}_{self.id}, i_br_Q)": (i_emt_Q, i_ssm_Q)
         }
 
         

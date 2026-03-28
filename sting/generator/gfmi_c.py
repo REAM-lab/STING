@@ -568,7 +568,7 @@ class GFMIc(Generator):
 
         # Create mapping of errors using columns/states that can be compared directly
         delta = {
-            f"({self.type_}_{self.id}, {col})": (emt[col] - ssm[col]).to_numpy()
+            f"({self.type_}_{self.id}, {col})": (emt[col].to_numpy(), ssm[col].to_numpy())
             for col in ["p_pc","q_pc"]
         }
         # Name of EMT (abc) variables to compare with SSM (dq) variables
@@ -585,7 +585,7 @@ class GFMIc(Generator):
             # Unpack the SSM dq states
             d_ssm, q_ssm = [c.to_numpy() for c in ssm.select(d,q)]
             # Append deltas
-            delta[f"({self.type_}_{self.id}, {d})"] = (d_emt - d_ssm)
-            delta[f"({self.type_}_{self.id}, {q})"] = (q_emt - q_ssm)
+            delta[f"({self.type_}_{self.id}, {d})"] = (d_emt, d_ssm)
+            delta[f"({self.type_}_{self.id}, {q})"] = (q_emt, q_ssm)
             
         return delta

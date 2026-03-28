@@ -248,6 +248,6 @@ class InfiniteSource(Generator):
 
         # Return deltas
         return {
-            f"({self.type_}_{self.id}, i_bus_d)": (i_emt_d - i_ssm_d),
-            f"({self.type_}_{self.id}, i_bus_q)": (i_emt_q - i_ssm_q)
+            f"({self.type_}_{self.id}, i_bus_d)": (i_emt_d, i_ssm_d),
+            f"({self.type_}_{self.id}, i_bus_q)": (i_emt_q, i_ssm_q)
         }
