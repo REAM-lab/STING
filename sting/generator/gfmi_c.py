@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
-
+import polars as pl
 # ------------------
 # Import sting code
 # ------------------
@@ -556,3 +556,36 @@ class GFMIc(Generator):
                         margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
         
         fig.write_html(os.path.join(output_dir, name + ".html"))
+
+
+    def compare_ssm_emt(self, emt_directory, ssm_directory):
+        """
+        TODO: "angle_pc" and "w_pc" are not compared as it.
+        """
+         # Read the SSM and EMT states
+        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
+        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
+
+        # Create mapping of errors using columns/states that can be compared directly
+        delta = {
+            f"({self.type_}_{self.id}, {col})": (emt[col].to_numpy(), ssm[col].to_numpy())
+            for col in ["p_pc","q_pc"]
+        }
+        # Name of EMT (abc) variables to compare with SSM (dq) variables
+        outputs = [
+            ("i_vsc_a", "i_vsc_b", "i_vsc_c","i_vsc_d","i_vsc_q"),
+            ("v_sh_a","v_sh_b","v_sh_c","v_lcl_sh_d","v_lcl_sh_q"),
+            ("i_bus_a","i_bus_b","i_bus_c","i_bus_d","i_bus_q")
+            ]
+        
+        for (a,b,c,d,q) in outputs:
+            # Transform EMT abc states to dq0 states
+            a, b, c, angle_ref = [c.to_numpy() for c in emt.select(a,b,c,"angle_pc")]
+            d_emt, q_emt, _ = zip(*map(abc2dq0, a, b, c, angle_ref))
+            # Unpack the SSM dq states
+            d_ssm, q_ssm = [c.to_numpy() for c in ssm.select(d,q)]
+            # Append deltas
+            delta[f"({self.type_}_{self.id}, {d})"] = (d_emt, d_ssm)
+            delta[f"({self.type_}_{self.id}, {q})"] = (q_emt, q_ssm)
+            
+        return delta

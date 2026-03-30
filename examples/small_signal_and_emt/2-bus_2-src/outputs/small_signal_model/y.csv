@@ -3,9 +3,9 @@ i_bus_D,infinite_sources_0,"",-0.8586698271936963
 i_bus_Q,infinite_sources_0,"",0.4405416612599554
 i_bus_D,infinite_sources_1,"",0.9384312927680164
 i_bus_Q,infinite_sources_1,"",-0.27161023945495943
-v_bus_D,pa_rc_0,"",1.0
-v_bus_Q,pa_rc_0,"",0.0
-v_bus_D,pa_rc_1,"",1.1960241954528867
-v_bus_Q,pa_rc_1,"",0.45059616370234223
-i_br_D,se_rl_0,"",-0.9086698272918832
-i_br_Q,se_rl_0,"",0.3738749943599358
+v_bus_D,shunt_parallel_rc_0,"",1.0
+v_bus_Q,shunt_parallel_rc_0,"",0.0
+v_bus_D,shunt_parallel_rc_1,"",1.1960241954528867
+v_bus_Q,shunt_parallel_rc_1,"",0.45059616370234223
+i_br_D,branch_series_rl_0,"",-0.9086698272918832
+i_br_Q,branch_series_rl_0,"",0.3738749943599358

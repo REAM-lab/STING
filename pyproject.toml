@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sting"
+version = "0.1.0"
+description = "Specialized Tool for INverter-based Grids"
+readme = "README.md"
+requires-python = ">=3.10"
+
+authors = [
+    { name = "Paul", email = "psernatorre@ucsd.edu" },
+    { name = "Adam", email = "asedlak@ucsd.edu" }
+]
+
+license = { text = "Apache-2.0" }
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "more-itertools",
+    "polars",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "plotly",
+    "networkx",
+    "pyomo",
+]
+
+[project.optional-dependencies]
+# Solvers (requires system ipopt installation)
+optimization = [
+    "cyipopt",
+    "mosek",
+    "gurobipy",
+]
+# Model reduction (requires system slycot installation)
+model_reduction = [
+    "control",
+    "pymor",
+    # "slycot",
+]
+# Development tools
+dev = [
+    "pytest"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

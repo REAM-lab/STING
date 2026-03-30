@@ -33,7 +33,7 @@ equilibrium point. Beforing installing the solvers in your python environment, y
 
 | Solver | How to install in your python environment     | Use                |
 |--------|-----------------------------------------------|--------------------|
-| IPOPT  | `pip install ipopt`                           | ACOPF              |
+| IPOPT  | `brew install ipopt` + `pip install cyipopt`  | ACOPF              |
 | Gurobi | `pip install gurobipy`                        | Capacity expansion |
 | MOSEK  | `pip install mosek`                           | Capacity expansion |
 

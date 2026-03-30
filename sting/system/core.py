@@ -13,7 +13,7 @@ import datetime
 # -----------------------
 # Import sting code
 # -----------------------
-from sting import __logo__
+from sting.__init__ import __logo__
 import sting.system.stream as sl
 
 # -----------------------
@@ -93,6 +93,18 @@ class System:
                 setattr(self, c.type_, [])
 
         logger.info(f" System initialization completed.")
+
+
+    @classmethod
+    def from_dataset(cls, dataset, case_directory) -> 'System':
+        """
+        Construct a system model from a predefined dataset.
+        """
+        dataset_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
+        system = cls.from_csv(case_directory=dataset_directory)
+        system.case_directory = case_directory
+        return system
+
 
     @classmethod
     def from_csv(cls, case_directory = None) -> 'System':
