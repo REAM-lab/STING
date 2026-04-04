@@ -7,12 +7,13 @@ Below is a list of people and organizations that have contributed source code to
 
 - Adam Sedlak $^1$ (<asedlak@ucsd.edu>)
 - Patricia Hidalgo-Gonzalez $^1$ (<phidalgogonzalez@ucsd.edu>)
-- Paul Serna-Torre $^1$$^\dagger$ (<psernatorre@ucsd.edu>)
+- Paul Serna-Torre $^1$ $^\dagger$ (<psernatorre@ucsd.edu>)
 - Ruth Kravis $^2$
 
 **Organizations**
-$1$. University of California San Diego (Renewable Energy + Advanced Mathematics Lab).
-$2$. University of California Berkeley (Energy Modeling, Analysis, and Control).
+
+$1$. University of California San Diego (Renewable Energy + Advanced Mathematics Lab).<br>
+$2$. University of California Berkeley (Energy Modeling, Analysis, and Control).<br>
 $\dagger$. Lead author.
 
 ## Papers
