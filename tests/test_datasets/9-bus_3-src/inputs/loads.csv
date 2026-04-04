@@ -1,0 +1,10 @@
+bus,timepoint,load_MW,load_MVAR
+bus_1,hour_0,0,0
+bus_2,hour_0,0,0
+bus_3,hour_0,0,0
+bus_4,hour_0,0,0
+bus_5,hour_0,0,0
+bus_6,hour_0,0,0
+bus_7,hour_0,0,0
+bus_8,hour_0,0,0
+bus_9,hour_0,0,0
