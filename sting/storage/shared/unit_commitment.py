@@ -101,29 +101,4 @@ def construct_unit_commitment_model(system: System, model: pyo.ConcreteModel, mo
     # Total storage cost
     model.eStorTotalCost = pyo.Expression(expr = lambda m: sum(m.eStorCostPerTp[t] * t.weight for t in T) )
 
-@timeit
-def export_results_unit_commitment(system: System, model: pyo.ConcreteModel, output_directory: str):
-    """Storage results to CSV files."""
-
-    # Export discharge and charge results
-    df1 = pl.DataFrame([(e.name, s.name, t.name, pyo.value(model.vDISCHA[e, s, t])) for e in system.storage for s in system.scenarios for t in system.timepoints], 
-                       columns=['storage', 'scenario', 'timepoint', 'discharge_MW'])
-    
-    if hasattr(model, 'vCHARGE'):
-        df2 = pl.DataFrame([(e.name, s.name, t.name, pyo.value(model.vCHARGE[e, s, t])) for e in system.storage for s in system.scenarios for t in system.timepoints],
-                            columns=['storage', 'scenario', 'timepoint', 'charge_MW'])
-        df1 = df1.join(df2, on=['storage', 'scenario', 'timepoint'])
-    
-    # Join with state of charge results
-    df3 = pl.DataFrame([(e.name, s.name, t.name, pyo.value(model.vSOC[e, s, t])) for e in system.storage for s in system.scenarios for t in system.timepoints],
-                        columns=['storage', 'scenario', 'timepoint', 'state_of_charge_MWh'])
-    df1 = df1.join(df3, on=['storage', 'scenario', 'timepoint'])
-
-    df1.write_csv(os.path.join(output_directory, 'storage_dispatch.csv'))
-
-    # Export summary of storage costs
-    (pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'total_cost_USD'],
-                          'cost' : [  sum( pyo.value(model.eStorCostPerTp[t]) * t.weight for t in system.timepoints), 
-                                            pyo.value(model.eStorTotalCost) ]})
-        .write_csv(os.path.join(output_directory, 'storage_costs_summary.csv')))
 

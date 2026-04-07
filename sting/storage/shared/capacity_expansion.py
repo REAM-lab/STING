@@ -154,21 +154,22 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
     df1.write_csv(os.path.join(output_directory, 'storage_dispatch.csv'))
 
     # Export storage capacity results
-    df1 = pyovariable_to_df(model.vPCAP, 
-                            dfcol_to_field={'storage': 'name'}, 
-                            value_name='built_power_capacity_MW')
-    
-    df2 = pyovariable_to_df(model.vECAP, 
-                            dfcol_to_field={'storage': 'name'}, 
-                            value_name='built_energy_capacity_MWh')
-    
-    df = df1.join(df2, on=['storage'])
-    df.write_csv(os.path.join(output_directory, 'storage_built_capacity.csv'))
+    if hasattr(model, 'vPCAP') and hasattr(model, 'vECAP'):
+        df1 = pyovariable_to_df(model.vPCAP, 
+                                dfcol_to_field={'storage': 'name'}, 
+                                value_name='built_power_capacity_MW')
+        
+        df2 = pyovariable_to_df(model.vECAP, 
+                                dfcol_to_field={'storage': 'name'}, 
+                                value_name='built_energy_capacity_MWh')
+        
+        df = df1.join(df2, on=['storage'])
+        df.write_csv(os.path.join(output_directory, 'storage_built_capacity.csv'))
 
     # Export summary of storage costs
     costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
                           'cost' : [  sum( pyo.value(model.eStorCostPerTp[t]) * t.weight for t in system.timepoints), 
-                                            pyo.value(model.eStorCostPerPeriod), 
+                                            pyo.value(model.eStorCostPerPeriod) if hasattr(model, 'eStorCostPerPeriod') else 0,
                                             pyo.value(model.eStorTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'storage_costs_summary.csv'))
 

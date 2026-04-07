@@ -125,35 +125,3 @@ def construct_unit_commitment_model(system: System, model: pyo.ConcreteModel, mo
         model.eShedTotalCost = pyo.Expression(
                                 expr =  lambda m: sum(m.eShedCostPerTp[t] * t.weight for t in T)
                                 )
-
-@timeit
-def export_results_unit_commitment(system: System, model: pyo.ConcreteModel, output_directory: str):
-    """Transmission results to CSV files."""
-
-    # Export power balance by bus, scenario, and timepoint
-    (pl.DataFrame(  data = [ (n.name, 
-                                  s.name, 
-                                  t.name, 
-                                  pyo.value(model.eGenAtBus[n, s, t]),
-                                  pyo.value(model.eNetDischargeAtBus[n, s, t]),
-                                  pyo.value(model.vSHED[n, s, t]) if ((hasattr(model, 'vSHED')) and ((n, s, t) in model.vSHED)) else 0,
-                                  model.load_lookup.get((n.name, s.name, t.name), 0.0),
-                                  pyo.value(model.eFlowAtBus[n, s, t])) for n in system.buses for s in system.scenarios for t in system.timepoints],
-                        schema= ['bus', 'scenario', 'timepoint', 'generator_dispatch_MW', 'storage_dispatch_MW', 'load_shedding_MW', 'load_MW', 'net_line_leaving_flow_MW'],
-                        orient= 'row')
-            .write_csv(os.path.join(output_directory, 'power_balance_by_bus.csv')))
-
-    # Export load shedding results if it is existing
-    if hasattr(model, 'vSHED'):
-        (pl.DataFrame(  data = [ (n.name, 
-                                  s.name, 
-                                  t.name, 
-                                  pyo.value(model.vSHED[n, s, t])) for n, s, t in model.vSHED],
-                        schema= ['bus', 'scenario', 'timepoint', 'load_shedding_MW'],
-                        orient= 'row')
-                        .write_csv(os.path.join(output_directory, 'load_shedding.csv')))
-        
-        # Export summary of load shedding costs
-        (pl.DataFrame({'component' : ['total_cost_USD'],
-                              'cost' : [  pyo.value(model.eShedTotalCost)]})
-            .write_csv(os.path.join(output_directory, 'load_shedding_costs_summary.csv')))

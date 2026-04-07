@@ -22,8 +22,11 @@ import sting.bus.shared.unit_commitment as bus
 import sting.generator.shared.unit_commitment as generator
 import sting.storage.shared.unit_commitment as storage
 import sting.policies.carbon_policies.capacity_expansion as carbon_policies
-import sting.policies.energy_budgets.unit_commitment as energy_budgets
-import sting.policies.energy_budgets.capacity_expansion as energy_budget_ce
+import sting.policies.energy_budgets.capacity_expansion as energy_budgets
+
+import sting.generator.shared.capacity_expansion as generator_ce
+import sting.storage.shared.capacity_expansion as storage_ce
+import sting.bus.shared.capacity_expansion as bus_ce
 
 
 # Set up logging
@@ -94,7 +97,7 @@ class UnitCommitment:
 
         # Construct modules for policies, if any
         carbon_policies.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        energy_budgets.construct_unit_commitment_model(self.system, self.model, self.model_settings)
+        energy_budgets.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
 
         # Define objective function
         logger.info("> Initializing construction of objective function ...")
@@ -167,9 +170,9 @@ class UnitCommitment:
         costs.write_csv(os.path.join(self.output_directory, 'costs_summary.csv'))
 
         # Export module-specific results
-        generator.export_results_unit_commitment(self.system, self.model, self.output_directory)
-        storage.export_results_unit_commitment(self.system, self.model, self.output_directory)
-        bus.export_results_unit_commitment(self.system, self.model, self.output_directory)
+        generator_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        storage_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        bus_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
         carbon_policies.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-        energy_budget_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        energy_budgets.export_results_capacity_expansion(self.system, self.model, self.output_directory)

@@ -131,22 +131,23 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                       csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
 
     # Export generator capacity results
-    pyovariable_to_df(model.vCAP, 
-                      dfcol_to_field={'generator': 'name'}, 
-                      value_name='built_capacity_MW', 
-                      csv_filepath=os.path.join(output_directory, 'generator_built_capacity.csv'))
+    if hasattr(model, 'vCAP'):
+        pyovariable_to_df(model.vCAP, 
+                          dfcol_to_field={'generator': 'name'}, 
+                          value_name='built_capacity_MW', 
+                          csv_filepath=os.path.join(output_directory, 'generator_built_capacity.csv'))
     
     # Export emissions per scenario
-    emissions = pl.DataFrame({'scenario': [s.name for s in system.scenarios], 
+    (pl.DataFrame({'scenario': [s.name for s in system.scenarios], 
                             'emissions_tonneCO2peryear': [sum(pyo.value(model.eEmissionsPerScPerTp[s, t]) * t.weight for t in system.timepoints) for s in system.scenarios]})
-    emissions.write_csv(os.path.join(output_directory, 'emissions_per_scenario.csv'))
+    .write_csv(os.path.join(output_directory, 'emissions_per_scenario.csv')))
 
     # Export summary of generator costs
-    costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
+    (pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
                           'cost' : [  sum( pyo.value(model.eGenCostPerTp[t]) * t.weight for t in system.timepoints), 
-                                            pyo.value(model.eGenCostPerPeriod), 
+                                            pyo.value(model.eGenCostPerPeriod) if hasattr(model, 'eGenCostPerPeriod') else 0,
                                             pyo.value(model.eGenTotalCost)]})
-    costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
+    .write_csv(os.path.join(output_directory, 'generator_costs_summary.csv')))
 
 def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
     """Upload built capacities from a previous capex solution."""
