@@ -9,13 +9,12 @@ import time
 import logging
 from pyomo.common.log import LogStream
 from pyomo.common.tee import capture_output
-from pyomo.repn import generate_standard_repn
-import math
 
 # ------------------
 # Import sting code
 # ------------------
 from sting.utils.runtime_tools import timeit
+from sting.utils.pyomo_tools import inspect_coefficients
 from sting.system.core import System
 from sting.timescales.core import Timepoint
 from sting.modules.capacity_expansion.utils import ModelSettings, SolverSettings, KronVariables
@@ -48,7 +47,9 @@ class CapacityExpansion:
         self.set_settings()
         self.set_output_folder()
         self.construct()
-        self.inspect_coefficients()
+        
+        if self.model_settings.inspect_coefficients:
+            inspect_coefficients(self.model)
         
 
     def set_settings(self):
@@ -210,98 +211,3 @@ class CapacityExpansion:
         energy_budgets.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         transmission_capacity.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
-    @timeit
-    def inspect_coefficients(self):
-        """
-        Inspection of coefficients in the model.
-        """
-
-        min_coef = math.inf
-        max_coef = 0
-
-        min_coef_info = None
-        max_coef_info = None
-
-        min_rhs = math.inf
-        max_rhs = 0
-
-        min_rhs_info = None
-        max_rhs_info = None
-
-        for c in self.model.component_data_objects(pyo.Constraint, active=True):
-            repn = generate_standard_repn(c.body, compute_values=False)
-
-            for var, coef in zip(repn.linear_vars, repn.linear_coefs):
-                val = abs(coef)
-
-                if val == 0:
-                    continue
-
-                if val < min_coef:
-                    min_coef = val
-                    min_coef_info = (coef, c.name, var.name)
-
-                if val > max_coef:
-                    max_coef = val
-                    max_coef_info = (coef, c.name, var.name)
-
-            if c.lower is not None:
-                v = abs(pyo.value(c.lower))
-                if v < min_rhs and v != 0:
-                    min_rhs = v
-                    min_rhs_info = (pyo.value(c.lower), c.name, "lower")
-                if v > max_rhs:
-                    max_rhs = v
-                    max_rhs_info = (pyo.value(c.lower), c.name, "lower")
-
-
-            if c.upper is not None:
-                v = abs(pyo.value(c.upper))
-                if v < min_rhs and v != 0:
-                    min_rhs = v
-                    min_rhs_info = (pyo.value(c.upper), c.name, "upper")
-                if v > max_rhs:
-                    max_rhs = v
-                    max_rhs_info = (pyo.value(c.upper), c.name, "upper")
-
-        obj = next(self.model.component_data_objects(pyo.Objective, active=True))
-
-        repn = generate_standard_repn(obj.expr, compute_values=False)
-
-        min_obj_coef = math.inf
-        max_obj_coef = 0
-        min_obj_info = None
-        max_obj_info = None
-
-        for var, coef in zip(repn.linear_vars, repn.linear_coefs):
-
-            val = abs(coef)
-
-            if val < min_obj_coef:
-                min_obj_coef = coef
-                min_obj_info = (coef, var.name)
-
-            if val > max_obj_coef:
-                max_obj_coef = coef               
-                max_obj_info = (coef, var.name)
-
-        logger.info(f"  - Matrix coefficient extremes:")
-        logger.info(f"     - Minimum coefficient: {min_coef_info[0]}")
-        logger.info(f"       Constraint={min_coef_info[1]}  ")
-        logger.info(f"       Variable={min_coef_info[2]}")
-        logger.info(f"     - Maximum coefficient: {max_coef_info[0]}")
-        logger.info(f"       Constraint={max_coef_info[1]}  ")
-        logger.info(f"       Variable={max_coef_info[2]} \n")
-        logger.info(f"  - RHS extremes:")
-        logger.info(f"     - Minimum RHS: {min_rhs_info[0]}")
-        logger.info(f"       Constraint={min_rhs_info[1]}  ")
-        logger.info(f"       Bound={min_rhs_info[2]}")
-        logger.info(f"     - Maximum RHS: {max_rhs_info[0]}")
-        logger.info(f"       Constraint={max_rhs_info[1]}  ")
-        logger.info(f"       Bound={max_rhs_info[2]} \n")
-
-        logger.info(f"  - Objective coefficient extremes:")
-        logger.info(f"     - Minimum coefficient: {min_obj_info[0]}")
-        logger.info(f"       Variable={min_obj_info[1]}")
-        logger.info(f"     - Maximum coefficient: {max_obj_info[0]}")
-        logger.info(f"       Variable={max_obj_info[1]}")

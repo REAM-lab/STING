@@ -218,6 +218,7 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
     return capex, zonal_system
 
 def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None, solver_settings=None,
+                                 log_filename: str = None,
                                  output_directory=None,
                                  built_capacity_directory=None, make_non_expandable=False, print_system_with_built_capacities=False,
                                  threshold_MW: float = 1e-1):
@@ -225,7 +226,7 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
     # Set up logging to file
-    setup_logging_file(case_directory)
+    setup_logging_file(case_directory, filename=log_filename)
 
     start_time = time.time()
 
@@ -254,7 +255,6 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
     return capex, system
-
 
 def run_model_reduction(
         reductions:dict[str, Reducer],
