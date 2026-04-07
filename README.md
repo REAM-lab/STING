@@ -23,27 +23,29 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
     $ source .venv/bin/activate
     (.venv)$ pip install -e .  
     ```
+To install all optional dependencies, run  `pip install -e ".[all]"`. This will install extra packages necessary for optimization `solvers`, `model_reduction`, and sting `development`.
 
 2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for different modules. Find the file `run.py` and execute it.
 
 ### Solvers
 
-Most of modules require commercial or open-source solvers to run various optimization models. Even small-signal modeling requires a solver to run optimal power flow to find an
-equilibrium point. Beforing installing the solvers in your python environment, you should have any solver installed in your computer. Testcases are currently supported by these solvers:
+Most of modules additionally require commercial or open-source solvers to run various optimization models. For example, solving optimal power flow is needed to find an equilibrium point for small-signal modeling. We currently support and use the following libraries
 
 | Solver | How to install in your python environment     | Use                |
 |--------|-----------------------------------------------|--------------------|
 | IPOPT  | `brew install ipopt` + `pip install cyipopt`  | ACOPF              |
 | Gurobi | `pip install gurobipy`                        | Capacity expansion |
 | MOSEK  | `pip install mosek`                           | Capacity expansion |
+| SLICOT | `pip install slycot`  + `brew install gcc`    |   Model Reduction  |
 
-### SLICOT
-
-Some of our model reduction algorithms use the `slycot` python wrapper for FORTRAN SLICOT routines. Please refer to the `slycot` documentation for full installation instructions
-#### OSX 
-For Mac users your can build `slycot` with support from brew. Run `brew install gcc` and then add `slycot` in your virtual environment with pip, `pip install slycot`.
-
-
-> [!IMPORTANT]
-> **EMT simulation with SPS (Deprecated)**: We are currently offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. Unfortunately [MATLAB has dropped support for the SPS library](https://www.mathworks.com/matlabcentral/answers/2180147-unable-to-find-the-specialized-power-systems-group-in-simscape-electrical-in-newer-version-r2025b) in versions after 2025a. As such, we are actively working to replace these EMT models with pure Python scripts for EMT simulation.
->1. **Open SPS library**: Make sure that you have MATLAB R2025a. Go to the folder `sps_library`. Open the library, and make sure that it is open while you are running EMT simulation with our testcases.
+## Citing
+```
+@misc{STING,
+    author = {{Renewable Energy + Advanced Mathematics Lab (REAM)}},
+    title = {Specialized tool for inverter-based grids},
+    year = {2025},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    url = {https://github.com/REAM-lab/sting}
+}
+```

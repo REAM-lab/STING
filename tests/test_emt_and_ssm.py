@@ -21,7 +21,9 @@ def evaluate_dataset(dataset, inputs, tol=0.05):
 
     t_max = 1.0 # Simulation length in seconds
     # Load dataset
-    system = System.from_dataset(dataset=dataset, case_directory=case_dir)
+    dataset_dir = os.path.join(os.getcwd(), "tests", "test_datasets", dataset)
+    system = System.from_csv(dataset_dir)
+    system.case_directory = case_dir
     # Construct system and small-signal model
     _, ssm = main.run_ssm(system=system, case_directory=case_dir)
     ssm.simulate_ssm(t_max=t_max, inputs=inputs)

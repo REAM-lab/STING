@@ -37,8 +37,9 @@ dependencies = [
 
 [project.optional-dependencies]
 # Solvers (requires system ipopt installation)
-optimization = [
-    "cyipopt",
+solvers = [
+    # "cyipopt",
+    # "ipopt",
     "mosek",
     "gurobipy",
 ]
@@ -52,6 +53,7 @@ model_reduction = [
 dev = [
     "pytest"
 ]
+all = ["sting[solvers,model_reduction,dev]"]
 
 [tool.setuptools.packages.find]
 where = ["."]
