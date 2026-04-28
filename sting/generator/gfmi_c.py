@@ -89,6 +89,8 @@ class GFMIc(Generator):
         return 2 * np.pi * self.base_frequency_Hz
     
     def _calculate_emt_initial_conditions(self):
+
+        # Get power flow variables
         vmag_bus = self.power_flow_variables.vmag_bus
         vphase_bus = self.power_flow_variables.vphase_bus
         p_bus = self.power_flow_variables.p_bus
