@@ -125,10 +125,14 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
     """Generator results to CSV files."""
 
     # Export generator dispatch results
-    pyovariable_to_df(model.vGEN, 
-                      dfcol_to_field={'generator': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                      value_name='dispatch_MW', 
-                      csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
+    #pyovariable_to_df(model.vGEN, 
+    #                  dfcol_to_field={'generator': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
+    #                  value_name='dispatch_MW', 
+    #                  csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
+
+    (pl.DataFrame( data = [ (g.name, s.name, t.name, pyo.value(model.vGEN[g, s, t])) for (g, s, t) in model.vGEN],
+                    schema=['generator', 'scenario', 'timepoint', 'dispatch_MW'], orient='row')
+        .write_csv(os.path.join(output_directory, 'generator_dispatch.csv') ))
 
     # Export generator capacity results
     if hasattr(model, 'vCAP'):
@@ -149,7 +153,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                                             pyo.value(model.eGenTotalCost)]})
     .write_csv(os.path.join(output_directory, 'generator_costs_summary.csv')))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.05):
     """Upload built capacities from a previous capex solution."""
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
@@ -166,7 +170,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     if gens_to_update:
         for g in gens_to_update:
             if generator_built_capacity[g.name] > threshold_MW:
-                g.cap_existing_power_MW += generator_built_capacity[g.name]
+                g.cap_existing_power_MW += generator_built_capacity[g.name] * overbuild_factor # The factor of 1.05 is to add a buffer to ensure that the built capacity from the previous solution is not exactly at the limit, which could cause numerical issues in the optimization.
             if make_non_expandable:
                 g.expand_capacity = False
             else:
