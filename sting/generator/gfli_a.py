@@ -9,8 +9,9 @@ This module implements a GFLI that incorporates:
 # ----------------------
 import numpy as np
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional, ClassVar
+from typing import NamedTuple, Optional
 import scipy.linalg 
+from sting.generator.core import Generator
 
 # ------------------
 # Import sting code
@@ -20,13 +21,6 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 # -----------
 # Sub-classes
 # -----------
-class PowerFlowVariables(NamedTuple):
-    p_bus: float
-    q_bus: float
-    vmag_bus: float
-    vphase_bus: float
-
-
 class InitialConditionsEMT(NamedTuple):
     vmag_bus: float
     vphase_bus: float
@@ -51,8 +45,8 @@ class InitialConditionsEMT(NamedTuple):
 # -----------
 # Main class
 # -----------
-@dataclass(slots=True)
-class GFLIa:
+@dataclass(slots=True, kw_only=True, eq=False)
+class GFLIa(Generator):
     v_dc_pu: float
     rf1_pu: float
     xf1_pu: float
@@ -71,6 +65,7 @@ class GFLIa:
     kp_cc_pu: float
     ki_cc_puHz: float
     x_pll_rescale: np.ndarray = field(default_factory=lambda: np.array([[100, 0], [0, 1]])) 
+    emt_init: Optional[InitialConditionsEMT] = None
 
     @property
     def rf2_pu(self):
