@@ -154,25 +154,26 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
     df1.write_csv(os.path.join(output_directory, 'storage_dispatch.csv'))
 
     # Export storage capacity results
-    df1 = pyovariable_to_df(model.vPCAP, 
-                            dfcol_to_field={'storage': 'name'}, 
-                            value_name='built_power_capacity_MW')
-    
-    df2 = pyovariable_to_df(model.vECAP, 
-                            dfcol_to_field={'storage': 'name'}, 
-                            value_name='built_energy_capacity_MWh')
-    
-    df = df1.join(df2, on=['storage'])
-    df.write_csv(os.path.join(output_directory, 'storage_built_capacity.csv'))
+    if hasattr(model, 'vPCAP') and hasattr(model, 'vECAP'):
+        df1 = pyovariable_to_df(model.vPCAP, 
+                                dfcol_to_field={'storage': 'name'}, 
+                                value_name='built_power_capacity_MW')
+        
+        df2 = pyovariable_to_df(model.vECAP, 
+                                dfcol_to_field={'storage': 'name'}, 
+                                value_name='built_energy_capacity_MWh')
+        
+        df = df1.join(df2, on=['storage'])
+        df.write_csv(os.path.join(output_directory, 'storage_built_capacity.csv'))
 
     # Export summary of storage costs
     costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
                           'cost' : [  sum( pyo.value(model.eStorCostPerTp[t]) * t.weight for t in system.timepoints), 
-                                            pyo.value(model.eStorCostPerPeriod), 
+                                            pyo.value(model.eStorCostPerPeriod) if hasattr(model, 'eStorCostPerPeriod') else 0,
                                             pyo.value(model.eStorTotalCost)]})
     costs.write_csv(os.path.join(output_directory, 'storage_costs_summary.csv'))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str, make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+def upload_built_capacities_from_csv(system: System, input_directory: str, make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.00):
     """Upload built capacities from a previous capex solution. """
     
     if not os.path.exists(os.path.join(input_directory, "storage_built_capacity.csv")):
@@ -191,8 +192,8 @@ def upload_built_capacities_from_csv(system: System, input_directory: str, make_
     if storage_to_update:
         for stor in storage_to_update:
             if storage_built_power_capacity[stor.name] > threshold_MW:
-                stor.cap_existing_energy_MWh += storage_built_energy_capacity[stor.name]
-                stor.cap_existing_power_MW += storage_built_power_capacity[stor.name]    
+                stor.cap_existing_energy_MWh += storage_built_energy_capacity[stor.name] * overbuild_factor
+                stor.cap_existing_power_MW += storage_built_power_capacity[stor.name] * overbuild_factor
             if make_non_expandable:
                 stor.expand_capacity = False
             else:

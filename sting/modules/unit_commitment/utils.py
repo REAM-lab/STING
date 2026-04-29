@@ -20,36 +20,21 @@ logger = logging.getLogger(__name__)
 # -----------
 class ModelSettings(NamedTuple):   
     """
-    Settings for the capacity expansion model.
+    Settings for the unit commitment model.
     """
     generator_type_costs: str = "linear"
     load_shedding: bool = False
     single_storage_injection: bool = False
-    generation_capacity_expansion: bool = True
-    storage_capacity_expansion: bool = True
-    line_capacity_expansion: bool = True
     line_capacity: bool = True
     power_flow: str = "dc"
-    bus_max_flow_expansion: bool = False
-    bus_max_flow: bool = False
     angle_difference_limits: bool = False
     inspect_coefficients: bool = True
     write_model_file: bool = False
-    kron_equivalent_flow_constraints: bool = False
 
 class SolverSettings(NamedTuple):
     """
-    Settings for the solver for the capacity expansion model.
+    Settings for the solver for the unit commitment model.
     """
     solver_name: str = "mosek_direct"
     tee: bool = True
     solver_options: dict = field(default_factory=dict)
-
-class KronVariables(NamedTuple):
-    original_system: System
-    removable_buses: set[str] = None
-    Y_original: np.ndarray = None
-    Y_kron: np.ndarray = None
-    B_qp: np.ndarray = None
-    invB_qq: np.ndarray = None
-

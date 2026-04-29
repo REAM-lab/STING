@@ -50,14 +50,14 @@ inputs = {
     }
 t_max = 1.0 # Simulation length in seconds
 
-system = System.from_dataset("2-bus_2-src")
+#system = System.from_dataset("2-bus_2-src")
 
 # Construct system and small-signal model
-sys, ssm = main.run_ssm(case_directory=case_dir, system=system)
+sys, ssm = main.run_ssm(case_directory=case_dir)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 # Run EMT simulation
-main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max,  system=system)
+main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
 
 
 import os

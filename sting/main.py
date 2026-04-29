@@ -15,6 +15,7 @@ from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.modules.capacity_expansion.core import CapacityExpansion
+from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
 from sting.utils.dynamical_systems import StateSpaceModel
@@ -217,15 +218,20 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return capex, zonal_system
 
-def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None, solver_settings=None,
+def run_capex_with_initial_build(case_directory=os.getcwd(), 
+                                 model_settings=None, 
+                                 solver_settings=None,
+                                 log_filename: str = None,
                                  output_directory=None,
-                                 built_capacity_directory=None, make_non_expandable=False, print_system_with_built_capacities=False,
+                                 built_capacity_directory=None, 
+                                 make_non_expandable=False, 
+                                 print_system_with_built_capacities=False,
                                  threshold_MW: float = 1e-1):
     """
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
     # Set up logging to file
-    setup_logging_file(case_directory)
+    setup_logging_file(case_directory, filename=log_filename)
 
     start_time = time.time()
 
@@ -255,6 +261,48 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
 
     return capex, system
 
+def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
+                                           model_settings=None, 
+                                           solver_settings=None,
+                                           log_filename: str = None,
+                                           output_directory=None,
+                                           built_capacity_directory=None, 
+                                           make_non_expandable=True, 
+                                           print_system_with_built_capacities=False,
+                                           threshold_MW: float = 1e-1):
+    """
+    Function to run unit commitment analysis with initial built capacities from a previous capacity expansion solution. 
+    """
+    # Set up logging to file
+    setup_logging_file(case_directory, filename=log_filename)
+
+    start_time = time.time()
+
+    # Load system from CSV files
+    system = System.from_csv(case_directory=case_directory)
+
+    # If built_capacity_directory is not provided, it will look for built capacities in the default output directory of the capacity expansion results.
+    if built_capacity_directory is None:
+        built_capacity_directory = os.path.join(case_directory, "outputs", "cost_production")
+
+    # Upload built capacities
+    sys_modifier = SystemModifier(system=system)
+    sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+    
+    if print_system_with_built_capacities:
+        system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
+
+    # Perform unit commitment analysis
+    uc = UnitCommitment(system=system, model_settings=model_settings, solver_settings=solver_settings,
+                              output_directory=output_directory)
+
+    # Solve unit commitment
+    uc.solve()
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+
+    return uc, system
 
 def run_model_reduction(
         reductions:dict[str, Reducer],

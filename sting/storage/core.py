@@ -38,7 +38,7 @@ class Storage(Component):
     bus_id: int = None
 
     def post_system_init(self, system):
-        self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
+        #self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
         self.bus_id = next((n for n in system.buses if n.name == self.bus)).id
 
     def __repr__(self):

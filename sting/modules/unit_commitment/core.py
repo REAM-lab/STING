@@ -17,13 +17,16 @@ from sting.utils.runtime_tools import timeit
 from sting.utils.pyomo_tools import inspect_coefficients
 from sting.system.core import System
 from sting.timescales.core import Timepoint
-from sting.modules.capacity_expansion.utils import ModelSettings, SolverSettings, KronVariables
-import sting.bus.shared.capacity_expansion as bus
-import sting.generator.shared.capacity_expansion as generator
-import sting.storage.shared.capacity_expansion as storage
+from sting.modules.unit_commitment.utils import ModelSettings, SolverSettings
+import sting.bus.shared.unit_commitment as bus
+import sting.generator.shared.unit_commitment as generator
+import sting.storage.shared.unit_commitment as storage
 import sting.policies.carbon_policies.capacity_expansion as carbon_policies
 import sting.policies.energy_budgets.capacity_expansion as energy_budgets
-import sting.policies.transmission_expansion_constraint.capacity_expansion as transmission_capacity
+
+import sting.generator.shared.capacity_expansion as generator_ce
+import sting.storage.shared.capacity_expansion as storage_ce
+import sting.bus.shared.capacity_expansion as bus_ce
 
 
 # Set up logging
@@ -33,17 +36,16 @@ logger = logging.getLogger(__name__)
 # Main class
 # -----------
 @dataclass(slots=True)
-class CapacityExpansion:
+class UnitCommitment:
     system: System
     model: pyo.ConcreteModel = None
     model_settings: ModelSettings = None
     solver_settings: SolverSettings = None
     output_directory: str = None
-    kron_variables: KronVariables = None
-    
+
     def __post_init__(self):
 
-        logger.info("\n>> Starting capacity expansion...\n")
+        logger.info("\n>> Starting unit commitment...\n")
         self.set_settings()
         self.set_output_folder()
         self.construct()
@@ -58,35 +60,7 @@ class CapacityExpansion:
             self.model_settings = ModelSettings()
         else:
             self.model_settings = ModelSettings(**self.model_settings)
-
-            if self.model_settings.line_capacity_expansion == True and self.model_settings.line_capacity == False:
-                logger.error("line_capacity_expansion setting is True but line_capacity setting is False. " \
-                             "It does not make sense to expand line capacities if line capacities are neglected. " \
-                             "If line_capacity_expansion is True, line_capacity must also be True." \
-                             "If line_capacity_expansion is False, line_capacity can be True or False.")
-                raise ValueError("Inconsistent line capacity settings")
-
-            if self.model_settings.generator_type_costs not in ["linear", "quadratic"]:
-                logger.error("generator_type_costs setting must be either 'linear' or 'quadratic'.")
-                raise ValueError("Invalid value for generator_type_costs")
-            
-            if self.model_settings.bus_max_flow == True and self.model_settings.line_capacity_expansion == True:
-                logger.error("bus_max_flow setting is True but line_capacity_expansion setting is also True. " \
-                             "It does not make sense to upgrade lines but keeping the bus max flow fixed." \
-                             "You may consider bus_max_flow False in this case, and just allow line capacity expansion.")
-                raise ValueError("Inconsistent bus max flow settings")
-            
-            if self.model_settings.bus_max_flow_expansion == True and self.model_settings.line_capacity_expansion == True:
-                logger.error("bus_max_flow_expansion setting is True but line_capacity_expansion setting is also True. " \
-                             "It is unexpected how the model performs. Select either line_capacity_expansion or bus_max_flow_expansion to be True, not both.")
-            
-            if (self.model_settings.kron_equivalent_flow_constraints == True) and (self.model_settings.line_capacity == True):
-                logger.error("kron_equivalent_flow_constraints setting is True but line_capacity setting is also True. " \
-                             "Both setting can be false however we don't know if it makes sense to consider both the "\
-                            "thermal line limits of the original system and the line limits assigned in the Kron system.")
-                raise ValueError("Inconsistent thermal flow constraints in model settings")
-                        
-            
+           
         logger.info(f"Model settings: {self.model_settings}")
 
         if self.solver_settings is None:
@@ -101,13 +75,13 @@ class CapacityExpansion:
         Set up the output folder for storing results.
         """
         if self.output_directory is None:
-            self.output_directory = os.path.join(self.system.case_directory, "outputs", "capacity_expansion")
+            self.output_directory = os.path.join(self.system.case_directory, "outputs", "unit_commitment")
         os.makedirs(self.output_directory, exist_ok=True)
 
     @timeit    
     def construct(self):
         """
-        Construction of the optimization model for capacity expansion.
+        Construction of the optimization model for unit commitment.
         """
         
         # Create Pyomo model
@@ -115,17 +89,15 @@ class CapacityExpansion:
 
         # Construct empty lists for costs
         self.model.cost_components_per_tp = []
-        self.model.cost_components_per_period = []
 
         # Construct modules
-        generator.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        storage.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        bus.construct_capacity_expansion_model(self.system, self.model, self.model_settings, self.kron_variables)
+        generator.construct_unit_commitment_model(self.system, self.model, self.model_settings)
+        storage.construct_unit_commitment_model(self.system, self.model, self.model_settings)
+        bus.construct_unit_commitment_model(self.system, self.model, self.model_settings)
 
         # Construct modules for policies, if any
         carbon_policies.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
         energy_budgets.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
-        transmission_capacity.construct_capacity_expansion_model(self.system, self.model, self.model_settings)
 
         # Define objective function
         logger.info("> Initializing construction of objective function ...")
@@ -134,12 +106,8 @@ class CapacityExpansion:
         def eCostPerTp_rule(m: pyo.ConcreteModel, t: Timepoint):
             return sum( getattr(m, tp_cost.name)[t] for tp_cost in m.cost_components_per_tp)
         
-        def eCostPerPeriod_rule(m: pyo.ConcreteModel):
-            return sum( getattr(m, period_cost.name) for period_cost in m.cost_components_per_period)
-
         self.model.eCostPerTp = pyo.Expression(self.system.timepoints, expr=eCostPerTp_rule)
-        self.model.eCostPerPeriod = pyo.Expression(expr=eCostPerPeriod_rule)
-        self.model.eTotalCost = pyo.Expression(expr= self.model.eCostPerPeriod + sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.timepoints))
+        self.model.eTotalCost = pyo.Expression(expr= sum(self.model.eCostPerTp[t]  * t.weight for t in self.system.timepoints))
         
         self.model.rescaling_factor_obj = pyo.Param(initialize=1e-2)  # To reduce range of objective function values.
 
@@ -149,11 +117,11 @@ class CapacityExpansion:
 
     def solve(self):
         """
-        Solve the capacity expansion optimization model.
+        Solve the unit commitment optimization model.
         """
         # Use root logger so solver output also goes to the file handler attached there
         start_time = time.time()
-        logger.info("> Solving capacity expansion model...")
+        logger.info("> Solving unit commitment model...")
         solver = pyo.SolverFactory(self.solver_settings.solver_name)
         
         # Write solver output to sting_log.txt
@@ -196,18 +164,15 @@ class CapacityExpansion:
         solver_status.write_csv(os.path.join(self.output_directory, 'solver_status.csv'))
 
         # Export costs summary
-        costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
+        costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'total_cost_USD'],
                               'cost' : [  sum( pyo.value(self.model.eCostPerTp[t]) * t.weight for t in self.system.timepoints), 
-                                            pyo.value(self.model.eCostPerPeriod), 
                                             pyo.value(self.model.eTotalCost)]})
         costs.write_csv(os.path.join(self.output_directory, 'costs_summary.csv'))
 
         # Export module-specific results
-        generator.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-        storage.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-        bus.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        generator_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        storage_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
+        bus_ce.export_results_capacity_expansion(self.system, self.model, self.output_directory)
 
         carbon_policies.export_results_capacity_expansion(self.system, self.model, self.output_directory)
         energy_budgets.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-        transmission_capacity.export_results_capacity_expansion(self.system, self.model, self.output_directory)
-
