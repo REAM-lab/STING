@@ -113,12 +113,12 @@ class GFMIe(Generator):
     Ti_load: float # for DC/DC controller - measurement filter 
     Tload: float # time constant for actuation of load current change 
     i_load_ref: float 
-    #bus_id: int = None
+    Pbat_max_pu: float # maximum power capacity of battery (pu by S)
+    SOC_max_pu: float # maximum energy capacity of battery (pu by S)
+    SOC_init_pu: float # initial battery state of charge (pu)
     name: str = field(default_factory=str)
-    #pf: Optional[Power_flow_variables] = None
     emt_init: Optional[InitialConditionsEMT] = None
     ssm: Optional[StateSpaceModel] = None
-    #tags: ClassVar[list[str]] = ["generator"]
 
     @property
     def rf2_pu(self):
@@ -470,9 +470,9 @@ class GFMIe(Generator):
         v_dc, i_dc, i_L, x1, x2, i_load = self.emt_init.v_dc, self.emt_init.i_dc, self.emt_init.i_L, self.emt_init.x_1, self.emt_init.x_2, self.emt_init.i_load
         
         x = DynamicalVariables(
-            name = ['angle_pc', 'w_pc', 'p_pc', 'q_pc', 'gamma',"i_vsc_a", "i_vsc_b","i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", 'i_l_f', 'v_dc_f', 'i_dc_f', 'i_load_f','x_1', 'x_2', 'i_L', 'v_dc', 'i_load'],
+            name = ['angle_pc', 'w_pc', 'p_pc', 'q_pc', 'gamma',"i_vsc_a", "i_vsc_b","i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", 'i_l_f', 'v_dc_f', 'i_dc_f', 'i_load_f','x_1', 'x_2', 'i_L', 'v_dc', 'i_load', 'soc', 'x3'],
             component = f"{self.type_}_{self.id}",
-            init=[angle_ref*np.pi/180, 1.0, p_ref, q_ref, v_vsc_d, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L, v_dc, i_dc, i_load, x1, x2, i_L, v_dc, i_load]
+            init=[angle_ref*np.pi/180, 1.0, p_ref, q_ref, v_vsc_d, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L, v_dc, i_dc, i_load, x1, x2, i_L, v_dc, i_load, self.SOC_init_pu, 0.0]
         )
         
         # Inputs 
@@ -504,7 +504,7 @@ class GFMIe(Generator):
     def get_derivative_state_emt(self):
         
         # Get state values 
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value 
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load, soc, x3 = self.variables_emt.x.value 
         
         # Get input values (external inputs)
         p_ref, q_ref, v_ref, v_dc_ref, v_s, i_load_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value 
@@ -515,20 +515,24 @@ class GFMIe(Generator):
         i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)
 
         # Do Q-V droop 
-        v_sh_mag_ref = v_ref - self.droop_q_pu*(q_pc - q_ref) # droop on error from ref 
+        v_sh_mag_ref = v_ref - self.droop_q_pu*(q_pc - q_ref) # adjusting voltage reference based on reactive power error (measured at capacitor)
         
         # NB updating algebraic states!
+        # Updating converter terminal voltages 
         v_vsc_d = gamma + self.kp_vc_pu*(v_sh_mag_ref - (v_sh_d**2 + v_sh_q**2)**0.5) # update 
         v_vsc_q = 0.0 # update 
+        
+        # # check magnitude wrt v_dc and limit if necessary 
+        # if v_vsc_d > v_dc: # can check only d component because v_vsc_q= 0 
+        #     v_vsc_d = v_dc 
         
         # convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, angle_pc) # correct to use this angle?
         
-        # power balance 
+        # DC/AC power balance 
         i_dc = (v_vsc_d*i_vsc_d + v_vsc_q*i_vsc_q)/v_dc
         
         
-        # abc->dq conversions 
         
         # Differential equations 
         # ----------------------
@@ -623,7 +627,7 @@ class GFMIe(Generator):
             DC-DC controller + circuit + load control 
             """
             # Define states
-            i_Lf, v_dcf, i_dcf, i_loadf, x_1, x_2, i_L, v_dc, i_load = y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8]
+            i_Lf, v_dcf, i_dcf, i_loadf, x_1, x_2, i_L, v_dc, i_load, soc = y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9]
             
             # Inputs 
             i_dc, i_load_ref, v_dc_ref, v_s = internal_inputs
@@ -631,6 +635,11 @@ class GFMIe(Generator):
             # Parameters 
             l_dc, c_dc, TiL, Tvdc, Tidc, Kp_vdc, Ki_vdc, Kp_iL, Ki_iL, Kff_idc, Kff_iload, Ti_load, Tload = self.l_dc, self.c_dc, self.Ti_L, self.Tv_dc, self.Ti_dc, self.kp_v_dc, self.ki_v_dc, self.kp_i_L, self.ki_i_L, self.Kff_idc, self.Kff_iload, self.Ti_load, self.Tload 
             wb = self.wbase
+            
+            # # DC side limits 
+            # # P_battery = i_L*v_s 
+            # if i_L > 1.0:
+            #     i_L = 1.0
             
             # ODEs 
             
@@ -643,6 +652,14 @@ class GFMIe(Generator):
             d_x_2 = Ki_iL*(Kp_vdc*(v_dc_ref - v_dcf) + x_1 - i_Lf + Kff_idc*i_dcf + Kff_iload*i_loadf)
             duty_cycle = Kp_iL*(Kp_vdc*(v_dc_ref - v_dcf) + x_1 - i_Lf + Kff_idc*i_dcf + Kff_iload*i_loadf) + x_2
             
+            # # limit duty cycle 
+            # if duty_cycle > 0.9:
+            #     duty_cycle = 0.9 
+            
+            d_soc = i_L*v_s 
+            # soc controller 
+            d_x3 = (soc - self.SOC_init_pu)
+            
             # Circuit equations   
             d_v_dc = (wb/c_dc)*(-i_dc - i_load + (1-duty_cycle)*i_L)
             d_i_L = (wb/l_dc)*(v_s - (1-duty_cycle)*v_dc)
@@ -650,14 +667,13 @@ class GFMIe(Generator):
             # Load control 
             d_i_load = (1/Tload)*(i_load_ref - i_load)
             
-            return [d_i_Lf, d_v_dcf, d_i_dcf, d_i_load_f, d_x_1, d_x_2, d_i_L, d_v_dc, d_i_load]
-            #return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            return [d_i_Lf, d_v_dcf, d_i_dcf, d_i_load_f, d_x_1, d_x_2, d_i_L, d_v_dc, d_i_load, d_soc, d_x3]
 
 
         dy_pc = power_controller_dynamics([angle_pc, w_pc, p_pc, q_pc], [v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref])
         dy_vc = voltage_controller_dynamics([gamma], [v_sh_mag_ref, v_sh_d, v_sh_q])
         dy_lcl = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
-        dy_dc_side = dc_side([i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load], [i_dc, i_load_ref, v_dc_ref, v_s])
+        dy_dc_side = dc_side([i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load, soc, x3], [i_dc, i_load_ref, v_dc_ref, v_s])
         
         return np.hstack([dy_pc, dy_vc, dy_lcl, dy_dc_side])
         
@@ -665,13 +681,15 @@ class GFMIe(Generator):
     def get_output_emt(self):
         
         # Output is i_bus_abc 
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value 
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load, soc, x3 = self.variables_emt.x.value 
         
         return [i_bus_a, i_bus_b, i_bus_c]
 
     def plot_results_emt(self, output_dir):
         
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value 
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load, soc, x3 = self.variables_emt.x.value 
+        
+        #i_L = np.clip(i_L, -1000.0, 1.0)
         
         tps = self.variables_emt.x.time
         
@@ -686,9 +704,7 @@ class GFMIe(Generator):
         v_vsc_dq = v_sh_dq + np.multiply((self.rf1_pu + self.xf1_pu * 1j), i_vsc_dq)
         
         fig = make_subplots(
-            rows=12, cols=2,
-            horizontal_spacing=0.15,
-            vertical_spacing=0.05,
+            rows=14, cols=2
         )
 
         fig.add_trace(go.Scatter(x=tps, y=w_pc, mode='lines', line=dict(color='red', dash='solid')),
@@ -721,8 +737,6 @@ class GFMIe(Generator):
         fig.update_xaxes(title_text='Time [s]', row=3, col=2)
         fig.update_yaxes(title_text='iload_f [p.u.]', row=3, col=2)   
         
-        
-
         fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, mode='lines', line=dict(color='red', dash='solid')),
                     row=4, col=1)
         fig.update_xaxes(title_text='Time [s]', row=4, col=1)
@@ -800,16 +814,20 @@ class GFMIe(Generator):
         p_load = i_load*v_dc 
         p_ref, q_ref, v_ref, v_dc_ref, v_s, i_load_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value 
         p_bat = i_L*v_s  
-        fig.add_trace(go.Scatter(x=tps, y=p_vsc, name="p_vsc", mode='lines', line=dict(color='red', dash='solid')),
+        p_capacitor = p_vsc + p_load - p_bat 
+        fig.add_trace(go.Scatter(x=tps, y=p_vsc, name="p_vsc", mode='lines', line=dict(color='red', dash='solid'), legendgroup='1'),
                     row=11, col=1)
-        fig.add_trace(go.Scatter(x=tps, y=p_load, name="p_load", mode='lines', line=dict(color='blue', dash='solid')),
+        fig.add_trace(go.Scatter(x=tps, y=p_load, name="p_load", mode='lines', line=dict(color='blue', dash='solid'), legendgroup='1'),
                     row=11, col=1)
-        fig.add_trace(go.Scatter(x=tps, y=p_bat, name="p_bat", mode='lines', line=dict(color='green', dash='solid')),
+        fig.add_trace(go.Scatter(x=tps, y=p_bat, name="p_bat", mode='lines', line=dict(color='green', dash='solid'), legendgroup='1'),
                     row=11, col=1)
-        
+        fig.add_trace(go.Scatter(x=tps, y=p_capacitor, name="p_cap", mode='lines', line=dict(color='pink', dash='solid'), legendgroup='1'),
+                    row=11, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=np.ones_like(p_bat)*self.Pbat_max_pu, name="p_bat_lim", mode='lines', line=dict(color='green', dash='dot'), legendgroup='1'),
+                    row=11, col=1)
         
         fig.update_xaxes(title_text='Time [s]', row=11, col=1)
-        fig.update_yaxes(title_text='p [p.u.]', row=11, col=1)
+        fig.update_yaxes(title_text='power [p.u.]', row=11, col=1)
         
         # v_vsc (calculated)
         fig.add_trace(go.Scatter(x=tps, y=v_vsc_dq.real, mode='lines', line=dict(color='red', dash='solid')),
@@ -822,6 +840,32 @@ class GFMIe(Generator):
         fig.update_xaxes(title_text='Time [s]', row=12, col=2)
         fig.update_yaxes(title_text='v_vsc_q [p.u.]', row=12, col=2)
         
+        e_cap = 0.5*self.c_dc*(v_dc**2)
+        e_ind = 0.5*self.l_dc*(i_L**2)
+        fig.add_trace(go.Scatter(x=tps, y=soc, name='battery soc', mode='lines', line=dict(color='red', dash='solid')),
+                    row=13, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=e_cap, name='cap energy', mode='lines', line=dict(color='blue', dash='dot')),
+                    row=13, col=1)
+        fig.add_trace(go.Scatter(x=tps, y=e_ind, name='ind energy', mode='lines', line=dict(color='pink', dash='dot')),
+                    row=13, col=1)
+        
+        fig.add_trace(go.Scatter(x=tps, y=np.ones_like(soc)*self.SOC_max_pu, name="soc lim", mode='lines', line=dict(color='green', dash='dot')),
+                    row=13, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=13, col=1)
+        fig.update_yaxes(title_text='energy [p.u.]', row=13, col=1)
+        
+        duty_cycle = self.kp_i_L*(self.kp_v_dc*(v_dc_ref - v_dcf) + x1 - i_Lf + self.Kff_idc*i_dcf + self.Kff_iload*i_loadf) + x2
+        duty_cycle = np.clip(duty_cycle, 0.0, 1.0)
+        fig.add_trace(go.Scatter(x=tps, y=duty_cycle, name="duty cycle", mode='lines', line=dict(color='red', dash='solid')),
+                    row=13, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=13, col=2)
+        fig.update_yaxes(title_text='duty cycle [p.u.]', row=13, col=2)
+        
+        fig.add_trace(go.Scatter(x=tps, y=x3, mode='lines', line=dict(color='red', dash='solid')),
+                    row=14, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=14, col=1)
+        fig.update_yaxes(title_text='x3 [p.u.]', row=14, col=1)
+        
 
         name = f"{self.type_}_{self.id}"
         fig.update_layout(  title_text = name,
@@ -829,9 +873,9 @@ class GFMIe(Generator):
                             showlegend = False,
                             )
 
-        fig.update_layout(height=1200*2, 
+        fig.update_layout(height=1200*3, 
                         width=800*2, 
-                        showlegend=False,
+                        showlegend=True,
                         margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
         
         fig.write_html(os.path.join(output_dir, name + ".html"))

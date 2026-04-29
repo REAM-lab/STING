@@ -1,0 +1,2 @@
+name,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,cost_variable_USDperMWh,rf1_pu,lf1_pu,rsh_pu,csh_pu,txr_power_MVA,txr_voltage1_kV,txr_voltage2_kV,txr_r1_pu,txr_l1_pu,txr_r2_pu,txr_l2_pu,beta,kp_pll,ki_pll,kp_cc,ki_cc,vdc_ref,i_load_ref,c_dc,kp_oc,ki_oc
+solar,santiago,10,10,0,0,1.00E+02,4.80E-01,60,0,0.02,0.1,10,1,1.00E+02,4.80E-01,2.30E+02,0.01,0.1,0.02,0.1,0,1,10,1,10,2,0,20,1,10

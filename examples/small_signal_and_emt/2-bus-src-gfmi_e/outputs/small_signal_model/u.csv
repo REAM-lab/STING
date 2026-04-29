@@ -1,9 +1,9 @@
 name,component,type,init
-v_ref_d,infinite_sources_0,device,0.9319147420205057
-v_ref_q,infinite_sources_0,device,2.4364261741631428e-17
-p_ref,gfmi_e_0,device,-0.09970849663622566
-q_ref,gfmi_e_0,device,0.0019433557584956256
-v_ref,gfmi_e_0,device,1.0117040377962803
-v_dc_ref,gfmi_e_0,device,1.0
+v_ref_d,infinite_sources_0,device,1.0602915467925695
+v_ref_q,infinite_sources_0,device,-6.184065849485258e-17
+p_ref,gfmi_e_0,device,-0.4924473672884809
+q_ref,gfmi_e_0,device,0.05787698596992697
+v_ref,gfmi_e_0,device,0.9882122222891866
+v_dc_ref,gfmi_e_0,device,1.05
 v_s,gfmi_e_0,device,0.5
-i_load_ref,gfmi_e_0,device,0.1
+i_load_ref,gfmi_e_0,device,0.5
