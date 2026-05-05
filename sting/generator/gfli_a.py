@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 import scipy.linalg 
 from sting.generator.core import Generator
+import os
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ------------------
 # Import sting code
@@ -145,7 +148,7 @@ class GFLIa(Generator):
                                 y = DynamicalVariables(name=['phase', 'w']),
                                 x = DynamicalVariables(name=["int_pll", "phase_pll"], 
                                                        init=[int_pll, phase_pll] ) )
-        
+
         # Re-scale the states so that they are not very small numbers compared to 
         # other states. It was tested in EMT simulation.
         pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
@@ -276,12 +279,10 @@ class GFLIa(Generator):
         i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(i_vsc_d, i_vsc_q, 0, angle_ref*np.pi/180)
         v_sh_a, v_sh_b, v_sh_c = dq02abc(v_sh_d, v_sh_q, 0, angle_ref*np.pi/180)
 
-        v_vsc_d = self.emt_init.v_vsc_d
-
         x = DynamicalVariables(
-            name = ['pi_cc_d', 'pi_cc_q', 'int_pll', 'phase_pll',"i_vsc_a", "i_vsc_b","i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            name = ['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
             component = f"{self.type_}_{self.id}",
-            init = [pi_cc_d, pi_cc_q, 1.0, angle_ref * np.pi/180, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c]
+            init = [pi_cc_d, pi_cc_q, angle_ref * np.pi/180, 0, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c]
         )
 
         # Inputs 
@@ -321,15 +322,15 @@ class GFLIa(Generator):
         i_bus_d_ref, i_bus_q_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
 
         # convert relevant quantities to dq 
-        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) # for power controller 
-        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) # for power controller 
+        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
+        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
       
         # Update algebraic states
-        e_d = self.ki_cc_puHz * pi_cc_d + self.kp_cc_pu * (i_bus_d_ref - i_bus_d) 
-        e_q = self.ki_cc_puHz * pi_cc_q + self.kp_cc_pu * (i_bus_q_ref - i_bus_q)
+        e_d = pi_cc_d + self.kp_cc_pu * (i_bus_d_ref - i_bus_d) 
+        e_q = pi_cc_q + self.kp_cc_pu * (i_bus_q_ref - i_bus_q)
         
         v_vsc_d = e_d + self.beta * v_bus_d - (self.xf1_pu + self.xf2_pu) * i_bus_q 
-        v_vsc_q = e_q + self.beta * v_bus_q + (self.xf1_pu + self.xf2_pu) * i_bus_q  
+        v_vsc_q = e_q + self.beta * v_bus_q + (self.xf1_pu + self.xf2_pu) * i_bus_d  
 
         # convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
@@ -351,8 +352,8 @@ class GFLIa(Generator):
             i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q = internal_inputs
 
             # Define ODEs that describe the dynamics of the current controller
-            d_pi_cc_d = i_bus_d_ref - i_bus_d
-            d_pi_cc_q = i_bus_q_ref - i_bus_q
+            d_pi_cc_d = ki_cc * (i_bus_d_ref - i_bus_d)
+            d_pi_cc_q = ki_cc * (i_bus_q_ref - i_bus_q)
             
             return [d_pi_cc_d, d_pi_cc_q]
 
@@ -369,15 +370,12 @@ class GFLIa(Generator):
             ki_pll = self.ki_pll_puHz  # integral gain of PLL
             w_base = self.wbase # base frequency of the system
 
-            # Define measured capacitor voltages at timepoint "t"
-            v_bus_a, v_bus_b, v_bus_c = internal_inputs
-
-            # Transform to dq frame using PLL angle
-            v_q = 2/3*(-np.sin(theta_pll)*v_bus_a -np.sin(theta_pll- 2*np.pi/3)*v_bus_b - np.sin(theta_pll + 2*np.pi/3)*v_bus_c )
+            # Define voltage at bus
+            v_bus_q = internal_inputs
 
             # Define ODEs that describe the dynamics of the PLL
-            d_theta_pll = kp_pll * v_q + gamma_pll + w_base
-            d_gamma_pll = ki_pll * v_q
+            d_theta_pll = kp_pll * v_bus_q * w_base + gamma_pll + w_base
+            d_gamma_pll = ki_pll * v_bus_q
 
             return [d_theta_pll, d_gamma_pll]
 
@@ -423,8 +421,88 @@ class GFLIa(Generator):
           
         d_pi_cc_d, d_pi_cc_q = current_controller_dynamics([pi_cc_d, pi_cc_q], [i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q])
 
-        d_theta_pll, d_gamma_pll = pll_dynamics([theta_pll, gamma_pll], [v_bus_a, v_bus_b, v_bus_c])
+        d_theta_pll, d_gamma_pll = pll_dynamics([theta_pll, gamma_pll], v_bus_q)
 
         di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
 
         return [d_pi_cc_d, d_pi_cc_q, d_theta_pll, d_gamma_pll, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+    
+    def get_output_emt(self):
+        
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+
+        return [i_bus_a, i_bus_b, i_bus_c]
+    
+    def plot_results_emt(self, output_dir):
+        """
+        Plot EMT simulation results
+        """
+
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        
+        tps = self.variables_emt.x.time
+        i_bus_d_ref, i_bus_q_ref, v_bus_a, v_bus_b, v_bus_c, = self.variables_emt.u.value
+        
+        # Transform abc to dq0
+        i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        
+        fig = make_subplots(
+            rows=4, cols=2,
+            horizontal_spacing=0.15,
+            vertical_spacing=0.05,
+        )  
+
+        fig.add_trace(go.Scatter(x=tps, y=pi_cc_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
+        fig.update_yaxes(title_text='pi_cc_d [p.u.]', row=1, col=1)        
+
+        fig.add_trace(go.Scatter(x=tps, y=pi_cc_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
+        fig.update_yaxes(title_text='pi_cc_q [p.u.]', row=1, col=2)      
+
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=2, col=1)
+        fig.update_yaxes(title_text='i_vsc_d [p.u.]', row=2, col=1) 
+
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=2, col=2)
+        fig.update_yaxes(title_text='i_vsc_q [p.u.]', row=2, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=3, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=3, col=1)
+        fig.update_yaxes(title_text='v_sh_d [p.u.]', row=3, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=3, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=3, col=2)
+        fig.update_yaxes(title_text='v_sh_q [p.u.]', row=3, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=1)
+        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=4, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=2)
+        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=4, col=2)
+
+        name = f"{self.type_}_{self.id}"
+        fig.update_layout(  title_text = name,
+                            title_x=0.5,
+                            showlegend = False,
+                            )
+
+        fig.update_layout(height=1200*2, 
+                        width=800*2, 
+                        showlegend=False,
+                        margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
+        
+        fig.write_html(os.path.join(output_dir, name + ".html"))
