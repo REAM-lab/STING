@@ -54,6 +54,6 @@ t_max = 2.0 # Simulation length
 _, ssm =  main.run_ssm(case_directory=case_dir)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation (not implemented yet for gfli_a)
-# main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
+main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
 
 print('\nok')

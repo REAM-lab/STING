@@ -2,7 +2,7 @@
 This module implements a GFLI that incorporates: 
 - LCL filter: Two Series RL branches (one branch is the transformer) and one Parallel RC shunt. 
 - Current controller: A dq-based frame PI controller
-- PLL: A basic implementation
+- PLL: It that tracks the phase of the grid voltage. The PLL has a proportional and integral gain.
 """
 # ----------------------
 # Import python packages
@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 import scipy.linalg 
 from sting.generator.core import Generator
+import os
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ------------------
 # Import sting code
@@ -145,7 +148,7 @@ class GFLIa(Generator):
                                 y = DynamicalVariables(name=['phase', 'w']),
                                 x = DynamicalVariables(name=["int_pll", "phase_pll"], 
                                                        init=[int_pll, phase_pll] ) )
-        
+
         # Re-scale the states so that they are not very small numbers compared to 
         # other states. It was tested in EMT simulation.
         pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
@@ -276,12 +279,10 @@ class GFLIa(Generator):
         i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(i_vsc_d, i_vsc_q, 0, angle_ref*np.pi/180)
         v_sh_a, v_sh_b, v_sh_c = dq02abc(v_sh_d, v_sh_q, 0, angle_ref*np.pi/180)
 
-        v_vsc_d = self.emt_init.v_vsc_d
-
         x = DynamicalVariables(
-            name = ['pi_cc_d', 'pi_cc_q', 'int_pll', 'phase_pll',"i_vsc_a", "i_vsc_b","i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            name = ['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
             component = f"{self.type_}_{self.id}",
-            init = [pi_cc_d, pi_cc_q, 1.0, angle_ref * np.pi/180, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c]
+            init = [pi_cc_d, pi_cc_q, angle_ref * np.pi/180, 0, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c]
         )
 
         # Inputs 
@@ -315,80 +316,68 @@ class GFLIa(Generator):
         This model includes: pi controller, pll, and LCL filter.
         """    
         # Get state values # here in progress
-        pi_cc_d, pi_cc_q, int_pll, phase_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
         
         # Get input values (external inputs)
-        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        i_bus_d_ref, i_bus_q_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
 
         # convert relevant quantities to dq 
-        v_sh_d, v_sh_q, _ = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle_pc) # for power controller 
-        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, angle_pc) # for power controller 
-
-        # Calculate DC-side current using current vsc voltage and current  
-        # need to calculate v_vsc_dq, because it is an algebraic state so is not available in our state vector 
-        i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)
-        i_vsc_dq = i_vsc_d + 1j*i_vsc_q
-        v_sh_dq = v_sh_d + 1j*v_sh_q 
-        v_vsc_dq = v_sh_dq + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_dq
+        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
+        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
+      
+        # Update algebraic states
+        e_d = pi_cc_d + self.kp_cc_pu * (i_bus_d_ref - i_bus_d) 
+        e_q = pi_cc_q + self.kp_cc_pu * (i_bus_q_ref - i_bus_q)
         
-        # Do Q-V droop 
-        v_sh_mag = (v_sh_d**2+v_sh_q**2)**0.5 # current voltage mag 
-        v_sh_mag_ref = v_ref - self.droop_q_pu*(q_pc - q_ref) # droop on error from ref 
-        
-        # NB updating algebraic states!
-        v_vsc_d = gamma + self.kp_vc_pu*(v_sh_mag_ref - v_sh_mag) # update 
-        v_vsc_q = 0.0 # update 
+        v_vsc_d = e_d + self.beta * v_bus_d - (self.xf1_pu + self.xf2_pu) * i_bus_q 
+        v_vsc_q = e_q + self.beta * v_bus_q + (self.xf1_pu + self.xf2_pu) * i_bus_d  
 
         # convert to abc to feed into filter dynamics 
-        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, angle_pc) # correct to use this angle?
+        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
 
-        def power_controller_dynamics(y, internal_inputs):
+        def current_controller_dynamics(y, internal_inputs):
             """
-            It returns the differential equations that describe the dynamics of the power controller.
-            The power controller has: virtual inertia, filter for active and reactive power.
+            It returns the differential equations that describe the dynamics of the current controller.
+            The current controller has: virtual inertia, filter for active and reactive power.
             """
 
-            # Definition of states for the ODEs of the power controller
-            angle_pc, w_pc, p_pc, q_pc  = y[0], y[1], y[2], y[3]  
+            # Definition of states for the ODEs of the current controller
+            pi_cc_d, pi_cc_q  = y[0], y[1]  
 
             # Extract the list of parameters
-            tau_pc = self.tau_pc_s  # proportional gain of active power controller
-            droop_q = self.droop_q_pu  # integral gain of active power controller
-            kd = self.kd_pu  # proportional gain of reactive power controller
-            h = self.h_s  # integral gain of reactive power controller
-            wb = self.wbase  # nominal frequency of the system
+            kp_cc = self.kp_cc_pu  # proportional gain of current controller
+            ki_cc = self.ki_cc_puHz  # integral gain of current controller
 
-            # Define measured active and reactive power at timepoint "t"
-            v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref = internal_inputs
+            # Define internal inputs for the current controller at timepoint "t"
+            i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q = internal_inputs
 
-            # Define ODEs that describe the dynamics of the power controller
-            d_angle_pc = wb * w_pc
-            d_w_pc = 1/(2*h) * (p_ref - p_pc - kd * (w_pc - 1))
-            d_p_pc = 1/tau_pc * (- p_pc + v_sh_d * i_bus_d + v_sh_q * i_bus_q)
-            d_q_pc = 1/tau_pc * (- q_pc - v_sh_d * i_bus_q + v_sh_q * i_bus_d)
+            # Define ODEs that describe the dynamics of the current controller
+            d_pi_cc_d = ki_cc * (i_bus_d_ref - i_bus_d)
+            d_pi_cc_q = ki_cc * (i_bus_q_ref - i_bus_q)
             
-            return [d_angle_pc, d_w_pc, d_p_pc, d_q_pc]
+            return [d_pi_cc_d, d_pi_cc_q]
 
-        def voltage_controller_dynamics(y, internal_inputs):
+        def pll_dynamics(y, internal_inputs):
             """
-            It returns the differential equations that describe the dynamics of the voltage controller.
-            The voltage controller has a PI structure that regulates the magnitude of the voltage at the
-            middle of the LCL filter. 
+            It returns the differential equations that describe the dynamics of the PLL.
+            The PLL tracks the phase of the grid voltage.
             """    
-            # Definition of states for the ODEs of the voltage controller
-            gamma = y[0]
+            # Definition of states for the ODEs of the pll
+            theta_pll, gamma_pll = y[0], y[1]
 
             # Extract the list of parameters
-            kp_vc = self.kp_vc_pu  # proportional gain of voltage controller
-            ki_vc = self.ki_vc_puHz  # integral gain of voltage controller
+            kp_pll = self.kp_pll_pu  # proportional gain of PLL
+            ki_pll = self.ki_pll_puHz  # integral gain of PLL
+            w_base = self.wbase # base frequency of the system
 
-            # Define measured capacitor voltages at timepoint "t"
-            v_sh_mag_ref, v_sh_d, v_sh_q = internal_inputs
+            # Define voltage at bus
+            v_bus_q = internal_inputs
 
-            # Define ODEs that describe the dynamics of the voltage controller
-            d_gamma = ki_vc * v_sh_mag_ref - ki_vc * (v_sh_d**2 + v_sh_q**2)**0.5
+            # Define ODEs that describe the dynamics of the PLL
+            d_theta_pll = kp_pll * v_bus_q * w_base + gamma_pll + w_base
+            d_gamma_pll = ki_pll * v_bus_q
 
-            return d_gamma
+            return [d_theta_pll, d_gamma_pll]
 
         def lcl_filter_dynamics(y, internal_inputs):
             """
@@ -430,10 +419,90 @@ class GFLIa(Generator):
 
             return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
           
-        d_angle_pc, d_w_pc, d_p_pc, d_q_pc = power_controller_dynamics([angle_pc, w_pc, p_pc, q_pc], [v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_ref])
+        d_pi_cc_d, d_pi_cc_q = current_controller_dynamics([pi_cc_d, pi_cc_q], [i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q])
 
-        d_gamma = voltage_controller_dynamics([gamma], [v_sh_mag_ref, v_sh_d, v_sh_q])
-            
+        d_theta_pll, d_gamma_pll = pll_dynamics([theta_pll, gamma_pll], v_bus_q)
+
         di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
 
-        return [d_angle_pc, d_w_pc, d_p_pc, d_q_pc, d_gamma, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+        return [d_pi_cc_d, d_pi_cc_q, d_theta_pll, d_gamma_pll, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+    
+    def get_output_emt(self):
+        
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+
+        return [i_bus_a, i_bus_b, i_bus_c]
+    
+    def plot_results_emt(self, output_dir):
+        """
+        Plot EMT simulation results
+        """
+
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        
+        tps = self.variables_emt.x.time
+        i_bus_d_ref, i_bus_q_ref, v_bus_a, v_bus_b, v_bus_c, = self.variables_emt.u.value
+        
+        # Transform abc to dq0
+        i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        
+        fig = make_subplots(
+            rows=4, cols=2,
+            horizontal_spacing=0.15,
+            vertical_spacing=0.05,
+        )  
+
+        fig.add_trace(go.Scatter(x=tps, y=pi_cc_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
+        fig.update_yaxes(title_text='pi_cc_d [p.u.]', row=1, col=1)        
+
+        fig.add_trace(go.Scatter(x=tps, y=pi_cc_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=1, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
+        fig.update_yaxes(title_text='pi_cc_q [p.u.]', row=1, col=2)      
+
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=2, col=1)
+        fig.update_yaxes(title_text='i_vsc_d [p.u.]', row=2, col=1) 
+
+        fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=2, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=2, col=2)
+        fig.update_yaxes(title_text='i_vsc_q [p.u.]', row=2, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=3, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=3, col=1)
+        fig.update_yaxes(title_text='v_sh_d [p.u.]', row=3, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=v_sh_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=3, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=3, col=2)
+        fig.update_yaxes(title_text='v_sh_q [p.u.]', row=3, col=2)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_d, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=1)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=1)
+        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=4, col=1)
+
+        fig.add_trace(go.Scatter(x=tps, y=i_bus_q, mode='lines', line=dict(color='red', dash='solid')),
+                    row=4, col=2)
+        fig.update_xaxes(title_text='Time [s]', row=4, col=2)
+        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=4, col=2)
+
+        name = f"{self.type_}_{self.id}"
+        fig.update_layout(  title_text = name,
+                            title_x=0.5,
+                            showlegend = False,
+                            )
+
+        fig.update_layout(height=1200*2, 
+                        width=800*2, 
+                        showlegend=False,
+                        margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
+        
+        fig.write_html(os.path.join(output_dir, name + ".html"))
