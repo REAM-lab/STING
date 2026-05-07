@@ -33,6 +33,8 @@ dependencies = [
     "plotly",
     "networkx",
     "pyomo",
+    "control",
+    "pymor"
 ]
 
 [project.optional-dependencies]

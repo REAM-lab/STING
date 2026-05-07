@@ -142,7 +142,7 @@ class ShuntParallelRC(Shunt):
 
         return [v_bus_a, v_bus_b, v_bus_c]
     
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
 
         # Get state values
         v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
@@ -152,24 +152,15 @@ class ShuntParallelRC(Shunt):
         # Transform abc to dq0
         v_bus_D, v_bus_Q, _ = zip(*map(abc2dq0, v_bus_a, v_bus_b, v_bus_c, angle_ref))
         
-        # Plot results
-        fig = make_subplots(rows=1, cols=2)
+        results = DynamicalVariables(
+            name=["v_bus_D", "v_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            value=[v_bus_D, v_bus_Q],
+            time=time
+        )
+        return results
         
-        fig.add_trace(go.Scatter(x=time, y=v_bus_D), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='v_bus_D [p.u.]', row=1, col=1)
 
-        fig.add_trace(go.Scatter(x=time, y=v_bus_Q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='v_bus_Q [p.u.]', row=1, col=2)
-
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
-
-        fig.write_html(os.path.join(output_dir, name + ".html"))
 
 
     def compare_ssm_emt(self, emt_directory, ssm_directory):

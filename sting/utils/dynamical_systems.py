@@ -11,6 +11,8 @@ from scipy.linalg import eigvals, block_diag
 from scipy.integrate import solve_ivp
 from control import ss
 from pymor.models.iosys import LTIModel
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import pylab as plt
 import matplotlib
@@ -87,6 +89,28 @@ class DynamicalVariables:
         if csv_filepath is not None:
             df.write_csv(csv_filepath)
         return df
+    
+    def to_plotly(self, figure_filepath = None):
+        """Plot the dynamical variables using plotly. It creates a subplot for each variable, with shared x-axis. 
+        The figure is saved as an html file if figure_filepath is provided."""
+        
+        # Create two columns with shared x-axis
+        ncols = 2
+        nrows = len(self._name) // ncols + int(len(self._name) % ncols > 0)
+        
+        fig = make_subplots(rows=nrows, cols=ncols, shared_xaxes=True)
+        for i in range(len(self._name)):
+            fig.add_trace(go.Scatter(x=self._time, y=self._value[i], name=self._name[i]), row=i//ncols+1, col=i%ncols+1)
+            fig.update_yaxes(title_text=self._name[i], row=i//ncols+1, col=i%ncols+1)
+            fig.update_xaxes(title_text='Time [s]',row=i//ncols+1, col=i%ncols+1)
+
+        fig.update_layout(title_text = self._component[0], title_x=0.5, showlegend = False)
+        
+        if figure_filepath is not None:
+            fig.write_html(figure_filepath)
+
+        return fig
+        
 
     # Name property and setter
     # --------------------------

@@ -250,7 +250,8 @@ class SimulationEMT:
 
         for c in components:
             component: Component = getattr(self.system, c.type_)[c.id]
-            getattr(component, "plot_results_emt")(output_dir)
+            results: DynamicalVariables = getattr(component, "plot_results_emt")()
+            results.to_plotly(figure_filepath=os.path.join(output_dir, f"{c.type_}_{c.id}.html"))
     
     def write_results_csv(self, components = None):
         """
