@@ -167,7 +167,7 @@ class BranchSeriesRL(Branch):
 
         return [i_br_a, i_br_b, i_br_c]
     
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
         
         # Retrieve simulation results
         time = self.variables_emt.x.time
@@ -178,23 +178,13 @@ class BranchSeriesRL(Branch):
         i_br_D, i_br_Q, _ = zip(*map(abc2dq0, i_br_a, i_br_b, i_br_c, angle_ref))
 
         # Plot results
-        fig = make_subplots(rows=1, cols=2)
-
-        fig.add_trace(go.Scatter(x=time, y=i_br_D), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='i_br_D [p.u.]', row=1, col=1)
-
-        fig.add_trace(go.Scatter(x=time, y=i_br_Q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='i_br_Q [p.u.]', row=1, col=2)
-
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
-
-        fig.write_html(os.path.join(output_dir, name + ".html"))
+        results = DynamicalVariables(
+            name=["i_br_D", "i_br_Q"],
+            component=f"{self.type_}_{self.id}",
+            value=[i_br_D, i_br_Q],
+            time=time
+        )
+        return results
 
 
     def compare_ssm_emt(self, emt_directory, ssm_directory):

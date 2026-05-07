@@ -470,94 +470,27 @@ class GFMIc(Generator):
 
         return [i_bus_a, i_bus_b, i_bus_c]
 
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
         """
         Plot EMT simulation results
         """
 
         angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
-        
         tps = self.variables_emt.x.time
-        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c, = self.variables_emt.u.value
         
         # Transform abc to dq0
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, angle_pc)])
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle_pc)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle_pc)])
         
-        fig = make_subplots(
-            rows=7, cols=2,
-            horizontal_spacing=0.15,
-            vertical_spacing=0.05,
+        results = DynamicalVariables(
+            name=["angle_pc", "w_pc", "p_pc", "q_pc", "gamma", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"],
+            component=f"{self.type_}_{self.id}",
+            value=[angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q],
+            time=tps
         )
 
-        fig.add_trace(go.Scatter(x=tps, y=w_pc, mode='lines', line=dict(color='red', dash='solid')),
-                    row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='Frequency pc [p.u.]', row=1, col=1)
-
-        fig.add_trace(go.Scatter(x=tps, y=angle_pc * 180 / np.pi, mode='lines', line=dict(color='red', dash='solid')),
-                    row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='Angle pc [deg]', row=1, col=2)
-
-        fig.add_trace(go.Scatter(x=tps, y=p_pc, name="p_pc", mode='lines', line=dict(color='red', dash='solid')),
-                    row=2, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=2, col=1)
-        fig.update_yaxes(title_text='Active Power pc [p.u.]', row=2, col=1)
-
-        fig.add_trace(go.Scatter(x=tps, y=q_pc, mode='lines', line=dict(color='red', dash='solid')),
-                    row=2, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=2, col=2)
-        fig.update_yaxes(title_text='Reactive Power pc [p.u.]', row=2, col=2)
-
-        fig.add_trace(go.Scatter(x=tps, y=gamma, mode='lines', line=dict(color='red', dash='solid')),
-                    row=3, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=3, col=1)
-        fig.update_yaxes(title_text='Gamma [p.u.]', row=3, col=1)   
-
-        fig.add_trace(go.Scatter(x=tps, y=i_vsc_d, mode='lines', line=dict(color='red', dash='solid')),
-                    row=4, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=4, col=1)
-        fig.update_yaxes(title_text='i_vsc_d [p.u.]', row=4, col=1) 
-
-        fig.add_trace(go.Scatter(x=tps, y=i_vsc_q, mode='lines', line=dict(color='red', dash='solid')),
-                    row=4, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=4, col=2)
-        fig.update_yaxes(title_text='i_vsc_q [p.u.]', row=4, col=2)
-
-        fig.add_trace(go.Scatter(x=tps, y=v_sh_d, mode='lines', line=dict(color='red', dash='solid')),
-                    row=5, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=5, col=1)
-        fig.update_yaxes(title_text='v_sh_d [p.u.]', row=5, col=1)
-
-        fig.add_trace(go.Scatter(x=tps, y=v_sh_q, mode='lines', line=dict(color='red', dash='solid')),
-                    row=5, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=5, col=2)
-        fig.update_yaxes(title_text='v_sh_q [p.u.]', row=5, col=2)
-
-        fig.add_trace(go.Scatter(x=tps, y=i_bus_d, mode='lines', line=dict(color='red', dash='solid')),
-                    row=6, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=6, col=1)
-        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=6, col=1)
-
-        fig.add_trace(go.Scatter(x=tps, y=i_bus_q, mode='lines', line=dict(color='red', dash='solid')),
-                    row=6, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=6, col=2)
-        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=6, col=2)
-
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
-
-        fig.update_layout(height=1200*2, 
-                        width=800*2, 
-                        showlegend=False,
-                        margin={'t': 0, 'l': 0, 'b': 0, 'r': 0})
-        
-        fig.write_html(os.path.join(output_dir, name + ".html"))
+        return results
 
 
     def compare_ssm_emt(self, emt_directory, ssm_directory):

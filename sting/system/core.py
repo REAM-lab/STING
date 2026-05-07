@@ -26,6 +26,7 @@ from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
+from sting.generator.gfmi_d import GFMId
 from sting.generator.gfmi_e import GFMIe
 from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.line.pi_model import LinePiModel
@@ -55,6 +56,7 @@ class System:
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
     gfmi_c: list[GFMIc] = None
+    gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
     linear_subsystems: list[LinearSubsystem] = None

@@ -205,7 +205,7 @@ class InfiniteSource(Generator):
 
         return [i_bus_a, i_bus_b, i_bus_c]
     
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
         """
         Plot EMT simulation results
         """
@@ -214,23 +214,13 @@ class InfiniteSource(Generator):
         i_bus_d, i_bus_q, _ = zip(*map(abc2dq0, i_bus_a, i_bus_b, i_bus_c, angle_ref))
         t = self.variables_emt.x.time
 
-        fig = make_subplots(rows=1, cols=2)
-        
-        fig.add_trace(go.Scatter(x=t, y=i_bus_d), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='i_bus_d [p.u.]', row=1, col=1)
-
-        fig.add_trace(go.Scatter(x=t, y=i_bus_q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='i_bus_q [p.u.]', row=1, col=2)
-
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
-
-        fig.write_html(os.path.join(output_dir, name + ".html"))
+        results = DynamicalVariables(
+            name=["i_bus_d", "i_bus_q"],
+            component=f"{self.type_}_{self.id}",
+            value=[i_bus_d, i_bus_q],
+            time=t,
+        )
+        return results
 
 
     def compare_ssm_emt(self, emt_directory, ssm_directory):
