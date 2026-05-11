@@ -28,6 +28,7 @@ from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_d import GFMId
 from sting.generator.gfmi_e import GFMIe
+from sting.generator.gfli_e import GFLIe
 from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.line.pi_model import LinePiModel
 from sting.branch.series_rl import BranchSeriesRL
@@ -59,6 +60,7 @@ class System:
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
+    gfli_e: list[GFLIe] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None
