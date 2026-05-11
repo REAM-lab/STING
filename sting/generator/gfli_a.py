@@ -137,13 +137,13 @@ class GFLIa(Generator):
         phase_pll =  self.emt_init.angle_ref*np.pi/180
 
         pll = StateSpaceModel(  A = np.array([  [  0         ,  -vmag_bus*ki_pll],
-                                                [wb          , -wb*vmag_bus*kp_pll]]),
+                                                [1          , -1*vmag_bus*kp_pll]]),
                                 B = np.array([  [-sinphi*ki_pll   ,        +cosphi*ki_pll],
-                                                [-wb*kp_pll*sinphi,  wb*kp_pll*cosphi]]),
+                                                [-1*kp_pll*sinphi,  1*kp_pll*cosphi]]),
                                 C = np.array([  [0  , 1],
-                                                [1  , -1*vmag_bus*kp_pll]]),
+                                                [1/wb  , -1/wb * vmag_bus*kp_pll]]),
                                 D = np.array([  [0                ,           0],
-                                                [-1*kp_pll*sinphi ,  1*kp_pll*cosphi]]),
+                                                [-1/wb * kp_pll * sinphi ,  1/wb * kp_pll * cosphi]]),
                                 u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
                                 y = DynamicalVariables(name=['phase', 'w']),
                                 x = DynamicalVariables(name=["int_pll", "phase_pll"], 
@@ -151,9 +151,9 @@ class GFLIa(Generator):
 
         # Re-scale the states so that they are not very small numbers compared to 
         # other states. It was tested in EMT simulation.
-        pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
-        pll.B = self.x_pll_rescale @ pll.B
-        pll.C = pll.C @ scipy.linalg.inv(self.x_pll_rescale)
+        #pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
+        #pll.B = self.x_pll_rescale @ pll.B
+        #pll.C = pll.C @ scipy.linalg.inv(self.x_pll_rescale)
 
         # Construction of CCM matrices
         Fccm = np.vstack( (     np.zeros((6, )) ,# i2ref_d
@@ -374,7 +374,7 @@ class GFLIa(Generator):
             v_bus_q = internal_inputs
 
             # Define ODEs that describe the dynamics of the PLL
-            d_theta_pll = kp_pll * v_bus_q * w_base + gamma_pll + w_base
+            d_theta_pll = kp_pll * v_bus_q + gamma_pll + w_base
             d_gamma_pll = ki_pll * v_bus_q
 
             return [d_theta_pll, d_gamma_pll]
