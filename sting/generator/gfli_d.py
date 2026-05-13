@@ -1,36 +1,29 @@
 """
 This module implements a GFLI that incorporates: 
 - LCL filter: Two Series RL branches (one branch is the transformer) and one Parallel RC shunt. 
-- Outer loop DC voltage PI controller
-- DC-side capacitor dynamics with resistor and current source representing a load 
 - Current controller: A dq-based frame PI controller
-- PLL: A basic implementation
-
+- PLL: It that tracks the phase of the grid voltage. The PLL has a proportional and integral gain.
+- DC-DC converter for controlling Vdc
+- DC side circuit with load modeled as current source 
 """
 # ----------------------
 # Import python packages
 # ----------------------
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import NamedTuple, Optional
+from sting.generator.core import Generator
 
 # ------------------
 # Import sting code
 # ------------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.generator.core import Generator
 
 # -----------
 # Sub-classes
 # -----------
-class PowerFlowVariables(NamedTuple):
-    p_bus: float
-    q_bus: float
-    vmag_bus: float
-    vphase_bus: float
-
-
 class InitialConditionsEMT(NamedTuple):
     vmag_bus: float
     vphase_bus: float
@@ -53,27 +46,24 @@ class InitialConditionsEMT(NamedTuple):
     v_vsc_DQ_phase: float
     v_vsc_d: float 
     v_vsc_q: float 
-    p_vsc: float 
-    v_dc: float 
-    int_vdc: float 
-    i_dc: float 
+    v_dc: float # DC bus voltage 
+    d: float # DC/DC converter duty cycle 
+    i_dc: float # current into/out of inverter 
+    i_L: float # DC/DC converter inductor current 
+    x_1: float # DC voltage regulator integrator 
+    x_2: float # DC current regulator integrator 
     i_load_ref: float 
+    p_vsc: float 
 
-
-class VariablesEMT(NamedTuple):
-    x: DynamicalVariables
-    u: DynamicalVariables
-    y: DynamicalVariables
-    
 # -----------
 # Main class
 # -----------
 @dataclass(slots=True, kw_only=True, eq=False)
-class GFLIe(Generator):
+class GFLId(Generator):
     rf1_pu: float
     xf1_pu: float
-    rsh_pu: float
     csh_pu: float
+    rsh_pu: float
     txr_power_MVA: float
     txr_voltage1_kV: float
     txr_voltage2_kV: float
@@ -86,16 +76,22 @@ class GFLIe(Generator):
     ki_pll_puHz: float
     kp_cc_pu: float
     ki_cc_puHz: float
-    v_dc_ref: float # added 
-    c_dc: float # added 
-    kp_oc_pu: float # added 
-    ki_oc_puHz: float # added 
-    Tload: float # added 
-    r_dc: float # added 
-    x_pll_rescale: np.ndarray = field(default_factory=lambda: np.array([[100, 0], [0, 1]])) 
-    name: str = field(default_factory=str)
+    kp_v_dc: float # DC voltage regulator P gain 
+    ki_v_dc: float # DC voltage regulator I gain [1/s] 
+    kp_i_L: float # DC current regulator P gain 
+    ki_i_L: float # DC current regulator I gain [1/s]
+    l_dc: float # DC/DC converter inductance, [pu]
+    c_dc: float # DC link capacitance, [pu]
+    v_dc_ref: float # DC bus reference voltage, [pu]
+    v_s: float # DC voltage source voltage, [pu]
+    Ti_L: float # measurement filter time constants [s]
+    Tv_dc: float 
+    Ti_dc: float 
+    Kff_idc: float 
+    Kff_iload: float 
+    Ti_load: float # for DC/DC controller - measurement filter 
+    Tload: float # time constant for actuation of load current change 
     emt_init: Optional[InitialConditionsEMT] = None
-    ssm: Optional[StateSpaceModel] = None
 
     @property
     def rf2_pu(self):
@@ -104,7 +100,7 @@ class GFLIe(Generator):
     @property
     def xf2_pu(self):
         return (self.txr_x1_pu + self.txr_x2_pu) * self.base_power_MVA / self.txr_power_MVA
-
+    
     @property
     def wbase(self):
         return 2 * np.pi * self.base_frequency_Hz
@@ -125,26 +121,26 @@ class GFLIe(Generator):
                                                                     init= [pi_cc_d, pi_cc_q]) )
 
         # LCL filter
-        rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
+        rf1, lf1, rf2, lf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
         wb = self.wbase
         i_vsc_d, i_vsc_q = self.emt_init.i_vsc_d, self.emt_init.i_vsc_q
         i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
         v_lcl_sh_d, v_lcl_sh_q = self.emt_init.v_lcl_sh_d, self.emt_init.v_lcl_sh_q
 
         lcl_filter = StateSpaceModel(
-                        A = wb*np.array([[-rf1/xf1  ,   1       ,  0        ,   0       ,       -1/xf1      ,  0],
-                                         [-1        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1],
-                                         [0         ,   0       ,  -rf2/xf2 ,   1       ,       1/xf2       ,  0],
-                                         [0         ,   0       ,  -1       ,   -rf2/xf2,       0           ,  1/xf2],
+                        A = wb*np.array([[-rf1/lf1  ,   1       ,  0        ,   0       ,       -1/lf1      ,  0],
+                                         [-1        ,   -rf1/lf1,  0        ,   0       ,       0           ,  -1/lf1],
+                                         [0         ,   0       ,  -rf2/lf2 ,   1       ,       1/lf2       ,  0],
+                                         [0         ,   0       ,  -1       ,   -rf2/lf2,       0           ,  1/lf2],
                                          [1/csh     ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  1],
                                          [0         ,   1/csh   ,  0        ,   -1/csh  ,       -1          ,  -1/(rsh*csh)]]),
-                        B = wb*np.array([[1/xf1 ,    0      ,   0       ,   0      ,      i_vsc_q],
-                                         [0     ,    1/xf1  ,   0       ,   0      ,      -i_vsc_d],
-                                         [0     ,    0      ,   -1/xf2  ,   0      ,      i_bus_q],
-                                         [0     ,    0      ,   0       ,   -1/xf2 ,      -i_bus_d],
+                        B = wb*np.array([[1/lf1 ,    0      ,   0       ,   0      ,      i_vsc_q],
+                                         [0     ,    1/lf1  ,   0       ,   0      ,      -i_vsc_d],
+                                         [0     ,    0      ,   -1/lf2  ,   0      ,      i_bus_q],
+                                         [0     ,    0      ,   0       ,   -1/lf2 ,      -i_bus_d],
                                          [0     ,    0      ,   0       ,   0      ,      v_lcl_sh_q],
                                          [0     ,    0      ,   0       ,   0      ,      -v_lcl_sh_d]]),
-                        C = np.hstack((np.eye(4,4), np.zeros((4,2)))),
+                        C = np.hstack((np.eye(4), np.zeros((4,2)))), 
                         D = np.zeros((4,5)),
                         x = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
                                                init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_lcl_sh_d, v_lcl_sh_q]),
@@ -173,38 +169,62 @@ class GFLIe(Generator):
                                 x = DynamicalVariables(name=["int_pll", "phase_pll"], 
                                                        init=[int_pll, phase_pll] ) )
 
-        # Re-scale the states so that they are not very small numbers compared to 
-        # other states. It was tested in EMT simulation.
-        #pll.A = self.x_pll_rescale @ pll.A @ scipy.linalg.inv(self.x_pll_rescale)
-        #pll.B = self.x_pll_rescale @ pll.B
-        #pll.C = pll.C @ scipy.linalg.inv(self.x_pll_rescale)
+        # DC-DC controller 
+        # Parameters
+        l_dc, c_dc, TiL, Tvdc, Tidc, Kp_vdc, Ki_vdc, Kp_iL, Ki_iL, Kff_idc, Kff_iload, Ti_load, Tload = self.l_dc, self.c_dc, self.Ti_L, self.Tv_dc, self.Ti_dc, self.kp_v_dc, self.ki_v_dc, self.kp_i_L, self.ki_i_L, self.Kff_idc, self.Kff_iload, self.Ti_load, self.Tload 
         
-        # Outer control + DC capacitor dynamics
-        Kp, Ki, Cdc, Tload, r_dc = self.kp_oc_pu, self.ki_oc_puHz, self.c_dc, self.Tload, self.r_dc
-        outer_control = StateSpaceModel(A = np.array([[0, Ki, 0], 
-                                                     [0, -1/r_dc,  -wb/Cdc],
-                                                     [0, 0, -1/Tload]]),
-                                        B = np.array([[-Ki, 0, 0], 
-                                                      [0, 0, -wb/Cdc],
-                                                      [0, 1/Tload, 0]]),
-                                        C = np.array([[1, Kp, 0],
-                                                      [0, 1, 0]]),
-                                        D = np.array([[-Kp, 0,  0], 
-                                                      [0, 0, 0]]),
-                                        u = DynamicalVariables(name=["v_dc_ref", "i_load_ref", "idc"]),
-                                        y = DynamicalVariables(name=["i_bus_d_ref", "v_dc"]),
-                                        x = DynamicalVariables(name=["int_vdc", "v_dc", "i_load"], 
-                                                               init=[self.emt_init.int_vdc, self.emt_init.v_dc, self.emt_init.i_load_ref]))
+        # Initial conditions
+        v_dc, duty_cycle, i_dc, i_L, x1, x2, i_load = self.emt_init.v_dc, self.emt_init.d, self.emt_init.i_dc, self.emt_init.i_L, self.emt_init.x_1, self.emt_init.x_2, self.emt_init.i_load_ref
+        
+        
+        # DC control 
+        dc_dc_controller = StateSpaceModel(
+            A = np.array([
+                            [-1/TiL, 0, 0, 0, 0, 0],
+                            [0,-1/Tvdc, 0, 0, 0, 0],
+                            [0, 0, -1/Tidc, 0, 0, 0],
+                            [0, 0, 0, -1/Ti_load, 0, 0],
+                            [0, -Ki_vdc, 0, 0, 0, 0],
+                            [-Ki_iL, -Kp_vdc*Ki_iL, Kff_idc*Ki_iL, Kff_iload*Ki_iL, Ki_iL, 0]]),
+            B = np.array([
+                            [1/TiL, 0, 0, 0, 0],
+                            [0, 1/Tvdc, 0, 0, 0],
+                            [0, 0, 1/Tidc, 0, 0],
+                            [0, 0, 0, 1/Ti_load, 0],
+                            [0, 0, 0, 0, Ki_vdc],
+                            [0, 0, 0, 0, Ki_iL*Kp_vdc]]),
+            
+            C = np.array([[-Kp_iL, -Kp_iL*Kp_vdc, Kp_iL*Kff_idc, Kp_iL*Kff_iload, Kp_iL, 1]]),
+            D = np.array([[0, 0, 0, 0, Kp_iL*Kp_vdc]]),
+            u = DynamicalVariables(name=['i_L', 'v_dc', 'i_dc', 'i_load', 'v_dc_ref']),
+            y = DynamicalVariables(name=['d']),
+            x = DynamicalVariables(
+                name = ['i_l_f', 'v_dc_f', 'i_dc_f', 'i_load_f','x_1', 'x_2'],
+                init = [i_L, v_dc, i_dc, i_load, x1, x2]
+            )
+        )
 
+        # DC circuit - includes capacitor, inductor, and load dynamics 
+        dc_circuit = StateSpaceModel(
+            A = wb*np.array([[0,         (duty_cycle-1)/l_dc, 0], 
+                             [(1-duty_cycle)/c_dc,         0, -1/c_dc],
+                             [0, 0, -1/(wb*Tload)]]),
+            B = wb*np.array([[1/l_dc, v_dc/l_dc,       0,       0],
+                             [0,      -i_L/c_dc, -1/c_dc, 0],
+                             [0, 0, 0, 1/(wb*Tload)]]),
+            C = np.eye(3), 
+            D = np.zeros((3,4)),
+            u = DynamicalVariables(name=['v_s', 'd', 'i_dc','i_load_ref']),
+            y = DynamicalVariables(name=['i_L','v_dc', 'i_load']),
+            x = DynamicalVariables(
+                name = ['i_L', 'v_dc', 'iload'],
+                init = [i_L, v_dc, i_load]
+        )
+        )
+        
         # Construction of CCM matrices
-        # ustack = F*ystack + G*u 
         
-        # ustack = i2dq_ref, i2dq_c, v1dq_c, v2dq_c, w, v2dq, vdcref, iload_ref, idc (14)
-        # y_stack = e1d, e1q, i1d_c, i1q_c, i2d_c, i2q_c, theta, w, i2d_ref, vdc (12) 
-        # u = vdc_ref, iload_ref, i2q_ref, v2d, v2q
-        # y = i2dq 
-        
-        # dc power balance linearization 
+        # dc power balance linearization coefficients 
         v_dc = self.emt_init.v_dc 
         
         b1 = self.emt_init.v_vsc_d/v_dc # i1d
@@ -214,53 +234,57 @@ class GFLIe(Generator):
         b5 = self.emt_init.i_vsc_q/v_dc # e1q
         b6 = (self.emt_init.i_vsc_q/v_dc)*(self.xf1_pu+self.xf2_pu) #i2d 
         b7 = - self.emt_init.i_dc/v_dc #vdc 
-        b8 = -(self.emt_init.i_vsc_q/v_dc)*self.beta*vmag_bus # theta 
-
-        # Construction of CCM matrices
-        Fccm = np.vstack( ( np.hstack((np.zeros((8, )), 1, 0)) ,# i2d_ref
-                            np.zeros((10,)), # i2q_ref 
-                            np.hstack((np.zeros((2,4)), np.eye(2) ,np.zeros((2,4)))), # i2dq_c
-                            [1, 0, 0, 0, 0, -(xf1+xf2), 0, 0, 0, 0], # v1d_c
-                            [0, 1, 0, 0, (xf1+xf2), 0, -beta*vmag_bus, 0, 0, 0], # v1q_c
-                            np.zeros((10, )) , # v2d_c
-                            np.append( np.zeros((6,)) , [-vmag_bus,  0, 0, 0] ), # v2q_c
-                            np.append( np.zeros((7,)) , [1, 0, 0] ), # w
-                            np.zeros((2, 10)), # v2_dq
-                            np.zeros((2, 10)), #vdc_ref, iload_ref 
-                            [b2, b5, b1, b4, b6, b3, b8, 0, 0, b7] #idc
-                         )
-        ) 
-
-
-        Gccm = np.vstack((      np.zeros(5,), # i2ref_d, 
-                                [0, 0, 1, 0, 0], #i2q_ref
-                                np.zeros((2,5)), #i2dq_c, 
-                                [0, 0, 0, beta*cosphi ,    beta*sinphi],  # v1d_c
-                                [0, 0, 0, -beta*sinphi,    beta*cosphi], # v1q_c
-                                [0, 0, 0, cosphi   ,sinphi], # v2d_c
-                                [0, 0,  0, -sinphi ,cosphi], # v2q_c
-                                np.zeros((5, )), # w
-                                np.hstack((np.zeros((2,3)), np.eye(2) ) ),  # v2dq 
-                                [1, 0, 0, 0, 0], #vdc_ref 
-                                [0, 1, 0, 0, 0], #iload_ref
-                                np.zeros((1,5)) # idc 
-                                ) 
-                         ) 
-  
-        Hccm = np.vstack(( [ 0, 0 , 0, 0, cosphi , -sinphi, -sinphi*i_bus_d-cosphi*i_bus_q, 0, 0, 0],
-                            [0, 0, 0, 0, sinphi , cosphi , cosphi*i_bus_d-sinphi*i_bus_q, 0, 0, 0] ))
+        b8 = -(self.emt_init.i_vsc_q/v_dc)*self.beta*vmag_bus # phi 
         
-        Lccm = np.zeros((2, 5))
+        Fccm = np.vstack( (     np.zeros((12, )) ,# i2ref_d
+                                np.zeros((12, )) , # i2ref_q 
+                                np.hstack((np.zeros((2,4)), np.eye(2) ,np.zeros((2,6)))), # i2c_dq
+                                [1, 0   ,  0, 0, 0        ,   -(lf1+lf2)  ,  0              , 0, 0, 0, 0, 0], # v1c_d
+                                [0, 1   , 0, 0, (lf1+lf2) ,   0           ,  -beta*vmag_bus , 0, 0, 0, 0, 0], # v1c_q
+                                np.zeros((12, )) , # v2c_d
+                                np.append( np.zeros((1,6)) , [-vmag_bus,  0, 0, 0, 0, 0] ), # v2c_q
+                                np.append( np.zeros((1,7)) , [1, 0, 0, 0, 0] ), # w
+                                np.zeros((2,12)),# v2c_dq
+                                np.hstack((np.zeros(9,), [1, 0, 0])), #iL
+                                np.hstack((np.zeros(9,), [0, 1, 0])), #vdc
+                                [b2, b5, b1, b4, b6, b3, b8, 0, 0, 0, b7, 0], #idc 
+                                np.hstack((np.zeros(11,), [1])), #iload 
+                                np.zeros((2,12)), #vdc_ref, v_s
+                                np.hstack((np.zeros(8,), [1, 0, 0, 0])), #d
+                                [b2, b5, b1, b4, b6, b3, b8, 0, 0, 0, b7, 0], #idc 
+                                np.zeros(12,) # iload_ref 
+                                )) 
 
-        components = [pi_controller, lcl_filter, pll, outer_control]
+        Gccm = np.vstack((      [1,  0,  0, 0, 0, 0, 0], # i2ref_d
+                                [0,  1, 0, 0, 0, 0, 0], # i2ref_q
+                                np.zeros((2,7)), # i2c_dq
+                                [0, 0, 0, 0, 0, beta*cosphi ,    beta*sinphi],  # v1c_d
+                                [0, 0, 0, 0, 0, -beta*sinphi,    beta*cosphi], # v1c_q
+                                [0, 0, 0, 0, 0, cosphi   ,sinphi], # v2c_d
+                                [0, 0, 0, 0, 0, -sinphi ,cosphi], # v2c_q
+                                np.zeros((7, )), # w
+                                np.hstack( (np.zeros((2,5)), np.eye(2) ) ),# v2_dq 
+                                np.zeros((4,7)), #iL, vdc, idc, iload
+                                [0, 0, 1, 0, 0, 0, 0], #vdc_ref
+                                [0, 0, 0, 1, 0, 0, 0], #vs
+                                np.zeros((2,7)), #d, idc 
+                                [0, 0, 0, 0, 1, 0, 0] #i_load_ref 
+                                ) ) 
+  
+        Hccm = np.vstack(( [ 0, 0 , 0, 0, cosphi , -sinphi, -sinphi*i_bus_d-cosphi*i_bus_q, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, sinphi , cosphi , cosphi*i_bus_d-sinphi*i_bus_q, 0, 0, 0, 0, 0] ))
+        
+        Lccm = np.zeros((2, 7))
+
+        components = [pi_controller, lcl_filter, pll, dc_dc_controller, dc_circuit]
         connections = [Fccm, Gccm, Hccm, Lccm]
 
         # Inputs and outputs
         v_bus_D, v_bus_Q= self.emt_init.v_bus_D, self.emt_init.v_bus_Q
         u = DynamicalVariables(
-                                name=["v_dc_ref", "i_load_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
-                                type=["device", "device", "device", "grid", "grid"],
-                                init=[self.emt_init.v_dc, self.emt_init.i_load_ref, self.emt_init.i_bus_q, v_bus_D, v_bus_Q])
+                                name=["i_bus_d_ref", "i_bus_q_ref", "v_dc_ref", "v_s", "i_load_ref", "v_bus_D", "v_bus_Q"],
+                                type=["device", "device", "device", "device", "device", "grid", "grid"],
+                                init=[i_bus_d, i_bus_q, v_dc, self.v_s, i_load, v_bus_D, v_bus_Q])
 
         i_bus_D, i_bus_Q= self.emt_init.i_bus_D, self.emt_init.i_bus_Q
         y = DynamicalVariables(
@@ -268,12 +292,9 @@ class GFLIe(Generator):
                                 init=[i_bus_D, i_bus_Q])
 
         # Generate small-signal model
-        ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
-
-        self.ssm = ssm  
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}") 
 
     def _calculate_emt_initial_conditions(self):
-        
         
         # Extract power flow solution
         vmag_bus = self.power_flow_variables.vmag_bus
@@ -308,16 +329,22 @@ class GFLIe(Generator):
 
         v_lcl_sh_dq = v_lcl_sh_DQ * np.exp(-angle_ref * np.pi / 180 * 1j)
 
-        # Initial conditions for the current controller
+        # Initial conditions for the integral controller
         pi_cc_dq = (
             v_vsc_dq - self.beta * v_bus_dq - 1j * (self.xf1_pu + self.xf2_pu) * i_bus_dq
         )
         
+        # DC side 
         # DC-side initial conditions 
-        v_dc = self.v_dc_ref
+        v_dc = self.v_dc_ref 
         p_vsc = (v_vsc_dq*np.conjugate(i_vsc_dq)).real # power at converter terminals 
         i_dc = p_vsc/v_dc 
-        i_load = -v_dc/self.r_dc - i_dc 
+        i_load = -i_dc # negative sign because of how direction of idc is defined 
+        duty_cycle = (v_dc - self.v_s)/v_dc 
+        i_L = (i_load+i_dc)/(1-duty_cycle)
+        x_1 = i_L - self.Kff_idc*i_dc - self.Kff_iload*i_load 
+        x_2 = duty_cycle - self.kp_i_L*(x_1 - i_L + self.Kff_idc*i_dc + self.Kff_iload*i_load) 
+        
 
         self.emt_init = InitialConditionsEMT(
             vmag_bus=vmag_bus,
@@ -339,15 +366,18 @@ class GFLIe(Generator):
             v_bus_Q=v_bus_DQ.imag,
             v_vsc_mag = abs(v_vsc_DQ),
             v_vsc_DQ_phase = np.angle(v_vsc_DQ, deg=True),
+            v_vsc_d=v_vsc_dq.real,
+            v_vsc_q=v_vsc_dq.imag,
             v_dc=v_dc,
             p_vsc=p_vsc,
             i_dc=i_dc,
-            int_vdc=i_bus_dq.real,
             i_load_ref=i_load,
-            v_vsc_d=v_vsc_dq.real,
-            v_vsc_q=v_vsc_dq.imag
+            d = duty_cycle,
+            i_L = i_L,
+            x_1 = x_1,
+            x_2 = x_2
         )
-        
+
     def define_variables_emt(self):
         # States 
         # ------ 
@@ -365,11 +395,15 @@ class GFLIe(Generator):
         i_bus_a, i_bus_b, i_bus_c = dq02abc(i_bus_d, i_bus_q, 0, angle_ref*np.pi/180)
         i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(i_vsc_d, i_vsc_q, 0, angle_ref*np.pi/180)
         v_sh_a, v_sh_b, v_sh_c = dq02abc(v_sh_d, v_sh_q, 0, angle_ref*np.pi/180)
+        
+        # DC side 
+        v_dc, i_dc, i_L, x1, x2, i_load = self.emt_init.v_dc, self.emt_init.i_dc, self.emt_init.i_L, self.emt_init.x_1, self.emt_init.x_2, self.emt_init.i_load_ref
+        
 
         x = DynamicalVariables(
-            name = ['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "int_vdc", "v_dc", "i_load"],
+            name = ['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c",'i_l_f', 'v_dc_f', 'i_dc_f', 'i_load_f','x_1', 'x_2', 'i_L', 'v_dc', 'i_load'],
             component = f"{self.type_}_{self.id}",
-            init = [pi_cc_d, pi_cc_q, angle_ref * np.pi/180, 0, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, self.emt_init.int_vdc, self.emt_init.v_dc, self.emt_init.i_load_ref]
+            init = [pi_cc_d, pi_cc_q, angle_ref * np.pi/180, 0, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c,i_L, v_dc, i_dc, i_load, x1, x2, i_L, v_dc, i_load]
         )
 
         # Inputs 
@@ -380,10 +414,10 @@ class GFLIe(Generator):
         v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_D, v_bus_Q, 0, 0)
 
         u = DynamicalVariables(
-                            name=["v_dc_ref", "i_load_ref", "i_bus_q_ref", "v_bus_a", "v_bus_b", "v_bus_c"],
+                            name=["i_bus_d_ref", "i_bus_q_ref", "v_dc_ref", "v_s", "i_load_ref", "v_bus_a", "v_bus_b", "v_bus_c"],
                             component=f"{self.type_}_{self.id}",
-                            type=["device", "device", "device", "grid", "grid", "grid"],
-                            init=[self.emt_init.v_dc, self.emt_init.i_load_ref, self.emt_init.i_bus_q, v_bus_a, v_bus_b, v_bus_c]
+                            type=["device", "device", "device", "device", "device", "grid", "grid", "grid"],
+                            init=[i_bus_d, i_bus_q, v_dc, self.v_s, i_load, v_bus_a, v_bus_b, v_bus_c]
                             )
 
         # Outputs
@@ -403,33 +437,28 @@ class GFLIe(Generator):
         This model includes: pi controller, pll, and LCL filter.
         """    
         # Get state values # here in progress
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, int_vdc, v_dc, i_load = self.variables_emt.x.value 
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value 
         
         # Get input values (external inputs)
-        v_dc_ref, i_load_ref, i_bus_q_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        i_bus_d_ref, i_bus_q_ref, v_dc_ref, v_s, i_load_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
 
         # convert relevant quantities to dq 
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
         i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
       
         # Update algebraic states
-        
-        # outer loop Vdc control 
-        i_bus_d_ref = self.kp_oc_pu*(-v_dc_ref + v_dc) + int_vdc 
-        
-        # current controller output 
         e_d = pi_cc_d + self.kp_cc_pu * (i_bus_d_ref - i_bus_d) 
         e_q = pi_cc_q + self.kp_cc_pu * (i_bus_q_ref - i_bus_q)
         
         v_vsc_d = e_d + self.beta * v_bus_d - (self.xf1_pu + self.xf2_pu) * i_bus_q 
         v_vsc_q = e_q + self.beta * v_bus_q + (self.xf1_pu + self.xf2_pu) * i_bus_d  
-        
-        # calculate idc 
-        i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)
-        i_dc = (v_vsc_d*i_vsc_d + v_vsc_q*i_vsc_q)/v_dc
 
         # convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
+        
+        # DC/AC power balance 
+        i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)
+        i_dc = (v_vsc_d*i_vsc_d + v_vsc_q*i_vsc_q)/v_dc
 
         def current_controller_dynamics(y, internal_inputs):
             """
@@ -478,7 +507,9 @@ class GFLIe(Generator):
         def lcl_filter_dynamics(y, internal_inputs):
             """
             It returns the differential equations that describe the dynamics of the LCL filter.
-            The LCL filter connects the VSC to the grid. It has three branches: the first branch (RL) connects the VSC to the shunt element, the second branch is the shunt element (RC), and the third branch (RL) connects the shunt element to the grid.
+            The LCL filter connects the VSC to the grid. It has three branches: the first branch (RL) connects
+            the VSC to the shunt element, the second branch is the shunt element (RC), and the third branch (RL)
+            connects the shunt element to the grid.
             """
 
             # Definition of states for the ODEs of the LCL filter
@@ -513,65 +544,73 @@ class GFLIe(Generator):
 
             return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
           
-        def outer_loop_and_dc_side(y, internal_inputs):
+        def dc_side(y, internal_inputs):
             """
-            Dynamics of PI controller (of Vdc), Vdc (capacitor dynamics based on current balance), and the load (current source). 
+            DC-DC controller + circuit + load control 
             """
-            int_vdc, v_dc, i_load = y[0], y[1], y[2]
+            # Define states
+            i_Lf, v_dcf, i_dcf, i_loadf, x_1, x_2, i_L, v_dc, i_load = y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8]
             
-            v_dc_ref, i_load_ref, i_dc = internal_inputs 
+            # Inputs 
+            i_dc, i_load_ref, v_dc_ref, v_s = internal_inputs
             
-            d_int_vdc = self.ki_oc_puHz*(-v_dc_ref + v_dc)
-            d_vdc = (self.wbase/self.c_dc)*(-i_load - v_dc/self.r_dc - i_dc)
-            d_iload = 1/(self.Tload)*(i_load_ref - i_load)
+            # Parameters 
+            l_dc, c_dc, TiL, Tvdc, Tidc, Kp_vdc, Ki_vdc, Kp_iL, Ki_iL, Kff_idc, Kff_iload, Ti_load, Tload = self.l_dc, self.c_dc, self.Ti_L, self.Tv_dc, self.Ti_dc, self.kp_v_dc, self.ki_v_dc, self.kp_i_L, self.ki_i_L, self.Kff_idc, self.Kff_iload, self.Ti_load, self.Tload 
+            wb = self.wbase
             
-            return [d_int_vdc, d_vdc, d_iload]
+            # ODEs 
+            
+            # DC-DC controller 
+            d_i_Lf = (1/TiL)*(i_L - i_Lf)
+            d_v_dcf = (1/Tvdc)*(v_dc - v_dcf)
+            d_i_dcf = (1/Tidc)*(i_dc - i_dcf)
+            d_i_load_f = (1/Ti_load)*(i_load - i_loadf)
+            d_x_1 = Ki_vdc*(v_dc_ref - v_dcf)
+            d_x_2 = Ki_iL*(Kp_vdc*(v_dc_ref - v_dcf) + x_1 - i_Lf + Kff_idc*i_dcf + Kff_iload*i_loadf)
+            duty_cycle = Kp_iL*(Kp_vdc*(v_dc_ref - v_dcf) + x_1 - i_Lf + Kff_idc*i_dcf + Kff_iload*i_loadf) + x_2
+            
+            # Circuit equations  
+            d_v_dc = (wb/c_dc)*(-i_dc - i_load + (1-duty_cycle)*i_L)
+            d_i_L = (wb/l_dc)*(v_s - (1-duty_cycle)*v_dc)
+            
+            # Load control 
+            d_i_load = (1/Tload)*(i_load_ref - i_load) 
+            
+            return [d_i_Lf, d_v_dcf, d_i_dcf, d_i_load_f, d_x_1, d_x_2, d_i_L, d_v_dc, d_i_load]
+
+        d_cc= current_controller_dynamics([pi_cc_d, pi_cc_q], [i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q])
+
+        d_pll = pll_dynamics([theta_pll, gamma_pll], v_bus_q)
+
+        d_lcl = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
         
-        d_pi_cc_d, d_pi_cc_q = current_controller_dynamics([pi_cc_d, pi_cc_q], [i_bus_d_ref, i_bus_q_ref, i_bus_d, i_bus_q])
+        d_dc = dc_side([i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load], [i_dc, i_load_ref, v_dc_ref, v_s])
 
-        d_theta_pll, d_gamma_pll = pll_dynamics([theta_pll, gamma_pll], v_bus_q)
-
-        di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c = lcl_filter_dynamics([i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c], [v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c])
-        
-        d_int_vdc, d_vdc, d_iload = outer_loop_and_dc_side([int_vdc, v_dc, i_load], [v_dc_ref, i_load_ref, i_dc])
-
-        return [d_pi_cc_d, d_pi_cc_q, d_theta_pll, d_gamma_pll, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c, d_int_vdc, d_vdc, d_iload]
+        return np.hstack([d_cc, d_pll, d_lcl, d_dc])
     
     def get_output_emt(self):
         
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, int_vdc, v_dc, i_load = self.variables_emt.x.value
-        return [i_bus_a, i_bus_b, i_bus_c]
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value 
 
-    def plot_results_emt(self) -> DynamicalVariables:
+        return [i_bus_a, i_bus_b, i_bus_c]
+    
+    def plot_results_emt(self):
         """
         Plot EMT simulation results
         """
 
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, int_vdc, v_dc, i_load = self.variables_emt.x.value
-        
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load = self.variables_emt.x.value         
         tps = self.variables_emt.x.time
-        
+
         # Transform abc to dq0
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
         
-        # Additional quantities to plot 
-        v_sh_dq = v_sh_d + np.multiply(v_sh_q, 1j)
-        i_vsc_dq = i_vsc_d + np.multiply(i_vsc_q, 1j)
-        i_bus_dq = i_bus_d + np.multiply(i_bus_q, 1j)
-        v_vsc_dq = v_sh_dq + np.multiply((self.rf1_pu + self.xf1_pu * 1j), i_vsc_dq)
-        p_vsc = (v_vsc_dq*np.conjugate(i_vsc_dq)).real 
-        
-        p_sh = (v_sh_dq*np.conjugate(i_bus_dq)).real 
-        q_sh = (v_sh_dq*np.conjugate(i_bus_dq)).imag 
-        
-        p_load = v_dc*i_load
-        
         results = DynamicalVariables(
-            name=['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', 'i_vsc_d', 'i_vsc_q', 'v_sh_d', 'v_sh_q', 'i_bus_d', 'i_bus_q', 'int_vdc', 'v_dc', 'i_load', 'p_vsc', 'p_sh', 'pload', 'q_sh'],
+            name=['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', 'i_vsc_d', 'i_vsc_q', 'v_sh_d', 'v_sh_q', 'i_bus_d', 'i_bus_q', 'i_l_f', 'v_dc_f', 'i_dc_f', 'i_load_f','x_1', 'x_2', 'i_L', 'v_dc', 'i_load'],
             component=f"{self.type_}_{self.id}",
-            value=[pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, int_vdc, v_dc, i_load, p_vsc, p_sh, p_load, q_sh],
+            value=[pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_Lf, v_dcf, i_dcf, i_loadf, x1, x2, i_L, v_dc, i_load],
             time=tps
         )
         return results

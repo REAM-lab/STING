@@ -7,8 +7,14 @@ from pathlib import Path
 from scipy import signal 
 import numpy as np 
 
+import sys 
+sys.path.append("/Users/ruthkravis/Documents/STING")
 # Import sting package
+
 from sting import main
+from sting.system.core import System
+
+
 # from sting.system.core import System
 # from sting.system.operations import SystemModifier
 # from sting.modules.power_flow.core import ACPowerFlow
@@ -20,38 +26,42 @@ case_dir = Path(__file__).resolve().parent
 
 # Construct system and small-signal model
 def step1(t):
-    return 0.5 if t >= 0.5 else 0.0
+    return 0.3 if t >= 0.2 else 0.0
 
 def step2(t):
     return 0.0
 
 def step3(t):
-    return 0.25 if t > 1.0 else 0.0 
+    return 0.1 if t > 1.0 else 0.0 
 
 def step3_neg(t):
     return -0.25 if t > 1.0 else 0.0 
 
+def sin_oscillation(t):
+    return 0.05*np.sin(2*np.pi*20*t) if t < 1 else 0  #1 Hz oscillation
+
 def square_oscillation(t):
-    osc = 0.1*signal.square(2 * np.pi * 14 * t)
+    osc = 0.05*signal.square(2 * np.pi * 14 * t)
     return osc
 
 # Specify inputs to excite - any constant input does not need to be specified 
 # NB: input is a perturbation from the nominal value 
 inputs = {'infinite_sources_0': {'v_ref_d': step2}, 
-          'gfmi_e_0': {'p_ref': step3_neg, 
+          'gfmi_e_0': {'p_ref': step2, 
                        'q_ref': step2,
                        'v_ref': step2,
                        'v_dc_ref': step2,
                        'v_s': step2, 
-                       'i_load_ref': step3}}
+                       'i_load_ref': sin_oscillation}}
 
-t_max = 4.0
+t_max = 1.0
 
 # Construct system and small-signal model
-sys, ssm =  main.run_ssm(case_directory=case_dir)
+_, ssm =  main.run_ssm(case_directory=case_dir)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
-# Run EMT simulation
 main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
+
+#run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
 
 
 # # Load system from CSV files

@@ -18,6 +18,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pathlib import Path
 from typing import Callable
+from scipy import signal 
 
 # Import sting package
 from sting import main
@@ -128,15 +129,20 @@ def p_ref(t):
 def slow_small_oscillation(t):
     return 0.1*np.sin(2*np.pi*1*t) if t < 1 else 0  #1 Hz oscillation
 
+
+def square_oscillation(t):
+    osc = 0.1*signal.square(2 * np.pi * 14 * t)
+    return osc
+
 # Specify inputs to excite - any constant input does not need to be specified 
 # NB: input is a perturbation from the nominal value 
 inputs = {'infinite_sources_0': {'v_ref_d': no_step}, 
-          'gfmi_e_0': {'p_ref': step1, 
+          'gfmi_e_0': {'p_ref': no_step, 
                        'q_ref': no_step,
                        'v_ref': no_step,
                        'v_dc_ref': no_step,
                        'v_s': no_step,
-                       'i_load_ref': slow_small_oscillation}}
+                       'i_load_ref': square_oscillation}}
 
 t_max = 4.0
 

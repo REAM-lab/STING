@@ -6,4 +6,4 @@ q_ref,gfmi_e_0,device,0.05787698596992697
 v_ref,gfmi_e_0,device,0.9882122222891866
 v_dc_ref,gfmi_e_0,device,1.05
 v_s,gfmi_e_0,device,0.5
-i_load_ref,gfmi_e_0,device,0.5
+i_load_ref,gfmi_e_0,device,0.3
