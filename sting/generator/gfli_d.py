@@ -89,6 +89,7 @@ class GFLId(Generator):
     Ti_dc: float 
     Kff_idc: float 
     Kff_iload: float 
+    i_load_ref: float 
     Ti_load: float # for DC/DC controller - measurement filter 
     Tload: float # time constant for actuation of load current change 
     emt_init: Optional[InitialConditionsEMT] = None
@@ -339,7 +340,7 @@ class GFLId(Generator):
         v_dc = self.v_dc_ref 
         p_vsc = (v_vsc_dq*np.conjugate(i_vsc_dq)).real # power at converter terminals 
         i_dc = p_vsc/v_dc 
-        i_load = -i_dc # negative sign because of how direction of idc is defined 
+        i_load = self.i_load_ref
         duty_cycle = (v_dc - self.v_s)/v_dc 
         i_L = (i_load+i_dc)/(1-duty_cycle)
         x_1 = i_L - self.Kff_idc*i_dc - self.Kff_iload*i_load 
