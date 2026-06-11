@@ -1,0 +1,10 @@
+name,bus_type,base_power_MVA,base_voltage_kV,base_frequency_Hz,minimum_voltage_pu,maximum_voltage_pu,zone
+bus_1,slack,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_2,PV,1.00E+02,2.30E+02,60,0.98,1.02,
+bus_3,PV,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_4,PQ,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_5,PQ,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_6,PQ,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_7,PQ,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_8,PQ,1.00E+02,2.30E+02,60,0.98,1.02,external
+bus_9,PQ,1.00E+02,2.30E+02,60,0.9,1.5,external

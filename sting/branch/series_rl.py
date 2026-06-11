@@ -7,6 +7,7 @@ import copy
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
+import polars as pl
 
 # Import sting code
 from sting.branch.core import Branch
@@ -91,7 +92,7 @@ class BranchSeriesRL(Branch):
 
         u = DynamicalVariables(
             name=["v_from_bus_D", "v_from_bus_Q", "v_to_bus_D", "v_to_bus_Q"],
-            component=f"se_rl_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid", "grid", "grid"],
             init=[
                 self.emt_init.v_from_bus_D,
@@ -103,7 +104,7 @@ class BranchSeriesRL(Branch):
 
         x = DynamicalVariables(
             name=["i_br_D", "i_br_Q"],
-            component=f"se_rl_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[self.emt_init.i_br_D, self.emt_init.i_br_Q],
         )
         y = copy.deepcopy(x)
@@ -166,7 +167,7 @@ class BranchSeriesRL(Branch):
 
         return [i_br_a, i_br_b, i_br_c]
     
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
         
         # Retrieve simulation results
         time = self.variables_emt.x.time
@@ -177,23 +178,32 @@ class BranchSeriesRL(Branch):
         i_br_D, i_br_Q, _ = zip(*map(abc2dq0, i_br_a, i_br_b, i_br_c, angle_ref))
 
         # Plot results
-        fig = make_subplots(rows=1, cols=2)
+        results = DynamicalVariables(
+            name=["i_br_D", "i_br_Q"],
+            component=f"{self.type_}_{self.id}",
+            value=[i_br_D, i_br_Q],
+            time=time
+        )
+        return results
 
-        fig.add_trace(go.Scatter(x=time, y=i_br_D), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='i_br_D [p.u.]', row=1, col=1)
 
-        fig.add_trace(go.Scatter(x=time, y=i_br_Q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='i_br_Q [p.u.]', row=1, col=2)
+    def compare_ssm_emt(self, emt_directory, ssm_directory):
+        # Read the SSM and EMT states
+        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
+        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
 
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
+        # Transform EMT abc states to dq0 states
+        angle_ref =  2 * np.pi * self.base_frequency_Hz * emt["time"].to_numpy()
+        i_a, i_b, i_c = [c.to_numpy() for c in emt.select("i_br_a","i_br_b","i_br_c")]
+        i_emt_D, i_emt_Q, _ = zip(*map(abc2dq0, i_a, i_b, i_c, angle_ref))
 
-        fig.write_html(os.path.join(output_dir, name + ".html"))
+        # Unpack the SSM dq states
+        i_ssm_D, i_ssm_Q = [c.to_numpy() for c in ssm.select("i_br_D", "i_br_Q")]
 
+        # Return deltas
+        return {
+            f"({self.type_}_{self.id}, i_br_D)": (i_emt_D, i_ssm_D),
+            f"({self.type_}_{self.id}, i_br_Q)": (i_emt_Q, i_ssm_Q)
+        }
 
         

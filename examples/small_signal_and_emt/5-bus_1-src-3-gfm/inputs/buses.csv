@@ -1,0 +1,6 @@
+name,base_power_MVA,base_voltage_kV,base_frequency_Hz,minimum_voltage_pu,maximum_voltage_pu
+richmond,1.00E+02,2.30E+02,60,1,1
+sf,1.00E+02,2.30E+02,60,0.95,1.3
+berkeley,1.00E+02,2.30E+02,60,0.95,1.3
+oakland,1.00E+02,2.30E+02,60,0.95,1.3
+san_jose,1.00E+02,2.30E+02,60,0.95,1.3

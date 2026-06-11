@@ -47,12 +47,23 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
     model.cCapGenNonVar = pyo.Constraint(expandable_gens, rule=lambda m, g: m.vCAP[g] <= (g.cap_max_power_MW - g.cap_existing_power_MW))
     logger.info(f"   Size: {len(model.cCapGenNonVar)} constraints")
 
-    logger.info(" - Constraints on dispatch based on capacity factors and existing/built capacity")
+    logger.info(" - Constraints on dispatch for non-variable generators (capacity factor of 1)")
+    gens_no_capacity_factor = [g for g in G if g.site == 'no_capacity_factor' or g.site is None]
+    model.cMaxDispatchNoCf = pyo.Constraint(gens_no_capacity_factor, S, T, rule=lambda m, g, s, t: m.vGEN[g, s, t] <= (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW)
+    logger.info(f"   Size: {len(model.cMaxDispatchNoCf)} constraints")
+
+    logger.info(" - Constraints on dispatch for variable generators")
+    gens_with_capacity_factor = [g for g in G if g.site != 'no_capacity_factor' and g.site is not None]
     cf_lookup = {(cf_inst.site, cf_inst.scenario, cf_inst.timepoint): cf_inst.capacity_factor for cf_inst in cf}
+
     def max_dispatch_rule(m: pyo.ConcreteModel, g: Generator, s: Scenario, t: Timepoint):
 
         # Generator capacity factor and nameplate power capacity
-        capacity_factor = cf_lookup.get((g.site, s.name, t.name), 1)
+        capacity_factor = cf_lookup.get((g.site, s.name, t.name), None)
+        if capacity_factor is None:
+                logger.info(f"The site {g.site} for generator {g.name} does not have a corresponding capacity factor for scenario {s.name} and timepoint {t.name}. Check capacity_factors.csv")
+                raise ValueError(f"Check capacity_factors.csv")
+
         nameplate = (m.vCAP[g] if g in expandable_gens else 0) + g.cap_existing_power_MW
 
         x = (g.cap_existing_power_MW * capacity_factor)
@@ -67,8 +78,8 @@ def construct_capacity_expansion_model(system: System, model: pyo.ConcreteModel,
 
         return scalefactor * m.vGEN[g, s, t] <= scalefactor * capacity_factor *  nameplate
 
-    model.cMaxDispatch = pyo.Constraint(G, S, T, rule=max_dispatch_rule)
-    logger.info(f"   Size: {len(model.cMaxDispatch)} constraints")
+    model.cMaxDispatchCf = pyo.Constraint(gens_with_capacity_factor, S, T, rule=max_dispatch_rule)
+    logger.info(f"   Size: {len(model.cMaxDispatchCf)} constraints")
 
     logger.info(" - Constraints on forced dispatch requirements specified for certain generators")
     forced_dispatch_gens = [g for g in G if g.forced_dispatch_MW is not None]
@@ -114,30 +125,35 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
     """Generator results to CSV files."""
 
     # Export generator dispatch results
-    pyovariable_to_df(model.vGEN, 
-                      dfcol_to_field={'generator': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
-                      value_name='dispatch_MW', 
-                      csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
+    #pyovariable_to_df(model.vGEN, 
+    #                  dfcol_to_field={'generator': 'name', 'scenario': 'name', 'timepoint': 'name'}, 
+    #                  value_name='dispatch_MW', 
+    #                  csv_filepath=os.path.join(output_directory, 'generator_dispatch.csv'))
+
+    (pl.DataFrame( data = [ (g.name, s.name, t.name, pyo.value(model.vGEN[g, s, t])) for (g, s, t) in model.vGEN],
+                    schema=['generator', 'scenario', 'timepoint', 'dispatch_MW'], orient='row')
+        .write_csv(os.path.join(output_directory, 'generator_dispatch.csv') ))
 
     # Export generator capacity results
-    pyovariable_to_df(model.vCAP, 
-                      dfcol_to_field={'generator': 'name'}, 
-                      value_name='built_capacity_MW', 
-                      csv_filepath=os.path.join(output_directory, 'generator_built_capacity.csv'))
+    if hasattr(model, 'vCAP'):
+        pyovariable_to_df(model.vCAP, 
+                          dfcol_to_field={'generator': 'name'}, 
+                          value_name='built_capacity_MW', 
+                          csv_filepath=os.path.join(output_directory, 'generator_built_capacity.csv'))
     
     # Export emissions per scenario
-    emissions = pl.DataFrame({'scenario': [s.name for s in system.scenarios], 
+    (pl.DataFrame({'scenario': [s.name for s in system.scenarios], 
                             'emissions_tonneCO2peryear': [sum(pyo.value(model.eEmissionsPerScPerTp[s, t]) * t.weight for t in system.timepoints) for s in system.scenarios]})
-    emissions.write_csv(os.path.join(output_directory, 'emissions_per_scenario.csv'))
+    .write_csv(os.path.join(output_directory, 'emissions_per_scenario.csv')))
 
     # Export summary of generator costs
-    costs = pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
+    (pl.DataFrame({'component' : ['cost_per_timepoint_USD', 'cost_per_period_USD', 'total_cost_USD'],
                           'cost' : [  sum( pyo.value(model.eGenCostPerTp[t]) * t.weight for t in system.timepoints), 
-                                            pyo.value(model.eGenCostPerPeriod), 
+                                            pyo.value(model.eGenCostPerPeriod) if hasattr(model, 'eGenCostPerPeriod') else 0,
                                             pyo.value(model.eGenTotalCost)]})
-    costs.write_csv(os.path.join(output_directory, 'generator_costs_summary.csv'))
+    .write_csv(os.path.join(output_directory, 'generator_costs_summary.csv')))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.05):
     """Upload built capacities from a previous capex solution."""
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
@@ -154,7 +170,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     if gens_to_update:
         for g in gens_to_update:
             if generator_built_capacity[g.name] > threshold_MW:
-                g.cap_existing_power_MW += generator_built_capacity[g.name]
+                g.cap_existing_power_MW += generator_built_capacity[g.name] * overbuild_factor # The factor of 1.05 is to add a buffer to ensure that the built capacity from the previous solution is not exactly at the limit, which could cause numerical issues in the optimization.
             if make_non_expandable:
                 g.expand_capacity = False
             else:

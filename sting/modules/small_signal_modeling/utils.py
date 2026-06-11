@@ -1,8 +1,55 @@
-from sting.utils.graph_matrices import build_generation_connection_matrix, build_oriented_incidence_matrix
+# ----------------------
+# Import python packages
+# ----------------------
 import numpy as np
+from typing import NamedTuple
 from scipy.linalg import block_diag
 
+# ----------------------
+# Import sting code
+# ----------------------
 from sting.system.core import System
+from sting.utils.graph_matrices import build_generation_connection_matrix, build_oriented_incidence_matrix
+from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
+
+
+# -----------
+# Sub-classes
+# -----------
+class VariablesSSM(NamedTuple):
+    """
+    All variables in the system for small-signal modeling.
+    """
+    x: DynamicalVariables
+    u: DynamicalVariables
+    y: DynamicalVariables
+
+class ComponentSSM(NamedTuple):
+    """
+    A component of the system that participates in small-signal modeling.
+
+    #### Attributes:
+    - type: `str`
+            inf_src, se_rl, pa_rc, ... etc. 
+    - idx: `int`
+            Index of the component in its corresponding list in the system.
+    """
+    type: str
+    id: int
+
+class ConnectionMatrices(NamedTuple):
+    """
+    Component connection matrices
+    Using a NamedTuple to avoid accessing each element by it's index in a list
+    """
+    F: np.ndarray
+    G: np.ndarray
+    H: np.ndarray
+    L: np.ndarray
+
+# -----------
+# Functions
+# -----------
 
 def get_ccm_matrices(system: System, attribute: str, dimI: int):
     """ """

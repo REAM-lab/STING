@@ -1,0 +1,10 @@
+name,from_bus,to_bus,base_power_MVA,base_voltage_kV,base_frequency_Hz,r_pu,x_pu,g_pu,b_pu,zone
+1_tx_4,bus_1,bus_4,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+4_tx_5,bus_4,bus_5,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+5_tx_6,bus_5,bus_6,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+3_tx_5,bus_3,bus_6,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+6_tx_7,bus_6,bus_7,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+7_tx_8,bus_7,bus_8,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+8_tx_2,bus_8,bus_2,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,
+8_tx_9,bus_8,bus_9,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external
+9_tx_4,bus_9,bus_4,1.00E+02,2.30E+02,60,0.01,0.5,0.01,0.01,external

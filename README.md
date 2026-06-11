@@ -23,22 +23,29 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
     $ source .venv/bin/activate
     (.venv)$ pip install -e .  
     ```
+To install all optional dependencies, run  `pip install -e ".[all]"`. This will install extra packages necessary for optimization `solvers`, `model_reduction`, and sting `development`.
 
-2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for differents modules. Find the file run.py and execute it.
+2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for different modules. Find the file `run.py` and execute it.
 
-## Requirements
+### Solvers
 
-Most of modules require solvers to solve optimization models, even small-signal modeling requires a solver to solve optimal power flow. Make sure you have a solver installed in your
-computer. Here, we show a list of solvers we have used:
+Most of modules additionally require commercial or open-source solvers to run various optimization models. For example, solving optimal power flow is needed to find an equilibrium point for small-signal modeling. We currently support and use the following libraries
 
-- Ipopt
-- Gurobi
-- Mosek 
+| Solver | How to install in your python environment     | Use                |
+|--------|-----------------------------------------------|--------------------|
+| IPOPT  | `brew install ipopt` + `pip install cyipopt`  | ACOPF              |
+| Gurobi | `pip install gurobipy`                        | Capacity expansion |
+| MOSEK  | `pip install mosek`                           | Capacity expansion |
+| SLICOT | `pip install slycot`  + `brew install gcc`    |   Model Reduction  |
 
-## EMT simulation with SPS (Deprecated)
-
-Currently, we are offering a library of EMT models in Simulink using Specialized Power Systems (SPS) models. The idea is to replace these EMT models with pure Python scripts for EMT simulation.
-We are working on it. Make sure that you have MATLAB R2025a.
-
-1. **Open SPS library**: Go to the folder sps_library. Open the library, and make sure that it is open
-while you are running EMT simulation with our testcases.
+## Citing
+```
+@misc{STING,
+    author = {{Renewable Energy + Advanced Mathematics Lab (REAM)}},
+    title = {Specialized tool for inverter-based grids},
+    year = {2025},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    url = {https://github.com/REAM-lab/sting}
+}
+```

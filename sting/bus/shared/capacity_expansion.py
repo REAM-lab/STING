@@ -395,7 +395,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
         # Export to CSV
         df.write_csv(os.path.join(output_directory, 'line_flows.csv'))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.05):
     """Upload built capacities from a previous capex solution. """
     
     if os.path.exists(os.path.join(input_directory, "line_built_capacity.csv")):
@@ -408,7 +408,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
         if lines_to_update:
             for l in lines_to_update:
                 if line_built_capacity[l.name] > threshold_MW:
-                    l.cap_existing_power_MW += line_built_capacity[l.name]
+                    l.cap_existing_power_MW += line_built_capacity[l.name] * overbuild_factor # The factor of 1.05 is to add a buffer to ensure that the built capacity from the previous solution is not exactly at the limit, which could cause numerical issues in the optimization.
                 if make_non_expandable:
                     l.expand_capacity = False
 
@@ -426,7 +426,7 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
         if buses_to_update:
             for n in buses_to_update:
                 if bus_built_capacity[n.name] > threshold_MW:
-                    n.max_flow_MW += bus_built_capacity[n.name]
+                    n.max_flow_MW += bus_built_capacity[n.name] * overbuild_factor # The factor of 1.05 is to add a buffer to ensure that the built capacity from the previous solution is not exactly at the limit, which could cause numerical issues in the optimization.
         
         logger.info(f"> Updated existing capacities for {len(buses_to_update)} buses based on input file {os.path.join(input_directory, 'bus_built_capacity.csv')}")  
     else:

@@ -69,9 +69,6 @@ class Generator(Component):
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.buses if n.name == self.bus)).id
 
-        if self.cap_existing_power_MW is not None and self.cap_max_power_MW is not None:
-            self.expand_capacity = False if self.cap_existing_power_MW >= self.cap_max_power_MW else True
-
     def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
         self.power_flow_variables = PowerFlowVariables(
             p_bus=pf_solution.generator_active_dispatch[self.id, timepoint, self.type_]/self.base_power_MVA,

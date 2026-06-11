@@ -1,0 +1,15 @@
+name,component,type,init
+i_bus_d,infinite_sources_0,"",0.03402119728519415
+i_bus_q,infinite_sources_0,"",0.06030324370916155
+v_bus_D,pa_rc_0,"",1.0
+v_bus_Q,pa_rc_0,"",0.0
+x0,"","",NaN
+x1,"","",NaN
+x2,"","",NaN
+x3,"","",NaN
+x4,"","",NaN
+x5,"","",NaN
+x6,"","",NaN
+x7,"","",NaN
+x8,"","",NaN
+x9,"","",NaN

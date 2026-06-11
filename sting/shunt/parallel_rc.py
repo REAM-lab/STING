@@ -10,6 +10,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 
+import polars as pl
+
 # -----------------------
 # Import sting code
 # -----------------------
@@ -72,14 +74,14 @@ class ShuntParallelRC(Shunt):
 
         u = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
-            component=f"pa_rc_{self.id}",
+            component=f"{self.type_}_{self.id}",
             type=["grid", "grid"],
             init=[self.emt_init.i_bus_D, self.emt_init.i_bus_Q],
         )
 
         x = DynamicalVariables(
             name=["v_bus_D", "v_bus_Q"],
-            component=f"pa_rc_{self.id}",
+            component=f"{self.type_}_{self.id}",
             init=[self.emt_init.v_bus_D, self.emt_init.v_bus_Q],
         )
         y = copy.deepcopy(x)
@@ -140,7 +142,7 @@ class ShuntParallelRC(Shunt):
 
         return [v_bus_a, v_bus_b, v_bus_c]
     
-    def plot_results_emt(self, output_dir):
+    def plot_results_emt(self):
 
         # Get state values
         v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
@@ -150,21 +152,32 @@ class ShuntParallelRC(Shunt):
         # Transform abc to dq0
         v_bus_D, v_bus_Q, _ = zip(*map(abc2dq0, v_bus_a, v_bus_b, v_bus_c, angle_ref))
         
-        # Plot results
-        fig = make_subplots(rows=1, cols=2)
+        results = DynamicalVariables(
+            name=["v_bus_D", "v_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            value=[v_bus_D, v_bus_Q],
+            time=time
+        )
+        return results
         
-        fig.add_trace(go.Scatter(x=time, y=v_bus_D), row=1, col=1)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=1)
-        fig.update_yaxes(title_text='v_bus_D [p.u.]', row=1, col=1)
 
-        fig.add_trace(go.Scatter(x=time, y=v_bus_Q), row=1, col=2)
-        fig.update_xaxes(title_text='Time [s]', row=1, col=2)
-        fig.update_yaxes(title_text='v_bus_Q [p.u.]', row=1, col=2)
 
-        name = f"{self.type_}_{self.id}"
-        fig.update_layout(  title_text = name,
-                            title_x=0.5,
-                            showlegend = False,
-                            )
 
-        fig.write_html(os.path.join(output_dir, name + ".html"))
+    def compare_ssm_emt(self, emt_directory, ssm_directory):
+        # Read the SSM and EMT states
+        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
+        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
+
+        # Transform EMT abc states to dq0 states
+        angle_ref =  2 * np.pi * self.base_frequency_Hz * emt["time"].to_numpy()
+        v_a, v_b, v_c = [c.to_numpy() for c in emt.select("v_bus_a", "v_bus_b", "v_bus_c")]
+        v_emt_D, v_emt_Q, _ = zip(*map(abc2dq0, v_a, v_b, v_c, angle_ref))
+
+        # Unpack the SSM dq states
+        v_ssm_D, v_ssm_Q = [c.to_numpy() for c in ssm.select("v_bus_D", "v_bus_Q")]
+
+        # Return deltas
+        return {
+            f"({self.type_}_{self.id}, v_bus_D)": (v_emt_D, v_ssm_D),
+            f"({self.type_}_{self.id}, v_bus_Q)": (v_emt_Q, v_ssm_Q)
+        }

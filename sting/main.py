@@ -9,14 +9,17 @@ import time
 # Import sting code
 # ------------------
 from sting.system.core import System
+from sting.system.component import Component
 from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
-from sting.modules.small_signal_modeling.operations import GroupBy
 from sting.modules.capacity_expansion.core import CapacityExpansion
+from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
+from sting.utils.dynamical_systems import StateSpaceModel
+from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
@@ -48,7 +51,7 @@ def run_acopf(case_directory = os.getcwd(), model_settings=None, solver_settings
 
     return sys
 
-def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=None, system=None):
     """
     Routine to construct the system and its small-signal model from a case study directory.
     """
@@ -57,8 +60,11 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     # Set up logging to file
     setup_logging_file(case_directory)
 
-    # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    if system is not None:
+        sys = system
+    else:
+        # Load system from CSV files
+        sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
@@ -67,6 +73,7 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     # Break down lines into branches and shunts for small-signal modeling
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -76,13 +83,15 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, ssm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
-
-    # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    if system is not None:
+        sys = system
+    else:
+        # Load system from CSV files
+        sys = System.from_csv(case_directory=case_directory)
 
     # Run power flow
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
@@ -91,6 +100,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     # Break down lines into branches and shunts for small-signal modeling
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -102,20 +112,28 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     return sys
 
 
-def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None):
+def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None, log_filename: str = None,
+              components_to_add: list[Component] = None):
     """
     Routine to perform capacity expansion analysis from a case study directory.
     """
     start_time = time.time()
 
     # Set up logging to file
-    setup_logging_file(case_directory)
+    setup_logging_file(case_directory, filename=log_filename)
 
     # Load system from CSV files
     system = System.from_csv(case_directory=case_directory)
+
+    # Add any additional components to the system if specified (e.g., for policy scenarios). Useful for sensitivity analysis.
+    if components_to_add is not None:
+        for component in components_to_add:
+            system.add(component)
+            logger.info(f" > Added component {component}.")
+        logger.info(f"> Added {len(components_to_add)} total extra components to the system.")
     
     # Perform capacity expansion analysis
-    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings)
+    capex = CapacityExpansion(system=system, model_settings=model_settings, solver_settings=solver_settings, output_directory=output_directory)
     capex.solve()  
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
@@ -200,15 +218,20 @@ def run_zonal_capex(case_directory=os.getcwd(), model_settings: dict = None, sol
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
     return capex, zonal_system
 
-def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None, solver_settings=None,
+def run_capex_with_initial_build(case_directory=os.getcwd(), 
+                                 model_settings=None, 
+                                 solver_settings=None,
+                                 log_filename: str = None,
                                  output_directory=None,
-                                 built_capacity_directory=None, make_non_expandable=False, print_system_with_built_capacities=False,
+                                 built_capacity_directory=None, 
+                                 make_non_expandable=False, 
+                                 print_system_with_built_capacities=False,
                                  threshold_MW: float = 1e-1):
     """
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
     # Set up logging to file
-    setup_logging_file(case_directory)
+    setup_logging_file(case_directory, filename=log_filename)
 
     start_time = time.time()
 
@@ -238,40 +261,95 @@ def run_capex_with_initial_build(case_directory=os.getcwd(), model_settings=None
 
     return capex, system
 
-
-def run_mor_setup(case_directory = os.getcwd(), model_settings=None, solver_settings=None):
+def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
+                                           model_settings=None, 
+                                           solver_settings=None,
+                                           log_filename: str = None,
+                                           output_directory=None,
+                                           built_capacity_directory=None, 
+                                           make_non_expandable=True, 
+                                           print_system_with_built_capacities=False,
+                                           threshold_MW: float = 1e-1):
     """
-    Routine to construct the system and its small-signal model that can be used with model reduction methods.
+    Function to run unit commitment analysis with initial built capacities from a previous capacity expansion solution. 
     """
     # Set up logging to file
-    setup_logging_file(case_directory)
+    setup_logging_file(case_directory, filename=log_filename)
+
+    start_time = time.time()
 
     # Load system from CSV files
-    sys = System.from_csv(case_directory=case_directory)
+    system = System.from_csv(case_directory=case_directory)
 
-    # Run power flow
+    # If built_capacity_directory is not provided, it will look for built capacities in the default output directory of the capacity expansion results.
+    if built_capacity_directory is None:
+        built_capacity_directory = os.path.join(case_directory, "outputs", "cost_production")
+
+    # Upload built capacities
+    sys_modifier = SystemModifier(system=system)
+    sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+    
+    if print_system_with_built_capacities:
+        system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
+
+    # Perform unit commitment analysis
+    uc = UnitCommitment(system=system, model_settings=model_settings, solver_settings=solver_settings,
+                              output_directory=output_directory)
+
+    # Solve unit commitment
+    uc.solve()
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+
+    return uc, system
+
+def run_model_reduction(
+        reductions:dict[str, Reducer],
+        file_name,
+        case_directory=os.getcwd(),
+        model_settings=None, 
+        solver_settings=None,
+        ):
+    """
+    Routine to construct a small-signal model and then perform model order reduction (MOR)
+    on each subsystem.
+    """
+    setup_logging_file(case_directory)
+
+    # Load system and find feasible point for SSM
+    sys = System.from_csv(case_directory=case_directory)
     pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
     pf.solve()
 
-    # Break down lines into branches and shunts for small-signal modeling
+    # Construct the full-order small-signal model
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
-
-    # Construct small-signal model
+    sys_modifier.combine_shunts()
     ssm = SmallSignalModel(system=sys)
-    ssm.construct_system_ssm()
-
     # Interconnect all components in the same zone
-    zonal_ssm = GroupBy(ssm, "zone").interconnect()
-    # Interconnect all zonal models
-    zonal_ssm.construct_system_ssm(write_csv=False)
+    ssm = ssm.group_by("zone").interconnect()
 
-    # Manually write CSVs (to ensure non-conflicting paths)
-    output_dir = os.path.join(zonal_ssm.output_directory, os.pardir)
+    # Add a model reduction algorithm to each subsystem
+    for subsystem in ssm.system.linear_subsystems:
+        subsystem.reducer = reductions.get(subsystem.name, None)
+
+    # Construct a state-space model of the full-order model (FOM)
+    models = ssm.get_component_attribute("ssm")
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+
+    # Perform any system-level operations required by each reduction method
+    for reducer in reductions.values():
+        for operation in reducer.system_operations:
+            operation.solve(ssm)
+
+    # Construct all ROMs and switch from FOM to ROM
+    ssm.apply("_construct_rom")
+    ssm.apply("set_using", "reduced_order_model")
+
+    # Construct the state-space model
+    models = ssm.get_component_attribute("ssm")
+    rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    rom.to_csv(os.path.join(case_directory, "outputs", file_name))
     
-    zonal_ssm.model.to_csv(
-        filepath=os.path.join(output_dir, "zonal_small_signal_model"))
-    zonal_ssm.write_csv_ccm_matrices(
-        output_dir=os.path.join(output_dir, "zonal_component_connection_matrices"))
-
-    return ssm, zonal_ssm
+    return ssm, ssm.model, rom

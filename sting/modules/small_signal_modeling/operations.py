@@ -13,7 +13,7 @@ from scipy.linalg import block_diag
 # -----------------------
 from sting.system.core import System
 from sting.system.component import Component
-from sting.reduced_order_model.linear_rom import LinearROM
+from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.modules.small_signal_modeling.core import SmallSignalModel, ComponentSSM
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
-class GroupBy:
+class SmallSignalModelGroupBy:
     """Class to perform operations on small-signal models, such as grouping by zones"""
 
     model: SmallSignalModel
@@ -136,7 +136,7 @@ class GroupBy:
             subsystem_ssm = StateSpaceModel.from_interconnected(models, sub_model.ccm_matrices, y=outputs, u=inputs)
             
             # Add each subsystem level model to the new system and components
-            linear_system = LinearROM(ssm=subsystem_ssm)
+            linear_system = LinearSubsystem(name=key, full_order_model=subsystem_ssm)
             new_system.add(linear_system)
             new_components.append(ComponentSSM(linear_system.type_, linear_system.id))
 

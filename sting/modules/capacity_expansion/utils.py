@@ -3,7 +3,7 @@
 # Import python packages
 # -----------
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import NamedTuple
 import logging
 
@@ -33,6 +33,7 @@ class ModelSettings(NamedTuple):
     bus_max_flow_expansion: bool = False
     bus_max_flow: bool = False
     angle_difference_limits: bool = False
+    inspect_coefficients: bool = True
     write_model_file: bool = False
     kron_equivalent_flow_constraints: bool = False
 

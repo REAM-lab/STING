@@ -1,18 +1,26 @@
 # ---------------------------------------
 # Import standard and third-party packages
 # ----------------------------------------
-
-import logging
-from matplotlib.pyplot import plot
-import numpy as np
 import os
+from dataclasses import dataclass
+import logging
+import numpy as np
+import polars as pl
 from more_itertools import transpose
 from scipy.linalg import eigvals, block_diag
 from scipy.integrate import solve_ivp
-from dataclasses import dataclass
-import polars as pl
+from control import ss
+from pymor.models.iosys import LTIModel
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+import pylab as plt
+import matplotlib
+matplotlib.use("Agg")
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+
 
 # --------------
 # Import sting code
@@ -73,12 +81,36 @@ class DynamicalVariables:
     
         return df
 
-    def to_timeseries(self):
+    def to_timeseries(self, csv_filepath = None):
         d = {k : self._value[i] for i, k in enumerate(self._name)}
         df = pl.DataFrame(d)
         new_col = pl.Series("time", self._time)
         df = df.insert_column(0, new_col)
+        if csv_filepath is not None:
+            df.write_csv(csv_filepath)
         return df
+    
+    def to_plotly(self, figure_filepath = None):
+        """Plot the dynamical variables using plotly. It creates a subplot for each variable, with shared x-axis. 
+        The figure is saved as an html file if figure_filepath is provided."""
+        
+        # Create two columns with shared x-axis
+        ncols = 2
+        nrows = len(self._name) // ncols + int(len(self._name) % ncols > 0)
+        
+        fig = make_subplots(rows=nrows, cols=ncols, shared_xaxes=True)
+        for i in range(len(self._name)):
+            fig.add_trace(go.Scatter(x=self._time, y=self._value[i], name=self._name[i]), row=i//ncols+1, col=i%ncols+1)
+            fig.update_yaxes(title_text=self._name[i], row=i//ncols+1, col=i%ncols+1)
+            fig.update_xaxes(title_text='Time [s]',row=i//ncols+1, col=i%ncols+1)
+
+        fig.update_layout(title_text = self._component[0], title_x=0.5, showlegend = False)
+        
+        if figure_filepath is not None:
+            fig.write_html(figure_filepath)
+
+        return fig
+        
 
     # Name property and setter
     # --------------------------
@@ -317,9 +349,6 @@ class StateSpaceModel:
 
         return cls(A=A, B=B, C=C, D=D, x=x, y=y, u=u)
 
-    def coordinate_transform(self, invT, T):
-        pass
-
     def to_csv(self, filepath):
         
         # Create output directory if it doesn't exist
@@ -456,9 +485,29 @@ class StateSpaceModel:
                                       pl.col("damping_ratio_pu").round(3), 
                                       pl.col("time_constant_seconds").round(4)) 
         logger.info("Modal analysis results:")
-        logger.info(df_to_print)   
+        logger.info(df_to_print)
 
         return df
+    
+    def plot_eigenvalues(self, ax=None, **kwargs):
+        eigenvalues = eigvals(self.A)
+        real_parts = np.real(eigenvalues)
+        imag_parts = np.imag(eigenvalues)
+
+        if ax is None:
+            _, ax = plt.subplots(1,1, figsize=(8, 6))
+
+        ax.scatter(x=real_parts, y=imag_parts, **kwargs)
+
+        # Check if the x-axis label is empty and set it
+        if not ax.get_xlabel():
+            ax.set_xlabel(r'$\Re(\lambda)$') #
+
+        # Check if the y-axis label is empty and set it
+        if not ax.get_ylabel():
+            ax.set_ylabel(r'$\Im(\lambda)$') #
+
+        return ax
     
     def coordinate_transform(self, T:np.ndarray, invT:np.ndarray): #-> StateSpaceModel:
         """Perform a coordinate transformation z = Tx (analogous to MATLAB ss2ss)"""
@@ -466,4 +515,11 @@ class StateSpaceModel:
         B_t = invT @ self.B
         C_t = self.C @ T
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D)
+    
+    def to_python_control(self):
+        """Returns a python-controls state-space model"""
+        return ss(self.A, self.B, self.C, self.D)
+    
+    def to_pymor(self):
+        return LTIModel.from_matrices(A=self.A, B=self.B, C=self.C, D=self.D)
           
