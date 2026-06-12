@@ -24,6 +24,7 @@ from sting.bus.core import Bus, Load
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
+from sting.generator.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_d import GFMId
@@ -55,6 +56,7 @@ class System:
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
+    switching_loads: list[SwitchingLoad] = None
     gfmi_c: list[GFMIc] = None
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None

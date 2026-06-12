@@ -52,8 +52,11 @@ class ConnectionMatrices(NamedTuple):
 # -----------
 
 def get_ccm_matrices(system: System, attribute: str, dimI: int):
-    """ """
-    gen_buses, gen_ssm = system.gens.select("bus_id", attribute)
+    """ 
+    Returns the matrices F, G, H, L of the CCM formulation.
+    TODO: we are supposed to pass a list of components, not all the system in system.gens, it may require refactoring code.
+    """
+    gen_buses, gen_ssm = system.gens.filter(lambda x: getattr(x, attribute) is not None).select("bus_id", attribute)
     from_bus, to_bus, br_ssm = system.branches.select("from_bus_id", "to_bus_id", attribute)
 
     sh_ssm, = system.shunts.select(attribute)
@@ -146,7 +149,7 @@ def build_ccm_permutation(system: System):
         gens = getattr(system, gen_type)
         n = len(gens)
 
-        if n == 0:
+        if ((n == 0) or (gens[0].ssm is None)):
             continue
 
         # Note: all generators in 'gens' of the same class and will have
