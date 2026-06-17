@@ -46,6 +46,7 @@ class Generator(Component):
     base_power_MVA: float = None
     base_voltage_kV: float = None
     base_frequency_Hz: float = None
+    inertia_constant_s: float = None
     technology: str = None
     site: str = None
     cap_existing_power_MW: float = None
