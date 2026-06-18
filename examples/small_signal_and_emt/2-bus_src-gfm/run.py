@@ -46,12 +46,12 @@ inputs = {
         'v_ref_d': step2
         }, 
     'gfmi_c_0': {
-        'p_ref': step1}
+        'p_ref': step2}
     }
 t_max = 2.0 # Simulation length
 
 # Construct system and small-signal model
-_, ssm =  main.run_ssm(case_directory=case_dir)
+sys, ssm =  main.run_ssm(case_directory=case_dir)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
 main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
