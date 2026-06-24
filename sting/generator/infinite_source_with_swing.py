@@ -1,6 +1,6 @@
 """
 This module implements an infinite source that incorporates:
-- A voltage source with variable frequency and swing dynamics.
+- A voltage source with variable frequency, swing dynamics, and damping.
 - Assumptions at the equilibrium point:
     - The reference angle and the frequency of the source is equal to that of the bus
     - The mechanical power input into the source is equal to the electrical power output from the source
@@ -52,6 +52,7 @@ class InfiniteSourceWithSwing(Generator):
     r_pu: float
     x_pu: float
     inertia_constant_s: float
+    damping_pu: float
 
     emt_init: InitialConditionsEMT = None
 
@@ -60,6 +61,7 @@ class InfiniteSourceWithSwing(Generator):
         r = self.r_pu
         x = self.x_pu
         h = self.inertia_constant_s
+        d = self.damping_pu
 
         wb = 2 * np.pi * self.base_frequency_Hz
         angle_ref = self.emt_init.angle_ref * np.pi / 180
@@ -82,42 +84,42 @@ class InfiniteSourceWithSwing(Generator):
 
         # Define state-space matrices 
         A = wb * np.array(
-            [[0,                                            1/wb,       0,              0               ],
-             [0,                                            0,          -v_int_d/(2*h), -v_int_q/(2*h)  ],
-             [1/x * (sinphi * v_bus_D - cosphi * v_bus_Q),  i_bus_q/wb, -r/x,           1               ],
-             [1/x * (cosphi * v_bus_D + sinphi * v_bus_Q),  i_bus_d/wb, -1,             -r/x            ]])
+            [[0,                                            1/wb,                   0,              0               ],
+             [0,                                            -d / (2.0 * h * wb),    -v_int_d/(2*h), -v_int_q/(2*h)  ],
+             [1/x * (sinphi * v_bus_D - cosphi * v_bus_Q),  i_bus_q/wb,             -r/x,           1               ],
+             [1/x * (cosphi * v_bus_D + sinphi * v_bus_Q),  -i_bus_d/wb,            -1,             -r/x            ]])
         
         B = wb * np.array(
             [[0,        0,              0,              0,          0           ],  
              [1/(2*h),  -i_bus_d/(2*h), -i_bus_q/(2*h), 0,          0           ],
              [0,        1/x,            0,              -cosphi/x,  -sinphi/x   ],
-             [0,        0,              1/x,            sinphi/x,   cosphi/x    ]]) 
+             [0,        0,              1/x,            sinphi/x,   -cosphi/x    ]]) 
         # B = B @ block_diag(np.eye(2), R.T) 
         # fmt: on
-        C = block_diag(np.zeros((2, 2)), R)
+        C = np.hstack((np.zeros((2, 2)), R))
 
-        D = np.zeros((4, 5))
+        D = np.zeros((2, 5))
 
         # Inputs
         u = DynamicalVariables(
             name=["p_m", "v_ref_d", "v_ref_q", "v_bus_D", "v_bus_Q"],
             component=f"{self.type_}_{self.id}",
             type=["device", "device", "device", "grid", "grid"],
-            init=[p_source, v_int_d, v_int_q, v_bus_D, v_bus_Q],
+            init=[0.0, 0.0, 0.0, 0.0, 0.0],
         )
 
         # Outputs
         y = DynamicalVariables(
-            name=["delta", "omega", "i_bus_D", "i_bus_Q"],
+            name=["i_bus_D", "i_bus_Q"],
             component=f"{self.type_}_{self.id}",
-            init=[angle_ref, wb, i_bus_D, i_bus_Q],
+            init=[0.0, 0.0],
         )
 
         # States
         x = DynamicalVariables(
             name=["delta", "omega", "i_bus_d", "i_bus_q"],
             component=f"{self.type_}_{self.id}",
-            init=[angle_ref, wb, i_bus_d, i_bus_q],
+            init=[0.0, 0.0, 0.0, 0.0],
         )
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
