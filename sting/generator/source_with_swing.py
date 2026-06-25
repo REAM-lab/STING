@@ -1,9 +1,9 @@
 """
-This module implements an infinite source that incorporates:
-- A voltage source with variable frequency, swing dynamics, and damping.
-- Assumptions at the equilibrium point:
-    - The reference angle and the frequency of the source is equal to that of the bus
-    - The mechanical power input into the source is equal to the electrical power output from the source
+This module implements a voltage source that incorporates:
+- A variable frequency and swing dynamics.
+- Equilibrium assumptions:
+    - The source frequency equals to the nominal bus frequency.
+    - Mechanical input power equals to the electrical output power of the source.
 - Series RL branch: It is in series with the voltage source.
 """
 # -------------
@@ -48,7 +48,7 @@ class VariablesEMT(NamedTuple):
 # Main class
 # -------------
 @dataclass(slots=True, kw_only=True, eq=False)
-class InfiniteSourceWithSwing(Generator):
+class SourceWithSwing(Generator):
     r_pu: float
     x_pu: float
     inertia_constant_s: float
@@ -96,7 +96,7 @@ class InfiniteSourceWithSwing(Generator):
              [0,        0,              1/x,            sinphi/x,   -cosphi/x    ]]) 
         # B = B @ block_diag(np.eye(2), R.T) 
         # fmt: on
-        C = np.hstack((np.zeros((2, 2)), R))
+        C = np.hstack((np.array([[-i_bus_Q, 0], [i_bus_D, 0]]), R))
 
         D = np.zeros((2, 5))
 
