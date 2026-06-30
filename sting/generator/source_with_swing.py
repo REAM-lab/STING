@@ -153,3 +153,137 @@ class SourceWithSwing(Generator):
             angle_ref=angle_ref,
             p_source=p_source.real,
         )
+
+    def define_variables_emt(self):
+        
+        # States
+        # ------
+
+        # Initial conditions
+        i_bus_d, i_bus_q = self.emt_init.i_bus_d, self.emt_init.i_bus_q
+        angle_ref = self.emt_init.angle_ref * np.pi / 180
+        i_bus_a, i_bus_b, i_bus_c = dq02abc(i_bus_d, i_bus_q, 0, angle_ref)
+
+        wb = 2 * np.pi * self.base_frequency_Hz
+
+        x = DynamicalVariables(
+            name=["i_bus_a", "i_bus_b", "i_bus_c", "angle_ref", "omega"],
+            component=f"{self.type_}_{self.id}",
+            init=[i_bus_a, i_bus_b, i_bus_c, angle_ref, wb],
+        )
+
+        # Inputs
+        # ------
+
+        # Initial conditions
+        v_ref_d, v_ref_q = self.emt_init.v_int_d, self.emt_init.v_int_q
+        v_bus_D, v_bus_Q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_D, v_bus_Q, 0, 0)
+        p_m = self.emt_init.p_source
+
+        u = DynamicalVariables(
+            name=["p_m", "v_ref_d", "v_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
+            component=f"{self.type_}_{self.id}",
+            type=["device", "device", "device", "grid", "grid", "grid"],
+            init=[p_m, v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c],
+        )
+
+        # Outputs
+        y = DynamicalVariables(
+            name=["i_bus_a", "i_bus_b", "i_bus_c"],
+            component=f"{self.type_}_{self.id}",
+        )
+
+        self.variables_emt = VariablesEMT(x=x, u=u, y=y)
+
+    def get_derivative_state_emt(self):
+
+        # Get state values
+        i_bus_a, i_bus_b, i_bus_c, angle_ref, omega = self.variables_emt.x.value
+
+        # Get input values
+        p_m, v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+
+        v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_ref)
+        i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, angle_ref)
+
+        # Get parameters
+        r = self.r_pu
+        x = self.x_pu
+        h = self.inertia_constant_s
+        d = self.damping_pu
+
+        wb = 2 * np.pi * self.base_frequency_Hz
+
+        p_e = v_ref_d * i_bus_d + v_ref_q * i_bus_q
+
+        # Differential equations
+        d_i_bus_a = wb / x * (v_ref_a - v_bus_a - r * i_bus_a)
+        d_i_bus_b = wb / x * (v_ref_b - v_bus_b - r * i_bus_b)
+        d_i_bus_c = wb / x * (v_ref_c - v_bus_c - r * i_bus_c)
+        d_angle_ref = omega 
+        d_omega = wb / (2.0 * h) * (p_m - p_e - d * (omega - wb) / wb)
+
+        return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref, d_omega]
+    
+    def get_output_emt(self):
+
+        i_bus_a, i_bus_b, i_bus_c, angle_ref, omega = self.variables_emt.x.value
+
+        return [i_bus_a, i_bus_b, i_bus_c]
+    
+    def plot_results_emt(self):
+        """
+        Plot EMT simulation results
+        """
+
+        i_bus_a, i_bus_b, i_bus_c, angle_ref, omega = self.variables_emt.x.value
+        i_bus_d, i_bus_q, _ = zip(*map(abc2dq0, i_bus_a, i_bus_b, i_bus_c, angle_ref))
+        t = self.variables_emt.x.time
+
+        wb = 2.0 * np.pi * self.base_frequency_Hz
+        angle_ref_init = self.emt_init.angle_ref * np.pi / 180.0
+
+        delta_dev = angle_ref - angle_ref_init - wb * t
+        omega_dev = omega - wb
+        i_bus_d_dev = i_bus_d - self.emt_init.i_bus_d
+        i_bus_q_dev = i_bus_q - self.emt_init.i_bus_q
+
+        results = DynamicalVariables(
+            name=["delta", "omega", "i_bus_d", "i_bus_q"],
+            component=f"{self.type_}_{self.id}",
+            value=[delta_dev, omega_dev, i_bus_d_dev, i_bus_q_dev],
+            time=t,
+        )
+        return results
+
+
+    def compare_ssm_emt(self, emt_directory, ssm_directory):
+        # Read the SSM and EMT states
+        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
+        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
+
+        # Transform EMT abc states to dq0 states
+        
+        i_a, i_b, i_c, angle_ref, omega = [c.to_numpy() for c in emt.select("i_bus_a", "i_bus_b", "i_bus_c", "angle_ref", "omega")]
+        i_emt_d, i_emt_q, _ = zip(*map(abc2dq0, i_a, i_b, i_c, angle_ref))
+        t = emt["time"].to_numpy()
+        
+        wb = 2.0 * np.pi * self.base_frequency_Hz
+        angle_ref_init = self.emt_init.angle_ref * np.pi / 180.0
+
+        delta_emt_dev = (angle_ref - angle_ref_init - wb * t)
+        omega_emt_dev = omega - wb
+        i_emt_d_dev = i_emt_d - self.emt_init.i_bus_d
+        i_emt_q_dev = i_emt_q - self.emt_init.i_bus_q
+
+        # Unpack the SSM dq states
+        delta_ssm, omega_ssm, i_ssm_d, i_ssm_q = [c.to_numpy() for c in ssm.select("delta", "omega", "i_bus_d", "i_bus_q")]
+
+        # Return deltas
+        return {
+            f"({self.type_}_{self.id}, delta)": (delta_emt_dev, delta_ssm),
+            f"({self.type_}_{self.id}, omega)": (omega_emt_dev, omega_ssm),
+            f"({self.type_}_{self.id}, i_bus_d)": (i_emt_d_dev, i_ssm_d),
+            f"({self.type_}_{self.id}, i_bus_q)": (i_emt_q_dev, i_ssm_q)
+        }
