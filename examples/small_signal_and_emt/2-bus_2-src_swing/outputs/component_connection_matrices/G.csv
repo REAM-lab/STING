@@ -1,0 +1,19 @@
+Index,"('sources_with_swing_0', 'p_m')","('sources_with_swing_0', 'v_ref_d')","('sources_with_swing_0', 'v_ref_q')","('sources_with_swing_1', 'p_m')","('sources_with_swing_1', 'v_ref_d')","('sources_with_swing_1', 'v_ref_q')"
+"('sources_with_swing_0', 'p_m')",1.0,0.0,0.0,0.0,0.0,0.0
+"('sources_with_swing_0', 'v_ref_d')",0.0,1.0,0.0,0.0,0.0,0.0
+"('sources_with_swing_0', 'v_ref_q')",0.0,0.0,1.0,0.0,0.0,0.0
+"('sources_with_swing_0', 'v_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('sources_with_swing_0', 'v_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
+"('sources_with_swing_1', 'p_m')",0.0,0.0,0.0,1.0,0.0,0.0
+"('sources_with_swing_1', 'v_ref_d')",0.0,0.0,0.0,0.0,1.0,0.0
+"('sources_with_swing_1', 'v_ref_q')",0.0,0.0,0.0,0.0,0.0,1.0
+"('sources_with_swing_1', 'v_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('sources_with_swing_1', 'v_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
+"('shunt_parallel_rc_0', 'i_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('shunt_parallel_rc_0', 'i_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
+"('shunt_parallel_rc_1', 'i_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('shunt_parallel_rc_1', 'i_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
+"('branch_series_rl_0', 'v_from_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('branch_series_rl_0', 'v_from_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
+"('branch_series_rl_0', 'v_to_bus_D')",0.0,0.0,0.0,0.0,0.0,0.0
+"('branch_series_rl_0', 'v_to_bus_Q')",0.0,0.0,0.0,0.0,0.0,0.0
