@@ -37,7 +37,7 @@ class InnerCurrentController:
 
         return self.emt_init
 
-    def get_small_signal_model(self, z_d, z_q):
+    def get_small_signal_model(self, z_cc_d, z_cc_q):
         
         kp, ki, kff, xf = self.kp, self.ki, self.kff, self.xf
 
@@ -49,12 +49,19 @@ class InnerCurrentController:
             [  0, kp, xf,-kp,  0, kff]
         ])
 
-        """
-        u = DynamicalVariables(name=['i_bus_d_ref', 'i_bus_q_ref', 'i_bus_d', 'i_bus_q']), 
-                                          y = DynamicalVariables(name=['e_d', 'e_q']),
-                                          x = DynamicalVariables(   name=['pi_cc_d', 'pi_cc_q'],
-                                                                    init= [pi_cc_d, pi_cc_q]) )
-        """
+        ssm = StateSpaceModel(
+            A=A,
+            B=B,
+            C=C,
+            D=D,
+            u = DynamicalVariables(name=['i_cc_d_ref', 'i_cc_q_ref', 'i_cc_d', 'i_cc_q', 'v_cc_d', 'v_cc_q']), 
+            y = DynamicalVariables(name=['v_vsc_d', 'v_vsc_q']),
+            x = DynamicalVariables(
+                name=['z_cc_d', 'z_cc_q'],
+                init= [z_cc_d, z_cc_q]
+            ) 
+        )
+        return ssm
 
     def differential_step_emt_dq0(self, ref_d, ref_q, i_d, i_q):
         dz_cc_d = self.ki * (ref_d - i_d)
