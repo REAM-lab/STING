@@ -66,6 +66,8 @@ class GFLI10A(Generator):
     
 
     def _calculate_emt_initial_conditions(self):
+       
+       
 
        lcl_init = self.lcl_filter.get_steady_state(
            v_bus_mag = self.power_flow_variables.vmag_bus,
@@ -87,15 +89,16 @@ class GFLI10A(Generator):
     def _build_small_signal_model(self):
         # Initial conditions for the LCL filter
         init = self.lcl_filter.emt_init
+        relative_phase_deg = self.power_flow_variables.vphase_bus
 
         # Create each components small-signal model
         cc_ssm = self.current_controller.get_small_signal_model(
-            z_cc_d=self.current_controller.emt_init.z_d,
-            z_cc_q=self.current_controller.emt_init.z_q
+            z_cc_d=self.current_controller.emt_init.z_cc_d,
+            z_cc_q=self.current_controller.emt_init.z_cc_q
         )
         pll_ssm = self.phase_locked_loop.get_small_signal_model(
             v_bus_mag = self.power_flow_variables.vmag_bus,
-            relative_phase_deg = self.power_flow_variables.vphase_bus
+            relative_phase_deg = relative_phase_deg
         )
         lcl_ssm = self.lcl_filter.get_small_signal_model(
             i_vsc_d=init.i_vsc_d,
@@ -118,11 +121,69 @@ class GFLI10A(Generator):
 
         # Generate small-signal model
         components = [cc_ssm, pll_ssm, lcl_ssm]
-        connections = self.get_interconnections_ssm()
+        connections = self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, relative_phase_deg)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
-    def get_interconnections_ssm(self):
-        pass
+    def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
+
+        sin = np.sin(relative_phase_deg * np.pi / 180)
+        cos = np.cos(relative_phase_deg * np.pi / 180)
+
+        R = np.array([
+            [ cos,-sin],
+            [ sin, cos]
+        ])
+        dRdt = np.array([
+            [-sin,-cos],
+            [ cos,-sin]
+        ])
+
+        v_D, v_Q = (dRdt.T @ np.array([[v_bus_D],[v_bus_Q]])).flatten()
+        i_d, i_q = (dRdt @ np.array([[i_bus_d],[i_bus_q]])).flatten()
+        
+        F = np.array([
+            # v_vsc_dq | delta | w | i_vsc_dq| i_bus_dq | v_f_dq 
+            [0,0,  0,0,0,0,0,0,0,0], # i_ref_dq
+            [0,0,  0,0,0,0,0,0,0,0], 
+            [0,0,  0,0,0,0,1,0,0,0], # i_bus_dq
+            [0,0,  0,0,0,0,0,1,0,0], 
+            [0,0,v_D,0,0,0,0,0,0,0], # v_bus_dq
+            [0,0,v_Q,0,0,0,0,0,0,0],
+            [0,0,  0,0,0,0,0,0,0,0],# v_bus_DQ
+            [0,0,  0,0,0,0,0,0,0,0],
+            [1,0,  0,0,0,0,0,0,0,0], # v_vsc_dq
+            [0,1,  0,0,0,0,0,0,0,0],
+            [0,0,v_D,0,0,0,0,0,0,0], # v_bus_dq
+            [0,0,v_Q,0,0,0,0,0,0,0],
+            [0,0,  0,1,0,0,0,0,0,0], # w
+        ])
+
+        G = np.array([
+            # i_ref_dq | v_bus_DQ
+            [1,0,0,0],
+            [0,1,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,R[0,0],R[1,0]],
+            [0,0,R[0,1],R[1,1]],
+            [0,0,1,0],
+            [0,0,0,1],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,R[0,0],R[1,0]],
+            [0,0,R[0,1],R[1,1]],
+            [0,0,0,0]
+        ])
+
+        H = np.array([
+            # v_vsc_dq | delta | w | i_vsc_dq| i_bus_dq | v_f_dq 
+            [0,0,i_d,0,0,0,R[0,0],R[0,1],0,0], # i_bus_DQ
+            [0,0,i_q,0,0,0,R[1,0],R[1,1],0,0],
+        ])
+
+        L = np.zeros((2,4))
+
+        return F, G, H, L
 
 
     def define_variables_emt(self):
@@ -193,3 +254,31 @@ class GFLI10A(Generator):
             )
         
         return dx_cc + dx_pll + dx_lcl
+    
+    def plot_results_emt(self):
+        """
+        Plot EMT simulation results
+        """
+
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value        
+        tps = self.variables_emt.x.time
+
+        # Transform abc to dq0
+        i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        
+        results = DynamicalVariables(
+            name=['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', 'i_vsc_d', 'i_vsc_q', 'v_sh_d', 'v_sh_q', 'i_bus_d', 'i_bus_q'],
+            component=f"{self.type_}_{self.id}",
+            value=[pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q],
+            time=tps
+        )
+        return results
+    
+
+    def get_output_emt(self):
+        
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+
+        return [i_bus_a, i_bus_b, i_bus_c]

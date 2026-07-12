@@ -165,3 +165,21 @@ class LCLFilterShunt:
         di_bus_c = wb/xf2 *(v_sh_c - v_bus_c - rf2 * i_bus_c)
 
         return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+    
+    def differential_step_emt_dq0(
+            self,
+            i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q, # states
+            v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w, # inputs
+            ):
+        
+        # Current in branch 1
+        di_vsc_d = (self.wbase / self.xf1_pu)*(-self.rf1_pu * i_vsc_d + v_vsc_d - v_sh_d) + (w * i_vsc_q)
+        di_vsc_q = (self.wbase / self.xf1_pu)*(-self.rf1_pu * i_vsc_q + v_vsc_q - v_sh_q) - (w * i_vsc_d)
+        # Voltage across the capacitor
+        dv_sh_d = (self.wbase / self.csh_pu)*(-v_sh_d/self.rsh_pu + i_vsc_d - i_bus_d) + (w * v_sh_q)
+        dv_sh_q = (self.wbase / self.csh_pu)*(-v_sh_q/self.rsh_pu + i_vsc_q - i_bus_q) - (w * v_sh_d)
+        # Current in branch 2
+        di_bus_d = (self.wbase / self.xf2_pu)*(-self.rf2_pu * i_bus_d + v_sh_d - v_bus_d) + (w * i_bus_q)
+        di_bus_q = (self.wbase / self.xf2_pu)*(-self.rf2_pu * i_bus_q + v_sh_q - v_bus_q) - (w * i_bus_d)
+
+        return np.array([di_vsc_d, di_vsc_q, di_bus_d, di_bus_q, dv_sh_d, dv_sh_q])
