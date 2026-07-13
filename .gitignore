@@ -4,6 +4,7 @@ __pycache__/
 build/
 .venv/
 venv/
+dist/
 pyenv/
 *.mexmaca64
 *.slxc
