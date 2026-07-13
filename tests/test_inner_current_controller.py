@@ -1,4 +1,4 @@
-from sting.components import InnerCurrentController
+from sting.components import InnerCurrentController2A
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -9,8 +9,8 @@ from scipy.integrate import solve_ivp
 
 # Initial conditions
 init = {
-    'v_vsc_d': 1.215,
-    'v_vsc_q': 0.043,
+    'v_out_d': 1.215,
+    'v_out_q': 0.043,
     'v_d': 1.2, 
     'v_q': 0, 
     'i_d': 0.6667, 
@@ -30,12 +30,12 @@ inputs = {
 
 wbase = 2*np.pi*60
 # LCL filter model
-cc = InnerCurrentController(kp=5, ki=10, kff=0.75, xf=0.02)
+cc = InnerCurrentController2A(kp=5, ki=10, kff=0.75, xf=0.02)
 
 # Compute initial conditions and small signal model 
 x0 = np.array(cc.get_steady_state(**init))
 u0 = np.array([init["i_d"], init["i_q"], init["i_d"], init["i_q"], init["v_d"], init["v_q"]])
-y0 = np.array([init["v_vsc_d"], init["v_vsc_q"]])
+y0 = np.array([init["v_out_d"], init["v_out_q"]])
 
 ssm = cc.get_small_signal_model(*x0)
 

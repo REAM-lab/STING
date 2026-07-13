@@ -9,7 +9,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True)
-class InnerCurrentController:
+class InnerCurrentController2A:
     """
 
     Inputs 
@@ -28,11 +28,11 @@ class InnerCurrentController:
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, v_vsc_d, v_vsc_q, v_d, v_q, i_d, i_q):
+    def get_steady_state(self, v_out_d, v_out_q, v_d, v_q, i_d, i_q):
 
         self.emt_init = InitialConditionsEMT(
-            z_cc_d = v_vsc_d - self.kff * v_d + self.xf*i_q,
-            z_cc_q = v_vsc_q - self.kff * v_q - self.xf*i_d
+            z_cc_d = v_out_d - self.kff * v_d + self.xf*i_q,
+            z_cc_q = v_out_q - self.kff * v_q - self.xf*i_d
         )
 
         return self.emt_init
@@ -55,7 +55,7 @@ class InnerCurrentController:
             C=C,
             D=D,
             u = DynamicalVariables(name=['i_cc_d_ref', 'i_cc_q_ref', 'i_cc_d', 'i_cc_q', 'v_cc_d', 'v_cc_q']), 
-            y = DynamicalVariables(name=['v_vsc_d', 'v_vsc_q']),
+            y = DynamicalVariables(name=['v_out_d', 'v_out_q']),
             x = DynamicalVariables(
                 name=['z_cc_d', 'z_cc_q'],
                 init= [z_cc_d, z_cc_q]
@@ -63,15 +63,15 @@ class InnerCurrentController:
         )
         return ssm
 
-    def differential_step_emt_dq0(self, ref_d, ref_q, i_d, i_q):
-        dz_cc_d = self.ki * (ref_d - i_d)
-        dz_cc_q = self.ki * (ref_q - i_q)
+    def differential_step_emt_dq0(self, i_ref_d, i_ref_q, i_d, i_q):
+        dz_cc_d = self.ki * (i_ref_d - i_d)
+        dz_cc_q = self.ki * (i_ref_q - i_q)
 
         return [dz_cc_d, dz_cc_q]
 
-    def algebraic_step_emt_dq0(self, z_cc_d, z_cc_q, ref_d, ref_q, i_d, i_q, v_d, v_q):
+    def algebraic_step_emt_dq0(self, z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_d, i_q, v_d, v_q):
         
-        v_vsc_d = z_cc_d + self.kp * (ref_d - i_d) - self.xf * i_q + self.kff * v_d
-        v_vsc_q = z_cc_q + self.kp * (ref_q - i_q) + self.xf * i_d + self.kff * v_q
+        v_out_d = z_cc_d + self.kp * (i_ref_d - i_d) - self.xf * i_q + self.kff * v_d
+        v_out_q = z_cc_q + self.kp * (i_ref_q - i_q) + self.xf * i_d + self.kff * v_q
         
-        return [v_vsc_d, v_vsc_q]
+        return [v_out_d, v_out_q]

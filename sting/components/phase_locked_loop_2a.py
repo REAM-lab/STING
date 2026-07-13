@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 @dataclass(slots=True)
-class PhaseLockedLoop:
+class PhaseLockedLoop2A:
     kp_pu: float
     ki_puHz: float
     wbase: float

@@ -17,7 +17,7 @@ from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.components import PhaseLockedLoop, InnerCurrentController, LCLFilterShunt
+from sting.components import PhaseLockedLoop2A, InnerCurrentController2A, LCLFilter6A
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -43,14 +43,14 @@ class GFLI10A(Generator):
     kff_cc_pu: float
 
     # Components
-    lcl_filter: LCLFilterShunt = field(init=False)
-    current_controller: InnerCurrentController = field(init=False)
-    phase_locked_loop: PhaseLockedLoop = field(init=False)
+    lcl_filter: LCLFilter6A = field(init=False)
+    current_controller: InnerCurrentController2A = field(init=False)
+    phase_locked_loop: PhaseLockedLoop2A = field(init=False)
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilterShunt(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        self.phase_locked_loop = PhaseLockedLoop(self.kp_pll_pu, self.ki_pll_puHz, self.wbase)
-        self.current_controller = InnerCurrentController(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc_pu, self.xf1_pu + self.xf2_pu)
+        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_pu, self.ki_pll_puHz, self.wbase)
+        self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc_pu, self.xf1_pu + self.xf2_pu)
 
     @property
     def rf2_pu(self):
@@ -77,8 +77,8 @@ class GFLI10A(Generator):
        )
 
        self.current_controller.get_steady_state(
-           v_vsc_d=lcl_init.v_vsc_d,
-           v_vsc_q=lcl_init.v_vsc_q,
+           v_out_d=lcl_init.v_vsc_d,
+           v_out_q=lcl_init.v_vsc_q,
            v_d=lcl_init.v_bus_d,
            v_q=lcl_init.v_bus_q,
            i_d=lcl_init.i_bus_d,
