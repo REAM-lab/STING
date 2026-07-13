@@ -46,19 +46,7 @@ gfli = GFLI10A(
     # PLL and inner current controller
     kp_pll_pu=1, ki_pll_puHz=5, kp_cc_pu=1, ki_cc_puHz=5, kff_cc_pu=0.75
 )
-"""
-gfli = GFLIa(
-    name="santiago_gfl", bus="santiago",
-    # Power flow 
-    minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
-    cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
-    # LCL filter
-    rf1_pu=0.02, xf1_pu=0.1, csh_pu=0.1, rsh_pu=1, 
-    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
-    # PLL and inner current controller
-    kp_pll_pu=1, ki_pll_puHz=5, kp_cc_pu=1, ki_cc_puHz=5, beta=0.75, v_dc_pu=1
-)
-"""
+
 system = System(case_directory=case_directory)
 
 # Build grid model
@@ -73,21 +61,22 @@ system.apply("post_system_init", system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.1 if t >= 0.5 else 0.0
+    return 0.05 if t >= 0.25 else 0.0
 
 def step2(t):
-    return 0.0
+    return -0.05 if t >= 0.75 else 0.0
 
 inputs = {
     'infinite_sources_0': {
-        'v_ref_d': step1
+        'v_ref_d': lambda t: 0
         }, 
-    'gfli_10a': {
-        'i_bus_d_ref': step2
+    'gfli_10a_0': {
+        'i_bus_d_ref': step1,
+        'i_bus_q_ref': step2,
         }
 }
 
-t_max = 1.0 # Simulation length in seconds
+t_max = 1.5 # Simulation length in seconds
 
 
 # Construct system and small-signal model

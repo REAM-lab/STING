@@ -124,6 +124,8 @@ class GFLI10A(Generator):
         connections = self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, relative_phase_deg)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
+        return self.ssm
+
     def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
 
         sin = np.sin(relative_phase_deg * np.pi / 180)

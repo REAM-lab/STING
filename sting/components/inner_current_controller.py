@@ -31,8 +31,8 @@ class InnerCurrentController:
     def get_steady_state(self, v_vsc_d, v_vsc_q, v_d, v_q, i_d, i_q):
 
         self.emt_init = InitialConditionsEMT(
-            z_cc_d = v_vsc_d - self.kff * v_d + self.xf*i_d,
-            z_cc_q = v_vsc_q - self.kff * v_q - self.xf*i_q
+            z_cc_d = v_vsc_d - self.kff * v_d + self.xf*i_q,
+            z_cc_q = v_vsc_q - self.kff * v_q - self.xf*i_d
         )
 
         return self.emt_init

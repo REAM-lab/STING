@@ -30,7 +30,7 @@ inputs = {
 
 wbase = 2*np.pi*60
 # LCL filter model
-cc = InnerCurrentController(kp=5, ki=10, kff=0.25, xf=0.02)
+cc = InnerCurrentController(kp=5, ki=10, kff=0.75, xf=0.02)
 
 # Compute initial conditions and small signal model 
 x0 = np.array(cc.get_steady_state(**init))
@@ -72,8 +72,8 @@ emt_sol = solve_ivp(emt_dynamics, y0=x0, **settings)
 ssm_sol = solve_ivp(ssm_dynamics, y0=x0*0, **settings)
 
 # TODO: Fix the shapes here
-emt_sol.y = np.array([emt_algebraic(t, x) for t, x in zip(emt_sol.t, emt_sol.y)])
-ssm_sol.y = np.array([ssm_algebraic(t, x) for t, x in zip(emt_sol.t, emt_sol.y)]) + y0.reshape(-1, 1)
+emt_sol.y = np.array([emt_algebraic(emt_sol.t[i], emt_sol.y[:, i]) for i in range(len(emt_sol.t))]).T
+ssm_sol.y = np.array([ssm_algebraic(ssm_sol.t[i], ssm_sol.y[:, i]) for i in range(len(ssm_sol.t))]).T + y0.reshape(-1, 1)
 
 # Plot results
 titles = [r"$v^{vsc}_d$", r"$v^{vsc}_q$"]
