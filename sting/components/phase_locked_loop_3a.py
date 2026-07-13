@@ -11,6 +11,10 @@ class InitialConditionsEMT(NamedTuple):
 class PhaseLockedLoop3A:
     """
     A third-order model of a phase-locked loop with a filter.
+
+    - kp_pu: Proportional gain [pu]
+    - ki_puHz: Integral gain [pu]
+    - wbase: Nominal frequency [rad/s] of the system
     """
     kp_pu: float
     ki_puHz: float
@@ -23,7 +27,7 @@ class PhaseLockedLoop3A:
         pass
 
     
-    def small_signal_model(self, v_bus_mag, relative_phase_deg):
+    def get_small_signal_model(self, v_bus_mag, relative_phase_deg):
         
         v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi/180)
         wb = self.wbase
@@ -65,7 +69,7 @@ class PhaseLockedLoop3A:
         return ssm
 
 
-    def quadratic_bilinear_model(self, v_bus_mag, relative_phase_deg):
+    def get_quadratic_bilinear_model(self, v_bus_mag, relative_phase_deg):
         
         ki, kp, wb, tau = self.ki_puHz, self.kp_pu, self.wbase, self.tau
         a = self.alpha

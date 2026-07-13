@@ -103,8 +103,7 @@ class LCLFilter6A:
         )
 
         return self.emt_init
-
-    
+   
 
     def get_small_signal_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
         rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
@@ -142,6 +141,54 @@ class LCLFilter6A:
             y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"]))
         
         return ssm
+    
+
+    def get_quadratic_bilinear_model(self):
+        """
+        inputs:
+        v_vsc_dq
+        v_bus_dq
+        w
+        """
+        
+        r1, r2, b, g = self.r1, self.r2, self.b, self.g
+        x1, x2, = self.x1, self.x2, 
+
+        invE = self.w_b * np.diag([1/x1, 1/x1, 1/b, 1/b, 1/x2, 1/x2])
+
+        A = invE @ np.array([
+            [-r1,  0, -1,  0,  0,  0], # i_vsc_d
+            [  0,-r1,  0, -1,  0,  0], # i_vsc_q
+            [  1,  0, -g,  0, -1,  0], # v_sh_d
+            [  0,  1,  0, -g,  0, -1], # v_sh_q
+            [  0,  0,  1,  0,-r2,  0], # i_bus_d
+            [  0,  0,  0,  1,  0,-r2], # i_bus_q
+        ])
+
+        B = invE @ np.array([
+            [1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0,-1, 0, 0],
+            [0, 0, 0,-1, 0],       
+        ])
+
+        C = np.eye(6)
+
+        # State-angular velocity interaction terms
+        N_w =  np.array([
+            [ 0, 1, 0, 0, 0, 0],
+            [-1, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 1, 0, 0],
+            [ 0, 0,-1, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 1],
+            [ 0, 0, 0, 0,-1, 0],       
+        ])
+        N = np.hstack([np.zeros((6,24)), N_w])
+
+        return 
+
 
     def differential_step_emt_abc(
             self, 

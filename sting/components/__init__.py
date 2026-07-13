@@ -1,3 +1,4 @@
 from .lcl_filter_6a import LCLFilter6A
 from .phase_locked_loop_2a import PhaseLockedLoop2A
+from .phase_locked_loop_3a import PhaseLockedLoop3A
 from .inner_current_controller_2a import InnerCurrentController2A
