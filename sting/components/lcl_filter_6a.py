@@ -31,14 +31,14 @@ class LCLFilter6A:
     the VSC to the shunt element, the second branch is the shunt element (RC), and the third branch (RL)
     connects the shunt element to the grid.
 
-    Parameters
-    rf1_pu: resistance [pu] of first branch of filter
-    xf1_pu: inductance [pu] of first branch of filter
-    rf2_pu: resistance [pu] of second branch of filter
-    xf2_pu: inductance [pu] of second branch of filter
-    rsh_pu: resistance [pu] of series RC shunt
-    csh_pu: capacitance [pu] of series RC shunt
-    wbase: nominal frequency of the system
+    Parameters:
+    - rf1_pu: resistance [pu] of first branch of filter
+    - xf1_pu: inductance [pu] of first branch of filter
+    - rf2_pu: resistance [pu] of second branch of filter
+    - xf2_pu: inductance [pu] of second branch of filter
+    - rsh_pu: resistance [pu] of series RC shunt
+    - csh_pu: capacitance [pu] of series RC shunt
+    - wbase: nominal frequency [rad/s] of the system
     """
     rf1_pu: float
     xf1_pu: float
@@ -51,6 +51,10 @@ class LCLFilter6A:
     emt_init: InitialConditionsEMT = field(init=False)
 
     def get_steady_state(self, v_bus_mag, relative_phase_deg, p_bus, q_bus):
+
+        # DQ: reference frame of the grid
+        # dq: reference frame of the inverter
+        
         # Convert degrees to radians
         phase_rad = relative_phase_deg * np.pi / 180
 
