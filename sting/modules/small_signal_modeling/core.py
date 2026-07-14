@@ -116,11 +116,13 @@ class SmallSignalModel:
         matrices are constructed (i.e., generators, shunts, branches).        
         """
         ssm_components:Iterable[Component] = itertools.chain(self.system.gens, self.system.shunts, self.system.branches)
+        ssm_components = filter(lambda c: hasattr(c, "_build_small_signal_model"), ssm_components)
         self.components = [ComponentSSM(type=c.type_, id=c.id) for c in ssm_components]
 
     def construct_ccm_matrices(self):
         """
         Initialize the CCM matrices in dq frame for the small-signal modeling.
+        TODO: we should use here the list of self.components, not the whole system, it may require refactoring code.
         """
         self.F, self.G, self.H, self.L = get_ccm_matrices(self.system, attribute="ssm", dimI=2)
         # Permute the F and G 

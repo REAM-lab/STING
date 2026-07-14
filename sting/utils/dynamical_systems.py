@@ -104,7 +104,7 @@ class DynamicalVariables:
             fig.update_yaxes(title_text=self._name[i], row=i//ncols+1, col=i%ncols+1)
             fig.update_xaxes(title_text='Time [s]',row=i//ncols+1, col=i%ncols+1)
 
-        fig.update_layout(title_text = self._component[0], title_x=0.5, showlegend = False)
+        fig.update_layout(title_text = self._component[0], title_x=0.5, showlegend = False, height=300*nrows, width=700)
         
         if figure_filepath is not None:
             fig.write_html(figure_filepath)
