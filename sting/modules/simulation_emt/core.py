@@ -18,6 +18,7 @@ from sting.utils.dynamical_systems import DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices
 from sting.utils.runtime_tools import timeit
+from sting.modules.power_flow.utils import load_ac_power_flow_solution
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class SimulationEMT:
 
     def __post_init__(self):
         self.get_components()
+        self.initialize_variables()
         self.get_variables()
         self.assign_idx()
         self.get_ccm_matrices()
@@ -86,6 +88,21 @@ class SimulationEMT:
         for c in self.components:
                component = getattr(self.system, c.type_)[c.id]
                getattr(component, method)(*args)
+
+    def initialize_variables(self):
+        """
+        Initialize the EMT variables for all components in the system.
+        """
+
+        # Get the solution of the AC power flow model for the first timepoint
+        solution = load_ac_power_flow_solution(os.path.join(self.system.case_directory, "outputs", "ac_power_flow"))
+
+        # Default to the first timepoint if no timepoint is specified
+        t = self.system.timepoints[0]
+
+        self.apply("load_ac_power_flow_solution", t.name, solution)
+
+        self.apply("_calculate_emt_initial_conditions")
 
     def get_variables(self):
         """
@@ -173,7 +190,7 @@ class SimulationEMT:
         Construction and solution of differential equations for EMT simulation.
         """
         
-        F, G, H, L = self.ccm_abc_matrices
+        F, G, _, _ = self.ccm_abc_matrices
         x_len = len(self.variables.x)
         y_len = len(self.variables.y)
 

@@ -61,18 +61,18 @@ system.apply("post_system_init", system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.05 if t >= 0.25 else 0.0
+    return 0.05 if t >= 0.1 else 0.0
 
 def step2(t):
-    return -0.05 if t >= 0.75 else 0.0
+    return -0.05 if t >= 100 else 0.0
 
 inputs = {
     'infinite_sources_0': {
         'v_ref_d': lambda t: 0
         }, 
     'gfli_10a_0': {
-        'i_bus_d_ref': step1,
-        'i_bus_q_ref': step2,
+        'i_ref_d': step1,
+        'i_ref_q': step2,
         }
 }
 
@@ -80,10 +80,10 @@ t_max = 1.5 # Simulation length in seconds
 
 
 # Construct system and small-signal model
-_, ssm = main.run_ssm(system=system, case_directory=case_directory)
-ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+#_, ssm = main.run_ssm(system=system, case_directory=case_directory)
+#ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
 main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
 emt_dir = os.path.join(case_directory, "outputs", "simulation_emt")
-ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")
+#ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")

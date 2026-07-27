@@ -102,10 +102,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     sys_modifier.decompose_lines()
     sys_modifier.combine_shunts()
 
-    # Construct small-signal model
-    ssm = SmallSignalModel(system=sys)
-    ssm.construct_system_ssm()
-
+    # Run EMT simulation
     emt_sc = SimulationEMT(system=sys)
     emt_sc.sim(t_max, inputs)
 

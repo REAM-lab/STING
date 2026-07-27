@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import NamedTuple
 
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.transformations import dq02abc, abc2dq0
 
 class InitialConditionsEMT(NamedTuple):
     # Bus-side voltage and currents
@@ -14,14 +15,29 @@ class InitialConditionsEMT(NamedTuple):
     i_bus_q: float
     i_bus_D: float
     i_bus_Q: float
+    i_bus_a: float
+    i_bus_b: float
+    i_bus_c: float
+    v_bus_a: float
+    v_bus_b: float
+    v_bus_c: float
     # Shunt voltage
     v_sh_d: float
     v_sh_q: float
+    v_sh_a: float
+    v_sh_b: float
+    v_sh_c: float
     # Converter-side voltage and current
     v_vsc_d: float
     v_vsc_q: float
     i_vsc_d: float
     i_vsc_q: float
+    v_vsc_a: float
+    v_vsc_b: float
+    v_vsc_c: float
+    i_vsc_a: float
+    i_vsc_b: float
+    i_vsc_c: float
 
 
 @dataclass(slots=True)
@@ -61,15 +77,24 @@ class LCLFilter6A:
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, v_bus_mag, relative_phase_deg, p_bus, q_bus):
+    def get_steady_state(self, v_bus_mag, relative_phase_deg, p_bus, q_bus, reference_node: str):
+        """
+        Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
+        Consider that: DQ: reference frame of the grid, dq: reference frame of the inverter
 
-        # DQ: reference frame of the grid
-        # dq: reference frame of the inverter
-        
-        # Convert degrees to radians
-        phase_rad = relative_phase_deg * np.pi / 180
+        Inputs:
+        - v_bus_mag [pu]: voltage magnitude at the bus
+        - relative_phase_deg [deg]: voltage phase at the bus
+        - p_bus [pu]: active power at the bus
+        - q_bus [pu]: reactive power at the bus
+        - reference_node [str]: reference node for the voltage angle. Can be 'bus', 'shunt', or 'converter'.
 
+        Outputs:
+        - emt_init: Initial conditions for the EMT simulation
+        """
+                       
         # Voltage in the end of the LCL filter
+        phase_rad = relative_phase_deg * np.pi / 180
         v_bus_DQ = v_bus_mag * np.exp(phase_rad * 1j)
         # Current sent from the end of the LCL filter
         i_bus_DQ = (p_bus - q_bus * 1j) / np.conjugate(v_bus_DQ)
@@ -81,12 +106,31 @@ class LCLFilter6A:
         i_vsc_DQ = i_bus_DQ + i_lcl_sh_DQ
         v_vsc_DQ = v_lcl_sh_DQ + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_DQ
 
+        # Compute the reference angle based on the specified reference node
+        match reference_node:
+            case "bus":
+                angle_ref = relative_phase_deg * np.pi / 180
+            case "shunt":
+                angle_ref = np.angle(v_lcl_sh_DQ) 
+            case "converter":
+                angle_ref = np.angle(v_vsc_DQ) 
+            case _:
+                raise ValueError(f"Invalid reference node: {reference_node}. Must be 'bus', 'shunt', or 'converter'.")
+
         # We refer the voltage and currents to the synchronous frames of the inverter
-        v_vsc_dq = v_vsc_DQ * np.exp(-phase_rad * 1j)
-        i_vsc_dq = i_vsc_DQ * np.exp(-phase_rad * 1j)
-        v_bus_dq = v_bus_DQ * np.exp(-phase_rad * 1j)
-        i_bus_dq = i_bus_DQ * np.exp(-phase_rad * 1j)
-        v_sh_dq = v_lcl_sh_DQ * np.exp(-phase_rad * 1j)
+        v_vsc_dq = v_vsc_DQ * np.exp(-angle_ref * 1j)
+        i_vsc_dq = i_vsc_DQ * np.exp(-angle_ref * 1j)
+        v_bus_dq = v_bus_DQ * np.exp(-angle_ref * 1j)
+        i_bus_dq = i_bus_DQ * np.exp(-angle_ref * 1j)
+        v_sh_dq = v_lcl_sh_DQ * np.exp(-angle_ref * 1j)
+
+        # Convert dq0 to abc 
+        i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(np.real(i_vsc_dq), np.imag(i_vsc_dq), 0, angle_ref)
+        i_bus_a, i_bus_b, i_bus_c = dq02abc(np.real(i_bus_dq), np.imag(i_bus_dq), 0, angle_ref)
+        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(np.real(v_vsc_dq), np.imag(v_vsc_dq), 0, angle_ref)
+        v_sh_a, v_sh_b, v_sh_c = dq02abc(np.real(v_sh_dq), np.imag(v_sh_dq), 0, angle_ref)
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(np.real(v_bus_dq), np.imag(v_bus_dq), 0, angle_ref)
+        
 
         self.emt_init = InitialConditionsEMT(
             # Bus
@@ -101,9 +145,22 @@ class LCLFilter6A:
 
             i_bus_D=i_bus_DQ.real,
             i_bus_Q=i_bus_DQ.imag,
+
+            i_bus_a=i_bus_a,
+            i_bus_b=i_bus_b,
+            i_bus_c=i_bus_c,
+
+            v_bus_a=v_bus_a,
+            v_bus_b=v_bus_b,
+            v_bus_c=v_bus_c,
+
             # Shunt
             v_sh_d=v_sh_dq.real,
             v_sh_q=v_sh_dq.imag,
+
+            v_sh_a=v_sh_a,
+            v_sh_b=v_sh_b,
+            v_sh_c=v_sh_c,
 
             # Converter
             v_vsc_d=v_vsc_dq.real,
@@ -111,6 +168,14 @@ class LCLFilter6A:
 
             i_vsc_d=i_vsc_dq.real,
             i_vsc_q=i_vsc_dq.imag,
+
+            v_vsc_a=v_vsc_a,
+            v_vsc_b=v_vsc_b,
+            v_vsc_c=v_vsc_c,
+
+            i_vsc_a=i_vsc_a,
+            i_vsc_b=i_vsc_b,
+            i_vsc_c=i_vsc_c
         )
 
         return self.emt_init
@@ -199,6 +264,36 @@ class LCLFilter6A:
         N = np.hstack([np.zeros((6,24)), N_w])
 
         return 
+
+    def define_variables_emt_abc(self):
+
+        x = DynamicalVariables(
+            name = ["i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            component = f"{self.__class__.__name__}",
+            init =  [self.emt_init.i_vsc_a,
+                    self.emt_init.i_vsc_b,
+                    self.emt_init.i_vsc_c,
+                    self.emt_init.v_sh_a,
+                    self.emt_init.v_sh_b,
+                    self.emt_init.v_sh_c,
+                    self.emt_init.i_bus_a,
+                    self.emt_init.i_bus_b,
+                    self.emt_init.i_bus_c]
+        )
+
+        u = DynamicalVariables(
+            name=["v_vsc_a", "v_vsc_b", "v_vsc_c", "v_bus_a", "v_bus_b", "v_bus_c"],
+            component=f"{self.__class__.__name__}",
+            init=[  self.emt_init.v_vsc_a,
+                    self.emt_init.v_vsc_b,
+                    self.emt_init.v_vsc_c,
+                    self.emt_init.v_bus_a,
+                    self.emt_init.v_bus_b,
+                    self.emt_init.v_bus_c]
+        )
+
+        return [x, u]
+                
 
 
     def differential_step_emt_abc(

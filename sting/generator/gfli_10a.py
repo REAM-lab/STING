@@ -1,5 +1,5 @@
 """
-This module implements a 10th order Grid-Forming Inverter comprised of: 
+This module implements a 10th order Grid-following Inverter comprised of: 
 - LCL filter: Two Series RL branches (one branch is the transformer) and one Parallel RC shunt. 
 - Current controller: A dq-based frame PI controller
 - PLL: It that tracks the phase of the grid voltage.
@@ -67,14 +67,15 @@ class GFLI10A(Generator):
 
     def _calculate_emt_initial_conditions(self):
        
-       lcl_init = self.lcl_filter.get_steady_state(
+        lcl_init = self.lcl_filter.get_steady_state(
            v_bus_mag = self.power_flow_variables.vmag_bus,
            relative_phase_deg = self.power_flow_variables.vphase_bus,
            p_bus = self.power_flow_variables.p_bus,
            q_bus = self.power_flow_variables.q_bus,
+           reference_node = 'bus'
        )
 
-       self.current_controller.get_steady_state(
+        self.current_controller.get_steady_state(
            v_out_d=lcl_init.v_vsc_d,
            v_out_q=lcl_init.v_vsc_q,
            v_d=lcl_init.v_bus_d,
@@ -83,6 +84,11 @@ class GFLI10A(Generator):
            i_q=lcl_init.i_bus_q,
            w = 1
        )
+
+        self.phase_locked_loop.get_steady_state(
+            v_bus_mag = self.power_flow_variables.vmag_bus,
+            relative_phase_deg = self.power_flow_variables.vphase_bus
+        )
 
     
     def _build_small_signal_model(self):
@@ -188,41 +194,39 @@ class GFLI10A(Generator):
 
 
     def define_variables_emt(self):
-        # Initial conditions for the LCL filter
-        init = self.lcl_filter.emt_init
 
         # States 
-        # ------ 
-        relative_phase_deg = self.power_flow_variables.vphase_bus * np.pi / 180
-        z_cc_d, z_cc_q = self.current_controller.emt_init.z_cc_d, self.current_controller.emt_init.z_cc_q
-        # Convert dq0 to abc 
-        i_bus_a, i_bus_b, i_bus_c = dq02abc(init.i_bus_d, init.i_bus_q, 0, relative_phase_deg)
-        i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(init.i_vsc_d, init.i_vsc_q, 0, relative_phase_deg)
-        v_sh_a, v_sh_b, v_sh_c = dq02abc(init.v_sh_d, init.v_sh_q, 0, relative_phase_deg)
-
         x = DynamicalVariables(
             name = ['z_cc_d', 'z_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
             component = f"{self.type_}_{self.id}",
-            init = [z_cc_d, z_cc_q, relative_phase_deg, 0, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c]
+            init = [self.current_controller.emt_init.z_cc_d, 
+                    self.current_controller.emt_init.z_cc_q,
+                    self.phase_locked_loop.emt_init.theta_pll, 
+                    self.phase_locked_loop.emt_init.z_pll,
+                    self.lcl_filter.emt_init.i_vsc_a, self.lcl_filter.emt_init.i_vsc_b, self.lcl_filter.emt_init.i_vsc_c,
+                    self.lcl_filter.emt_init.v_sh_a, self.lcl_filter.emt_init.v_sh_b, self.lcl_filter.emt_init.v_sh_c,
+                    self.lcl_filter.emt_init.i_bus_a, self.lcl_filter.emt_init.i_bus_b, self.lcl_filter.emt_init.i_bus_c]
         )
 
         # Inputs 
-        # ------
-        v_bus_a, v_bus_b, v_bus_c = dq02abc(init.v_bus_D, init.v_bus_Q, 0, 0)
-
         u = DynamicalVariables(
-            name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_a", "v_bus_b", "v_bus_c"],
+            name=["i_ref_d", "i_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
             type=["device", "device", "grid", "grid", "grid"],
-            init=[init.i_bus_d, init.i_bus_q, v_bus_a, v_bus_b, v_bus_c]
+            init=[ self.lcl_filter.emt_init.i_bus_d,
+                  self.lcl_filter.emt_init.i_bus_q,
+                  self.lcl_filter.emt_init.v_bus_a, 
+                  self.lcl_filter.emt_init.v_bus_b, 
+                  self.lcl_filter.emt_init.v_bus_c]
         )
 
         # Outputs
-        # -------
         y = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c"],
             component=f"{self.type_}_{self.id}",
-            init=[i_bus_a, i_bus_b, i_bus_c]
+            init=[self.lcl_filter.emt_init.i_bus_a, 
+                  self.lcl_filter.emt_init.i_bus_b, 
+                  self.lcl_filter.emt_init.i_bus_c]
         )
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
@@ -241,19 +245,30 @@ class GFLI10A(Generator):
         # convert relevant quantities to dq (reference frame of the IBR)
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
         i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
+
+        # Compute time derivatives of PLL
+        d_x_pll = self.phase_locked_loop.get_derivatives_step_emt_abc(theta_pll, z_pll, # states in PLL
+                                                                      v_bus_a, v_bus_b, v_bus_c # inputs to PLL
+                                                                      )
+
+        # Compute frequency estimated by PLL
+        w_pll  = d_x_pll[0]/self.wbase
       
         # Compute the voltage references from the inner current controller. No delay assumed in VSC.
-        v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, 1)
+        v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, # states in current controller
+                                                                               i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, w_pll # inputs to current controller
+                                                                               )
+
+        # Compute the time derivatives of the current controller
+        d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q) # inputs to current controller
 
         # Convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
 
-        # Compute the time derivatives of the state variables for each component
-        d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q)
-        d_x_pll = self.phase_locked_loop.differential_step_emt_dq0(z_pll, v_bus_q)
+        # Compute the time derivatives of the LCL filter
         d_x_lcl = self.lcl_filter.differential_step_emt_abc(
-            i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states
-            v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs
+            i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states in LCL filter
+            v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs to LCL filter
             )
         
         return d_x_cc + d_x_pll + d_x_lcl

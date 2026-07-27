@@ -10,10 +10,7 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 # Subclasses
 # ---------------------------------------
 class InitialConditionsEMT(NamedTuple):
-    angle_rad: float
-    w_pu: float
-    p_ref: float
-    p_sh: float
+    angle: float
 
 # ---------------------------------------
 # Main class
@@ -35,18 +32,37 @@ class VirtualInertia2A:
 
     emt_init: InitialConditionsEMT = field(init=False)
 
+    def get_steady_state(self, angle: float) -> InitialConditionsEMT:
+        """
+        Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
+        
+        Inputs:
+        - angle [rad]: Steady-state angle of the active power controller
+         
+        Outputs:
+        - emt_init: Initial conditions for the EMT simulation
+        """
 
-    def get_differential_step_emt(self, w_pc: float, p_ref: float, p_sh: float) -> list:
+        self.emt_init = InitialConditionsEMT(
+            angle = angle,
+            w = 1.0
+        )
+
+        return self.emt_init
+
+    def get_differential_step_emt(self, w: float, p_ref: float, p: float) -> list[float]:
         """
         Compute the derivates with respect to time of the states of the virtual inertia model
         for the next time step in the EMT simulation.
+
         Inputs:
-        - w_pc: angular frequency of the active power controller [pu]. It is a state of the virtual inertia model.
-        - p_ref: reference active power [pu]. It is an input to the virtual inertia model.
-        - p_sh: measured active power at the shunt of the LCL filter [pu]. It is an input to the virtual inertia model.
+        - w [pu]: angular frequency. It is a state of the virtual inertia model.
+        - p_ref [pu]: reference active power. It is an input to the virtual inertia model.
+        - p [pu]: measured active power. It is an input to the virtual inertia model.
+
         Outputs:
-        - d_angle_pc: derivative of the angle of the active power controller [rad/s]
-        - d_w_pc: derivative of the angular frequency of the active power controller [pu/s]
+        - d_angle [rad/s]: derivative of the angle of the active power controller
+        - d_w [pu/s]: derivative of the angular frequency of the active power controller
         """
     
         # Extract the list of parameters
@@ -55,9 +71,9 @@ class VirtualInertia2A:
         w_nom = self.w_nom  # nominal frequency of the system
 
         # Derivative of the angle
-        d_angle_pc = w_nom * w_pc
+        d_angle_pc = w_nom * w
         
         # Derivative of the angular frequency
-        d_w_pc = 1/(2 * h) * (p_ref - p_sh - kd_w * (w_pc - 1))
+        d_w_pc = 1/(2 * h) * (p_ref - p - kd_w * (w - 1))
     
         return [d_angle_pc, d_w_pc]
