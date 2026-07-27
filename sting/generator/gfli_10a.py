@@ -67,8 +67,6 @@ class GFLI10A(Generator):
 
     def _calculate_emt_initial_conditions(self):
        
-       
-
        lcl_init = self.lcl_filter.get_steady_state(
            v_bus_mag = self.power_flow_variables.vmag_bus,
            relative_phase_deg = self.power_flow_variables.vphase_bus,
@@ -83,6 +81,7 @@ class GFLI10A(Generator):
            v_q=lcl_init.v_bus_q,
            i_d=lcl_init.i_bus_d,
            i_q=lcl_init.i_bus_q,
+           w = 1
        )
 
     
@@ -239,23 +238,25 @@ class GFLI10A(Generator):
         # Get input values (external inputs)
         i_ref_d, i_ref_q, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
 
-        # convert relevant quantities to dq 
+        # convert relevant quantities to dq (reference frame of the IBR)
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
         i_bus_d, i_bus_q, _ = abc2dq0(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
       
-        # Update algebraic states
-        v_vsc_d, v_vsc_q = self.current_controller.algebraic_step_emt_dq0(z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q)
+        # Compute the voltage references from the inner current controller. No delay assumed in VSC.
+        v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, 1)
+
         # Convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
 
-        dx_cc = self.current_controller.differential_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q)
-        dx_pll = self.phase_locked_loop.differential_step_emt_dq0(z_pll, v_bus_q)
-        dx_lcl = self.lcl_filter.differential_step_emt_abc(
+        # Compute the time derivatives of the state variables for each component
+        d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q)
+        d_x_pll = self.phase_locked_loop.differential_step_emt_dq0(z_pll, v_bus_q)
+        d_x_lcl = self.lcl_filter.differential_step_emt_abc(
             i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs
             )
         
-        return dx_cc + dx_pll + dx_lcl
+        return d_x_cc + d_x_pll + d_x_lcl
     
     def plot_results_emt(self):
         """

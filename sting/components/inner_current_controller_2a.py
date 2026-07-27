@@ -21,25 +21,50 @@ class InnerCurrentController2A:
     TODO: Add w as an input
     """
 
-    kp: float  # Proportional gain
-    ki: float  # Integral gain
-    kff: float # Feed-forward gain
-    xf: float  # Inductive reactance
+    kp_pu: float  # Proportional gain
+    ki_puHz: float  # Integral gain
+    kffv: float # Feed-forward gain
+    xf_pu: float  # Inductive reactance
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, v_out_d, v_out_q, v_d, v_q, i_d, i_q):
+    def get_steady_state(self, v_out_d: float, v_out_q: float, v_d: float, v_q: float, i_d: float, i_q: float, w: float):
+        """
+        Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
+        
+        Inputs:
+        - v_out_d [pu]: Output voltage in d-axis
+        - v_out_q [pu]: Output voltage in q-axis
+        - v_d [pu]: Feed-forward voltage in d-axis
+        - v_q [pu]: Feed-forward voltage in q-axis
+        - i_d [pu]: Actual current in d-axis
+        - i_q [pu]: Actual current in q-axis
+        - w [pu]: frequency
+         
+        Outputs:
+        - emt_init: Initial conditions for the EMT simulation
+        """
 
         self.emt_init = InitialConditionsEMT(
-            z_cc_d = v_out_d - self.kff * v_d + self.xf*i_q,
-            z_cc_q = v_out_q - self.kff * v_q - self.xf*i_d
+            z_cc_d = v_out_d - self.kffv * v_d + self.xf_pu * i_q * w,
+            z_cc_q = v_out_q - self.kffv * v_q - self.xf_pu * i_d * w
         )
 
         return self.emt_init
 
-    def get_small_signal_model(self, z_cc_d, z_cc_q):
+    def get_small_signal_model(self, z_cc_d: float, z_cc_q: float):
+        """
+        Returns the small-signal state-space model of the inner current controller.
+        TODO: Add w as an input
+        Inputs:
+        - z_cc_d [pu]: State associated to integral control block in d-axis
+        - z_cc_q [pu]: State associated to integral control block in q-axis
         
-        kp, ki, kff, xf = self.kp, self.ki, self.kff, self.xf
+        Outputs:
+        - ssm: Small-signal state-space model of the inner current controller
+        """
+        
+        kp, ki, kff, xf = self.kp_pu, self.ki_puHz, self.kffv, self.xf_pu
 
         A = np.zeros((2,2))
         B = ki * np.hstack([np.eye(2), -np.eye(2), np.zeros((2,2))])
@@ -63,15 +88,50 @@ class InnerCurrentController2A:
         )
         return ssm
 
-    def differential_step_emt_dq0(self, i_ref_d, i_ref_q, i_d, i_q):
-        dz_cc_d = self.ki * (i_ref_d - i_d)
-        dz_cc_q = self.ki * (i_ref_q - i_q)
+    def get_derivatives_step_emt_dq0(self, i_ref_d: float, i_ref_q: float, i_d: float, i_q: float):
+        """
+        Returns the derivatives of the state variables for the EMT simulation step.
 
-        return [dz_cc_d, dz_cc_q]
+        Inputs:
+        - i_ref_d [pu]: Reference current in d-axis
+        - i_ref_q [pu]: Reference current in q-axis
+        - i_d [pu]: Actual current in d-axis
+        - i_q [pu]: Actual current in q-axis
 
-    def algebraic_step_emt_dq0(self, z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_d, i_q, v_d, v_q):
-        
-        v_out_d = z_cc_d + self.kp * (i_ref_d - i_d) - self.xf * i_q + self.kff * v_d
-        v_out_q = z_cc_q + self.kp * (i_ref_q - i_q) + self.xf * i_d + self.kff * v_q
+        Outputs:
+        - d_z_cc_d: Derivative of the state associated to integral control block in d-axis
+        - d_z_cc_q: Derivative of the state associated to integral control block in q-axis
+        """
+
+        d_z_cc_d = self.ki_puHz * (i_ref_d - i_d)
+        d_z_cc_q = self.ki_puHz * (i_ref_q - i_q)
+
+        return [d_z_cc_d, d_z_cc_q]
+
+    def get_algebraics_step_emt_dq0(self, z_cc_d: float, z_cc_q: float, i_ref_d: float, i_ref_q: float, i_d: float, i_q: float, v_d: float, v_q: float, w: float):
+        """
+        Returns the voltage outputs of the inner current controller for the EMT simulation step. These voltage outputs can be used as voltage references.
+        Inputs:
+        - z_cc_d [pu]: State variable z_cc_d
+        - z_cc_q [pu]: State variable z_cc_q
+        - i_ref_d [pu]: Reference current in d-axis
+        - i_ref_q [pu]: Reference current in q-axis
+        - i_d [pu]: Actual current in d-axis
+        - i_q [pu]: Actual current in q-axis
+        - v_d [pu]: Feed-forward voltage in d-axis
+        - v_q [pu]: Feed-forward voltage in q-axis
+        - w [pu]: frequency
+
+        Outputs:
+        - v_out_d [pu]: Output voltage in d-axis
+        - v_out_q [pu]: Output voltage in q-axis
+        """ 
+
+        # Compute output of PI controller in d-axis and q-axis
+        out_pi_d = z_cc_d + self.kp_pu * (i_ref_d - i_d)
+        out_pi_q = z_cc_q + self.kp_pu * (i_ref_q - i_q)
+
+        v_out_d = out_pi_d + self.kffv * v_d - self.xf_pu * i_q * w
+        v_out_q = out_pi_q + self.kffv * v_q + self.xf_pu * i_d * w
         
         return [v_out_d, v_out_q]
