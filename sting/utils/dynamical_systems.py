@@ -522,4 +522,24 @@ class StateSpaceModel:
     
     def to_pymor(self):
         return LTIModel.from_matrices(A=self.A, B=self.B, C=self.C, D=self.D)
-          
+
+
+# -------------
+# Functions
+# -------------
+def smooth_step(t: float, step_time: float, initial_value: float, final_value: float, transient_width: float) -> float:
+    """
+    Returns the value of a smooth step function at time t. 
+    The function transitions from initial_value to final_value around step_time with a transition width defined by transient_width.
+    
+    Inputs:
+    - t: time at which to evaluate the function
+    - step_time: time at which the step occurs
+    - initial_value: value of the function before the step
+    - final_value: value of the function after the step
+    - transient_width: width of the transition region (the larger, the smoother the transition). It should be a bit larger than integration step, e.g. 1e-3 for a 1e-4 integration step.
+
+    Outputs
+    - The value of the smooth step function at time t.
+    """
+    return initial_value + (final_value - initial_value) * 0.5 * (1 + np.tanh((t - step_time)/transient_width))

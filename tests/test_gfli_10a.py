@@ -67,9 +67,6 @@ def step2(t):
     return -0.05 if t >= 100 else 0.0
 
 inputs = {
-    'infinite_sources_0': {
-        'v_ref_d': lambda t: 0
-        }, 
     'gfli_10a_0': {
         'i_ref_d': step1,
         'i_ref_q': step2,
