@@ -48,7 +48,7 @@ def emt_dynamics(t, x):
     i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q = x
     v_vsc_d, v_vsc_q, v_bus_d, v_bus_q, w = np.array([u(t) for u in inputs.values()]) + u0
 
-    dx = lcl.differential_step_emt_dq0(
+    dx = lcl.get_derivatives_step_emt_dq0(
         i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q,
         v_vsc_d, v_vsc_q, v_bus_d, v_bus_q, w
     )

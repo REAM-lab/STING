@@ -4,10 +4,16 @@ from typing import NamedTuple
 import numpy as np
 
 from sting.utils import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+from sting.utils.transformations import abc2dq0, dq02abc
 
 
 class InitialConditionsEMT(NamedTuple):
-    pass
+    theta_pll: float
+    v_pll_q: float
+    z_pll: float
+    v_a: float
+    v_b: float
+    v_c: float
 
 @dataclass
 class PhaseLockedLoop3A:
@@ -25,13 +31,24 @@ class PhaseLockedLoop3A:
     alpha: float = 0
 
 
-    def get_steady_state(self):
-        pass
+    def get_steady_state(self, v_mag, relative_phase_deg):
+
+        theta_pll = relative_phase_deg * np.pi / 180
+        v_a, v_b, v_c = dq02abc(v_mag, 0, 0, theta_pll)
+
+        self.emt_init = InitialConditionsEMT(
+            theta_pll = theta_pll,
+            v_pll_q = v_mag,
+            z_pll = 0.0,
+            v_a = v_a,
+            v_b = v_b,
+            v_c = v_c
+        )
 
     
-    def get_small_signal_model(self, v_bus_mag, relative_phase_deg):
+    def get_small_signal_model(self, v_mag, relative_phase_deg):
         
-        v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi/180)
+        phase_rad = relative_phase_deg*np.pi/180
         wb = self.wbase
         sin0 = np.sin(phase_rad)
         cos0 = np.cos(phase_rad)
@@ -54,7 +71,7 @@ class PhaseLockedLoop3A:
             [kp/wb, 1/wb, 0], # w
             [    0,    0, 1], # phase
         ])
-        D = np.zeros((2, 3))
+        D = np.zeros((2, 2))
 
         ssm = StateSpaceModel(
             A=A,
@@ -62,17 +79,19 @@ class PhaseLockedLoop3A:
             C=C,
             D=D,
             u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
-            y = DynamicalVariables(name=['phase', 'w']),
+            y = DynamicalVariables(name=['w', 'phase']),
             x = DynamicalVariables(
-                name=["z_pll", "phase_pll", "v_pll_q"], 
-                init=[0, phase_rad, v_mag] 
+                name=["v_pll_q", "z_pll", "phase_pll"], 
+                init=[0, 0, phase_rad] 
                 )
             )
         return ssm
 
 
-    def get_quadratic_bilinear_model(self, v_bus_mag, relative_phase_deg):
-        v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi / 180)
+    def get_quadratic_bilinear_model(self, v_mag, relative_phase_deg):
+        phase_rad = relative_phase_deg*np.pi/180
+        v_bus_DQ = v_mag * np.exp(phase_rad * 1j)
+
         ki, kp, wb, tau = self.ki_puHz, self.kp_pu, self.wbase, self.tau
         a = self.alpha
 
@@ -85,7 +104,7 @@ class PhaseLockedLoop3A:
         B = np.zeros((4, 2))
 
         # Nonlinear dynamics of sin and cos "lifted" states
-        H0 = np.zeros((5,5))
+        H0 = np.zeros((4,4))
         H_sin = np.array([
             [  0,  0, 0, 0],
             [  0,  0, 0, 0],
@@ -101,7 +120,7 @@ class PhaseLockedLoop3A:
         H = np.hstack([H0, H0, H_sin, H_cos])
 
         # Inputs-state interactions of xy -> dq voltage
-        # v_q = -v_x * sin + v_y * cos 
+        # v_q = -v_D * sin + v_Q * cos 
         N_D = np.array([
             [0, 0,-1/tau, 0], # v_D * z_sin
             [0, 0,     0, 0],
@@ -124,21 +143,28 @@ class PhaseLockedLoop3A:
 
         D = np.zeros((2, 4))
 
-        u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
-        y = DynamicalVariables(name=['phase', 'w']),
+        u = DynamicalVariables(
+            name=['v_bus_D', 'v_bus_Q'],
+            init=[v_bus_DQ.real, v_bus_DQ.imag])
+        y = DynamicalVariables(name=['w', 'sin', 'cos'])
         x = DynamicalVariables(
-            name=["z_pll", "phase_pll", "v_pll_q"], 
-            init=[0, phase_rad, v_mag] 
+            name=["v_pll_q", "z_pll", "sin_pll", "cos_pll"], 
+            init=[0, 0, np.sin(phase_rad), np.cos(phase_rad)] 
         )
 
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 
 
-    def differential_step_emt_dq0(self, z_pll, v_pll_q, v_bus_q):
+    def get_derivatives_step_emt_abc(self):
+        pass
+
+    def get_derivatives_step_emt_dq0(self, v_pll_q, z_pll, phase_pll, v_bus_D, v_bus_Q):
+
+        v_bus_q = -v_bus_D * np.sin(phase_pll) + v_bus_Q * np.cos(phase_pll)
         # PLL dynamics
-        d_theta_pll = (self.kp_pu * v_pll_q) + z_pll + self.wbase
+        d_phase_pll = (self.kp_pu * v_pll_q) + z_pll
         d_z_pll = self.ki_puHz * v_pll_q
         # Voltage filter dynamics
         d_v_pll_q = (1/self.tau) * (v_bus_q - v_pll_q)
 
-        return [d_theta_pll, d_z_pll, d_v_pll_q]
+        return [d_v_pll_q, d_z_pll, d_phase_pll]
