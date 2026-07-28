@@ -50,9 +50,6 @@ class InnerCurrentController2A:
     - ki_puHz: integral gain in per unit per Hz
     - kffv: feed-forward gain
     - xf_pu: inductive reactance in per unit
-
-
-    TODO: Add w as an input in small signal model
     """
 
     kp_pu: float  # Proportional gain
@@ -126,6 +123,9 @@ class InnerCurrentController2A:
             ) 
         )
         return ssm
+
+    def get_quadratic_bilinear_model(self):
+        pass
 
     def define_variables_emt_dq0(self):
 

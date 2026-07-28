@@ -1,10 +1,10 @@
+import matplotlib
+
 from sting.components import LCLFilter6A
 
-import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
 import pylab as plt
-
 from scipy.integrate import solve_ivp
 
 # Power flow solution 
@@ -29,16 +29,19 @@ wbase = 2*np.pi*60
 lcl = LCLFilter6A(rf1_pu=0.001, xf1_pu=0.02, rf2_pu=0.001, xf2_pu=0.01, csh_pu=0.001, rsh_pu=1, wbase=wbase)
 
 # Compute initial conditions and small signal model 
-init = lcl.get_steady_state(**pf_sol)
+init = lcl.get_steady_state(**pf_sol, reference_node="bus")
 x0 = np.array([init.i_vsc_d, init.i_vsc_q, init.i_bus_d, init.i_bus_q, init.v_sh_d, init.v_sh_q])
 u0 = np.array([init.v_vsc_d, init.v_vsc_q, init.v_bus_d, init.v_bus_q, wbase])
 ssm = lcl.get_small_signal_model(*x0)
-
+qbm = lcl.get_quadratic_bilinear_model(*x0)
 
 def ssm_dynamics(t, x):
     u = np.array([u(t) for u in inputs.values()])
     return ssm.A @ x + ssm.B @ u
 
+def qbm_dynamics(t, x):
+    u = np.array([u(t) for u in inputs.values()]) + u0
+    return qbm.A @ x + qbm.B @ u + qbm.H @ np.kron(x,x) + qbm.N @ np.kron(u, x)
 
 def emt_dynamics(t, x):
     """Wrapper function for ODE simulation step"""
@@ -60,6 +63,7 @@ settings = {
 }
 
 emt_sol = solve_ivp(emt_dynamics, y0=x0, **settings)
+qbm_sol = solve_ivp(qbm_dynamics, y0=x0, **settings)
 ssm_sol = solve_ivp(ssm_dynamics, y0=x0*0, **settings)
 ssm_sol.y += x0.reshape(-1, 1)
 
@@ -67,10 +71,10 @@ ssm_sol.y += x0.reshape(-1, 1)
 # Plot results
 titles = [r"$i^{vsc}_d$", r"$i^{vsc}_q$", r"$i^{bus}_d$", r"$i^{bus}_q$", r"$v^f_d$", r"$v^f_q$"]
 fig, axs = plt.subplots(2, 3)
-labels = ["EMT", "SSM"]
-ls = ["-", "-."]
+labels = ["EMT", "QBM", "SSM"]
+ls = ["-", "-.", "--"]
 
-for j, sol in enumerate([emt_sol, ssm_sol]):#
+for j, sol in enumerate([emt_sol, qbm_sol, ssm_sol]):
  
     for i, ax in enumerate(axs.flatten()):
         ax.set_ylabel(titles[i])

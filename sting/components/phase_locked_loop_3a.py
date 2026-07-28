@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import NamedTuple
+
 import numpy as np
 
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+
 
 class InitialConditionsEMT(NamedTuple):
     pass
@@ -63,14 +65,14 @@ class PhaseLockedLoop3A:
             y = DynamicalVariables(name=['phase', 'w']),
             x = DynamicalVariables(
                 name=["z_pll", "phase_pll", "v_pll_q"], 
-                init=[0, phase_rad, 0] 
+                init=[0, phase_rad, v_mag] 
                 )
             )
         return ssm
 
 
     def get_quadratic_bilinear_model(self, v_bus_mag, relative_phase_deg):
-        
+        v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi / 180)
         ki, kp, wb, tau = self.ki_puHz, self.kp_pu, self.wbase, self.tau
         a = self.alpha
 
@@ -98,8 +100,8 @@ class PhaseLockedLoop3A:
         ])
         H = np.hstack([H0, H0, H_sin, H_cos])
 
-        # Inputs-state interactions of DQ -> dq voltage
-        # v_d = -v_D * sin + v_Q * cos 
+        # Inputs-state interactions of xy -> dq voltage
+        # v_q = -v_x * sin + v_y * cos 
         N_D = np.array([
             [0, 0,-1/tau, 0], # v_D * z_sin
             [0, 0,     0, 0],
@@ -122,7 +124,14 @@ class PhaseLockedLoop3A:
 
         D = np.zeros((2, 4))
 
-        return 
+        u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
+        y = DynamicalVariables(name=['phase', 'w']),
+        x = DynamicalVariables(
+            name=["z_pll", "phase_pll", "v_pll_q"], 
+            init=[0, phase_rad, v_mag] 
+        )
+
+        return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 
 
     def differential_step_emt_dq0(self, z_pll, v_pll_q, v_bus_q):
