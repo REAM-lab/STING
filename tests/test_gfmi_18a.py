@@ -8,6 +8,7 @@ from sting.generator import InfiniteSource, GFMI18A
 from sting.line import LinePiModel
 from sting.bus import Bus, Load
 from sting.timescales import Timepoint
+from sting.utils.dynamical_systems import smooth_step
 
 # Set up a temporary directory used by all tests
 case_directory = os.path.join(os.getcwd(), "tests", "tmpdir")
@@ -48,7 +49,7 @@ gfmi = GFMI18A(
     # Inner current controller
     kp_cc_pu=4.77, ki_cc_puHz=60, kffv_cc=0,
     # Virtual inertia
-    h_s=2, kd_pu=20, 
+    h_s=2, kd_pu=70, 
     # Voltage droop
     k_q_pu=0.2, w_q_puHz=1000
 )
@@ -66,9 +67,6 @@ system.apply("post_system_init", system)
 # -------------------------------------------------------
 
 # Step function inputs to simulate
-def step1(t):
-    return 0.05 if t >= 100 else 0.0
-
 def step2(t):
     return -0.05 if t >= 100 else 0.0
 
@@ -77,8 +75,7 @@ inputs = {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': step1,
-        'q_ref': step2,
+        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.05, transient_width=5e-3),
         }
 }
 

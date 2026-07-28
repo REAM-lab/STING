@@ -121,15 +121,15 @@ class GFMI18A(Generator):
     def define_variables_emt(self):
         # States 
         x = DynamicalVariables(
-            name = ["angle", "w", "q_f", "z_cc_d", "z_cc_q", "z_vc_d", "z_vc_q", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b", "v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            name = ["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b", "v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
             component = f"{self.type_}_{self.id}",
             init = [self.virtual_inertia.emt_init.angle,
                     self.virtual_inertia.emt_init.w,
                     self.voltage_droop.emt_init.q_ref,
-                    self.current_controller.emt_init.z_cc_d,
-                    self.current_controller.emt_init.z_cc_q,
                     self.voltage_controller.emt_init.z_vc_d,
                     self.voltage_controller.emt_init.z_vc_q,
+                    self.current_controller.emt_init.z_cc_d,
+                    self.current_controller.emt_init.z_cc_q,
                     self.lcl_filter.emt_init.i_vsc_a,
                     self.lcl_filter.emt_init.i_vsc_b,
                     self.lcl_filter.emt_init.i_vsc_c,
