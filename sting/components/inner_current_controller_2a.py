@@ -1,14 +1,10 @@
-# -------------------------------------------------------------------------
-# Import libraries
-# -------------------------------------------------------------------------
-import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-# -------------------------------------------------------------------------
-# Import sting code
-# -------------------------------------------------------------------------
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+import numpy as np
+
+from sting.utils import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+
 
 # ------------------------------------
 # Sub-classes
@@ -28,16 +24,17 @@ class InitialConditionsEMT(NamedTuple):
 @dataclass(slots=True)
 class InnerCurrentController2A:
     """
-    Models an inner current control of the structure shown below: 
-
-    v_dq --------> [kffv] ---------------------> [+1] ------
-                                                            |
-    i_ref_dq ----> [+1] --- + -----> [PI controller] ------ + ---> v_out_dq
-                            |                               |
-                           [-1]                             |
-                            |                               |
-    i_dq --------------------- x --->[j xf] ----> [+1] -----
-    w -------------------------|
+    Models a second-order inner current control with the following structure:
+                                     ┌──────┐
+    v_dq ───────────────────────────▶│ kffv │───────────────┐
+                                     └──────┘               │
+                  [+]             ┌───────────────┐     [+] ▼[+]
+    i_ref_dq ──────▶──┬──────────▶│ PI Controller │──────▶──┼────▶ v_out_dq
+                      ▲[-]        └───────────────┘         ▲[+]
+                      │                                     │
+    i_dq ─────────────┴─────────────▶┌────────┐             │
+                                     │ j * xf │─────────────┘
+    w ──────────────────────────────▶└────────┘
 
     where:
     - v_dq: feed-forward voltage in dq frame
@@ -52,18 +49,17 @@ class InnerCurrentController2A:
     - xf_pu: inductive reactance in per unit
     """
 
-    kp_pu: float  # Proportional gain
+    kp_pu: float    # Proportional gain
     ki_puHz: float  # Integral gain
-    kffv: float # Feed-forward gain
-    xf_pu: float  # Inductive reactance
+    kffv: float     # Feed-forward gain
+    xf_pu: float    # Inductive reactance
 
     emt_init: InitialConditionsEMT = field(init=False)
 
     def get_steady_state(self, v_out_d: float, v_out_q: float, v_d: float, v_q: float, i_d: float, i_q: float, w: float):
         """
         Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
-        
-        Inputs:
+
         - v_out_d [pu]: Output voltage of the inner current controller in d-axis
         - v_out_q [pu]: Output voltage of the inner current controller in q-axis
         - v_d [pu]: Feed-forward voltage in d-axis
@@ -71,9 +67,6 @@ class InnerCurrentController2A:
         - i_d [pu]: Target current to be regulated in d-axis
         - i_q [pu]: Target current to be regulated in q-axis
         - w [pu]: frequency
-         
-        Outputs:
-        - emt_init: Initial conditions for the EMT simulation
         """
 
         self.emt_init = InitialConditionsEMT(
@@ -88,44 +81,101 @@ class InnerCurrentController2A:
 
         return self.emt_init
 
-    def get_small_signal_model(self, z_cc_d: float, z_cc_q: float):
+    def get_small_signal_model(self, z_cc_d: float, z_cc_q: float, i_d: float, i_q: float, v_d: float, v_q: float, w: float):
         """
         Returns the small-signal state-space model of the inner current controller.
-        TODO: Add w as an input
-        Inputs:
-        - z_cc_d [pu]: State associated to integral control block in d-axis
-        - z_cc_q [pu]: State associated to integral control block in q-axis
+
+        SSM Inputs:
+        - z_cc_d [pu]: State variable associated to integral control block in d-axis
+        - z_cc_q [pu]: State variable associated to integral control block in q-axis
+        - i_ref_d [pu]: Reference current in d-axis
+        - i_ref_q [pu]: Reference current in q-axis
+        - i_d [pu]: Actual current or current to be regulated in d-axis
+        - i_q [pu]: Actual current or current to be regulated in q-axis
+        - v_d [pu]: Feed-forward voltage in d-axis
+        - v_q [pu]: Feed-forward voltage in q-axis
+        - w [pu]: frequency
+
+        SSM Outputs:
+        - v_out_d [pu]: Output voltage of the inner current controller in d-axis
+        - v_out_q [pu]: Output voltage of the inner current controller in q-axis
+        """
+        v_out_d = z_cc_d + self.kffv * v_d - self.xf_pu * i_q * w
+        v_out_q = z_cc_q + self.kffv * v_q + self.xf_pu * i_d * w
         
-        Outputs:
-        - ssm: Small-signal state-space model of the inner current controller
+        kp, ki, kff, xf = self.kp_pu, self.ki_puHz, self.kffv, self.xf_pu
+
+        A = np.zeros((2,2))
+        B = ki * np.hstack([np.eye(2), -np.eye(2), np.zeros((2,3))])
+        C = np.eye(2)
+        D = np.array([
+            [ kp,  0,-kp,-xf*w, kff,  0, -xf*i_q],
+            [  0, kp, xf*w,-kp,  0, kff, xf*i_d]
+        ])
+
+        u = DynamicalVariables(
+            name=['i_d_ref', 'i_q_ref', 'i_d', 'i_q', 'v_d', 'v_q', 'w'],
+            init=[i_d, i_q, i_d, i_q, v_d, v_q, w]
+            )
+        x = DynamicalVariables(
+            name=['z_cc_d', 'z_cc_q'],
+            init=[z_cc_d, z_cc_q]
+            )
+        
+        y = DynamicalVariables(
+            name=['v_out_d', 'v_out_q'],
+            init=[v_out_d, v_out_q])
+
+        return StateSpaceModel(A=A, B=B, C=C, D=D, u=u, x=x, y=y)
+
+    def get_quadratic_bilinear_model(self, z_cc_d: float, z_cc_q: float, i_d: float, i_q: float, v_d: float, v_q: float, w: float):
+        """
+        Returns the quadratic bilinear model of the inner current controller.
+        NOTE: Unlike the small-signal model, w*i_dq is a model input
+
+        QBM Inputs:
+        - z_cc_d [pu]: State variable associated to integral control block in d-axis
+        - z_cc_q [pu]: State variable associated to integral control block in q-axis
+        - i_ref_d [pu]: Reference current in d-axis
+        - i_ref_q [pu]: Reference current in q-axis
+        - i_d [pu]: Actual current or current to be regulated in d-axis
+        - i_q [pu]: Actual current or current to be regulated in q-axis
+        - v_d [pu]: Feed-forward voltage in d-axis
+        - v_q [pu]: Feed-forward voltage in q-axis
+        - w*i_d [pu]: frequency *TIMES* current to be regulated in d-axis
+        - w*i_q [pu]: frequency *TIMES* current to be regulated in q-axis
+
+        QBM Outputs:
+        - v_out_d [pu]: Output voltage of the inner current controller in d-axis
+        - v_out_q [pu]: Output voltage of the inner current controller in q-axis
         """
         
         kp, ki, kff, xf = self.kp_pu, self.ki_puHz, self.kffv, self.xf_pu
 
         A = np.zeros((2,2))
-        B = ki * np.hstack([np.eye(2), -np.eye(2), np.zeros((2,2))])
+        B = ki * np.hstack([np.eye(2), -np.eye(2), np.zeros((2,4))])
         C = np.eye(2)
         D = np.array([
-            [ kp,  0,-kp,-xf, kff,  0],
-            [  0, kp, xf,-kp,  0, kff]
+            [ kp,  0,-kp,  0, kff,  0,  0,-xf],
+            [  0, kp,  0,-kp,  0, kff, xf,  0]
         ])
 
-        ssm = StateSpaceModel(
-            A=A,
-            B=B,
-            C=C,
-            D=D,
-            u = DynamicalVariables(name=['i_cc_d_ref', 'i_cc_q_ref', 'i_cc_d', 'i_cc_q', 'v_cc_d', 'v_cc_q']), 
-            y = DynamicalVariables(name=['v_out_d', 'v_out_q']),
-            x = DynamicalVariables(
-                name=['z_cc_d', 'z_cc_q'],
-                init= [z_cc_d, z_cc_q]
-            ) 
-        )
-        return ssm
+        H = np.zeros((2, 4))
+        N = np.zeros((2, 16))
 
-    def get_quadratic_bilinear_model(self):
-        pass
+        u = DynamicalVariables(
+            name=['i_d_ref', 'i_q_ref', 'i_d', 'i_q', 'v_d', 'v_q', 'w*i_d', 'w*i_q'],
+            init=[i_d, i_q, i_d, i_q, v_d, v_q, w*i_d, w*i_q]
+            )
+        y = DynamicalVariables(name=['v_out_d', 'v_out_q'])
+        x = DynamicalVariables(
+            name=['z_cc_d', 'z_cc_q'],
+            init= [z_cc_d, z_cc_q]
+        ) 
+
+        return QuadraticBilinearModel(A=A, B=B, C=C, D=D, N=N, H=H, x=x, y=y, u=u)
+
+        
 
     def define_variables_emt_dq0(self):
 
@@ -167,7 +217,8 @@ class InnerCurrentController2A:
     def get_algebraics_step_emt_dq0(self, z_cc_d: float, z_cc_q: float, i_ref_d: float, i_ref_q: float, i_d: float, i_q: float, v_d: float, v_q: float, w: float):
         """
         Returns the current outputs of the inner current controller for the EMT simulation step. These current outputs can be used as current references.
-        Inputs:
+        
+        EMT Inputs:
         - z_cc_d [pu]: State variable associated to integral control block in d-axis
         - z_cc_q [pu]: State variable associated to integral control block in q-axis
         - i_ref_d [pu]: Reference current in d-axis
@@ -178,7 +229,7 @@ class InnerCurrentController2A:
         - v_q [pu]: Feed-forward voltage in q-axis
         - w [pu]: frequency
 
-        Outputs:
+        EMT Outputs:
         - v_out_d [pu]: Output voltage of the inner current controller in d-axis
         - v_out_q [pu]: Output voltage of the inner current controller in q-axis
         """ 
