@@ -19,10 +19,18 @@ class InitialConditionsEMT(NamedTuple):
 class PhaseLockedLoop3A:
     """
     A third-order model of a phase-locked loop with a filter.
+               ┌──────────┐     ┌─────────────┐       ┌──────┐     ┌──────┐
+    v_abc ────▶│ abc→dq0  │────▶│ 1/(tau*s+1) │──────▶│  PI  │────▶│ wb/s │───┬──▶ θ_pll
+               └────┬─────┘     └─────────────┘  v_q  └──────┘     └──────┘   │
+                    ▲                                                         │
+                    └─────────────────────────────────────────────────────────┘
 
+    Parameters
     - kp_pu: Proportional gain [pu]
     - ki_puHz: Integral gain [pu]
+    - tau: Filter constant [pu]
     - wbase: Nominal frequency [rad/s] of the system
+    - alpha: Quadratic bilinear artificial stabilization
     """
     kp_pu: float
     ki_puHz: float
@@ -155,8 +163,17 @@ class PhaseLockedLoop3A:
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 
 
-    def get_derivatives_step_emt_abc(self):
-        pass
+    def get_derivatives_step_emt_abc(self, v_pll_q, z_pll, theta_pll: float, v_a: float, v_b: float, v_c: float):
+        # Get voltage voltage of axis q
+        _, v_q, _ = abc2dq0(v_a, v_b, v_c, theta_pll)
+        # Voltage filter dynamics
+        d_v_pll_q = (1/self.tau) * (v_q - v_pll_q)
+
+        # Compute the derivatives of the state variables for the EMT simulation step
+        d_theta_pll = (self.kp_pu * v_pll_q) + z_pll + self.wbase
+        d_z_pll = self.ki_puHz * v_pll_q
+
+        return [d_v_pll_q, d_z_pll, d_theta_pll]
 
     def get_derivatives_step_emt_dq0(self, v_pll_q, z_pll, phase_pll, v_bus_D, v_bus_Q):
 
