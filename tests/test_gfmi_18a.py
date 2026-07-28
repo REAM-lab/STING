@@ -4,7 +4,7 @@ from sting import main
 from sting.system import System
 
 # Core components
-from sting.generator import InfiniteSource, GFLI10A
+from sting.generator import InfiniteSource, GFMI18A
 from sting.line import LinePiModel
 from sting.bus import Bus, Load
 from sting.timescales import Timepoint
@@ -26,31 +26,37 @@ load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
 line_1 = LinePiModel(
     name="lima_to_santiago", from_bus="lima", to_bus="santiago",
     base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5, g_pu=0.05, b_pu=0.06666666666667
+    r_pu=0.0001, x_pu=0.001, g_pu=0.0005, b_pu=0.001
     )
 # Generation
 source = InfiniteSource(
     name="lima_source", bus="lima", 
     minimum_active_power_MW=-200, maximum_active_power_MW=200, minimum_reactive_power_MVAR=-500, maximum_reactive_power_MVAR=500,
     cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5
+    r_pu=0.001, x_pu=0.005
 )
-gfli = GFLI10A(
-    name="santiago_gfl", bus="santiago",
+gfmi = GFMI18A(
+    name="santiago_gfmi", bus="santiago",
     # Power flow 
     minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # LCL filter
-    rf1_pu=0.02, xf1_pu=0.1, csh_pu=0.1, rsh_pu=1, 
+    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
     txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
-    # PLL and inner current controller
-    kp_pll_pu=1, ki_pll_puHz=5, kp_cc_pu=1, ki_cc_puHz=5, kff_cc=0.75
+    # Inner voltage controller
+    kp_vc_pu=0.562, ki_vc_puHz=484.989, kffi_vc=0.80,
+    # Inner current controller
+    kp_cc_pu=4.77, ki_cc_puHz=60, kffv_cc=0,
+    # Virtual inertia
+    h_s=2, kd_pu=20, 
+    # Voltage droop
+    k_q_pu=0.2, w_q_puHz=1000
 )
 
 system = System(case_directory=case_directory)
 
 # Build grid model
-for component in [bus_1, bus_2, load_1, load_2, line_1, source, gfli, t1]:
+for component in [bus_1, bus_2, load_1, load_2, line_1, source, gfmi, t1]:
     system.add(component)
 
 system.apply("post_system_init", system)
@@ -61,7 +67,7 @@ system.apply("post_system_init", system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.05 if t >= 0.1 else 0.0
+    return 0.05 if t >= 100 else 0.0
 
 def step2(t):
     return -0.05 if t >= 100 else 0.0
@@ -70,9 +76,9 @@ inputs = {
     'infinite_sources_0': {
         'v_ref_d': lambda t: 0
         }, 
-    'gfli_10a_0': {
-        'i_ref_d': step1,
-        'i_ref_q': step2,
+    'gfmi_18a_0': {
+        'p_ref': step1,
+        'q_ref': step2,
         }
 }
 

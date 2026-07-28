@@ -16,7 +16,8 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 class InitialConditionsEMT(NamedTuple):
     """Store the initial conditions of the reactive power controller for the EMT simulation."""
 
-    q_f: float
+    q_ref: float
+    v_ref: float
 
 # ------------------------------------
 # Main class
@@ -32,19 +33,21 @@ class VoltageDroopController1A:
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, q: float) -> InitialConditionsEMT:
+    def get_steady_state(self, q_ref: float, v_ref: float) -> InitialConditionsEMT:
         """
         Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
         
         Inputs:
         - q [pu]: Steady-state reactive power
+        - v_ref [pu]: Steady-state reference voltage
          
         Outputs:
         - emt_init: Initial conditions for the EMT simulation
         """
 
         self.emt_init = InitialConditionsEMT(
-            q_f = q
+            q_ref = q_ref,
+            v_ref = v_ref
         )
 
         return self.emt_init
@@ -64,7 +67,7 @@ class VoltageDroopController1A:
         # Compute derivative of the state variable associated to low-pass filter
         d_q_f = self.w_q_puHz * (q - q_f)
 
-        return d_q_f
+        return [d_q_f]
 
     def get_algebraics_step_emt_dq0(self, v_ref: float, q_ref: float, q_f: float) -> list[float]:
         """
