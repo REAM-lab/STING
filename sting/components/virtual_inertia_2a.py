@@ -11,6 +11,8 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 # ---------------------------------------
 class InitialConditionsEMT(NamedTuple):
     angle: float
+    w: float
+    p_ref: float
 
 # ---------------------------------------
 # Main class
@@ -22,17 +24,17 @@ class VirtualInertia2A:
 
     Parameters:
     - kd_w_pu: damping gain [pu] of the active power controller
-    - h_sec: virtual inertia [s]
+    - h_s: virtual inertia [s]
     - w_nom: nominal frequency [rad/s] of the system
 
     """
+    h_s: float
     kd_w_pu: float
-    h_sec: float
     w_nom: float
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, angle: float) -> InitialConditionsEMT:
+    def get_steady_state(self, angle: float, w: float, p_ref: float) -> InitialConditionsEMT:
         """
         Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
         
@@ -45,12 +47,13 @@ class VirtualInertia2A:
 
         self.emt_init = InitialConditionsEMT(
             angle = angle,
-            w = 1.0
+            w = w,
+            p_ref = p_ref
         )
 
         return self.emt_init
 
-    def get_differential_step_emt(self, w: float, p_ref: float, p: float) -> list[float]:
+    def get_derivatives_step_emt_abc(self, w: float, p_ref: float, p: float) -> list[float]:
         """
         Compute the derivates with respect to time of the states of the virtual inertia model
         for the next time step in the EMT simulation.
@@ -67,7 +70,7 @@ class VirtualInertia2A:
     
         # Extract the list of parameters
         kd_w = self.kd_w_pu  # damping gain of active power controller
-        h = self.h_sec  # virtual inertia
+        h = self.h_s  # virtual inertia
         w_nom = self.w_nom  # nominal frequency of the system
 
         # Derivative of the angle

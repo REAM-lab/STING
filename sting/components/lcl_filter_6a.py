@@ -8,6 +8,8 @@ from sting.utils.transformations import abc2dq0, dq02abc
 
 
 class InitialConditionsEMT(NamedTuple):
+    angle_ref: float
+
     # Bus-side voltage and currents
     v_bus_d: float
     v_bus_q: float
@@ -135,6 +137,9 @@ class LCLFilter6A:
         
 
         self.emt_init = InitialConditionsEMT(
+            # Angle (in radians)
+            angle_ref = angle_ref,
+
             # Bus
             v_bus_d=v_bus_dq.real,
             v_bus_q=v_bus_dq.imag,
@@ -307,8 +312,7 @@ class LCLFilter6A:
         return [x, u]
                 
 
-
-    def differential_step_emt_abc(
+    def get_derivatives_step_emt_abc(
             self, 
             i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs
@@ -335,7 +339,7 @@ class LCLFilter6A:
 
         return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
     
-    def differential_step_emt_dq0(
+    def get_derivatives_step_emt_dq0(
             self,
             i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q, # states
             v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w, # inputs

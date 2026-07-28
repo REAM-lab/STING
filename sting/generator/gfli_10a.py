@@ -40,7 +40,7 @@ class GFLI10A(Generator):
     # Current controller parameters
     kp_cc_pu: float
     ki_cc_puHz: float
-    kff_cc_pu: float
+    kff_cc: float
 
     # Components
     lcl_filter: LCLFilter6A = field(init=False)
@@ -50,7 +50,7 @@ class GFLI10A(Generator):
     def __post_init__(self):
         self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_pu, self.ki_pll_puHz, self.wbase)
-        self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc_pu, self.xf1_pu + self.xf2_pu)
+        self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
 
     @property
     def rf2_pu(self):
@@ -266,7 +266,7 @@ class GFLI10A(Generator):
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
 
         # Compute the time derivatives of the LCL filter
-        d_x_lcl = self.lcl_filter.differential_step_emt_abc(
+        d_x_lcl = self.lcl_filter.get_derivatives_step_emt_abc(
             i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states in LCL filter
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs to LCL filter
             )

@@ -33,10 +33,10 @@ class PhaseLockedLoop2A:
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, v_bus_mag, relative_phase_deg):
+    def get_steady_state(self, v_mag, relative_phase_deg):
 
         theta_pll = relative_phase_deg * np.pi / 180
-        v_a, v_b, v_c = dq02abc(v_bus_mag, 0, 0, theta_pll)
+        v_a, v_b, v_c = dq02abc(v_mag, 0, 0, theta_pll)
 
         self.emt_init = InitialConditionsEMT(
             theta_pll = theta_pll,
