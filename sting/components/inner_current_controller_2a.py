@@ -24,7 +24,7 @@ class InitialConditionsEMT(NamedTuple):
 @dataclass(slots=True)
 class InnerCurrentController2A:
     """
-    Models a second-order inner current control with the following structure:
+    Models a second-order inner current controller with the following structure:
                                      ┌──────┐
     v_dq ───────────────────────────▶│ kffv │───────────────┐
                                      └──────┘               │

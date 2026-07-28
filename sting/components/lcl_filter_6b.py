@@ -35,7 +35,18 @@ class InitialConditionsEMT(NamedTuple):
 class LCLFilter6B:
     """
     The LCL filter connects the VSC to the grid. It has three branches: the first branch (RL) connects
-    the VSC to the series shunt element (RC), and the third branch (RL) connects the series shunt element to the grid.
+    the VSC to the series shunt element (RC), and the third branch (RL) connects the series shunt 
+    element to the grid. Graphical representation of the LCL filter:
+
+                  rf1   xf1         rf2   xf2
+    Converter ├───VVV───UUU────┬────VVV───UUU───┤ PCC / Grid Bus
+                               <
+                           rsh >
+                               │
+                              ─┴─ 
+                          csh ─┬─
+                               │
+                            Neutral
 
     Parameters:
     - rf1_pu: resistance [pu] of first branch of filter
@@ -45,16 +56,6 @@ class LCLFilter6B:
     - rsh_pu: resistance [pu] of series RC shunt
     - csh_pu: capacitance [pu] of series RC shunt
     - wbase: nominal frequency [rad/s] of the system
-
-    Graphical representation of the LCL filter:
-
-    converter |----rf1----xf1-------+------rf2----xf2----| pcc or grid bus
-                                    |
-                                    rsh
-                                    |
-                                    csh
-                                    |
-                                    neutral
     """
     rf1_pu: float
     xf1_pu: float

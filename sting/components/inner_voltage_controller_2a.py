@@ -23,16 +23,17 @@ class InitialConditionsEMT(NamedTuple):
 @dataclass(slots=True)
 class InnerVoltageController2A:
     """
-    Models an inner voltage control of the structure shown below: 
-
-    i_dq --------> [kffi] ---------------------> [+1] ------
-                                                            |
-    v_ref_dq ----> [+1] --- + -----> [PI controller] ------ + ---> i_out_dq
-                            |                               |
-                           [-1]                             |
-                            |                               |
-    v_dq --------------------- x --->[j cf] ----> [+1] -----
-    w -------------------------|
+    Models a second-order inner voltage controller with the following structure: 
+                                     ┌──────┐
+    i_dq ───────────────────────────▶│ kffi │───────────────┐
+                                     └──────┘               │
+                  [+]             ┌───────────────┐     [+] ▼[+]
+    v_ref_dq ──────▶──┬──────────▶│ PI Controller │──────▶──┼────▶ i_out_dq
+                      ▲[-]        └───────────────┘         ▲[+]
+                      │                                     │
+    v_dq ─────────────┴─────────────▶┌────────┐             │
+                                     │ j * cf │─────────────┘
+    w ──────────────────────────────▶└────────┘
 
     where:
     - i_dq: feed-forward voltage in dq frame
@@ -45,9 +46,6 @@ class InnerVoltageController2A:
     - ki_puHz: integral gain in per unit per Hz
     - kffv: feed-forward gain
     - cf_pu: capacitance in per unit
-
-
-    TODO: Add w as an input in small signal model
     """
 
     kp_pu: float  # Proportional gain
