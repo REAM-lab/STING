@@ -284,9 +284,9 @@ class GFMI18A(Generator):
         
                 │   y_stack  │   u_sys
         ───────────────────────────────────────────────
-        u_stack │   F        │   H
+        u_stack │   F        │   G
         ───────────────────────────────────────────────
-        y_sys   │   G        │   L
+        y_sys   │   H        │   L
 
         order ──▶               0   1   2,3        4,5        6,7        8,9        10,11      12,13        0       1       2       3,4 
         ▼                   │   Δϕ  Δω  Δv_ref_dq  Δi_ref_dq  Δv_ref_dq  Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │   Δp_ref  Δq_ref  Δv_ref  Δv_bus_DQ
@@ -331,8 +331,8 @@ class GFMI18A(Generator):
         d = dq2DQ(i_bus_d, i_bus_q, angle)
 
         F = np.zeros((30, 14))
-        H = np.zeros((30, 5))
-        G = np.zeros((2, 14))
+        G = np.zeros((30, 5))
+        H = np.zeros((2, 14))
         L = np.zeros((2, 5))
 
         # Fill in the interconnection matrices
@@ -353,23 +353,23 @@ class GFMI18A(Generator):
         F[27:29, 0:1] = a
         F[29, 1] = 1
 
-        # H matrix
-        H[0, 0] = 1
-        H[5, 1] = 1
-        H[6, 2] = 1
-        H[27:29, 3:6] = b
-
         # G matrix
-        G[0:2, 0:1] = c
-        G[0:2, 10:12] = d
+        G[0, 0] = 1
+        G[5, 1] = 1
+        G[6, 2] = 1
+        G[27:29, 3:6] = b
 
-        return F, H, G, L
+        # L matrix
+        L[0:2, 0:1] = c
+        L[0:2, 10:12] = d
+
+        return F, G, H, L
 
     def _build_small_signal_model(self):
 
 
         # Create each components small-signal model
-        inertia_ssm = self.virtual_inertia.get_small_signal_model(
+        virtual_inertia_ssm = self.virtual_inertia.get_small_signal_model(
             i_d = self.lcl_filter.emt_init.i_bus_d,
             i_q = self.lcl_filter.emt_init.i_bus_q,
             v_d = self.lcl_filter.emt_init.v_sh_d,
@@ -406,19 +406,37 @@ class GFMI18A(Generator):
             v_q = self.lcl_filter.emt_init.v_sh_q
         )
 
+        lcl_filter_ssm = self.lcl_filter.get_small_signal_model(
+            i_vsc_d = self.lcl_filter.emt_init.i_vsc_d,
+            i_vsc_q = self.lcl_filter.emt_init.i_vsc_q,
+            i_bus_d = self.lcl_filter.emt_init.i_bus_d,
+            i_bus_q = self.lcl_filter.emt_init.i_bus_q,
+            v_sh_d = self.current_controller.emt_init.v_sh_d,
+            v_sh_q = self.current_controller.emt_init.v_sh_q
+        )
+
         # Inputs and outputs
         u = DynamicalVariables(
-            name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
-            type=["device", "device", "grid", "grid"],
-            init=[init.i_bus_d, init.i_bus_q,init.v_bus_D, init.v_bus_Q])
+            name=["p_ref", "q_ref", "v_ref", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "device", "grid", "grid"],
+            init=[self.virtual_inertia.emt_init.p_ref,
+                  self.voltage_droop.emt_init.q_ref,
+                  self.voltage_droop.emt_init.v_ref,
+                  self.lcl_filter.emt_init.v_bus_D,
+                  self.lcl_filter.emt_init.v_bus_Q])
 
         y = DynamicalVariables(
-            name=['i_bus_D', 'i_bus_Q'],
-            init=[init.i_bus_D, init.i_bus_Q])
+            name=["i_bus_D", "i_bus_Q"],
+            init=[self.lcl_filter.emt_init.i_bus_D, 
+                  self.lcl_filter.emt_init.i_bus_Q])
 
         # Generate small-signal model
-        components = [cc_ssm, pll_ssm, lcl_ssm]
-        connections = self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, relative_phase_deg)
+        components = [virtual_inertia_ssm, voltage_droop_ssm, voltage_controller_ssm, current_controller_ssm, lcl_filter_ssm]
+        connections = self.get_interconnections_ssm(self.lcl_filter.emt_init.v_bus_D, 
+                                                    self.lcl_filter.emt_init.v_bus_Q,
+                                                    self.lcl_filter.emt_init.i_bus_d, 
+                                                    self.lcl_filter.emt_init.i_bus_q,
+                                                    self.virtual_inertia.emt_init.angle)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
         return self.ssm
