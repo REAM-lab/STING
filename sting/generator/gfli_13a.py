@@ -95,7 +95,49 @@ class GFLI13A(Generator):
 
     
     def _build_small_signal_model(self):
-        pass
+        # Unpack OPF solutions
+        v_mag, phase_deg = self.power_flow_variables.vmag_bus, self.power_flow_variables.vphase_bus
+        p_bus, q_bus = self.power_flow_variables.p_bus, self.power_flow_variables.q_bus
+        # Initial conditions in the LCL filter
+        i_bus_d, i_bus_q = self.lcl_filter.emt_init.i_bus_d, self.lcl_filter.emt_init.i_bus_q
+        i_vsc_d, i_vsc_q = self.lcl_filter.emt_init.i_vsc_d, self.lcl_filter.emt_init.i_vsc_q
+        v_sh_d, v_sh_q = self.lcl_filter.emt_init.v_sh_d, self.lcl_filter.emt_init.v_sh_q
+
+        # Create each components small-signal model
+        pll_ssm = self.phase_locked_loop.get_small_signal_model(
+            v_bus_mag=v_mag, relative_phase_deg=phase_deg
+            )
+        apc_ssm = self.active_power_controller.get_small_signal_model(
+            z_pi=i_bus_d, p_ref=p_bus
+            )
+        rpc_ssm = self.reactive_power_controller.get_small_signal_model(
+            z_pi=i_bus_q, q_ref=q_bus
+            )
+        cc_ssm = self.current_controller.get_small_signal_model(
+            z_cc_d=self.current_controller.emt_init.z_cc_d, z_cc_q=self.current_controller.emt_init.z_cc_q
+            )
+        lcl_ssm = self.lcl_filter.get_small_signal_model(
+            i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_d=i_bus_d, i_bus_q=i_bus_q, v_sh_d=v_sh_d, v_sh_q=v_sh_q
+            )
+
+        init = None
+
+        # Inputs and outputs
+        u = DynamicalVariables(
+            name=["p_ref", "q_ref", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "grid", "grid"],
+            init=[p_bus, q_bus, init.v_bus_D, init.v_bus_Q])
+
+        y = DynamicalVariables(
+            name=['i_bus_D', 'i_bus_Q'],
+            init=[init.i_bus_D, init.i_bus_Q])
+
+        # Generate small-signal model
+        components = [pll_ssm, apc_ssm, rpc_ssm, cc_ssm, lcl_ssm]
+        connections = None #self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, phase_deg)
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.ssm
 
 
     def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):

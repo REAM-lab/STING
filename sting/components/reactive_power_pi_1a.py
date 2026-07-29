@@ -50,6 +50,18 @@ class ReactivePowerPI1A:
 
         return self.emt_init
 
+    def get_small_signal_model(self, z_pi, q_ref):
+        ssm = StateSpaceModel(
+            A = np.array([[0]]),
+            B = self.ki_puHz * np.array([[1, -1]]),
+            C = np.array([[1]]),
+            D = self.kp_pu * np.array([[1, -1]]),
+            x = DynamicalVariables(name=['z_pi'], init=z_pi),
+            u = DynamicalVariables(name=["q_ref", "q"], init = [q_ref, q_ref]),
+            y = DynamicalVariables(name=['i_q_ref'])
+        )
+        return ssm
+
     def define_variables_emt_abc(self):
 
         # States 

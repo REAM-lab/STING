@@ -19,8 +19,8 @@ class InitialConditionsEMT(NamedTuple):
 class PhaseLockedLoop3A:
     """
     A third-order model of a phase-locked loop with a filter.  
-                                                                w_base                           
-                                                                  │
+                                                              w_base                           
+                                                                 │
                ┌─────────┐     ┌─────────────┐     ┌────┐    [+] ▼[+]  ┌──────┐
     v_abc ────▶│ abc→dq0 │────▶│ 1/(tau*s+1) │────▶│ PI │─────▶──┴────▶│ wb/s │───┬──▶ θ_pll
                └───┬─────┘     └─────────────┘ v_q └────┘    Δw        └──────┘   │
