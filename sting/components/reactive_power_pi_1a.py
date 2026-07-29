@@ -45,7 +45,7 @@ class ReactivePowerPI1A:
         self.emt_init = InitialConditionsEMT(
             q_ref = q_ref,
             i_ref_q = i_ref_q,
-            z_pi = 0 
+            z_pi = i_ref_q
         )
 
         return self.emt_init
