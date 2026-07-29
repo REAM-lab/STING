@@ -45,7 +45,7 @@ class ActivePowerPI1A:
         self.emt_init = InitialConditionsEMT(
             p_ref = p_ref,
             i_ref_d = i_ref_d,
-            z_pi = 0
+            z_pi = i_ref_d
         )
 
         return self.emt_init

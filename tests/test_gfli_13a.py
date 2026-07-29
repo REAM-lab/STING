@@ -45,8 +45,8 @@ gfli = GFLI13A(
     txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
     # PLL, inner current controller, power controllers
     kp_pll_pu=1, ki_pll_puHz=5, tau_pll=1,
-    kp_cc_pu=2, ki_cc_puHz=6, kff_cc=0.75,
-    kp_pc_pu=3, ki_pc_puHz=1
+    kp_cc_pu=1, ki_cc_puHz=5, kff_cc=0.75,
+    kp_pc_pu=0.1, ki_pc_puHz=0.5
 )
 
 system = System(case_directory=case_directory)
@@ -63,15 +63,15 @@ system.apply("post_system_init", system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.05 if t >= 0.1 else 0.0
+    return 0.5 if t >= 0.5 else 0.0
 
 def step2(t):
-    return -0.05 if t >= 100 else 0.0
+    return -0.5 if t >= 0.5 else 0.0
 
 inputs = {
-    'gfli_10a_0': {
-        'i_ref_d': step1,
-        'i_ref_q': step2,
+    'gfli_13a_0': {
+        'p_ref': step1,
+        'q_ref': step2,
         }
 }
 
