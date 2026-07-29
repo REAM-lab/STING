@@ -85,32 +85,69 @@ class InnerCurrentController2A:
         """
         Returns the small-signal state-space model of the inner current controller.
 
-        SSM Inputs:
-        - z_cc_d [pu]: State variable associated to integral control block in d-axis
-        - z_cc_q [pu]: State variable associated to integral control block in q-axis
-        - i_ref_d [pu]: Reference current in d-axis
-        - i_ref_q [pu]: Reference current in q-axis
-        - i_d [pu]: Actual current or current to be regulated in d-axis
-        - i_q [pu]: Actual current or current to be regulated in q-axis
-        - v_d [pu]: Feed-forward voltage in d-axis
-        - v_q [pu]: Feed-forward voltage in q-axis
-        - w [pu]: frequency
+        Inputs:
+        - z_cc_d [pu]: Initial value of the state variable associated to integral control block in d-axis
+        - z_cc_q [pu]: Initial value of the state variable associated to integral control block in q-axis
+        - i_ref_d [pu]: Initial value of the reference current in d-axis
+        - i_ref_q [pu]: Initial value of the reference current in q-axis
+        - i_d [pu]: Initial value of the actual current or current to be regulated in d-axis
+        - i_q [pu]: Initial value of the actual current or current to be regulated in q-axis
+        - v_d [pu]: Initial value of the feed-forward voltage in d-axis
+        - v_q [pu]: Initial value of the feed-forward voltage in q-axis
+        - w [pu]: Initial value of the frequency
 
-        SSM Outputs:
-        - v_out_d [pu]: Output voltage of the inner current controller in d-axis
-        - v_out_q [pu]: Output voltage of the inner current controller in q-axis
-        """
-        v_out_d = z_cc_d + self.kffv * v_d - self.xf_pu * i_q * w
-        v_out_q = z_cc_q + self.kffv * v_q + self.xf_pu * i_d * w
+        Outputs:
+        - StateSpaceModel
         
+        Equations to derive the small-signal model:
+        dΔz_cc_d/dt = ki * (Δi_ref_d - Δi_d)
+        dΔz_cc_q/dt = ki * (Δi_ref_q - Δi_q)
+        Δv_out_d = Δz_cc_d + kp * (Δi_ref_d - Δi_d) + kff * Δv_d - xf * (w)ₒ * Δi_q - xf * (i_q)ₒ * Δw
+        Δv_out_q = Δz_cc_q + kp * (Δi_ref_q - Δi_q) + kff * Δv_q + xf * (w)ₒ * Δi_d + xf * (i_d)ₒ * Δw
+
+        State vector, input vector, and output vector are:
+        x = [Δz_cc_d, Δz_cc_q]
+        u = [Δi_ref_d, Δi_ref_q, Δi_d, Δi_q, Δv_d, Δv_q, Δw]
+        y = [Δv_out_d, Δv_out_q]
+
+        where:
+        - z_cc_d: State variable associated to integral control block in d-axis
+        - z_cc_q: State variable associated to integral control block in q-axis
+        - i_ref_d: Reference current in d-axis
+        - i_ref_q: Reference current in q-axis
+        - i_d: Actual current or current to be regulated in d-axis
+        - i_q: Actual current or current to be regulated in q-axis
+        - v_d: Feed-forward voltage in d-axis
+        - v_q: Feed-forward voltage in q-axis
+        - w: frequency
+        - v_out_d: Output voltage of the inner current controller in d-axis
+        - v_out_q: Output voltage of the inner current controller in q-axis     
+
+        State-space representation in tableau form:
+        
+                │   Δx  │   Δu
+        ────────────────────────
+        dΔx/dt  │   A   │   B 
+        ────────────────────────
+        Δy      │   C   │   D
+
+                    │ Δz_cc_d  Δz_cc_q  │   Δi_ref_d   Δi_ref_q  Δi_d     Δi_q         Δv_d    Δv_q  Δw
+        ───────────────────────────────────────────────────────────────────────────────────────────────────
+        dΔz_cc_d/dt │  0       0        │   ki         0         -ki      0            0       0     0
+        dΔz_cc_q/dt │  0       0        │   0          ki        0        -ki          0       0     0  
+        ───────────────────────────────────────────────────────────────────────────────────────────────────
+        Δv_out_d    │  1       0        │   kp         0         -kp      -xf*(w)ₒ     kff     0     -xf*i_q
+        Δv_out_q    │  0       1        │   0          kp        xf*(w)ₒ  -kp          0       kff   xf*i_d
+        """
+       
         kp, ki, kff, xf = self.kp_pu, self.ki_puHz, self.kffv, self.xf_pu
 
         A = np.zeros((2,2))
         B = ki * np.hstack([np.eye(2), -np.eye(2), np.zeros((2,3))])
         C = np.eye(2)
         D = np.array([
-            [ kp,  0,-kp,-xf*w, kff,  0, -xf*i_q],
-            [  0, kp, xf*w,-kp,  0, kff, xf*i_d]
+            [ kp,  0,   -kp,    -xf*w, kff,  0, -xf*i_q],
+            [  0, kp,   xf*w,   -kp,  0,    kff, xf*i_d]
         ])
 
         u = DynamicalVariables(
@@ -122,6 +159,9 @@ class InnerCurrentController2A:
             init=[z_cc_d, z_cc_q]
             )
         
+        v_out_d = z_cc_d + self.kffv * v_d - self.xf_pu * i_q * w # Output voltage of the inner current controller in d-axis
+        v_out_q = z_cc_q + self.kffv * v_q + self.xf_pu * i_d * w # Output voltage of the inner current controller in q-axis
+
         y = DynamicalVariables(
             name=['v_out_d', 'v_out_q'],
             init=[v_out_d, v_out_q])

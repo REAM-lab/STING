@@ -127,3 +127,100 @@ class InnerVoltageController2A:
         i_out_q = out_pi_q + self.kffi * i_q + self.cf_pu * v_d * w
         
         return [i_out_d, i_out_q]
+
+    def get_small_signal_model(self, z_vc_d: float, z_vc_q: float, v_d: float, v_q: float, i_d: float, i_q: float, w: float):
+        """
+        Returns the small-signal model of the inner voltage controller.
+
+        Inputs:
+        - z_vc_d [pu]: Initial value of the state variable associated to integral control block in d-axis
+        - z_vc_q [pu]: Initial value of the state variable associated to integral control block in q-axis
+        - v_d [pu]: Initial value of actual voltage to be regulated in d-axis
+        - v_q [pu]: Initial value of actual voltage to be regulated in q-axis
+        - i_d [pu]: Initial value of feed-forward current in d-axis
+        - i_q [pu]: Initial value of feed-forward current in q-axis
+        - w [pu]: Initial value of frequency
+
+        Outputs:
+        - ssm: State-space model object.
+
+        Equations to derive the small-signal model:
+        dΔz_vc_d/dt = ki * (Δv_ref_d - Δv_d)
+        dΔz_vc_q/dt = ki * (Δv_ref_q - Δv_q)
+        Δi_out_d = Δz_vc_d + kp * (Δv_ref_d - Δv_d) + kff * Δi_d - cf * (w)ₒ * Δv_q - cf * (v_q)ₒ * Δw
+        Δi_out_q = Δz_vc_q + kp * (Δv_ref_q - Δv_q) + kff * Δi_q + cf * (w)ₒ * Δv_d + cf * (v_d)ₒ * Δw
+        
+        where:
+        - z_vc_d: State variable associated to integral control block in d-axis
+        - z_vc_q: State variable associated to integral control block in q-axis
+        - v_ref_d: Reference voltage in d-axis
+        - v_ref_q: Reference voltage in q-axis
+        - v_d: Actual voltage to be regulated in d-axis
+        - v_q: Actual voltage to be regulated in q-axis
+        - i_d: Feed-forward current in d-axis
+        - i_q: Feed-forward current in q-axis
+        - w: frequency
+        - i_out_d: Output current of the inner voltage controller in d-axis
+        - i_out_q: Output current of the inner voltage controller in q-axis
+
+        State vector, input vector, and output vector are:
+        Δx = [Δz_vc_d, Δz_vc_q]
+        Δu = [Δv_ref_d, Δv_ref_q, Δv_d, Δv_q, Δi_d, Δi_q, Δw]
+        Δy = [Δi_out_d, Δi_out_q]
+
+        State-space representation in tableau form:
+
+                │   Δx  │   Δu
+        ────────────────────────
+        dΔx/dt  │   A   │   B
+        ────────────────────────
+        Δy      │   C   │   D
+
+                    │ Δz_vc_d  Δz_vc_q  │   Δv_ref_d  Δv_ref_q   Δv_d       Δv_q        Δi_d  Δi_q  Δw
+        ────────────────────────────────────────────────────────────────────────────────────────────────────────
+        dΔz_vc_d/dt │  0       0        │   ki         0         -ki        0           0     0     0
+        dΔz_vc_q/dt │  0       0        │   0          ki        0          -ki         0     0     0     
+        ────────────────────────────────────────────────────────────────────────────────────────────────────────
+        Δi_out_d    │  1       0        │   kp         0         -kp        -cf*(w)ₒ    kff   0     -cf * (v_q)ₒ
+        Δi_out_q    │  0       1        │   0          kp        cf*(w)ₒ    -kp         0     kff   cf * (v_d)ₒ
+
+        """
+
+        kp, ki, kff, cf = self.kp_pu, self.ki_puHz, self.kffi, self.cf_pu
+
+        A = np.zeros((2, 2))
+        B = np.array([
+            [ki, 0, -ki, 0, 0, 0, 0],
+            [0, ki, 0, -ki, 0, 0, 0]
+        ])
+        C = np.eye(2)
+        D = np.array([
+            [kp, 0, -kp, -cf * w, kff, 0, -cf * v_q],
+            [0, kp, cf * w, -kp, 0, kff, cf * v_d]
+        ])
+
+        x = DynamicalVariables(
+            name=['z_vc_d', 'z_vc_q'],
+            init=[z_vc_d, z_vc_q]
+        )
+        u = DynamicalVariables(
+            name=['v_ref_d', 'v_ref_q', 'v_d', 'v_q', 'i_d', 'i_q', 'w']
+        )
+
+        i_out_d = z_vc_d + self.kffi * i_d - self.cf_pu * v_q * w # Output current of the inner voltage controller in d-axis
+        i_out_q = z_vc_q + self.kffi * i_q + self.cf_pu * v_d * w # Output current of the inner voltage controller in q-axis
+
+        y = DynamicalVariables(
+            name=['i_out_d', 'i_out_q'],
+            init=[i_out_d, i_out_q]
+        )
+
+        return StateSpaceModel(
+            A = A,
+            B = B,
+            C = C,
+            D = D,
+            x = x,
+            u = u,
+            y = y
+        )

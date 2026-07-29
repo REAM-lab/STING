@@ -81,3 +81,87 @@ class VoltageDroopController1A:
         v_q_ref = 0.0
 
         return [v_d_ref, v_q_ref]
+
+    def get_small_signal_model(self, i_d, i_q, v_d, v_q, q_ref, v_ref):
+        """
+        Returns the small-signal model of the voltage droop control.
+
+        Inputs:
+        - i_d [pu]: initial d-axis current. For example, it can be the current going to the point of common coupling (PCC).
+        - i_q [pu]: initial q-axis current. For example, it can be the current going to the point of common coupling (PCC).
+        - v_d [pu]: initial d-axis voltage. For example, it can be the voltage of the shunt of the LCL filter.
+        - v_q [pu]: initial q-axis voltage. For example, it can be the voltage of the shunt of the LCL filter.
+        - q_ref [pu]: initial reference reactive power.
+        - v_ref [pu]: initial reference voltage.
+
+        Outputs:
+        - ssm: State-space model object.
+
+        Equations to derive the small-signal model:
+        dΔq_f/dt = w_q_puHz * (Δq - Δq_f)
+                 = w_q_puHz * ( -(v_d)ₒ * Δi_q + (v_q)ₒ * Δi_d + (i_d)ₒ * Δv_q - (i_q)ₒ * Δv_d - Δq_f)
+        dΔv_d_ref/dt = Δv_ref + k_q_pu * (Δq_ref - Δq_f)
+
+        State vector, input vector, and output vector are:
+        Δx = [Δq_f]
+        Δu = [Δq_ref, Δv_ref, Δi_d, Δi_q, Δv_d, Δv_q]
+        Δy = [Δv_d_ref, Δv_q_ref]
+
+        where:
+        - q_f: State variable associated to low-pass filter
+        - q_ref: Reference reactive power
+        - v_ref: Reference voltage
+        - i_d: d-axis current
+        - i_q: q-axis current
+        - v_d: d-axis voltage
+        - v_q: q-axis voltage  
+
+        State-space representation in tableau form:
+        
+                │   Δx  │   Δu
+        ────────────────────────
+        dΔx/dt  │   A   │   B 
+        ────────────────────────
+        Δy      │   C   │   D
+
+                    │ Δq_f      │   Δq_ref    Δv_ref    Δi_d            Δi_q              Δv_d            Δv_q
+        ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        dΔq_f/dt    │ -w_q      │   0         0         w_q * (v_q)ₒ    -w_q * (v_d)ₒ     -w_q * (i_q)ₒ    w_q * (i_d)ₒ
+        ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        Δv_d_ref    │ 0         │   k_q       1         0               0                 0                0
+        Δv_q_ref    │ 0         │   0         0         0               0                 0                0
+        """
+
+        w_q = self.w_q_puHz
+        k_q = self.k_q_pu
+
+        A = np.array([
+            [-w_q]
+        ])
+        B = np.array([
+            [0, 0, w_q * v_q, -w_q * v_d, -w_q * i_q, w_q * i_d]
+        ])
+        C = np.array([
+            [0],
+            [0]
+        ])
+        D = np.array([
+            [k_q, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0]
+        ])
+
+        ssm = StateSpaceModel(
+            A = A,
+            B = B,
+            C = C,
+            D = D,
+            x = DynamicalVariables(
+                name=["q_f"],
+                init=[q_ref]
+            ),
+            u = DynamicalVariables(name=["q_ref", "v_ref", "i_d", "i_q", "v_d", "v_q"],
+                                   init=[q_ref, v_ref, i_d, i_q, v_d, v_q]),
+            y = DynamicalVariables( name=["v_d_ref", "v_q_ref"],
+                                    init=[v_ref, 0])
+        )
+        return ssm
