@@ -36,6 +36,18 @@ def dq02abc(x_d, x_q, x_0, theta):
 
     return x_a, x_b, x_c
 
+def R_dq2DQ(theta):
+    R = np.array([
+        [ np.cos(theta),-np.sin(theta) ],
+        [ np.sin(theta), np.cos(theta) ]
+    ])
+    return R
+
+
+def R_DQ2dq(theta):
+    return R_dq2DQ(theta).T
+
+
 def dq2DQ(x_d: float, x_q: float, theta: float) -> tuple[float, float]:
     """
     Transforms dq coordinates to DQ coordinates.
@@ -52,16 +64,10 @@ def dq2DQ(x_d: float, x_q: float, theta: float) -> tuple[float, float]:
     x_D (float): value of axis D.
     x_Q (float): value of axis Q.
     """
-
-    R = np.array([
-            [ np.cos(theta),-np.sin(theta) ],
-            [ np.sin(theta), np.cos(theta) ]
-    ])
-
+    R = R_dq2DQ(theta)
     x_DQ = np.matmul(R, np.array([ x_d, x_q ]))
-    x_D, x_Q = x_DQ[0], x_DQ[1]
 
-    return x_D, x_Q
+    return x_DQ[0], x_DQ[1]
 
 def DQ2dq(x_D: float, x_Q: float, theta: float) -> tuple[float, float]:
     """
@@ -79,16 +85,10 @@ def DQ2dq(x_D: float, x_Q: float, theta: float) -> tuple[float, float]:
     x_d (float): value of axis d.
     x_q (float): value of axis q.
     """
-
-    R = np.array([
-            [ np.cos(theta), np.sin(theta) ],
-            [-np.sin(theta), np.cos(theta) ]
-    ])
-
+    R = R_DQ2dq(theta)
     x_dq = np.matmul(R, np.array([ x_D, x_Q ]))
-    x_d, x_q = x_dq[0], x_dq[1]
-
-    return x_d, x_q
+    
+    return x_dq[0], x_dq[1]
 
 
 
