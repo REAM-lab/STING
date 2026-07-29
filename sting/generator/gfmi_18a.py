@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
-from sting.utils.transformations import dq02abc, abc2dq0
+from sting.utils.transformations import dq02abc, abc2dq0, dq2DQ, DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
 from sting.components import LCLFilter6A, InnerVoltageController2A, InnerCurrentController2A, VirtualInertia2A, VoltageDroopController1A
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -252,3 +252,173 @@ class GFMI18A(Generator):
         i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value      
 
         return [i_bus_a, i_bus_b, i_bus_c]
+
+    def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
+        """
+        Construct the interconnection matrices F, H, G, and H that satisfies:
+        u_stack = F * y_stack + H * u_sys
+        y_sys   = G * y_stack + J * u_sys
+        
+        where:
+        u_stack = [u_virtual_inertia, u_voltage_droop, u_inner_voltage_controller, u_inner_current_controller, u_lcl_filter]
+        y_stack = [y_virtual_inertia, y_voltage_droop, y_inner_voltage_controller, y_inner_current_controller, y_lcl_filter]
+        y_sys   = [Δi_bus_D, Δi_bus_Q]
+        u_sys   = [Δp_ref, Δq_ref, Δv_ref, Δv_bus_D, Δv_bus_Q]
+
+        note that:
+        u_virtual_inertia = [Δp_ref, Δi_bus_dq, Δv_sh_dq] (5 inputs)
+        u_voltage_droop = [Δq_ref, Δv_ref, Δi_bus_dq, Δv_sh_dq] (6 inputs)
+        u_inner_voltage_controller = [Δv_ref_dq, Δv_sh_dq, Δi_bus_dq, Δω] (7 inputs)
+        u_inner_current_controller = [Δi_ref_dq, Δi_vsc_dq, Δv_sh_dq, Δω] (7 inputs)
+        u_lcl_filter = [Δv_vsc_dq, Δv_bus_dq, Δω] (5 inputs)
+        
+        y_virtual_inertia = [Δϕ, Δω] (2 outputs)
+        y_voltage_droop = [Δv_ref_dq] (2 outputs)
+        y_inner_voltage_controller = [Δi_ref_dq] (2 outputs)
+        y_inner_current_controller = [Δv_ref_dq] (2 outputs)
+        y_lcl_filter = [Δi_vsc_dq, Δi_bus_dq, Δv_sh_dq] (6 outputs)
+
+        thus: u_stack has 5 + 6 + 7 + 7 + 5 = 30 inputs, y_stack has 2 + 2 + 2 + 2 + 6 = 14 outputs, y_sys has 2 outputs, and u_sys has 5 inputs.
+
+        Given the tableau form:
+        
+                │   y_stack  │   u_sys
+        ───────────────────────────────────────────────
+        u_stack │   F        │   H
+        ───────────────────────────────────────────────
+        y_sys   │   G        │   L
+
+        order ──▶               0   1   2,3        4,5        6,7        8,9        10,11      12,13        0       1       2       3,4 
+        ▼                   │   Δϕ  Δω  Δv_ref_dq  Δi_ref_dq  Δv_ref_dq  Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │   Δp_ref  Δq_ref  Δv_ref  Δv_bus_DQ
+        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        0       Δp_ref      │   0   0   0          0          0          0          0          0        │   1        0        0        0     
+        1,2     Δi_bus_dq   │   0   0   0          0          0          0          I₂         0        │   0        0        0        0     
+        3,4     Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
+        5       Δq_ref      │   0   0   0          0          0          0          0          0        │   0        1        0        0     
+        6       Δv_ref      │   0   0   0          0          0          0          0          0        │   0        0        1        0     
+        7,8     Δi_bus_dq   │   0   0   0          0          0          0          I₂         0        │   0        0        0        0     
+        9,10    Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
+        11,12   Δv_ref_dq   │   0   0   I₂         0          0          0          0          0        │   0        0        0        0     
+        13,14   Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
+        15,16   Δi_ref_dq   │   0   0   0          I₂         0          0          0          0        │   0        0        0        0     
+        17      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0     
+        18,19   Δi_ref_dq   │   0   0   0          I₂         0          0          0          0        │   0        0        0        0     
+        20,21   Δi_vsc_dq   │   0   0   0          0          0          I₂         0          0        │   0        0        0        0     
+        22,23   Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
+        24      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0     
+        25,26   Δv_vsc_dq   │   0   0   0          0          I₂         0          0          0        │   0        0        0        0     
+        27,28   Δv_bus_dq   │   a   0   0          0          0          0          0          0        │   0        0        0        b     
+        29      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0  
+        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        0,1     Δi_bus_DQ   |   c   0   0          0          0          0          d          0        │   0        0        0        0
+       
+        Recall that:
+        v_dq = dRdangle.T * (v_DQ)ₒ * Δϕ + R.T * v_DQ 
+        i_DQ = dRdangle * (i_dq)ₒ * Δϕ + R * i_dq 
+
+        Thus:
+        a = dRdangle.T * (v_DQ)ₒ
+        b = R.T
+        c = dRdangle * (i_dq)ₒ
+        d = R
+        """
+
+        angle = relative_phase_deg * np.pi / 180 
+        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle)
+        b = DQ2dq(v_bus_D, v_bus_Q, angle)
+
+        c = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle)
+        d = dq2DQ(i_bus_d, i_bus_q, angle)
+
+        F = np.zeros((30, 14))
+        H = np.zeros((30, 5))
+        G = np.zeros((2, 14))
+        L = np.zeros((2, 5))
+
+        # Fill in the interconnection matrices
+        # F matrix
+        F[1:3, 10:12] = np.eye(2)  
+        F[3:5, 12:14] = np.eye(2)  
+        F[7:9, 10:12] = np.eye(2)
+        F[9:11, 12:14] = np.eye(2)
+        F[11:13, 2:4] = np.eye(2)
+        F[13:15, 12:14] = np.eye(2)
+        F[15:17, 4:6] = np.eye(2)
+        F[17, 1] = 1
+        F[18:20, 4:6] = np.eye(2)
+        F[20:22, 8:10] = np.eye(2)
+        F[22:24, 12:14] = np.eye(2)
+        F[24, 1] = 1
+        F[25:27, 6:8] = np.eye(2)
+        F[27:29, 0:1] = a
+        F[29, 1] = 1
+
+        # H matrix
+        H[0, 0] = 1
+        H[5, 1] = 1
+        H[6, 2] = 1
+        H[27:29, 3:6] = b
+
+        # G matrix
+        G[0:2, 0:1] = c
+        G[0:2, 10:12] = d
+
+        return F, H, G, L
+
+    def _build_small_signal_model(self):
+
+
+        # Create each components small-signal model
+        inertia_ssm = self.virtual_inertia.get_small_signal_model(
+            i_d = self.lcl_filter.emt_init.i_bus_d,
+            i_q = self.lcl_filter.emt_init.i_bus_q,
+            v_d = self.lcl_filter.emt_init.v_sh_d,
+            v_q = self.lcl_filter.emt_init.v_sh_q,
+            angle = self.virtual_inertia.emt_init.p_ref,
+            p_ref = self.virtual_inertia.emt_init.p_ref
+        )
+
+        voltage_droop_ssm = self.voltage_droop.get_small_signal_model(
+            i_d = self.lcl_filter.emt_init.i_bus_d,
+            i_q = self.lcl_filter.emt_init.i_bus_q,
+            v_d = self.lcl_filter.emt_init.v_sh_d,
+            v_q = self.lcl_filter.emt_init.v_sh_q,
+            q_ref = self.voltage_droop.emt_init.q_ref,
+            v_ref = self.voltage_droop.emt_init.v_ref
+        )
+
+        voltage_controller_ssm = self.voltage_controller.get_small_signal_model(
+            z_vc_d = self.voltage_controller.emt_init.z_vc_d,
+            z_vc_q = self.voltage_controller.emt_init.z_vc_q,
+            v_d = self.lcl_filter.emt_init.v_sh_d,
+            v_q = self.lcl_filter.emt_init.v_sh_q,
+            i_d = self.lcl_filter.emt_init.i_bus_d,
+            i_q = self.lcl_filter.emt_init.i_bus_q,
+            w = 1
+        )
+
+        current_controller_ssm = self.current_controller.get_small_signal_model(
+            z_cc_d = self.current_controller.emt_init.z_cc_d,
+            z_cc_q = self.current_controller.emt_init.z_cc_q,
+            i_d = self.lcl_filter.emt_init.i_vsc_d,
+            i_q = self.lcl_filter.emt_init.i_vsc_q,
+            v_d = self.lcl_filter.emt_init.v_sh_d,
+            v_q = self.lcl_filter.emt_init.v_sh_q
+        )
+
+        # Inputs and outputs
+        u = DynamicalVariables(
+            name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "grid", "grid"],
+            init=[init.i_bus_d, init.i_bus_q,init.v_bus_D, init.v_bus_Q])
+
+        y = DynamicalVariables(
+            name=['i_bus_D', 'i_bus_Q'],
+            init=[init.i_bus_D, init.i_bus_Q])
+
+        # Generate small-signal model
+        components = [cc_ssm, pll_ssm, lcl_ssm]
+        connections = self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, relative_phase_deg)
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.ssm
