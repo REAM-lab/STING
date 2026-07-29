@@ -20,7 +20,7 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import PhaseLockedLoop3A, InnerCurrentController2A, LCLFilter6A, ActivePowerPI1A, ReactivePowerPI1A
-from sting.utils.transformations import DQ2dq, dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
+from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
 
 @dataclass(slots=True, kw_only=True, eq=False)
 class GFLI13A(Generator):
@@ -103,39 +103,37 @@ class GFLI13A(Generator):
         i_bus_d, i_bus_q = self.lcl_filter.emt_init.i_bus_d, self.lcl_filter.emt_init.i_bus_q
         i_vsc_d, i_vsc_q = self.lcl_filter.emt_init.i_vsc_d, self.lcl_filter.emt_init.i_vsc_q
         v_sh_d, v_sh_q = self.lcl_filter.emt_init.v_sh_d, self.lcl_filter.emt_init.v_sh_q
+        v_bus_d, v_bus_q = self.lcl_filter.emt_init.v_bus_d, self.lcl_filter.emt_init.v_bus_q
+
+        z_cc_d, z_cc_q = self.current_controller.emt_init.z_cc_d, self.current_controller.emt_init.z_cc_q
 
         # Create each components small-signal model
         pll_ssm = self.phase_locked_loop.get_small_signal_model(
-            v_bus_mag=v_mag, relative_phase_deg=phase_deg
-            )
+            v_mag=v_mag, relative_phase_deg=phase_deg)
         apc_ssm = self.active_power_controller.get_small_signal_model(
-            z_pi=i_bus_d, p_ref=p_bus
-            )
+            z_apc=i_bus_d, p_ref=p_bus, i_d=i_bus_d, i_q=i_bus_q, v_d=v_bus_d, v_q=v_bus_q)
         rpc_ssm = self.reactive_power_controller.get_small_signal_model(
-            z_pi=i_bus_q, q_ref=q_bus
-            )
+            z_rpc=i_bus_q, q_ref=q_bus, i_d=i_bus_d, i_q=i_bus_q, v_d=v_bus_d, v_q=v_bus_q)
         cc_ssm = self.current_controller.get_small_signal_model(
-            z_cc_d=self.current_controller.emt_init.z_cc_d, z_cc_q=self.current_controller.emt_init.z_cc_q
+            z_cc_d=z_cc_d, z_cc_q=z_cc_q, i_d=i_bus_d, i_q=i_bus_q, v_d=v_bus_d, v_q=v_bus_q, w=1
             )
         lcl_ssm = self.lcl_filter.get_small_signal_model(
-            i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_d=i_bus_d, i_bus_q=i_bus_q, v_sh_d=v_sh_d, v_sh_q=v_sh_q
-            )
+            i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_d=i_bus_d, i_bus_q=i_bus_q, v_sh_d=v_sh_d, v_sh_q=v_sh_q)
 
-        init = None
-
-        # Inputs and outputs
+        # Inverter level inputs and outputs
+        v_bus_D, v_bus_Q = self.lcl_filter.emt_init.v_bus_D, self.lcl_filter.emt_init.v_bus_Q
+        i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
         u = DynamicalVariables(
             name=["p_ref", "q_ref", "v_bus_D", "v_bus_Q"],
             type=["device", "device", "grid", "grid"],
-            init=[p_bus, q_bus, init.v_bus_D, init.v_bus_Q])
-
+            init=[p_bus, q_bus, v_bus_D, v_bus_Q])
         y = DynamicalVariables(
             name=['i_bus_D', 'i_bus_Q'],
-            init=[init.i_bus_D, init.i_bus_Q])
+            init=[i_bus_D, i_bus_Q])
 
         # Generate small-signal model
         components = [pll_ssm, apc_ssm, rpc_ssm, cc_ssm, lcl_ssm]
-        connections = None #self.get_interconnections_ssm(init.v_bus_D, init.v_bus_Q, init.i_bus_d, init.i_bus_q, phase_deg)
+        connections = self.get_interconnections_ssm(v_bus_D, v_bus_Q, i_bus_d, i_bus_q, phase_deg)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
         return self.ssm
@@ -157,8 +155,8 @@ class GFLI13A(Generator):
             b := U *(i_dq)ₒ
 
 
-        component ──▶             │ PLL    │ APC      │ RPC      │ CC        │ LCL                            │ Grid inputs
-        │       index ──▶         │ 0   1  │ 2        │ 3        │ 4,5       │ 6,7        8,9        10,11    │ 0       1       2,3
+        ┌ component ──▶           │ PLL    │ APC      │ RPC      │ CC        │ LCL                            │ Grid inputs
+        │       ┌ index ──▶       │ 0   1  │ 2        │ 3        │ 4,5       │ 6,7        8,9        10,11    │ 0       1       2,3
         ▼       ▼                 │ Δω  Δϕ │ Δi_ref_d │ Δi_ref_q │ Δv_vsc_dq │ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δp_ref  Δq_ref  Δv_bus_DQ
         ──────────────────────────┼────────┴──────────┴──────────┴───────────┴────────────────────────────────┼────────────────────────────
         PLL     0,1     Δv_bus_DQ │  0  0    0          0          0           0          0          0        │ 0       0       I₂
@@ -172,54 +170,46 @@ class GFLI13A(Generator):
                 13      Δi_ref_q  │  0  0    0          1          0           0          0          0        │ 0       0       0
                 14,15   Δi_bus_dq │  0  0    0          0          0           0          I₂         0        │ 0       0       0
                 16,17   Δv_bus_dq │  0  a    0          0          0           0          0          0        │ 0       0       Rᵀ
-        LCL     18,19   Δv_vsc_dq │  0  0    0          0          I₂          0          0          0        │ 0       0       0
-                20,21   Δv_bus_dq │  0  a    0          0          0           0          0          0        │ 0       0       Rᵀ
-                22,23   Δi_bus_dq │  0  0    0          0          0           0          I₂         0        │ 0       0       0
-                24      Δw        │  1  0    0          0          0           0          0          0        │ 0       0       0
+                18      Δw        │  1  0    0          0          0           0          0          0        │ 0       0       0
+        LCL     19,20   Δv_vsc_dq │  0  0    0          0          I₂          0          0          0        │ 0       0       0
+                21,22   Δv_bus_dq │  0  a    0          0          0           0          0          0        │ 0       0       Rᵀ
+                23      Δw        │  1  0    0          0          0           0          0          0        │ 0       0       0
         ──────────────────────────┼───────────────────────────────────────────────────────────────────────────┼────────────────────────────
         Grid    0,1     Δi_bus_DQ │  0  b    0          0          0           0          R          0        │ 0       0       0
         outputs                  
         """
 
-        angle = relative_phase_deg * np.pi / 180 
-        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle)
-        b = DQ2dq(v_bus_D, v_bus_Q, angle)
+        angle = relative_phase_deg * np.pi / 180
+        R = R_dq2DQ(angle)
+        I = np.eye(2)
 
-        c = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle)
-        d = dq2DQ(i_bus_d, i_bus_q, angle)
+        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
+        b = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
 
-        F = np.zeros((30, 14))
-        H = np.zeros((30, 5))
-        G = np.zeros((2, 14))
-        L = np.zeros((2, 5))
+        F = np.zeros((24, 12))
+        G = np.zeros((24, 4))
+        H = np.zeros((2, 12))
+        L = np.zeros((2, 4))
 
-        # Fill in the interconnection matrices
-        # F matrix
-        F[1:3, 10:12] = np.eye(2)  
-        F[3:5, 12:14] = np.eye(2)  
-        F[7:9, 10:12] = np.eye(2)
-        F[9:11, 12:14] = np.eye(2)
-        F[11:13, 2:4] = np.eye(2)
-        F[13:15, 12:14] = np.eye(2)
-        F[15:17, 4:6] = np.eye(2)
-        F[17, 1] = 1
-        F[18:20, 4:6] = np.eye(2)
-        F[20:22, 8:10] = np.eye(2)
-        F[22:24, 12:14] = np.eye(2)
-        F[24, 1] = 1
-        F[25:27, 6:8] = np.eye(2)
-        F[27:29, 0:1] = a
-        F[29, 1] = 1
+        # Entries in F and G entered as tuples: (row_idx, col_idx, values)
+        idx_F =[
+            ([3,4], [8,9], I), ([8,9], [8,9], I), ([12,13], [2,3], I), ([14,15], [8,9], I), ([19,20], [4,5], I),
+            ([5,6], [1], a), ([10,11], [1], a), ([16,17], [1], a), ([21,22], [1], a), ([18], [0], 1), ([23], [0], 1)
+            ]
+        for rows, cols, value in idx_F:
+            F[np.ix_(rows, cols)] = value
+        
+        idx_G = [
+            ([2], [0], 1), ([7], [1], 1), ([0,1], [2,3], I), 
+            ([5,6], [2,3], R.T), ([10,11], [2,3], R.T), ([16,17], [2,3], R.T), ([21,22], [2,3], R.T)
+            ]
+        for rows, cols, value in idx_G:
+            G[np.ix_(rows, cols)] = value
+        # Add values to H
+        H[:,[1]] = b
+        H[np.ix_([0,1],[8,9])] = R
 
-        # H matrix
-        H[0, 0] = 1
-        H[5, 1] = 1
-        H[6, 2] = 1
-        H[27:29, 3:6] = b
-
-        # G matrix
-        G[0:2, 0:1] = c
-        G[0:2, 10:12] = d
+        return (F,G,H,L) 
         
 
     def define_variables_emt(self):
@@ -235,8 +225,8 @@ class GFLI13A(Generator):
                 self.phase_locked_loop.emt_init.z_pll,
                 self.phase_locked_loop.emt_init.theta_pll, 
                 # Power control
-                self.active_power_controller.emt_init.z_pi,
-                self.reactive_power_controller.emt_init.z_pi,
+                self.active_power_controller.emt_init.z_apc,
+                self.reactive_power_controller.emt_init.z_rpc,
                 # Current control
                 self.current_controller.emt_init.z_cc_d, 
                 self.current_controller.emt_init.z_cc_q,
@@ -292,11 +282,11 @@ class GFLI13A(Generator):
         w_pll  = d_x_pll[2]/self.wbase
 
         #### Power controller ####
-        d_z_apc = self.active_power_controller.get_derivatives_step_emt_abc(p_ref=p_ref, p=p_bus, z_pi=z_apc)
-        d_z_rpc = self.reactive_power_controller.get_derivatives_step_emt_abc(q_ref=q_ref, q=q_bus, z_pi=z_rpc)
+        d_z_apc = self.active_power_controller.get_derivatives_step_emt_abc(p_ref=p_ref, p=p_bus, z_apc=z_apc)
+        d_z_rpc = self.reactive_power_controller.get_derivatives_step_emt_abc(q_ref=q_ref, q=q_bus, z_rpc=z_rpc)
         # Reference currents from power controller
-        i_ref_d = self.active_power_controller.get_algebraics_step_emt_abc(p_ref=p_ref, p=p_bus, z_pi=z_apc)
-        i_ref_q = self.reactive_power_controller.get_algebraics_step_emt_abc(q_ref=q_ref, q=q_bus, z_pi=z_rpc)
+        i_ref_d = self.active_power_controller.get_algebraics_step_emt_abc(p_ref=p_ref, p=p_bus, z_apc=z_apc)
+        i_ref_q = self.reactive_power_controller.get_algebraics_step_emt_abc(q_ref=q_ref, q=q_bus, z_rpc=z_rpc)
 
         #### Current controller ####
         d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q)
