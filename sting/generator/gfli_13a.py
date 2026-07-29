@@ -58,6 +58,8 @@ class GFLI13A(Generator):
         self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_pu, self.ki_pll_puHz, self.tau_pll, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
+        self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
+        self.reactive_power_controller = ReactivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
 
     @property
     def rf2_pu(self):
@@ -72,29 +74,24 @@ class GFLI13A(Generator):
         return 2 * np.pi * self.base_frequency_Hz
 
     def _calculate_emt_initial_conditions(self):
-       
-        """    lcl_init = self.lcl_filter.get_steady_state(
-            v_bus_mag = self.power_flow_variables.vmag_bus,
-            relative_phase_deg = self.power_flow_variables.vphase_bus,
-            p_bus = self.power_flow_variables.p_bus,
-            q_bus = self.power_flow_variables.q_bus,
-            reference_node = 'bus'
-        )
-
-            self.current_controller.get_steady_state(
-            v_out_d=lcl_init.v_vsc_d,
-            v_out_q=lcl_init.v_vsc_q,
-            v_d=lcl_init.v_bus_d,
-            v_q=lcl_init.v_bus_q,
-            i_d=lcl_init.i_bus_d,
-            i_q=lcl_init.i_bus_q,
-            w = 1
-        )
-
-            self.phase_locked_loop.get_steady_state(
-                v_bus_mag = self.power_flow_variables.vmag_bus,
-                relative_phase_deg = self.power_flow_variables.vphase_bus
-            )"""
+        # Unpack OPF solutions
+        v_mag, phase_deg = self.power_flow_variables.vmag_bus, self.power_flow_variables.vphase_bus
+        p_bus, q_bus = self.power_flow_variables.p_bus, self.power_flow_variables.q_bus
+        # Compute initial conditions in the LCL filter
+        lcl_init = self.lcl_filter.get_steady_state(
+            v_bus_mag=v_mag, relative_phase_deg=phase_deg, p_bus=p_bus, q_bus=q_bus, reference_node = 'bus')
+        # Unpack initial conditions
+        i_bus_d, i_bus_q = lcl_init.i_bus_d, lcl_init.i_bus_q
+        v_bus_d, v_bus_q = lcl_init.v_bus_d, lcl_init.v_bus_q
+        v_vsc_d, v_vsc_q = lcl_init.v_vsc_d, lcl_init.v_vsc_q
+        # PLL
+        self.phase_locked_loop.get_steady_state(v_mag=v_mag, relative_phase_deg=phase_deg)        
+        # Power controllers
+        self.active_power_controller.get_steady_state(p_ref=p_bus, i_ref_d=i_bus_d)
+        self.reactive_power_controller.get_steady_state(q_ref=q_bus, i_ref_q=i_bus_q)
+        # Current controller
+        self.current_controller.get_steady_state(
+            v_out_d=v_vsc_d, v_out_q=v_vsc_q, v_d=v_bus_d, v_q=v_bus_q, i_d=i_bus_d, i_q=i_bus_q, w=1)
 
     
     def _build_small_signal_model(self):
@@ -157,7 +154,7 @@ class GFLI13A(Generator):
         This model includes: pi controller, pll, and LCL filter.
         """     
         # Unpack states
-        ( v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
+        (v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
         i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = self.variables_emt.x.value
         # Unpack *external* inputs
         p_ref, q_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
@@ -196,3 +193,33 @@ class GFLI13A(Generator):
             )
         
         return d_x_pll + [d_z_apc, d_z_rpc] + d_x_cc + d_x_lcl
+
+
+    def get_output_emt(self):
+            (v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
+                    i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = self.variables_emt.x.value
+                
+            return [i_bus_a, i_bus_b, i_bus_c]
+
+
+    def plot_results_emt(self):
+        """
+        Plot EMT simulation results
+        """
+        (v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
+                i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = self.variables_emt.x.value
+
+        # Transform abc to dq0
+        i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        
+
+        results = DynamicalVariables(
+            name = ['v_pll_q', 'z_pll', 'theta_pll', 'z_apc', 'z_rpc',  'z_cc_d', 'z_cc_q', "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"],
+            component = f"{self.type_}_{self.id}",
+            value=[v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q],
+            time=self.variables_emt.x.time
+        )
+
+        return results

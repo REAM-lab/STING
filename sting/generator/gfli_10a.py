@@ -86,7 +86,7 @@ class GFLI10A(Generator):
        )
 
         self.phase_locked_loop.get_steady_state(
-            v_bus_mag = self.power_flow_variables.vmag_bus,
+            v_mag = self.power_flow_variables.vmag_bus,
             relative_phase_deg = self.power_flow_variables.vphase_bus
         )
 

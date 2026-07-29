@@ -18,6 +18,7 @@ class InitialConditionsEMT(NamedTuple):
 
     p_ref: float
     i_ref_d: float
+    z_pi: float
 
 
 # ---------------------------------------
@@ -43,7 +44,8 @@ class ActivePowerPI1A:
 
         self.emt_init = InitialConditionsEMT(
             p_ref = p_ref,
-            i_ref_d = i_ref_d
+            i_ref_d = i_ref_d,
+            z_pi = 0
         )
 
         return self.emt_init
@@ -100,4 +102,4 @@ class ActivePowerPI1A:
         # Compute d-axis current reference
         i_ref_d = self.kp_pu * (p_ref - p) + z_pi
 
-        return [i_ref_d]
+        return i_ref_d

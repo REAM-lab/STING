@@ -18,6 +18,7 @@ class InitialConditionsEMT(NamedTuple):
 
     q_ref: float
     i_ref_q: float
+    z_pi: float
 
 
 # ---------------------------------------
@@ -34,8 +35,8 @@ class ReactivePowerPI1A:
         Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
         
         Inputs:
-        - p_ref [pu]: Steady-state active power
-        - i_ref_d [pu]: Steady-state d-axis current reference
+        - q_ref [pu]: Steady-state active power
+        - i_ref_q [pu]: Steady-state d-axis current reference
          
         Outputs:
         - emt_init: Initial conditions for the EMT simulation
@@ -43,7 +44,8 @@ class ReactivePowerPI1A:
 
         self.emt_init = InitialConditionsEMT(
             q_ref = q_ref,
-            i_ref_q = i_ref_q
+            i_ref_q = i_ref_q,
+            z_pi = 0 
         )
 
         return self.emt_init
@@ -59,9 +61,9 @@ class ReactivePowerPI1A:
 
         # Inputs 
         u = DynamicalVariables(
-            name=["p_ref", "p"],
+            name=["q_ref", "q"],
             component=f"{self.__class__.__name__}",
-            init=[self.emt_init.p_ref, self.emt_init.p_ref]
+            init=[self.emt_init.q_ref, self.emt_init.q_ref]
         )
 
         return [x, u]
@@ -100,4 +102,4 @@ class ReactivePowerPI1A:
         # Compute q-axis current reference
         i_ref_q = self.kp_pu * (-1) * (q_ref - q) + z_pi
 
-        return [i_ref_q]
+        return i_ref_q
