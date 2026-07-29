@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
-from sting.utils.transformations import dq02abc, abc2dq0, dq2DQ, DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
+from sting.utils.transformations import dq02abc, abc2dq0, R_dq2DQ, R_DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
 from sting.components import LCLFilter6A, InnerVoltageController2A, InnerCurrentController2A, VirtualInertia2A, VoltageDroopController1A
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -324,11 +324,11 @@ class GFMI18A(Generator):
         """
 
         angle = relative_phase_deg * np.pi / 180 
-        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle)
-        b = DQ2dq(v_bus_D, v_bus_Q, angle)
+        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
+        b = R_DQ2dq(angle) @ np.array([[v_bus_D], [v_bus_Q]])
 
-        c = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle)
-        d = dq2DQ(i_bus_d, i_bus_q, angle)
+        c = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
+        d = R_dq2DQ(angle) @ np.array([[i_bus_d], [i_bus_q]])
 
         F = np.zeros((30, 14))
         G = np.zeros((30, 5))
@@ -403,7 +403,8 @@ class GFMI18A(Generator):
             i_d = self.lcl_filter.emt_init.i_vsc_d,
             i_q = self.lcl_filter.emt_init.i_vsc_q,
             v_d = self.lcl_filter.emt_init.v_sh_d,
-            v_q = self.lcl_filter.emt_init.v_sh_q
+            v_q = self.lcl_filter.emt_init.v_sh_q,
+            w = 1
         )
 
         lcl_filter_ssm = self.lcl_filter.get_small_signal_model(
@@ -411,8 +412,8 @@ class GFMI18A(Generator):
             i_vsc_q = self.lcl_filter.emt_init.i_vsc_q,
             i_bus_d = self.lcl_filter.emt_init.i_bus_d,
             i_bus_q = self.lcl_filter.emt_init.i_bus_q,
-            v_sh_d = self.current_controller.emt_init.v_sh_d,
-            v_sh_q = self.current_controller.emt_init.v_sh_q
+            v_sh_d = self.lcl_filter.emt_init.v_sh_d,
+            v_sh_q = self.lcl_filter.emt_init.v_sh_q
         )
 
         # Inputs and outputs

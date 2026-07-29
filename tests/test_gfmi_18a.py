@@ -83,10 +83,10 @@ t_max = 1.5 # Simulation length in seconds
 
 
 # Construct system and small-signal model
-#_, ssm = main.run_ssm(system=system, case_directory=case_directory)
-#ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+_, ssm = main.run_ssm(system=system, case_directory=case_directory)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
-main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
+#main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
 emt_dir = os.path.join(case_directory, "outputs", "simulation_emt")
 #ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")
