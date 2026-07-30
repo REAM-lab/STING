@@ -127,6 +127,7 @@ gfmi_2 = GFMI18A(
     k_q_pu=0.2, w_q_puHz=4000
 )
 
+"""
 gfli_1 = GFLI13A(
     name="gfli_1", bus="bus_5",
     # Power flow 
@@ -142,6 +143,25 @@ gfli_1 = GFLI13A(
     # Power controllers
     kp_pc_pu=0.01, ki_pc_puHz=0.6
 )
+"""
+gfli_1 = GFMI18A(
+    name="gfli_1", bus="bus_5",
+    # Power flow 
+    minimum_active_power_MW=30, maximum_active_power_MW=70, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+    cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
+    # LCL filter
+    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
+    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
+    # Inner voltage controller
+    kp_vc_pu=0.562, ki_vc_puHz=484.989, kffi_vc=0.80,
+    # Inner current controller
+    kp_cc_pu=4.77, ki_cc_puHz=60, kffv_cc=0,
+    # Virtual inertia
+    h_s=2, kd_pu=70, 
+    # Voltage droop
+    k_q_pu=0.2, w_q_puHz=4000
+)
+
 
 system = System(case_directory=case_directory)
 buses = [bus_1, bus_2, bus_3, bus_4, bus_5, bus_6, bus_7, bus_8, bus_9]
