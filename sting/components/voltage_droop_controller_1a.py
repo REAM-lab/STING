@@ -100,7 +100,7 @@ class VoltageDroopController1A:
         Equations to derive the small-signal model:
         dΔq_f/dt = w_q_puHz * (Δq - Δq_f)
                  = w_q_puHz * ( -(v_d)ₒ * Δi_q + (v_q)ₒ * Δi_d + (i_d)ₒ * Δv_q - (i_q)ₒ * Δv_d - Δq_f)
-        dΔv_d_ref/dt = Δv_ref + k_q_pu * (Δq_ref - Δq_f)
+        Δv_d_ref = Δv_ref + k_q_pu * (Δq_ref - Δq_f)
 
         State vector, input vector, and output vector are:
         Δx = [Δq_f]
@@ -128,7 +128,7 @@ class VoltageDroopController1A:
         ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
         dΔq_f/dt    │ -w_q      │   0         0         w_q * (v_q)ₒ    -w_q * (v_d)ₒ     -w_q * (i_q)ₒ    w_q * (i_d)ₒ
         ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        Δv_d_ref    │ 0         │   k_q       1         0               0                 0                0
+        Δv_d_ref    │ -k_q      │   k_q       1         0               0                 0                0
         Δv_q_ref    │ 0         │   0         0         0               0                 0                0
         """
 
@@ -142,7 +142,7 @@ class VoltageDroopController1A:
             [0, 0, w_q * v_q, -w_q * v_d, -w_q * i_q, w_q * i_d]
         ])
         C = np.array([
-            [0],
+            [-k_q],
             [0]
         ])
         D = np.array([

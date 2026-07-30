@@ -211,7 +211,7 @@ class SmallSignalModel:
                 fig.update_yaxes(title_text=self.model.x.name[i], row=row, col=col)
                 i += 1
 
-            fig.update_layout(title_text = component, title_x=0.5, showlegend = False)
+            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
             fig.write_html(os.path.join(self.output_directory, f"{component}.html"))
             
     

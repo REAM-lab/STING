@@ -51,7 +51,7 @@ gfmi = GFMI18A(
     # Virtual inertia
     h_s=2, kd_pu=70, 
     # Voltage droop
-    k_q_pu=0.2, w_q_puHz=1000
+    k_q_pu=0.2, w_q_puHz=4000
 )
 
 system = System(case_directory=case_directory)
@@ -75,7 +75,8 @@ inputs = {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.05, transient_width=5e-3),
+        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
+        'q_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3)
         }
 }
 
@@ -86,7 +87,7 @@ t_max = 1.5 # Simulation length in seconds
 _, ssm = main.run_ssm(system=system, case_directory=case_directory)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
-#main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
+main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
 emt_dir = os.path.join(case_directory, "outputs", "simulation_emt")
-#ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")
+ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")
