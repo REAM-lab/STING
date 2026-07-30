@@ -61,8 +61,8 @@ class SystemModifier:
                     base_power_MVA=line.base_power_MVA,
                     base_voltage_kV=line.base_voltage_kV,
                     base_frequency_Hz=line.base_frequency_Hz,
-                    g_pu= line.g_pu,
-                    b_pu= line.b_pu,
+                    g_pu= line.g_pu/2,
+                    b_pu= line.b_pu/2,
                     # Shunts inherit their zone from buses
                     zone=self.system.buses[line.from_bus_id].zone
                 )
@@ -74,8 +74,8 @@ class SystemModifier:
                     base_power_MVA=line.base_power_MVA,
                     base_voltage_kV=line.base_voltage_kV,
                     base_frequency_Hz=line.base_frequency_Hz,
-                    g_pu= line.g_pu,
-                    b_pu= line.b_pu,
+                    g_pu= line.g_pu/2,
+                    b_pu= line.b_pu/2,
                     zone=self.system.buses[line.to_bus_id].zone
                 )
 

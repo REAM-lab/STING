@@ -22,7 +22,7 @@ t1 = Timepoint(name="t1", weight=1)
 bus_1 = Bus(name="lima", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=1, maximum_voltage_pu=1)
 bus_2 = Bus(name="santiago", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.3)
 load_1 = Load(bus="lima", timepoint="t1", load_MW=0, load_MVAR=0)
-load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
+#load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
 # Transmission
 line_1 = LinePiModel(
     name="lima_to_santiago", from_bus="lima", to_bus="santiago",
@@ -57,7 +57,7 @@ gfmi = GFMI18A(
 system = System(case_directory=case_directory)
 
 # Build grid model
-for component in [bus_1, bus_2, load_1, load_2, line_1, source, gfmi, t1]:
+for component in [bus_1, bus_2, load_1, line_1, source, gfmi, t1]:
     system.add(component)
 
 system.apply("post_system_init", system)
