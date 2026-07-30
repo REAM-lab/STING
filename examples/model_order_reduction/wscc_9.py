@@ -8,7 +8,6 @@ import pylab as plt
 from sting import main
 from sting.system import System
 from sting.modules.model_order_reduction.reductions import (
-    IRKA,
     BalancedTruncation,
     SingularPerturbation,
 )

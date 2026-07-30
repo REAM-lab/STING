@@ -5,7 +5,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
 import itertools
-from more_itertools import transpose
+#from more_itertools import transpose
 import os
 import logging
 
@@ -118,7 +118,7 @@ class SimulationEMT:
 
         fields = ["x", "u", "y"]
         selection = [[getattr(c, f) for f in fields] for c in variables_emt]
-        stack = dict(zip(fields, transpose(selection)))
+        stack = dict(zip(fields, zip(*selection)))
 
         x = sum(stack["x"], DynamicalVariables(name=[]))
         y = sum(stack["y"], DynamicalVariables(name=[]))
