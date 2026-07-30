@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from sting.utils.dynamical_systems import StateSpaceModel
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.utils.matrix_tools import mat2cell
-from sting.system.component import Component
 
 def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     """

@@ -5,7 +5,6 @@ import numpy as np
 from dataclasses import dataclass, field
 from scipy.integrate import solve_ivp
 import itertools
-#from more_itertools import transpose
 import os
 import logging
 

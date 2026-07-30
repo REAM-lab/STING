@@ -23,7 +23,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
     $ source .venv/bin/activate
     (.venv)$ pip install -e .  
     ```
-To install all optional dependencies, run  `pip install -e ".[all]"`. This will install extra packages necessary for optimization `solvers`, `model_reduction`, and sting `development`.
+To install all optional dependencies, run  `pip install -e ".[all]"`. This will install extra packages necessary for optimization, specifically solvers.
 
 2. **Run sting**: To ensure that sting was installed correctly navigate to the examples folder. You will see examples for different modules. Find the file `run.py` and execute it.
 
@@ -33,10 +33,9 @@ Most of modules additionally require commercial or open-source solvers to run va
 
 | Solver | How to install in your python environment     | Use                |
 |--------|-----------------------------------------------|--------------------|
-| IPOPT  | `brew install ipopt` + `pip install cyipopt`  | ACOPF              |
+| IPOPT  | `brew install ipopt`                          | ACOPF              |
 | Gurobi | `pip install gurobipy`                        | Capacity expansion |
 | MOSEK  | `pip install mosek`                           | Capacity expansion |
-| SLICOT | `pip install slycot`  + `brew install gcc`    |   Model Reduction  |
 
 ## Citing
 ```

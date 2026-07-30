@@ -11,8 +11,6 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 import pylab as plt
-#from control import ss
-from more_itertools import transpose
 from plotly.subplots import make_subplots
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov
@@ -286,7 +284,7 @@ class StateSpaceModel:
         fields = ["A", "B", "C", "D", "u", "y", "x"]
         selection = [[getattr(c, f) for f in fields] for c in components]
         
-        stack = dict(zip(fields, transpose(selection)))
+        stack = dict(zip(fields, zip(*selection)))
         A = block_diag(*stack["A"])
         B = block_diag(*stack["B"])
         C = block_diag(*stack["C"])

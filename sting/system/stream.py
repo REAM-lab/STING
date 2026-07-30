@@ -1,7 +1,5 @@
-from more_itertools import transpose
 from itertools import tee
 from typing import Iterable, Any
-#import pandas as pd
 import polars as pl
 
 class Stream:
@@ -38,7 +36,7 @@ class Stream:
             for obj in self._iterable
         ]
         
-        return transpose(selection)
+        return zip(*selection)
 
     def to_list(self):
         """Return a list of all items in the generator."""
