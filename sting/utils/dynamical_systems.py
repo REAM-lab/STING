@@ -514,7 +514,10 @@ class StateSpaceModel:
         A_t = invT @ self.A @ T
         B_t = invT @ self.B
         C_t = self.C @ T
-        return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D)
+        # Compute the new states initial conditions
+        x = DynamicalVariables(name=[f"x{i}" for i in range(T.shape[1])], init=invT@self.x.init)
+
+        return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
     
     def to_python_control(self):
         """Returns a python-controls state-space model"""

@@ -76,17 +76,17 @@ class ReactivePowerPI1A:
             Δy = [Δi_ref_q]
 
         while the matrix representation in tableau form is:
-                   │  Δz │  Δp_ref     Δi_d            Δi_q            Δv_d             Δv_q
+                   │  Δz │  Δq_ref     Δi_d            Δi_q            Δv_d             Δv_q
             ───────┼─────┼──────────────────────────────────────────────────────────────────────
-            dΔz/dt │  0  │   k_i   -k_i*(v_q)ₒ       k_i*(v_d)ₒ      k_i*(i_q)ₒ     -k_i*(i_d)ₒ 
+            dΔz/dt │  0  │  -k_i    k_i*(v_q)ₒ      -k_i*(v_d)ₒ     -k_i*(i_q)ₒ      k_i*(i_d)ₒ 
             ───────┼─────┼───────────────────────────────────────────────────────────────────────
-            Δϕ     │  1  │   k_p   -k_p*(v_q)ₒ       k_p*(v_d)ₒ      k_p*(i_q)ₒ     -k_p*(i_d)ₒ 
+            Δϕ     │  1  │  -k_p    k_p*(v_q)ₒ      -k_p*(v_d)ₒ     -k_p*(i_q)ₒ      k_p*(i_d)ₒ 
         """
         ssm = StateSpaceModel(
             A = np.array([[0]]),
             B = -self.ki_puHz * np.array([[1, -v_q, v_d, i_q, -i_d]]),
             C = np.array([[1]]),
-            D = self.kp_pu * np.array([[1, -v_q, v_d, i_q, -i_d]]),
+            D = -self.kp_pu * np.array([[1, -v_q, v_d, i_q, -i_d]]),
             x = DynamicalVariables(name=['z_rpc'], init=z_rpc),
             u = DynamicalVariables(name=["q_ref", "i_d", "i_q", "v_d", "v_q"], init = [q_ref, i_d, i_q, v_d, v_q]),
             y = DynamicalVariables(name=['i_ref_q'])

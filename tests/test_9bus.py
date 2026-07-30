@@ -25,38 +25,38 @@ os.makedirs(case_directory, exist_ok=True)
 t1 = Timepoint(name="t1", weight=1)
 
 # Buses
-bus_1 = Bus(name="bus_1", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_2 = Bus(name="bus_2", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_3 = Bus(name="bus_3", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_4 = Bus(name="bus_4", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_5 = Bus(name="bus_5", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_6 = Bus(name="bus_6", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_7 = Bus(name="bus_7", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_8 = Bus(name="bus_8", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
-bus_9 = Bus(name="bus_9", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.90, maximum_voltage_pu=1.5)
+bus_1 = Bus(name="bus_1", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_2 = Bus(name="bus_2", zone=None, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_3 = Bus(name="bus_3", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_4 = Bus(name="bus_4", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_5 = Bus(name="bus_5", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_6 = Bus(name="bus_6", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_7 = Bus(name="bus_7", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_8 = Bus(name="bus_8", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.05)
+bus_9 = Bus(name="bus_9", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.90, maximum_voltage_pu=1.5)
 
 # Loads
 load_1 = Load(bus="bus_1", timepoint="t1", load_MW=0, load_MVAR=0)
 
 # Transmission Lines
 line_1_4 = LinePiModel(
-    name="line_1_4", from_bus="bus_1", to_bus="bus_4", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0576, g_pu=0, b_pu=0)
+    name="line_1_4", from_bus="bus_1", to_bus="bus_4", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0576, g_pu=0, b_pu=0)
 line_4_5 = LinePiModel(
-    name="line_4_5", from_bus="bus_4", to_bus="bus_5", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.017, x_pu=0.092, g_pu=0, b_pu=0.158)
+    name="line_4_5", from_bus="bus_4", to_bus="bus_5", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.017, x_pu=0.092, g_pu=0, b_pu=0.158)
 line_5_6 = LinePiModel(
-    name="line_5_6", from_bus="bus_5", to_bus="bus_6", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.039, x_pu=0.17, g_pu=0, b_pu=0.358)
+    name="line_5_6", from_bus="bus_5", to_bus="bus_6", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.039, x_pu=0.17, g_pu=0, b_pu=0.358)
 line_3_6 = LinePiModel(
-    name="line_3_6", from_bus="bus_3", to_bus="bus_6", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0586, g_pu=0, b_pu=0)
+    name="line_3_6", from_bus="bus_3", to_bus="bus_6", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0586, g_pu=0, b_pu=0)
 line_6_7 = LinePiModel(
-    name="line_6_7", from_bus="bus_6", to_bus="bus_7", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.0119, x_pu=0.1008, g_pu=0, b_pu=0.209)
+    name="line_6_7", from_bus="bus_6", to_bus="bus_7", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.0119, x_pu=0.1008, g_pu=0, b_pu=0.209)
 line_7_8 = LinePiModel(
-    name="line_7_8", from_bus="bus_7", to_bus="bus_8", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.0085, x_pu=0.072, g_pu=0, b_pu=0.149)
+    name="line_7_8", from_bus="bus_7", to_bus="bus_8", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.0085, x_pu=0.072, g_pu=0, b_pu=0.149)
 line_8_2 = LinePiModel(
-    name="line_8_2", from_bus="bus_8", to_bus="bus_2", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0625, g_pu=0, b_pu=0)
+    name="line_8_2", from_bus="bus_8", to_bus="bus_2", zone=None, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0, x_pu=0.0625, g_pu=0, b_pu=0)
 line_8_9 = LinePiModel(
-    name="line_8_9", from_bus="bus_8", to_bus="bus_9", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.032, x_pu=0.161, g_pu=0, b_pu=0.306)
+    name="line_8_9", from_bus="bus_8", to_bus="bus_9", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.032, x_pu=0.161, g_pu=0, b_pu=0.306)
 line_9_4 = LinePiModel(
-    name="line_9_4", from_bus="bus_9", to_bus="bus_4", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.01, x_pu=0.085, g_pu=0, b_pu=0.176)
+    name="line_9_4", from_bus="bus_9", to_bus="bus_4", zone="external", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, r_pu=0.01, x_pu=0.085, g_pu=0, b_pu=0.176)
 
 # Add resistance and susceptance to lines based on typical values per mile for 230 kV lines to avoid zero values. The typical values are based on the IEEE RTS-79 test system.
 typical_parameters_per_mile = line_ieeerts79(base_voltage_kv=230, miles=1) 
@@ -85,14 +85,14 @@ for line in [line_1_4, line_4_5, line_5_6, line_3_6, line_6_7, line_7_8, line_8_
 
 # Generation
 source = InfiniteSource(
-    name="grid", bus="bus_1", 
+    name="grid", bus="bus_1", zone="external",
     minimum_active_power_MW=-200, maximum_active_power_MW=200, minimum_reactive_power_MVAR=-500, maximum_reactive_power_MVAR=500,
     cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
     r_pu=0.001, x_pu=0.005
 )
 
 gfmi_1 = GFMI18A(
-    name="gfmi_1", bus="bus_2",
+    name="gfmi_1", bus="bus_2", zone=None,
     # Power flow 
     minimum_active_power_MW=30, maximum_active_power_MW=50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
@@ -110,7 +110,7 @@ gfmi_1 = GFMI18A(
 )
 
 gfmi_2 = GFMI18A(
-    name="gfmi_2", bus="bus_3",
+    name="gfmi_2", bus="bus_3", zone="external",
     # Power flow 
     minimum_active_power_MW=30, maximum_active_power_MW=70, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
@@ -129,7 +129,7 @@ gfmi_2 = GFMI18A(
 
 
 gfli_1 = GFLI13A(
-    name="gfli_1", bus="bus_5",
+    name="gfli_1", bus="bus_5", zone="external",
     # Power flow 
     minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,

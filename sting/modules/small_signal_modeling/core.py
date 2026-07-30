@@ -16,7 +16,7 @@ import logging
 # ------------------
 # Import sting code
 # ------------------
-from sting.system.core import System
+from sting.system import System
 from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
 from sting.modules.small_signal_modeling.utils import get_ccm_matrices, build_ccm_permutation

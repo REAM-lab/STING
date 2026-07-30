@@ -1,4 +1,2 @@
-name,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,cost_variable_USDperMWh,r_pu,x_pu,zone
-gen_1,bus_1,-200,200,-500,500,1.00E+02,2.30E+02,60,0,0.01,0.5,external
-gen_2,bus_2,-200,200,-500,500,1.00E+02,2.30E+02,60,0,0.009,0.4,
-gen_3,bus_3,-200,200,-500,500,1.00E+02,2.30E+02,60,0,0.13,0.6,external
+id,name,type_,zone,bus,minimum_active_power_MW,maximum_active_power_MW,minimum_reactive_power_MVAR,maximum_reactive_power_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,technology,site,cap_existing_power_MW,cap_max_power_MW,cost_fixed_power_USDperkW,cost_variable_USDperMWh,c0_USD,c1_USDperMWh,c2_USDperMWh2,emission_rate_tonneCO2perMWh,bus_id,expand_capacity,component_id,forced_dispatch_MW,r_pu,x_pu
+0,grid,infinite_sources,external,bus_1,-200,200,-500,500,100,230,60,,,,,,0,,,,,,,,,0.001,0.005

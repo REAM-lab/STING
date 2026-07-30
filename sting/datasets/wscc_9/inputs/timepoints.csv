@@ -1,2 +1,2 @@
-﻿name
-hour_0
+id,name,type_,zone,timeseries,timeseries_id,weight,duration_hr,prev_timepoint_id
+0,t1,timepoints,,,,1,,
