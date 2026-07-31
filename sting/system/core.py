@@ -24,7 +24,7 @@ from sting.bus.core import Bus
 from sting.load import Load, ConstantImpedanceLoad, SwitchingLoad
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
-from sting.generator.infinite_source import InfiniteSource
+from sting.generator.voltage_source_4a import VoltageSource4A
 from sting.load.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
@@ -38,7 +38,7 @@ from sting.timescales.core import Scenario, Timepoint, Timeseries
 from sting.policies.carbon_policies.core import CarbonPolicy
 from sting.policies.energy_budgets.core import EnergyBudget
 from sting.policies.transmission_expansion_constraint.core import TransmissionExpansionConstraint
-from sting.generator import GFLI10A, GFLI13A, GFMI18A
+from sting.generator import GFLI13A, GFLI16A, GFMI18A
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -57,13 +57,13 @@ class System:
     generators: list[Generator] = None
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
-    infinite_sources: list[InfiniteSource] = None
+    voltage_source_4a: list[VoltageSource4A] = None
     gfmi_c: list[GFMIc] = None
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
-    gfli_10a: list[GFLI10A] = None
     gfli_13a: list[GFLI13A] = None
+    gfli_16a: list[GFLI16A] = None
     gfmi_18a: list[GFMI18A] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
@@ -105,18 +105,6 @@ class System:
                 setattr(self, c.type_, [])
 
         logger.info(f" System initialization completed.")
-
-
-    @classmethod
-    def from_dataset(cls, dataset, case_directory = None) -> 'System':
-        """
-        Construct a system model from a predefined dataset.
-        """
-        dataset_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
-        system = cls.from_csv(case_directory=dataset_directory)
-        system.case_directory = case_directory
-        return system
-
 
     @classmethod
     def from_csv(cls, case_directory = None) -> 'System':

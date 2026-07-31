@@ -1,2 +1,0 @@
-id,name,type_,zone,bus,timepoint,load_MW,scenario,load_MVAR
-0,,loads,,bus_1,t1,0,,0

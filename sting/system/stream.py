@@ -45,7 +45,7 @@ class Stream:
     def to_table(self, *attrs) -> pl.DataFrame:
         """Return a dataframe with one column per selected attribute."""
         selection = self.select(*attrs)
-        df = pl.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)})
+        df = pl.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)}, strict=False)
         return df
 
 
