@@ -115,7 +115,7 @@ class SmallSignalModel:
         Components should be sorted in the order in which the interconnection 
         matrices are constructed (i.e., generators, shunts, branches).        
         """
-        ssm_components:Iterable[Component] = itertools.chain(self.system.gens, self.system.shunts, self.system.branches)
+        ssm_components:Iterable[Component] = itertools.chain(self.system.ccm_generators, self.system.ccm_shunts, self.system.ccm_branches)
         ssm_components = filter(lambda c: hasattr(c, "_build_small_signal_model"), ssm_components)
         self.components = [ComponentSSM(type=c.type_, id=c.id) for c in ssm_components]
 

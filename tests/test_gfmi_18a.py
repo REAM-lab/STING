@@ -6,7 +6,8 @@ from sting.system import System
 # Core components
 from sting.generator import InfiniteSource, GFMI18A
 from sting.line import LinePiModel
-from sting.bus import Bus, Load
+from sting.bus import Bus
+from sting.load import Load
 from sting.timescales import Timepoint
 from sting.utils.dynamical_systems import smooth_step
 
@@ -21,7 +22,7 @@ t1 = Timepoint(name="t1", weight=1)
 # Buses
 bus_1 = Bus(name="lima", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=1, maximum_voltage_pu=1)
 bus_2 = Bus(name="santiago", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.3)
-load_1 = Load(bus="lima", timepoint="t1", load_MW=0, load_MVAR=0)
+load_1 = Load(bus="santiago", timepoint="t1", load_MW=50, load_MVAR=20)
 #load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
 # Transmission
 line_1 = LinePiModel(
@@ -87,7 +88,4 @@ t_max = 1.5 # Simulation length in seconds
 _, ssm = main.run_ssm(system=system, case_directory=case_directory)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
-main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
-
-emt_dir = os.path.join(case_directory, "outputs", "simulation_emt")
-ssm_dir = os.path.join(case_directory, "outputs", "small_signal_model")
+#main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)

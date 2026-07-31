@@ -33,7 +33,7 @@ class Branch(Component):
     base_power_MVA: float
     base_voltage_kV: float
     base_frequency_Hz: float
-    tags: ClassVar[list[str]] = ["branch"]
+    tags: ClassVar[list[str]] = ["ccm_branch"]
     pf: PowerFlowVariables = None
 
     def post_system_init(self, system):

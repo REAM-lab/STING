@@ -54,12 +54,12 @@ class ConnectionMatrices(NamedTuple):
 def get_ccm_matrices(system: System, attribute: str, dimI: int):
     """ 
     Returns the matrices F, G, H, L of the CCM formulation.
-    TODO: we are supposed to pass a list of components, not all the system in system.gens, it may require refactoring code.
+    TODO: we are supposed to pass a list of components, not all the system in system.ccm_generators, it may require refactoring code.
     """
-    gen_buses, gen_ssm = system.gens.filter(lambda x: getattr(x, attribute) is not None).select("bus_id", attribute)
-    from_bus, to_bus, br_ssm = system.branches.select("from_bus_id", "to_bus_id", attribute)
+    gen_buses, gen_ssm = system.ccm_generators.filter(lambda x: getattr(x, attribute) is not None).select("bus_id", attribute)
+    from_bus, to_bus, br_ssm = system.ccm_branches.select("from_bus_id", "to_bus_id", attribute)
 
-    sh_ssm, = system.shunts.select(attribute)
+    sh_ssm, = system.ccm_shunts.select(attribute)
 
     # Get the number of buses of the full system
     n_buses = len(system.buses)
@@ -143,7 +143,7 @@ def build_ccm_permutation(system: System):
     # Create empty lists for transformations, list order follows that of generator_types_list
     Y1, Y2, T1 = [], [], []
     # Iterate over the all generator types: [inf_src, gfmi_a, gfmi_b, ...]
-    generator_types = system.find_tagged("generator")
+    generator_types = system.find_tagged("ccm_generator")
     for gen_type in generator_types:
         # Number of generators of the given type
         gens = getattr(system, gen_type)

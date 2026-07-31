@@ -1,1 +1,1 @@
-from .core import Bus, Load
+from .core import Bus

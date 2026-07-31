@@ -20,11 +20,12 @@ import sting.system.stream as sl
 # Import sting components
 # -----------------------
 from sting.system.component import Component, SystemComponent
-from sting.bus.core import Bus, Load
+from sting.bus.core import Bus
+from sting.load import Load, ConstantImpedanceLoad, SwitchingLoad
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.infinite_source import InfiniteSource
-from sting.generator.switching_load import SwitchingLoad
+from sting.load.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_d import GFMId
@@ -57,7 +58,6 @@ class System:
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
     infinite_sources: list[InfiniteSource] = None
-    switching_loads: list[SwitchingLoad] = None
     gfmi_c: list[GFMIc] = None
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
@@ -68,6 +68,8 @@ class System:
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None
+    switching_loads: list[SwitchingLoad] = None
+    constant_impedance_loads: list[ConstantImpedanceLoad] = None
     lines: list[LinePiModel] = None
     branch_series_rl: list[BranchSeriesRL] = None
     shunt_parallel_rc: list[ShuntParallelRC] = None
@@ -244,24 +246,35 @@ class System:
 
     @property
     def gens(self):
-        # TODO: We should be more explicit with these properties. It seems like bad
-        # practice to have `sys.generators` and `sys.gens` referring to two different things.
-        # This has the potential to be very confusing from the user perspective. 
-        # Perhaps we can have ccm_generators, ccm_shunts, ccm_branches (and update their tags
-        # as well tags=["ccm_generator"]). Something like this.
-        """Return a lazy Stream (like list) of all components with the tag "generator"."""
+        """Return a lazy Stream (like list) of all components with the tag "generator".
+        It is a list of generic generators, usually used for power flow and capacity expansion.
+        """
         return self.query(self.find_tagged("generator"))
 
     @property
-    def shunts(self):
-        """Return a lazy Stream (like list) of all components with the tag "shunt"."""
-        return self.query(self.find_tagged("shunt"))
+    def ccm_generators(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_generator".
+        It is a list of components that are treated as current generators, that output current into the grid and receive the voltage at its terminals from the grid, 
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_generator"))
 
     @property
-    def branches(self):
-        """Return a lazy Stream (like list) of all components with the tag "branch"."""
-        return self.query(self.find_tagged("branch"))
-    
+    def ccm_shunts(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_shunt".
+        It is a list of components that are treated as shunts, that output voltage at its terminals and receive the current from the grid,
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_shunt"))
+
+    @property
+    def ccm_branches(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_branch".
+        It is a list of components that are treated as branches, that output current in both directions and receive the voltages at its terminals from the grid,
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_branch"))
+
     # ------------------------------------------------------------
     # Common selections
     # ------------------------------------------------------------

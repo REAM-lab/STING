@@ -7,6 +7,7 @@ This module implements a passive RL load that switches on and off at specified t
 # --------------
 import numpy as np
 from dataclasses import dataclass
+from typing import ClassVar
 
 # -------------
 # Import sting code
@@ -25,6 +26,7 @@ class SwitchingLoad(Generator):
     x_pu: float
     ton_sec: float
     toff_sec: float
+    tags: ClassVar[list[str]] = ["ccm_generator"]
 
     def define_variables_emt(self):
         

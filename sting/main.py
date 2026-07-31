@@ -74,6 +74,7 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
     sys_modifier.combine_shunts()
+    sys_modifier.create_impedance_loads()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -101,6 +102,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
     sys_modifier.combine_shunts()
+    sys_modifier.create_impedance_loads()
 
     # Run EMT simulation
     emt_sc = SimulationEMT(system=sys)

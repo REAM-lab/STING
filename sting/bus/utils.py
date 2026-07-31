@@ -7,7 +7,7 @@ import logging
 # ---------------
 # Import sting code
 # ---------------
-from sting.bus.core import Load
+from sting.load import Load
 
 logger = logging.getLogger(__name__)
 

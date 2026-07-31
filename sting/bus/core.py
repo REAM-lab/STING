@@ -57,16 +57,7 @@ class Bus(Component):
             else:
                 self.max_flow_MW += line.cap_existing_power_MW
 
-@dataclass(slots=True, kw_only=True)
-class Load(Component):
-    bus: str
-    timepoint: str
-    load_MW: float
-    scenario: str = None
-    load_MVAR: float = None
 
-    def __repr__(self):
-        return f"Load(id={self.id}, bus='{self.bus}', timepoint='{self.timepoint}')"
 
     
 

@@ -56,7 +56,7 @@ class Generator(Component):
     c1_USDperMWh: float = None
     c2_USDperMWh2: float = None
     emission_rate_tonneCO2perMWh: float = None
-    tags: ClassVar[list[str]] = ["generator"]
+    tags: ClassVar[list[str]] = ["generator", "ccm_generator"]
     bus_id: int = None
     expand_capacity: bool = None
     component_id: str = None

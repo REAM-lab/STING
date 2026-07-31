@@ -5,10 +5,12 @@ import logging
 from dataclasses import dataclass
 import copy
 import polars as pl
+from pyparsing import line
 
 # -----------------------
 # Import sting code
 # -----------------------
+from sting.load.impedance_load import ConstantImpedanceLoad
 from sting.system.core import System
 import sting.generator.shared.capacity_expansion as gen_capex
 import sting.bus.shared.capacity_expansion as bus_capex
@@ -32,10 +34,56 @@ class SystemModifier:
 
     system: System
 
-    def decompose_lines(self, delete_lines: bool = False):
-        logger.info("> Add branches and shunts to system from dissecting lines:")
-        logger.info("  - Lines with no series compensation")
+    def create_impedance_loads(self, delete_loads: bool = False):
+        """
+        Create constant impedance loads from generic loads in the system.
+        This is used in Small Signal Modeling (SSM) and EMT simulations.
+        The loads are given in MW and MVAR for Power Flow, then this info is passed to a constant impedance load, which is modeled as a series RL branch connected to ground.
+        """
 
+        logger.info("> Add constant impedance loads from generic loads:")
+        counter = 0
+        for load in self.system.loads:
+
+            if load.modeled_as_other_load_type:
+                continue  # Skip because it means that the generic load has already been modeled as another load type (e.g., constant impedance load, constant current load, etc.)
+
+            # check if the load has zero MW or MVAR, if so, skip it, it means that there is no load.
+            if (load.load_MW == 0) and (load.load_MVAR == 0):
+                continue
+
+            if (load.load_MW > 0) and (load.load_MVAR == 0):
+                logger.warning(f"Load {load.name} has active power but no reactive power. Add a nonzero reactive power to make it a valid load.")
+                raise ValueError(f"Load {load.name} has active power but no reactive power. Add a nonzero reactive power to make it a valid load.")
+
+            z_load = ConstantImpedanceLoad(
+                name=load.name,
+                bus=load.bus,
+                timepoint=load.timepoint,
+                bus_id=load.bus_id,
+                load_MW=load.load_MW,
+                load_MVAR=load.load_MVAR,
+                base_power_MVA=load.base_power_MVA,
+                base_voltage_kV=load.base_voltage_kV,
+                base_frequency_Hz=load.base_frequency_Hz,
+            )
+            counter += 1
+            self.system.add(z_load)
+
+            # Mark the load as modeled as a constant impedance load, so it is not modeled as a generic load anymore
+            load.modeled_as_other_load_type = True
+
+        # Delete all loads so they cannot be added to the system again
+        if delete_loads:
+            self.system.loads.clear()
+
+        logger.info(f" - Created {counter} constant impedance loads... ok\n")
+
+    def decompose_lines(self, delete_lines: bool = False):
+        logger.info("> Add branches and shunts to system from dissecting pi-model lines:")
+        logger.info(" - Lines with no series compensation")
+
+        counter = 0
         for line in self.system.lines:
             if line.decomposed:
                 continue  # Skip already decomposed lines
@@ -84,14 +132,15 @@ class SystemModifier:
             self.system.add(from_shunt)
             self.system.add(to_shunt)
 
+            counter += 1
             # Mark line as decomposed, so it is not decomposed again
             line.decomposed = True
 
         # Delete all lines so they cannot be added to the system again
         if delete_lines:
-            self.system.lines = []
+            self.system.lines.clear()
 
-        logger.info("... ok.\n")
+        logger.info(f"  - Pi-model {counter} lines decomposed into {counter} branches and {2*counter} shunts... ok\n")
         # TODO: Do the same for line with series compensation
 
     def combine_shunts(self):
@@ -105,13 +154,22 @@ class SystemModifier:
             - "base_power_MVA", "base_voltage_kV", "base_frequency_Hz", and "zone"
         """
 
-        print("> Combining shunts into one 'effective' shunt per bus:")
+        logger.info("> Combining parallel RC shunts into one 'effective' parallel RC shunt per bus:")
 
         shared_columns = ["bus", "base_power_MVA", "base_voltage_kV", "base_frequency_Hz", "zone"]
         # DataFrame with effective shunt parameters
         shunt_df = (
             self.system.query(["shunt_parallel_rc"])
             .to_table("bus_id", "g_pu", "b_pu", *shared_columns)
+        )
+
+        # Check if the number of unique bus_id is equal to the number of rows in the shunt_df, if so, there is no need to combine shunts
+        if shunt_df.select("bus_id").n_unique() == shunt_df.height:
+            logger.info("  - System has already one shunt (g parallel b) per bus. No need to combine shunts... ok\n")
+            return
+        
+        shunt_df = (
+            shunt_df
             .group_by("bus_id")
             .agg(
                 # Conductance and susceptance can be summed when in parallel
@@ -145,7 +203,7 @@ class SystemModifier:
             shunt = ShuntParallelRC(**row)
             self.system.add(shunt)
 
-        print(f"\t- Removed {original_n} shunts, created {reduced_n} effective shunts... ok\n")
+        logger.info(f"  - Removed {original_n} shunts, created {reduced_n} effective shunts... ok\n")
 
     @timeit
     def group_by_zones(self, components_to_clone: list[str] = None) -> System:
@@ -161,6 +219,7 @@ class SystemModifier:
 
         zonal_system = System(case_directory=self.system.case_directory)
 
+        logger.info(" - Grouping components by zones...")
         mapping_bus_to_zone = {n.name: n.zone for n in self.system.buses if n.zone is not None}
         zones = set(mapping_bus_to_zone.values())
 

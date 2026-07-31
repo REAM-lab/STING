@@ -110,9 +110,9 @@ class SimulationEMT:
         """
         self.apply("define_variables_emt")
 
-        generators, = self.system.gens.select("variables_emt")
-        shunts, = self.system.shunts.select("variables_emt")
-        branches, = self.system.branches.select("variables_emt")
+        generators, = self.system.ccm_generators.select("variables_emt")
+        shunts, = self.system.ccm_shunts.select("variables_emt")
+        branches, = self.system.ccm_branches.select("variables_emt")
 
         variables_emt = itertools.chain(generators, shunts, branches)
 
