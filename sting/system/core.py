@@ -108,7 +108,7 @@ class System:
 
 
     @classmethod
-    def from_dataset(cls, dataset, case_directory) -> 'System':
+    def from_dataset(cls, dataset, case_directory = None) -> 'System':
         """
         Construct a system model from a predefined dataset.
         """

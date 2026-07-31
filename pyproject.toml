@@ -25,7 +25,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "more-itertools",
     "polars",
     "numpy",
     "scipy",
@@ -33,24 +32,15 @@ dependencies = [
     "plotly",
     "networkx",
     "pyomo",
-    "control",
-    "pymor"
 ]
 
 [project.optional-dependencies]
 # Solvers (requires system ipopt installation)
 solvers = [
-    # "cyipopt",
-    # "ipopt",
     "mosek",
     "gurobipy",
 ]
-# Model reduction (requires system slycot installation)
-model_reduction = [
-    "control",
-    "pymor",
-    # "slycot",
-]
+
 # Development tools
 dev = [
     "pytest"

@@ -1,32 +1,27 @@
 # ---------------------------------------
 # Import standard and third-party packages
 # ----------------------------------------
+import logging
 import os
 from dataclasses import dataclass
-import logging
-import numpy as np
-import polars as pl
-from more_itertools import transpose
-from scipy.linalg import eigvals, block_diag
-from scipy.integrate import solve_ivp
-from control import ss
-from pymor.models.iosys import LTIModel
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from typing import Callable, Self, Literal
 
-import pylab as plt
 import matplotlib
-matplotlib.use("Agg")
-from plotly.subplots import make_subplots
+import numpy as np
 import plotly.graph_objects as go
-
+import polars as pl
+import pylab as plt
+from plotly.subplots import make_subplots
+from scipy.integrate import solve_ivp
+from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov
+from scipy.linalg.lapack import dpstrf
+matplotlib.use("Agg")
 
 
 # --------------
 # Import sting code
 # --------------
-from sting.utils.matrix_tools import matrix_to_csv, csv_to_matrix
-from typing import Self, Callable
+from sting.utils.matrix_tools import csv_to_matrix, matrix_to_csv
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -289,7 +284,7 @@ class StateSpaceModel:
         fields = ["A", "B", "C", "D", "u", "y", "x"]
         selection = [[getattr(c, f) for f in fields] for c in components]
         
-        stack = dict(zip(fields, transpose(selection)))
+        stack = dict(zip(fields, zip(*selection)))
         A = block_diag(*stack["A"])
         B = block_diag(*stack["B"])
         C = block_diag(*stack["C"])
@@ -514,14 +509,37 @@ class StateSpaceModel:
         A_t = invT @ self.A @ T
         B_t = invT @ self.B
         C_t = self.C @ T
-        return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D)
-    
-    def to_python_control(self):
-        """Returns a python-controls state-space model"""
-        return ss(self.A, self.B, self.C, self.D)
-    
-    def to_pymor(self):
-        return LTIModel.from_matrices(A=self.A, B=self.B, C=self.C, D=self.D)
+        # Compute the new states initial conditions
+        x = DynamicalVariables(name=[f"x{i}" for i in range(T.shape[1])], init=invT@self.x.init)
+
+        return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
+
+
+    def gramian(self, kind: Literal["controllability", "observability"], cholesky=False, lower=False):
+        """
+        Returns the Gramian of the state-space model.
+
+        Parameters
+        ----------
+        kind: Whether to compute the "controllability" or "observability" Gramian
+
+        cholesky: If True returns the Cholesky factorization of the Gramians
+
+        lower: Only applicable if `cholesky=True`, if True will return the 
+            lower Cholesky factorization of the Gramian.
+        """
+        match kind: 
+            case "controllability":
+                W = solve_continuous_lyapunov(self.A, -self.B@self.B.T)
+            case "observability":
+                W = solve_continuous_lyapunov(self.A.T, -self.C.T@self.C)
+
+        if cholesky:
+            # dpstrf: *PSD* Cholesky factorization
+            W_f, _, _, _= dpstrf(W, lower=lower)
+            return W_f
+
+        return W
 
 
 # -------------

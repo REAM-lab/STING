@@ -4,6 +4,7 @@
 import os
 import logging
 import time
+import copy
 
 # ------------------
 # Import sting code
@@ -18,7 +19,7 @@ from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
-from sting.utils.dynamical_systems import StateSpaceModel
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
@@ -305,28 +306,14 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
 
 def run_model_reduction(
         reductions:dict[str, Reducer],
-        file_name,
-        case_directory=os.getcwd(),
-        model_settings=None, 
-        solver_settings=None,
+        ssm: SmallSignalModel
         ):
     """
     Routine to construct a small-signal model and then perform model order reduction (MOR)
     on each subsystem.
     """
-    setup_logging_file(case_directory)
-
-    # Load system and find feasible point for SSM
-    sys = System.from_csv(case_directory=case_directory)
-    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
-    pf.solve()
-
-    # Construct the full-order small-signal model
-    sys_modifier = SystemModifier(system=sys)
-    sys_modifier.decompose_lines()
-    sys_modifier.combine_shunts()
-    ssm = SmallSignalModel(system=sys)
     # Interconnect all components in the same zone
+    ssm = copy.deepcopy(ssm)
     ssm = ssm.group_by("zone").interconnect()
 
     # Add a model reduction algorithm to each subsystem
@@ -335,20 +322,24 @@ def run_model_reduction(
 
     # Construct a state-space model of the full-order model (FOM)
     models = ssm.get_component_attribute("ssm")
-    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    # Input of system are device inputs (according to defined G matrix)
+    u = lambda u: u[u.type == "device"]
+    # Output of system are all outputs (according to defined H matrix)
+    y = lambda y: y
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=u, y=y)
 
     # Perform any system-level operations required by each reduction method
     for reducer in reductions.values():
         for operation in reducer.system_operations:
             operation.solve(ssm)
 
-    # Construct all ROMs and switch from FOM to ROM
+    # Construct all reduced order models (ROMs)
     ssm.apply("_construct_rom")
+    # Switch from using FOMs to ROMs 
     ssm.apply("set_using", "reduced_order_model")
 
-    # Construct the state-space model
+    # Construct the state-space model 
     models = ssm.get_component_attribute("ssm")
-    rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
-    rom.to_csv(os.path.join(case_directory, "outputs", file_name))
-    
-    return ssm, ssm.model, rom
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=ssm.model.u, y=y)
+
+    return ssm

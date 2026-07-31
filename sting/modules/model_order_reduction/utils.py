@@ -1,14 +1,11 @@
 import numpy as np
 from scipy.linalg import solve, eigvals, cholesky
 from typing import Literal
-from dataclasses import dataclass, field
-from control import gram
-from warnings import warn
+from dataclasses import dataclass
 
 from sting.utils.dynamical_systems import StateSpaceModel
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.utils.matrix_tools import mat2cell
-from sting.system.component import Component
 
 def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     """
@@ -73,8 +70,7 @@ class BlockGramian:
 
     def _lyapunov(self, ssm:SmallSignalModel) -> np.ndarray:
          # Compute the Gramian of the *system-level* state-space model
-        sys = ssm.model.to_python_control()
-        W = gram(sys=sys, type=self.type[0])
+        W = ssm.model.gramian(kind=self.type)
         return W
 
     def _structured(self, ssm:SmallSignalModel) -> np.ndarray:
