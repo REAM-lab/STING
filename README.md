@@ -11,7 +11,7 @@ Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**ver
 
 
 ## Installation 
-STING is now available on PyPI (https://pypi.org/project/sting-py/)! To get the latest version of STING please install in Editable Mode, rather than through pip.
+STING is now available on PyPI (https://pypi.org/project/sting-py/)! To get the latest version of STING please install in Editable Mode, rather than through PyPI.
 > [!WARNING]  
 > STING has been packaged under the name `sting-py`.
 
@@ -63,7 +63,7 @@ Most of modules additionally require commercial or open-source solvers to run va
 | MOSEK  | `pip install mosek`   | Capacity expansion |
 
 > [!IMPORTANT]  
-> Please install all relevant solvers for your use case before use.
+> Please install all relevant solvers for your use case before running STING.
 
 
 ## Citing
