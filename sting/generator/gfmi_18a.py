@@ -261,9 +261,18 @@ class GFMI18A(Generator):
 
     def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
         """
-        Construct the interconnection matrices F, H, G, and H that satisfies:
+        Construct the interconnection matrices F, H, G, and L that satisfies:
         u_stack = F * y_stack + H * u_sys
-        y_sys   = G * y_stack + J * u_sys
+        y_sys   = G * y_stack + L * u_sys
+
+        Given the tableau form:
+
+                │   y_stack  │   u_sys
+        ───────────────────────────────────────────────
+        u_stack │   F        │   G
+        ───────────────────────────────────────────────
+        y_sys   │   H        │   L
+        
         
         where:
         u_stack = [u_virtual_inertia, u_voltage_droop, u_inner_voltage_controller, u_inner_current_controller, u_lcl_filter]
@@ -286,89 +295,75 @@ class GFMI18A(Generator):
 
         thus: u_stack has 5 + 6 + 7 + 7 + 5 = 30 inputs, y_stack has 2 + 2 + 2 + 2 + 6 = 14 outputs, y_sys has 2 outputs, and u_sys has 5 inputs.
 
-        Given the tableau form:
         
-                │   y_stack  │   u_sys
-        ───────────────────────────────────────────────
-        u_stack │   F        │   G
-        ───────────────────────────────────────────────
-        y_sys   │   H        │   L
+        Interconnection matrices
+        ------------------------
+        Recall that to linearize the transformation from DQ to dq (and vice versa)
+            Δv_dq = Uᵀ*(v_DQ)ₒ*Δϕ + Rᵀ*Δv_DQ 
+            Δi_DQ = U *(i_dq)ₒ*Δϕ + R *Δi_dq 
+        where
+            R = [ cosϕₒ  -sinϕₒ ]
+                [ sinϕₒ   cosϕₒ ]
+            U = d/dϕₒ R 
+        and we will define
+            a := Uᵀ*(v_DQ)ₒ
+            b := U *(i_dq)ₒ
 
-        component ──▶           |   APC    ┆ RPC        ┆ VC         ┆ IC         ┆ LCL                            │
-        order ──▶               │   0   1  ┆ 2,3        ┆ 4,5        ┆ 6,7        ┆ 8,9        10,11      12,13    │    0       1       2       3,4 
-        ▼                       │   Δϕ  Δω ┆ Δv_ref_dq  ┆ Δi_ref_dq  ┆ Δv_ref_dq  ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │   Δp_ref  Δq_ref  Δv_ref   Δv_bus_DQ
-        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        APC 0       Δp_ref      │   0   0    0            0            0            0          0          0        │   1        0        0        0     
-            1,2     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
-            3,4     Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
-        RPC 5       Δq_ref      │   0   0    0            0            0            0          0          0        │   0        1        0        0     
-            6       Δv_ref      │   0   0    0            0            0            0          0          0        │   0        0        1        0     
-            7,8     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
-            9,10    Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
-        VC  11,12   Δv_ref_dq   │   0   0    I₂           0            0            0          0          0        │   0        0        0        0     
-            13,14   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
-            15,16   Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
-            17      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
-        IC  18,19   Δi_ref_dq   │   0   0    0            I₂           0            0          0          0        │   0        0        0        0     
-            20,21   Δi_vsc_dq   │   0   0    0            0            0            I₂         0          0        │   0        0        0        0     
-            22,23   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
-            24      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
-        LCL 25,26   Δv_vsc_dq   │   0   0    0            0            I₂           0          0          0        │   0        0        0        0     
-            27,28   Δv_bus_dq   │   a   0    0            0            0            0          0          0        │   0        0        0        b     
-            29      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0  
-        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-            0,1     Δi_bus_DQ   |   c   0    0            0            0            0          d          0        │   0        0        0        0
-       
-        Recall that:
-        v_dq = dRdangle.T * (v_DQ)ₒ * Δϕ + R.T * v_DQ 
-        i_DQ = dRdangle * (i_dq)ₒ * Δϕ + R * i_dq 
-
-        Thus:
-        a = dRdangle.T * (v_DQ)ₒ
-        b = R.T
-        c = dRdangle * (i_dq)ₒ
-        d = R
+        ┌ component ──▶             |   APC    ┆ RPC        ┆ IVC        ┆ ICC        ┆ LCL                            │ Grid inputs
+        │       ┌ index ──▶         │   0   1  ┆ 2,3        ┆ 4,5        ┆ 6,7        ┆ 8,9        10,11      12,13    │ 0       1       2       3,4 
+        ▼       ▼                   │   Δϕ  Δω ┆ Δv_ref_dq  ┆ Δi_ref_dq  ┆ Δv_vsc_dq  ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δp_ref  Δq_ref  Δv_ref  Δv_bus_DQ
+        ────────────────────────────┼──────────┴────────────┴────────────┴────────────┴────────────────────────────────┼─────────────────────────────────────
+        APC     0       Δp_ref      │   0   0    0            0            0            0          0          0        │   1        0        0        0     
+                1,2     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+                3,4     Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+        RPC     5       Δq_ref      │   0   0    0            0            0            0          0          0        │   0        1        0        0     
+                6       Δv_ref      │   0   0    0            0            0            0          0          0        │   0        0        1        0     
+                7,8     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+                9,10    Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+        IVC     11,12   Δv_ref_dq   │   0   0    I₂           0            0            0          0          0        │   0        0        0        0     
+                13,14   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+                15,16   Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+                17      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
+        ICC     18,19   Δi_ref_dq   │   0   0    0            I₂           0            0          0          0        │   0        0        0        0     
+                20,21   Δi_vsc_dq   │   0   0    0            0            0            I₂         0          0        │   0        0        0        0     
+                22,23   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+                24      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
+        LCL     25,26   Δv_vsc_dq   │   0   0    0            0            I₂           0          0          0        │   0        0        0        0     
+                27,28   Δv_bus_dq   │   a   0    0            0            0            0          0          0        │   0        0        0        Rᵀ     
+                29      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0  
+        ────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────
+        Grid    0,1     Δi_bus_DQ   |   b   0    0            0            0            0          R          0        │   0        0        0        0
+        outputs
         """
+        angle = relative_phase_deg * np.pi / 180
+        R = R_dq2DQ(angle)
+        I = np.eye(2)
 
-        angle = relative_phase_deg * np.pi / 180 
         a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
-        b = R_DQ2dq(angle) @ np.array([[v_bus_D], [v_bus_Q]])
-
-        c = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
-        d = R_dq2DQ(angle) @ np.array([[i_bus_d], [i_bus_q]])
+        b = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
 
         F = np.zeros((30, 14))
         G = np.zeros((30, 5))
         H = np.zeros((2, 14))
         L = np.zeros((2, 5))
 
-        # Fill in the interconnection matrices
-        # F matrix
-        F[1:3, 10:12] = np.eye(2)  
-        F[3:5, 12:14] = np.eye(2)  
-        F[7:9, 10:12] = np.eye(2)
-        F[9:11, 12:14] = np.eye(2)
-        F[11:13, 2:4] = np.eye(2)
-        F[13:15, 12:14] = np.eye(2)
-        F[15:17, 10:12] = np.eye(2)
-        F[17, 1] = 1
-        F[18:20, 4:6] = np.eye(2)
-        F[20:22, 8:10] = np.eye(2)
-        F[22:24, 12:14] = np.eye(2)
-        F[24, 1] = 1
-        F[25:27, 6:8] = np.eye(2)
-        F[27:29, 0:1] = a
-        F[29, 1] = 1
+        idx_F =[
+            ([1,2], [10,11], I), ([3,4], [12,13], I), ([7,8], [10,11], I), ([9,10], [12,13], I),
+            ([11,12], [2,3], I), ([13,14], [12,13], I), ([15,16], [10,11], I), ([17], [1], 1),
+            ([18,19], [4,5], I), ([20,21], [8,9], I), ([22,23], [12,13], I),  ([24], [1], 1), 
+            ([25,26], [6,7], I), ([27,28], [0], a), ([29], [1], 1), 
+        ]
+        for rows, cols, value in idx_F:
+            F[np.ix_(rows, cols)] = value
 
-        # G matrix
-        G[0, 0] = 1
-        G[5, 1] = 1
-        G[6, 2] = 1
-        G[27:29, 3:6] = b
-
-        # L matrix
-        L[0:2, 0:1] = c
-        L[0:2, 10:12] = d
+        idx_G = [
+            ([0], [0], 1), ([5,6],[1,2], I), ([27,28], [3,4], R.T)
+        ]
+        for rows, cols, value in idx_G:
+            G[np.ix_(rows, cols)] = value
+        
+        H[:, [0]] = b
+        H[np.ix_([0,1], [10,11])] = R
 
         return F, G, H, L
 
@@ -381,7 +376,7 @@ class GFMI18A(Generator):
             i_q = self.lcl_filter.emt_init.i_bus_q,
             v_d = self.lcl_filter.emt_init.v_sh_d,
             v_q = self.lcl_filter.emt_init.v_sh_q,
-            angle = self.virtual_inertia.emt_init.p_ref,
+            angle = self.virtual_inertia.emt_init.angle,
             p_ref = self.virtual_inertia.emt_init.p_ref
         )
 
