@@ -13,6 +13,17 @@ from sting.timescales import Timepoint
 # Construct a simple 2-bus system
 # -------------------------------------------------------
 def toy_2(case_directory=None):
+    """
+    Create a simple "toy" 2 bus system with a stiff voltage source
+    at bus 1 connected to a load at bus 2.
+                 
+                bus 1                  bus 2
+                  ├─────VVVV────UUUU─────┤ 
+                  │                      │    
+    ┌─────────────┴──┐               ┌───┴──┐   
+    │ Voltage Source │               │ Load │
+    └────────────────┘               └──────┘
+    """
     t1 = Timepoint(name="t1", weight=1)
 
     # Buses

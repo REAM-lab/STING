@@ -1,6 +1,6 @@
 import os
 
-from sting import main
+from sting import main, datasets
 from sting.system import System
 
 # Core components
@@ -17,45 +17,24 @@ os.makedirs(case_directory, exist_ok=True)
 # -------------------------------------------------------
 # Construct a simple 2-bus system
 # -------------------------------------------------------
-t1 = Timepoint(name="t1", weight=1)
-# Buses
-bus_1 = Bus(name="lima", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=1, maximum_voltage_pu=1)
-bus_2 = Bus(name="santiago", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.3)
-load_1 = Load(bus="lima", timepoint="t1", load_MW=0, load_MVAR=0)
-load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
-# Transmission
-line_1 = LinePiModel(
-    name="lima_to_santiago", from_bus="lima", to_bus="santiago",
-    base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5, g_pu=0.05, b_pu=0.06666666666667
-    )
-# Generation
-source = VoltageSource4A(
-    name="lima_source", bus="lima", 
-    minimum_active_power_MW=-200, maximum_active_power_MW=200, minimum_reactive_power_MVAR=-500, maximum_reactive_power_MVAR=500,
-    cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5
-)
-gfli = GFLI16A(
-    name="santiago_gfl", bus="santiago",
+gfli_1 = GFLI16A(
+    name="gfli_1", bus="bus_2",
     # Power flow 
-    minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
+    minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # LCL filter
-    rf1_pu=0.02, xf1_pu=0.1, csh_pu=0.1, rsh_pu=1, 
-    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
-    # PLL, inner current controller, power controllers
-    kp_pll_pu=1, ki_pll_puHz=5, tau_pll=1,
-    kp_cc_pu=1, ki_cc_puHz=5, kff_cc=0.75,
-    kp_pc_pu=0.1, ki_pc_puHz=0.5
+    rf1_pu=0.002, xf1_pu=0.07, csh_pu=0.01, rsh_pu=1, 
+    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.003/2, txr_x1_pu=0.08/2, txr_r2_pu=0.003/2, txr_x2_pu=0.08/2, 
+    # Phase-locked loop (PLL)
+    kp_pll_pu=100, ki_pll_puHz=2500, tau_pll=1/100,
+    # Inner current controller
+    kp_cc_pu=0.05, ki_cc_puHz=0.6, kff_cc=0.75,
+    # Power controllers
+    kp_pc_pu=0.1, ki_pc_puHz=100
 )
 
-system = System(case_directory=case_directory)
-
-# Build grid model
-for component in [bus_1, bus_2, load_1, load_2, line_1, source, gfli, t1]:
-    system.add(component)
-
+system = datasets.toy_2(case_directory=case_directory)
+system.add(gfli_1)
 system.apply("post_system_init", system)
 
 # -------------------------------------------------------
