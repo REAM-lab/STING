@@ -139,7 +139,7 @@ def wscc_9(case_directory=None):
         # Inner current controller
         kp_cc_pu=0.05, ki_cc_puHz=0.6, kff_cc=0.75,
         # Power controllers
-        kp_pc_pu=0.01, ki_pc_puHz=0.6
+        kp_pc_pu=0.1, ki_pc_puHz=100
     )
 
     system = System(case_directory=case_directory)

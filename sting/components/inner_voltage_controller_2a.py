@@ -195,8 +195,8 @@ class InnerVoltageController2A:
         ])
         C = np.eye(2)
         D = np.array([
-            [kp, 0, -kp, -cf * w, kff, 0, -cf * v_q],
-            [0, kp, cf * w, -kp, 0, kff, cf * v_d]
+            [kp, 0,    -kp, -cf * w, kff,   0, -cf * v_q],
+            [0, kp, cf * w,     -kp,   0, kff, cf * v_d]
         ])
 
         x = DynamicalVariables(

@@ -155,7 +155,7 @@ class GFLI16A(Generator):
             b := U *(i_dq)ₒ
 
 
-        ┌ component ──▶           │ PLL    ┆ APC      ┆ RPC      ┆ CC        ┆ LCL                            │ Grid inputs
+        ┌ component ──▶           │ PLL    ┆ APC      ┆ RPC      ┆ ICC       ┆ LCL                            │ Grid inputs
         │       ┌ index ──▶       │ 0   1  ┆ 2        ┆ 3        ┆ 4,5       ┆ 6,7        8,9        10,11    │ 0       1       2,3
         ▼       ▼                 │ Δω  Δϕ ┆ Δi_ref_d ┆ Δi_ref_q ┆ Δv_vsc_dq ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δp_ref  Δq_ref  Δv_bus_DQ
         ──────────────────────────┼────────┴──────────┴──────────┴───────────┴────────────────────────────────┼────────────────────────────
@@ -166,7 +166,7 @@ class GFLI16A(Generator):
         RPC     7       Δq_ref    │  0  0    0          0          0           0          0          0        │ 0       1       0
                 8,9     Δi_bus_dq │  0  0    0          0          0           0          I₂         0        │ 0       0       0
                 10,11   Δv_bus_dq │  0  a    0          0          0           0          0          0        │ 0       0       Rᵀ
-        CC      12      Δi_ref_d  │  0  0    1          0          0           0          0          0        │ 0       0       0
+        IC      12      Δi_ref_d  │  0  0    1          0          0           0          0          0        │ 0       0       0
                 13      Δi_ref_q  │  0  0    0          1          0           0          0          0        │ 0       0       0
                 14,15   Δi_bus_dq │  0  0    0          0          0           0          I₂         0        │ 0       0       0
                 16,17   Δv_bus_dq │  0  a    0          0          0           0          0          0        │ 0       0       Rᵀ
