@@ -190,7 +190,7 @@ class SmallSignalModel:
                 data=np.column_stack((tps, solution[i:i+number_of_states].T)),
                 schema=columns_for_df
             )
-            .write_csv(os.path.join(self.output_directory, f"{component}_states.csv")))
+            .write_csv(os.path.join(self.output_directory, f"{component}.csv")))
             i += number_of_states
 
         logger.info(f" - Plotting SSM simulation results in {self.output_directory}")

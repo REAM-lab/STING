@@ -92,7 +92,7 @@ def wscc_9(case_directory=None):
     gfmi_1 = GFMI18A(
         name="gfmi_1", bus="bus_2", zone=None,
         # Power flow 
-        minimum_active_power_MW=30, maximum_active_power_MW=50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+        minimum_active_power_MW=120, maximum_active_power_MW=140, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
         cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
         # LCL filter
         rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
@@ -110,7 +110,7 @@ def wscc_9(case_directory=None):
     gfmi_2 = GFMI18A(
         name="gfmi_2", bus="bus_3", zone="external",
         # Power flow 
-        minimum_active_power_MW=30, maximum_active_power_MW=70, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+        minimum_active_power_MW=200, maximum_active_power_MW=250, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
         cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
         # LCL filter
         rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
@@ -129,7 +129,7 @@ def wscc_9(case_directory=None):
     gfli_1 = GFLI16A(
         name="gfli_1", bus="bus_5", zone="external",
         # Power flow 
-        minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+        minimum_active_power_MW=50, maximum_active_power_MW=100, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
         cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
         # LCL filter
         rf1_pu=0.002, xf1_pu=0.07, csh_pu=0.01, rsh_pu=1, 

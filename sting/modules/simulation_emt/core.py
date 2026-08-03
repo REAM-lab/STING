@@ -44,10 +44,12 @@ class SimulationEMT:
     components: list[Component] = field(init=False)
     variables: VariablesEMT = field(init=False)
     ccm_abc_matrices: list[np.ndarray] = field(init=False)
+    power_flow_directory: str = None
     output_directory: str = None
 
-    def __post_init__(self):
+    def __post_init__(self):    
         self.get_components()
+        self.set_output_folder()
         self.initialize_variables()
         self.get_variables()
         self.assign_idx()
@@ -93,8 +95,11 @@ class SimulationEMT:
         Initialize the EMT variables for all components in the system.
         """
 
-        # Get the solution of the AC power flow model for the first timepoint
-        solution = load_ac_power_flow_solution(os.path.join(self.system.case_directory, "outputs", "ac_power_flow"))
+        # Get the solution of the AC power flow model
+        if self.power_flow_directory is None:
+            self.power_flow_directory = os.path.join(self.system.case_directory, "outputs", "ac_power_flow")
+
+        solution = load_ac_power_flow_solution(self.power_flow_directory)
 
         # Default to the first timepoint if no timepoint is specified
         t = self.system.timepoints[0]
@@ -259,15 +264,12 @@ class SimulationEMT:
         if components is None:
             components = self.components
 
-        output_dir = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
-        os.makedirs(output_dir, exist_ok=True)
-
-        logger.info(f" - Plotting EMT simulation results in {output_dir}")
+        logger.info(f" - Plotting EMT simulation results in {self.output_directory}")
 
         for c in components:
             component: Component = getattr(self.system, c.type_)[c.id]
             results: DynamicalVariables = getattr(component, "plot_results_emt")()
-            results.to_plotly(figure_filepath=os.path.join(output_dir, f"{c.type_}_{c.id}.html"))
+            results.to_plotly(figure_filepath=os.path.join(self.output_directory, f"{c.type_}_{c.id}.html"))
     
     def write_results_csv(self, components = None):
         """
@@ -277,13 +279,10 @@ class SimulationEMT:
         if components is None:
             components = self.components
 
-        output_dir = os.path.join(self.system.case_directory, "outputs", "simulation_emt")
-        os.makedirs(output_dir, exist_ok=True)
-
-        logger.info(f" - Writing EMT simulation results in {output_dir}")
+        logger.info(f" - Writing EMT simulation results in {self.output_directory}")
 
         for c in components:
             component: Component = getattr(self.system, c.type_)[c.id]
-            variables: VariablesEMT = getattr(component, "variables_emt")
-            states: DynamicalVariables = variables.x.to_timeseries(csv_filepath=os.path.join(output_dir, f"{c.type_}_{c.id}_states.csv"))
+            results: DynamicalVariables = getattr(component, "plot_results_emt")()
+            results.to_timeseries(csv_filepath=os.path.join(self.output_directory, f"{c.type_}_{c.id}.csv"))
 

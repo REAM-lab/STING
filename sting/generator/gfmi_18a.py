@@ -233,10 +233,16 @@ class GFMI18A(Generator):
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle)])
 
+        # Compute power
+        p_sh = [v_d * i_d + v_q * i_q for v_d, v_q, i_d, i_q in zip(v_sh_d, v_sh_q, i_bus_d, i_bus_q)]
+        q_sh = [v_q * i_d - v_d * i_q for v_d, v_q, i_d, i_q in zip(v_sh_d, v_sh_q, i_bus_d, i_bus_q)]
+
         results = DynamicalVariables(
-            name=["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"],
+            name=["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", 
+                  "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "p_sh", "q_sh"],
             component=f"{self.type_}_{self.id}",
-            value=[angle, w, q_f, z_vc_d, z_vc_q, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q],
+            value=[angle, w, q_f, z_vc_d, z_vc_q, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q,
+                    p_sh, q_sh],
             time=tps
         )
         return results
@@ -288,29 +294,30 @@ class GFMI18A(Generator):
         ───────────────────────────────────────────────
         y_sys   │   H        │   L
 
-        order ──▶               0   1   2,3        4,5        6,7        8,9        10,11      12,13        0       1       2       3,4 
-        ▼                   │   Δϕ  Δω  Δv_ref_dq  Δi_ref_dq  Δv_ref_dq  Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │   Δp_ref  Δq_ref  Δv_ref  Δv_bus_DQ
-        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        0       Δp_ref      │   0   0   0          0          0          0          0          0        │   1        0        0        0     
-        1,2     Δi_bus_dq   │   0   0   0          0          0          0          I₂         0        │   0        0        0        0     
-        3,4     Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
-        5       Δq_ref      │   0   0   0          0          0          0          0          0        │   0        1        0        0     
-        6       Δv_ref      │   0   0   0          0          0          0          0          0        │   0        0        1        0     
-        7,8     Δi_bus_dq   │   0   0   0          0          0          0          I₂         0        │   0        0        0        0     
-        9,10    Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
-        11,12   Δv_ref_dq   │   0   0   I₂         0          0          0          0          0        │   0        0        0        0     
-        13,14   Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
-        15,16   Δi_ref_dq   │   0   0   0          I₂         0          0          0          0        │   0        0        0        0     
-        17      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0     
-        18,19   Δi_ref_dq   │   0   0   0          I₂         0          0          0          0        │   0        0        0        0     
-        20,21   Δi_vsc_dq   │   0   0   0          0          0          I₂         0          0        │   0        0        0        0     
-        22,23   Δv_sh_dq    │   0   0   0          0          0          0          0          I₂       │   0        0        0        0     
-        24      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0     
-        25,26   Δv_vsc_dq   │   0   0   0          0          I₂         0          0          0        │   0        0        0        0     
-        27,28   Δv_bus_dq   │   a   0   0          0          0          0          0          0        │   0        0        0        b     
-        29      Δω          │   0   1   0          0          0          0          0          0        │   0        0        0        0  
+        component ──▶           |   APC    ┆ RPC        ┆ VC         ┆ IC         ┆ LCL                            │
+        order ──▶               │   0   1  ┆ 2,3        ┆ 4,5        ┆ 6,7        ┆ 8,9        10,11      12,13    │    0       1       2       3,4 
+        ▼                       │   Δϕ  Δω ┆ Δv_ref_dq  ┆ Δi_ref_dq  ┆ Δv_ref_dq  ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │   Δp_ref  Δq_ref  Δv_ref   Δv_bus_DQ
+        ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        APC 0       Δp_ref      │   0   0    0            0            0            0          0          0        │   1        0        0        0     
+            1,2     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+            3,4     Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+        RPC 5       Δq_ref      │   0   0    0            0            0            0          0          0        │   0        1        0        0     
+            6       Δv_ref      │   0   0    0            0            0            0          0          0        │   0        0        1        0     
+            7,8     Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+            9,10    Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+        VC  11,12   Δv_ref_dq   │   0   0    I₂           0            0            0          0          0        │   0        0        0        0     
+            13,14   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+            15,16   Δi_bus_dq   │   0   0    0            0            0            0          I₂         0        │   0        0        0        0     
+            17      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
+        IC  18,19   Δi_ref_dq   │   0   0    0            I₂           0            0          0          0        │   0        0        0        0     
+            20,21   Δi_vsc_dq   │   0   0    0            0            0            I₂         0          0        │   0        0        0        0     
+            22,23   Δv_sh_dq    │   0   0    0            0            0            0          0          I₂       │   0        0        0        0     
+            24      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0     
+        LCL 25,26   Δv_vsc_dq   │   0   0    0            0            I₂           0          0          0        │   0        0        0        0     
+            27,28   Δv_bus_dq   │   a   0    0            0            0            0          0          0        │   0        0        0        b     
+            29      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0  
         ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        0,1     Δi_bus_DQ   |   c   0   0          0          0          0          d          0        │   0        0        0        0
+            0,1     Δi_bus_DQ   |   c   0    0            0            0            0          d          0        │   0        0        0        0
        
         Recall that:
         v_dq = dRdangle.T * (v_DQ)ₒ * Δϕ + R.T * v_DQ 
@@ -343,7 +350,7 @@ class GFMI18A(Generator):
         F[9:11, 12:14] = np.eye(2)
         F[11:13, 2:4] = np.eye(2)
         F[13:15, 12:14] = np.eye(2)
-        F[15:17, 4:6] = np.eye(2)
+        F[15:17, 10:12] = np.eye(2)
         F[17, 1] = 1
         F[18:20, 4:6] = np.eye(2)
         F[20:22, 8:10] = np.eye(2)
