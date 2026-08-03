@@ -16,3 +16,4 @@ sting_log.txt
 *.csv
 # Ignore temp folder used for tests
 tests/tmpdir
+tests/emt_tests/tmpdir
