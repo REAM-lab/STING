@@ -259,7 +259,7 @@ class GFMI18A(Generator):
 
         return [i_bus_a, i_bus_b, i_bus_c]
 
-    def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
+    def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_rad):
         """
         Construct the interconnection matrices F, H, G, and L that satisfies:
         u_stack = F * y_stack + H * u_sys
@@ -332,10 +332,10 @@ class GFMI18A(Generator):
                 27,28   Δv_bus_dq   │   a   0    0            0            0            0          0          0        │   0        0        0        Rᵀ     
                 29      Δω          │   0   1    0            0            0            0          0          0        │   0        0        0        0  
         ────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────
-        Grid    0,1     Δi_bus_DQ   |   b   0    0            0            0            0          R          0        │   0        0        0        0
+        Grid    0,1     Δi_bus_DQ   │   b   0    0            0            0            0          R          0        │   0        0        0        0
         outputs
         """
-        angle = relative_phase_deg * np.pi / 180
+        angle = relative_phase_rad
         R = R_dq2DQ(angle)
         I = np.eye(2)
 
@@ -439,7 +439,7 @@ class GFMI18A(Generator):
                                                     self.lcl_filter.emt_init.v_bus_Q,
                                                     self.lcl_filter.emt_init.i_bus_d, 
                                                     self.lcl_filter.emt_init.i_bus_q,
-                                                    self.virtual_inertia.emt_init.angle)
+                                                    self.lcl_filter.emt_init.angle_ref)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
         return self.ssm
