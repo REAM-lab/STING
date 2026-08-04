@@ -34,8 +34,8 @@ class PhaseLockedLoop3A:
     - wbase: Nominal frequency [rad/s] of the system
     - alpha: Quadratic bilinear artificial stabilization
     """
-    kp_pu: float
-    ki_puHz: float
+    kp_rad_s: float
+    ki_rad2_s2: float
     tau: float
     wbase: float
     alpha: float = 0
@@ -63,7 +63,7 @@ class PhaseLockedLoop3A:
         sin0 = np.sin(phase_rad)
         cos0 = np.cos(phase_rad)
         
-        ki, kp, wb, tau = self.ki_puHz, self.kp_pu, self.wbase, self.tau
+        ki, kp, wb, tau = self.ki_rad2_s2, self.kp_rad_s, self.wbase, self.tau
         
         A = np.array([
             [-1/tau, 0, -v_mag/tau], # v_filter_q
@@ -102,7 +102,7 @@ class PhaseLockedLoop3A:
         phase_rad = relative_phase_deg*np.pi/180
         v_bus_DQ = v_mag * np.exp(phase_rad * 1j)
 
-        ki, kp, wb, tau = self.ki_puHz, self.kp_pu, self.wbase, self.tau
+        ki, kp, wb, tau = self.ki_rad2_s2, self.kp_rad_s, self.wbase, self.tau
         a = self.alpha
 
         A = np.array([
@@ -172,8 +172,8 @@ class PhaseLockedLoop3A:
         d_v_pll_q = (1/self.tau) * (v_q - v_pll_q)
 
         # Compute the derivatives of the state variables for the EMT simulation step
-        d_theta_pll = (self.kp_pu * v_pll_q) + z_pll + self.wbase
-        d_z_pll = self.ki_puHz * v_pll_q
+        d_theta_pll = (self.kp_rad_s * v_pll_q) + z_pll + self.wbase
+        d_z_pll = self.ki_rad2_s2 * v_pll_q
 
         return [d_v_pll_q, d_z_pll, d_theta_pll]
 
@@ -181,8 +181,8 @@ class PhaseLockedLoop3A:
 
         v_bus_q = -v_bus_D * np.sin(phase_pll) + v_bus_Q * np.cos(phase_pll)
         # PLL dynamics
-        d_phase_pll = (self.kp_pu * v_pll_q) + z_pll
-        d_z_pll = self.ki_puHz * v_pll_q
+        d_phase_pll = (self.kp_rad_s * v_pll_q) + z_pll
+        d_z_pll = self.ki_rad2_s2 * v_pll_q
         # Voltage filter dynamics
         d_v_pll_q = (1/self.tau) * (v_bus_q - v_pll_q)
 

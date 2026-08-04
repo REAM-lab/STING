@@ -37,9 +37,9 @@ class GFLI16A(Generator):
     txr_r2_pu: float
     txr_x2_pu: float
     # Phase-locked loop parameters
-    kp_pll_pu: float
-    ki_pll_puHz: float
-    tau_pll: float
+    kp_pll_rad_s: float
+    ki_pll_rad2_s2: float
+    tau_pll_s: float
     # Current controller parameters
     kp_cc_pu: float
     ki_cc_puHz: float
@@ -57,7 +57,7 @@ class GFLI16A(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_pu, self.ki_pll_puHz, self.tau_pll, self.wbase)
+        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
         self.reactive_power_controller = ReactivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
@@ -323,12 +323,15 @@ class GFLI16A(Generator):
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
-        
+
+        # Compute power
+        p_sh = [v_d * i_d + v_q * i_q for v_d, v_q, i_d, i_q in zip(v_sh_d, v_sh_q, i_bus_d, i_bus_q)]
+        q_sh = [v_q * i_d - v_d * i_q for v_d, v_q, i_d, i_q in zip(v_sh_d, v_sh_q, i_bus_d, i_bus_q)]
 
         results = DynamicalVariables(
-            name = ['v_pll_q', 'z_pll', 'theta_pll', 'z_apc', 'z_rpc',  'z_cc_d', 'z_cc_q', "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"],
+            name = ['v_pll_q', 'z_pll', 'theta_pll', 'z_apc', 'z_rpc',  'z_cc_d', 'z_cc_q', "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "p_sh", "q_sh"],
             component = f"{self.type_}_{self.id}",
-            value=[v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q],
+            value=[v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, p_sh, q_sh],
             time=self.variables_emt.x.time
         )
 

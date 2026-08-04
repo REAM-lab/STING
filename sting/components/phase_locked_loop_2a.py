@@ -27,8 +27,8 @@ class InitialConditionsEMT(NamedTuple):
 # ---------------------------------------
 @dataclass(slots=True)
 class PhaseLockedLoop2A:
-    kp_pu: float
-    ki_puHz: float
+    kp_rad_s: float
+    ki_rad2_s2: float
     wbase: float
 
     emt_init: InitialConditionsEMT = field(init=False)
@@ -47,7 +47,7 @@ class PhaseLockedLoop2A:
         )
 
     def get_small_signal_model(self, v_bus_mag, relative_phase_deg):
-        kp, ki = self.kp_pu, self.ki_puHz
+        kp, ki = self.kp_rad_sec, self.ki_rad2_sec2
         # Compute the reference phase angle in radians
         v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi/180)
         wb = self.wbase
