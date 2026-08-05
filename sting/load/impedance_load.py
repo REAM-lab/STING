@@ -134,6 +134,13 @@ class ConstantImpedanceLoad(Load):
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
 
+        return self.ssm
+
+    def _build_quadratic_bilinear_model(self):
+        ssm = self._build_small_signal_model()
+        self.qbm = ssm.to_quadratic_bilinear()
+        return self.qbm
+
     def define_variables_emt(self):
         
         # States

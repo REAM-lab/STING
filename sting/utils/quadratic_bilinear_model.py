@@ -1,28 +1,15 @@
 import copy
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Self
-
-import numpy as np
-from dataclasses import dataclass
-from collections.abc import Iterable
-import os
-from scipy.linalg import block_diag
-import itertools
-import polars as pl
-from typing import Callable
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import logging
 
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag
 
-from sting.utils.dynamical_systems import DynamicalVariables
-from sting.system.component import Component
 from sting.system.core import System
-from sting.utils.component_connections import get_ccm_matrices, build_ccm_permutation
+from sting.utils.component_connections import build_ccm_permutation, get_ccm_matrices
+from sting.utils.dynamical_systems import DynamicalVariables
+
 
 @dataclass
 class QuadraticBilinearModel:
@@ -42,7 +29,7 @@ class QuadraticBilinearModel:
 
 
     @classmethod
-    def from_stacked(cls, components: list[Self]):
+    def from_stacked(cls, components: list[Callable]):
         """
         Create a state space-model by stacking a collection of state-space models.
         """
@@ -120,7 +107,7 @@ class QuadraticBilinearModel:
 
         return new_sys
 
-    def from_system(cls, system:System, pf_sol):
+    def from_system(cls, system:System, power_flow_solution):
         # Load all components that are compatible with the component connection method
         components = system.query("ccm_generators", "ccm_shunts", "ccm_branches").to_list()
 

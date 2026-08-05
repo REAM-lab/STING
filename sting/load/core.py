@@ -10,7 +10,7 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-
+from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ class Load(Component):
     base_frequency_Hz: float = None
     bus_id: int = None
     ssm: StateSpaceModel = None
+    qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
     modeled_as_other_load_type: bool = False

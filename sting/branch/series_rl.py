@@ -12,6 +12,7 @@ import polars as pl
 # Import sting code
 from sting.branch.core import Branch
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 
 class InitialConditionsEMT(NamedTuple):
     vmag_from_bus: float
@@ -36,6 +37,7 @@ class BranchSeriesRL(Branch):
     x_pu: float
     emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
+    qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
     from_bus_id: int = None
@@ -110,6 +112,12 @@ class BranchSeriesRL(Branch):
         y = copy.deepcopy(x)
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
+        return self.ssm
+
+    def _build_quadratic_bilinear_model(self):
+        ssm = self._build_small_signal_model()
+        self.qbm = ssm.to_quadratic_bilinear()
+        return self.qbm
 
     def define_variables_emt(self):
 

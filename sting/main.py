@@ -21,6 +21,7 @@ from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
@@ -109,8 +110,8 @@ def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     sys_modifier.combine_shunts()
     sys_modifier.create_impedance_loads()
 
-    
-    
+    qbm = QuadraticBilinearModel.from_system(system=sys, power_flow_solution=pf_sol)
+    # TODO: Optional modal analysis and write CSVs
 
     logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
 
