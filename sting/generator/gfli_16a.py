@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 # ------------------
 from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import PhaseLockedLoop3A, InnerCurrentController2A, LCLFilter6A, ActivePowerPI1A, ReactivePowerPI1A
@@ -212,7 +213,49 @@ class GFLI16A(Generator):
         return (F,G,H,L)
 
     def _build_quadratic_bilinear_model(self):
-        pass
+        # Unpack OPF solutions
+        v_mag, phase_deg = self.power_flow_variables.vmag_bus, self.power_flow_variables.vphase_bus
+        p_bus, q_bus = self.power_flow_variables.p_bus, self.power_flow_variables.q_bus
+        # Initial conditions in the LCL filter
+        i_bus_d, i_bus_q = self.lcl_filter.emt_init.i_bus_d, self.lcl_filter.emt_init.i_bus_q
+        i_vsc_d, i_vsc_q = self.lcl_filter.emt_init.i_vsc_d, self.lcl_filter.emt_init.i_vsc_q
+        v_bus_d, v_bus_q = self.lcl_filter.emt_init.v_bus_d, self.lcl_filter.emt_init.v_bus_q
+        v_sh_D, v_sh_Q = self.lcl_filter.emt_init.v_sh_D, self.lcl_filter.emt_init.v_sh_Q
+        i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
+        # Current controller initial conditions
+        z_cc_d, z_cc_q = self.current_controller.emt_init.z_cc_d, self.current_controller.emt_init.z_cc_q
+
+        # Create each components quadratic bilinear model
+        pll_qbm = self.phase_locked_loop.get_quadratic_bilinear_model(
+            v_mag=v_mag, relative_phase_deg=phase_deg)
+        apc_qbm = self.active_power_controller.get_quadratic_bilinear_model(
+            z_apc=i_bus_d, p_ref=p_bus, p=p_bus)
+        rpc_qbm = self.reactive_power_controller.get_quadratic_bilinear_model(
+            z_rpc=i_bus_q, q_ref=q_bus, q=q_bus)
+        cc_ssm = self.current_controller.get_small_signal_model(
+            z_cc_d=z_cc_d, z_cc_q=z_cc_q, i_d=i_bus_d, i_q=i_bus_q, v_d=v_bus_d, v_q=v_bus_q, w=1
+            )
+        cc_qbm = cc_ssm.to_quadratic_bilinear()
+        lcl_qbm = self.lcl_filter.get_quadratic_bilinear_model(
+            i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_D=i_bus_D, i_bus_Q=i_bus_Q, v_sh_D=v_sh_D, v_sh_Q=v_sh_Q)
+
+        # Inverter level inputs and outputs
+        v_bus_D, v_bus_Q = self.lcl_filter.emt_init.v_bus_D, self.lcl_filter.emt_init.v_bus_Q
+        i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
+        u = DynamicalVariables(
+            name=["p_ref", "q_ref", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "grid", "grid"],
+            init=[p_bus, q_bus, v_bus_D, v_bus_Q])
+        y = DynamicalVariables(
+            name=['i_bus_D', 'i_bus_Q'],
+            init=[i_bus_D, i_bus_Q])
+
+        # Generate small-signal model
+        components = [pll_qbm, apc_qbm, rpc_qbm, cc_qbm, lcl_qbm]
+        connections = self.get_interconnections_qbm()
+        self.qbm = QuadraticBilinearModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.qbm
 
     def get_interconnections_qbm(self):
         """
@@ -222,7 +265,7 @@ class GFLI16A(Generator):
         LINEAR INTERCONNECTIONS
 
         ┌ component ──▶           │ PLL         ┆ APC     ┆ RPC     ┆ ICC      ┆ LCL                         │ Grid inputs
-        │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1       2,3
+        │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1      2,3
         ▼       ▼                 │ ω   sin cos ┆ i_ref_d ┆ i_ref_q ┆ v_vsc_dq ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ │ p_ref  q_ref  v_bus_DQ
         ──────────────────────────┼─────────────┴─────────┴─────────┴──────────┴─────────────────────────────┼────────────────────────
         PLL     0,1      v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
@@ -254,30 +297,81 @@ class GFLI16A(Generator):
             p = v_d * i_d + v_q * i_q
             q = v_q * i_d - v_d * i_q
 
-                                  │ Grid inputs                                            │ Grid inputs
-                                  │ 0,1  2       3                                         │ 0,1  2       3
-        x * u ──▶           sin * │ ref  v_bus_D v_bus_Q         x * u ──▶           cos * │ ref  v_bus_D v_bus_Q
-        ──────────────────────────┼───────────────────────       ──────────────────────────┼───────────────────────
-        ICC     10      *v_bus_d  │ 0    0       1               ICC     10      *v_bus_d  │ 0    1       0
-                11      *v_bus_q  │ 0   -1       0                       11      *v_bus_q  │ 0    0       1
+                                  │ PLL           ┆ PC   ┆ ICC  ┆ LCL                                  
+                        2         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (u_2 * x)       v_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
+        APC     3       *p_bus    │ 0     0   0     0      0      0        1       0        0       
+        RPC     5       *q_bus    │ 0     0   0     0      0      0        0      -1        0
+        ICC     10      *v_bus_d  │ 0     0   1     0      0      0        0       0        0
+                11      *v_bus_q  │ 0    -1   0     0      0      0        0       0        0
 
-                                  │ PLL           ┆ PC   ┆ ICC  ┆ LCL                               │ Grid inputs
-                                  │ 0,1   3   4   ┆ 5,6  ┆ 7,8  ┆ 9,10     11      12      13,14    │ 0,1  2       3
-        x*x & x*u ──▶   i_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ │ ref  v_bus_D v_bus_Q
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────┼────────────────────────────
-        APC     3       *p_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    1       0
-        RPC     5       *q_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    0       1
-        ICC     8       *i_bus_d  │ 0     0   1     0      0      0        0       0        0       │ 0    0       0
-                9       *i_bus_q  │ 0    -1   0     0      0      0        0       0        0       │ 0    0       0
+                        3         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (u_3 * x)       v_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
+        APC     3       *p_bus    │ 0     0   0     0      0      0        0       1        0       
+        RPC     5       *q_bus    │ 0     0   0     0      0      0        1       0        0
+        ICC     10      *v_bus_d  │ 0     1   0     0      0      0        0       0        0
+                11      *v_bus_q  │ 0     0   1     0      0      0        0       0        0        
+                                
+                        10        │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (x_10 * x)      i_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
+        ICC     8       *i_bus_d  │ 0     0   1     0      0      0        0       0        0
+                9       *i_bus_q  │ 0    -1   0     0      0      0        0       0        0
 
-                                  │ 0,1   3   4   ┆ 5,6  ┆ 7,8  ┆ 9,10     11      12      13,14    │ 0,1  2       3        
-        x*x & x*u ──▶   i_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ │ ref  v_bus_D v_bus_Q
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────┼────────────────────────────
-        APC     3       *p_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    0       1
-        RPC     5       *q_bus    │ 0     0   0     0      0      0        0       0        0       │ 0   -1       0
-        ICC     8       *i_bus_d  │ 0     1   0     0      0      0        0       0        0       │ 0    0       0
-                9       *i_bus_q  │ 0     0   1     0      0      0        0       0        0       │ 0    0       0
+                        11        │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (x_11 * x)      i_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────
+        ICC     8       *i_bus_d  │ 0     1   0     0      0      0        0       0        0
+                9       *i_bus_q  │ 0     0   1     0      0      0        0       0        0        
         """
+        # TODOs: 
+        # 3) QBM simulations
+
+        I = np.eye(2)
+        J = np.array([[0, 1], [-1,0]])
+
+        # Linear interconnection matrices
+        L11 = np.zeros((20, 13))
+        L12 = np.zeros((20, 4))
+        L21 = np.zeros((2, 13))
+        L22 = np.zeros((2, 4))
+
+        idx_11 = [([6,7], [3,4], I), ([13], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
+        for rows, cols, value in idx_11:
+            L11[np.ix_(rows, cols)] = value
+
+        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([15,16], [2,3], I)]
+        for rows, cols, value in idx_12:
+            L12[np.ix_(rows, cols)] = value
+
+        L21[np.ix_([0,1],[9,10])] = I
+
+        # Nonlinear interconnection matrices
+        # M1 (x \otime x)   
+        M1_x10 = np.zeros((20,14))
+        M1_x11 = np.zeros((20,14))
+
+        M1_x10[np.ix_([8,9],[2,3])] = J
+        M1_x11[np.ix_([8,9],[2,3])] = I
+
+        M1 = np.hstack((np.zeros((20, 14*10)), M1_x10, M1_x11, np.zeros((20, 14*2))))
+
+        # M2 (u \otimes x)
+        M2_u2 = np.zeros((20,14))
+        M2_u3 = np.zeros((20,14))
+
+        idx_u2 = [([3], [10], 1), ([5], [11], 1), ([10,11], [2,3], J)]
+        for rows, cols, value in idx_u2:
+            M2_u2[np.ix_(rows, cols)] = value
+        idx_u3 = [([3], [11], 1), ([5], [10], 1), ([10,11], [2,3], I)]
+        for rows, cols, value in idx_u3:
+            M2_u3[np.ix_(rows, cols)] = value
+
+        M2 = np.hstack((np.zeros(20, 14*2), M2_u2, M2_u3))
+        
+        return (L11, L12, L21, L22, M1, M2)
         
 
     def define_variables_emt(self):

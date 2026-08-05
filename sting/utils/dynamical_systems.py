@@ -344,6 +344,17 @@ class StateSpaceModel:
 
         return cls(A=A, B=B, C=C, D=D, x=x, y=y, u=u)
 
+    def to_quadratic_bilinear(self):
+        # Import here to avoid potential circular imports
+        from .quadratic_bilinear_model import QuadraticBilinearModel
+
+        n, m = self.B.shape
+        # State-space model is a quadratic bilinear model with H = 0 and N = 0
+        H = np.zeros((n, n*n))
+        N = np.zeros((n, n*m))
+
+        return QuadraticBilinearModel(A=self.A, B=self.B, C=self.C, D=self.D, H=H, N=N, x=self.x, y=self.y, u=self.u)
+
     def to_csv(self, filepath):
         
         # Create output directory if it doesn't exist

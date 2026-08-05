@@ -4,11 +4,25 @@ from dataclasses import dataclass
 from typing import Self
 
 import numpy as np
+from dataclasses import dataclass
+from collections.abc import Iterable
+import os
+from scipy.linalg import block_diag
+import itertools
+import polars as pl
+from typing import Callable
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import logging
+
+import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag
 
 from sting.utils.dynamical_systems import DynamicalVariables
-
+from sting.system.component import Component
+from sting.system.core import System
+from sting.utils.component_connections import get_ccm_matrices, build_ccm_permutation
 
 @dataclass
 class QuadraticBilinearModel:
@@ -57,13 +71,14 @@ class QuadraticBilinearModel:
         return cls(A=A, B=B, C=C, D=D, H=H, N=N, u=u, y=y, x=x)
 
     @classmethod
-    def from_interconnected(cls, components, u, y, L_11, L_12, L_21, L_22, M_1, M_2):
+    def from_interconnected(cls, components, connections, u, y, component_label:str=None):
         """
         a = u_stack, b = y_stack
 
-        a = L_11 * b + L_12*u + M_1 (x otimes x) + M_2 (u otimes x)
-        y = L_21 * b + L_22*u
+        a = L11 * b + L12*u + M1 (x otimes x) + M2 (u otimes x)
+        y = L21 * b + L22*u
         """
+        (L_11, L_12, L_21, L_22, M_1, M_2) = connections
         
         sys = cls.from_stacked(components)
         I_y = np.eye(L_11.shape[1])
@@ -71,24 +86,67 @@ class QuadraticBilinearModel:
 
         inv = np.linalg.inv(I_y - L_11@sys.D)
 
-        # All of these matrices should be zero
-        X_1 = sys.N@np.kron(inv@M_1, np.eye(n))
-        X_2 = sys.N@np.kron(inv@M_2, np.eye(n))
-        X_3 = L_21@sys.D@inv@M_1
-        X_4 = L_21@sys.D@inv@M_2
-        
+        if (M_1 is None) and (M_2 is None):
+            # If M1 and M2 are None, then they are assumed to be
+            # zeros and we can remove X and Y from our system level model
+            X = 0
+            Y = 0
+        else:
+            # All of these matrices should be zero
+            assert np.all(sys.N@np.kron(inv@M_1, np.eye(n)) == 0)
+            assert np.all(sys.N@np.kron(inv@M_2, np.eye(n)) == 0)
+            assert np.all(L_21@sys.D@inv@M_1 == 0)
+            assert np.all(L_21@sys.D@inv@M_2 == 0)
 
+            X = sys.B@inv@M_1
+            Y = sys.B@inv@M_2 
+            
         A = sys.A + sys.B@inv@L_11@sys.C 
-        H = sys.H + sys.B@inv@M_1 + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
+        H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
         B = sys.B@inv@L_12
-        N = sys.B@inv@M_2 + sys.N@np.kron(inv@L_12, np.eye(n))
+        N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
         C = L_21@sys.C + L_12@sys.D@inv@L_11@sys.C
         D = L_21@sys.D@inv@L_12 + L_22
 
         u = u if not callable(u) else u(sys.u)
         y = y if not callable(y) else y(sys.y)
 
-        return cls(A=A, B=B, C=C, D=D, H=H, N=N, u=u, y=y, x=sys.x)
+        new_sys = cls(A=A, B=B, C=C, D=D, H=H, N=N, u=u, y=y, x=sys.x)
+
+        if component_label is not None:
+            new_sys.x.component = component_label
+            new_sys.u.component = component_label
+            new_sys.y.component = component_label
+
+        return new_sys
+
+    def from_system(cls, system:System, pf_sol):
+        # Load all components that are compatible with the component connection method
+        components = system.query("ccm_generators", "ccm_shunts", "ccm_branches").to_list()
+
+        # Construct component quadratic bilinear models
+        for c in components:
+            c._calculate_emt_initial_conditions()
+        for c in components:
+            c._build_quadratic_bilinear_model()
+        models = [c.qbm for c in components]
+
+        # Construct interconnection matrices
+        L11, L12, L21, L22 = get_ccm_matrices(system, attribute="ssm", dimI=2)
+        # Permute the F and G 
+        T = build_ccm_permutation(system)
+        T = block_diag(T, np.eye(L11.shape[0] - T.shape[0]))
+        L11 = T @ L11
+        L12 = T @ L12
+
+        # Construct system level model
+        connections = (L11, L12, L21, L22, None, None)
+        u = lambda u: u[u.type == "device"] # System inputs are device inputs
+        y = lambda y: y # System outputs are all component outputs
+        # Interconnect models
+        qbm = cls.from_interconnected(models, connections, u, y)
+
+        return qbm
 
 
     def get_derivatives_step(self, t: float, x: np.ndarray,  inputs: Callable):

@@ -38,7 +38,7 @@ class Stream:
         
         return zip(*selection)
 
-    def to_list(self):
+    def to_list(self) -> list:
         """Return a list of all items in the generator."""
         return list(self)
 

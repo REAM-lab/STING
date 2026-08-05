@@ -225,7 +225,7 @@ class LCLFilter6A:
         return ssm
     
 
-    def get_quadratic_bilinear_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
+    def get_quadratic_bilinear_model(self, i_vsc_d, i_vsc_q, i_bus_D, i_bus_Q, v_sh_D, v_sh_Q):
         """
         u = [v_vsc_dq, v_bus_DQ, ω, sin, cos]
         x = [i_vsc_dq, i_bus_DQ, v_sh_DQ]
@@ -234,21 +234,21 @@ class LCLFilter6A:
         wb = self.wbase
 
         A = wb*np.array([
-            [-rf1/xf1  ,   0       ,  0        ,   0       ,       -1/xf1      ,  0          ], # i_vsc_d
-            [ 0        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1     ], # i_vsc_q
+            [-rf1/xf1  ,   0       ,  0        ,   0       ,       0           ,  0          ], # i_vsc_d
+            [0         ,   -rf1/xf1,  0        ,   0       ,       0           ,  0          ], # i_vsc_q
             [0         ,   0       ,  -rf2/xf2 ,   1       ,       1/xf2       ,  0          ], # i_bus_D
             [0         ,   0       ,  -1       ,   -rf2/xf2,       0           ,  1/xf2      ], # i_bus_Q
-            [1/csh     ,   0       ,  -1/csh   ,   1       ,       -1/(rsh*csh),  0          ], # v_sh_D
-            [0         ,   1/csh   ,  -1       ,   -1/csh  ,        0          ,  -1/(rsh*csh)] # v_sh_Q
+            [0         ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  1          ], # v_sh_D
+            [0         ,   0       ,   0       ,   -1/csh  ,       -1          ,  -1/(rsh*csh)] # v_sh_Q
         ])
         B = wb*np.array([
             # v_vsc_d,  v_vsc_q,   v_bus_D,    v_bus_Q,      w
             [1/xf1 ,    0      ,   0       ,   0      ,      0 ], 
-            [0     ,    1/xf1  ,   0       ,   0      ,     -0 ], 
+            [0     ,    1/xf1  ,   0       ,   0      ,      0 ], 
             [0     ,    0      ,   -1/xf2  ,   0      ,      0 ], 
-            [0     ,    0      ,   0       ,   -1/xf2 ,     -0 ],
+            [0     ,    0      ,   0       ,   -1/xf2 ,      0 ],
             [0     ,    0      ,   0       ,   0      ,      0 ],
-            [0     ,    0      ,   0       ,   0      ,     -0 ]
+            [0     ,    0      ,   0       ,   0      ,      0 ]
         ])
 
         C = np.eye(6)
@@ -265,26 +265,37 @@ class LCLFilter6A:
             [ 0, 0, 0, 0, 0, 0],
             [ 0, 0, 0, 0, 0, 0],
         ])
-        # Trig interaction terms
-        N_sin = np.array([
-            [ 0, 0, 0, 0, 0, 0], # i_vsc_d
-            [ 0, 0, 0, 0, 0, 0], # i_vsc_q
-            [ 0, 0, 0, 0, 0, 0], # i_bus_D
-            [ 0, 0, 0, 0, 0, 0], # i_bus_Q
-            [ 0, 0, 0, 0, 0, 0], # v_sh_D
-            [ 0, 0, 0, 0, 0, 0], # v_sh_Q
+        # Trig interaction terms due to reference frame transforms (DQ-> dq)
+        N_sin = wb*np.array([
+            [     0,     0, 0, 0,     0,-1/xf1], # i_vsc_d
+            [     0,     0, 0, 0, 1/xf1,     0], # i_vsc_q
+            [     0,     0, 0, 0,     0,     0], # i_bus_D
+            [     0,     0, 0, 0,     0,     0], # i_bus_Q
+            [     0,-1/csh, 0, 0,     0,     0], # v_sh_D
+            [ 1/csh,     0, 0, 0,     0,     0], # v_sh_Q
         ])
-        N = np.hstack([np.zeros((6,24)), N_w])
+        N_cos = wb*np.array([
+            [     0,     0, 0, 0,-1/xf1,     0], # i_vsc_d
+            [     0,     0, 0, 0,     0,-1/xf1], # i_vsc_q
+            [     0,     0, 0, 0,     0,     0], # i_bus_D
+            [     0,     0, 0, 0,     0,     0], # i_bus_Q
+            [ 1/csh,     0, 0, 0,     0,     0], # v_sh_D
+            [     0, 1/csh, 0, 0,     0,     0], # v_sh_Q
+        ])
+
+
+        N = np.hstack([np.zeros((6,24)), N_w, N_sin, N_cos])
 
         x = DynamicalVariables(
-            name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
-            init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q,]
+            name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_D", "v_sh_Q"],
+            init=[i_vsc_d, i_vsc_q, i_bus_D, i_bus_Q, v_sh_D, v_sh_Q,]
         )
         u = DynamicalVariables(
-            name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w'],
-            init=[i_vsc_d, i_vsc_q, self.emt_init.v_bus_d, self.emt_init.v_bus_q, self.wbase]
+            name=['v_vsc_d', 'v_vsc_q', 'v_bus_D', 'v_bus_Q', 'w', 'sin', 'cos'],
+            init=[i_vsc_d, i_vsc_q, self.emt_init.v_bus_D, self.emt_init.v_bus_Q, 
+                  self.wbase, np.sin(self.emt_init.angle_ref), np.cos(self.emt_init.angle_ref)]
         )
-        y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q",])
+        y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_D", "v_sh_Q"])
 
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 

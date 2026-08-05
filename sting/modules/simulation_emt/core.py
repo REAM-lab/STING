@@ -15,7 +15,7 @@ from sting.system.core import System
 from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
-from sting.modules.small_signal_modeling.utils import get_ccm_matrices
+from sting.utils.component_connections import get_ccm_matrices
 from sting.utils.runtime_tools import timeit
 from sting.modules.power_flow.utils import load_ac_power_flow_solution
 
