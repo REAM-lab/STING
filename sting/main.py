@@ -21,7 +21,7 @@ from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+
 from sting.modules.model_order_reduction.core import Reducer
 
 logging.basicConfig(level=logging.INFO,
@@ -88,6 +88,8 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     return sys, ssm
 
 def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=None, system=None):
+
+    from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
     start_time = time.time()
     
     # Set up logging to file

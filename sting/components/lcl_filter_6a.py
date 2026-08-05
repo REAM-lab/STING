@@ -28,6 +28,8 @@ class InitialConditionsEMT(NamedTuple):
     # Shunt voltage
     v_sh_d: float
     v_sh_q: float
+    v_sh_D: float
+    v_sh_Q: float
     v_sh_a: float
     v_sh_b: float
     v_sh_c: float
@@ -163,6 +165,8 @@ class LCLFilter6A:
             # Shunt
             v_sh_d=v_sh_dq.real,
             v_sh_q=v_sh_dq.imag,
+            v_sh_D=v_lcl_sh_DQ.real,
+            v_sh_Q=v_lcl_sh_DQ.imag,
 
             v_sh_a=v_sh_a,
             v_sh_b=v_sh_b,
@@ -243,17 +247,17 @@ class LCLFilter6A:
         ])
         B = wb*np.array([
             # v_vsc_d,  v_vsc_q,   v_bus_D,    v_bus_Q,      w
-            [1/xf1 ,    0      ,   0       ,   0      ,      0 ], 
-            [0     ,    1/xf1  ,   0       ,   0      ,      0 ], 
-            [0     ,    0      ,   -1/xf2  ,   0      ,      0 ], 
-            [0     ,    0      ,   0       ,   -1/xf2 ,      0 ],
-            [0     ,    0      ,   0       ,   0      ,      0 ],
-            [0     ,    0      ,   0       ,   0      ,      0 ]
+            [1/xf1 ,    0      ,   0       ,   0      ,      0, 0, 0], 
+            [0     ,    1/xf1  ,   0       ,   0      ,      0, 0, 0 ], 
+            [0     ,    0      ,   -1/xf2  ,   0      ,      0, 0, 0 ], 
+            [0     ,    0      ,   0       ,   -1/xf2 ,      0, 0, 0 ],
+            [0     ,    0      ,   0       ,   0      ,      0, 0, 0 ],
+            [0     ,    0      ,   0       ,   0      ,      0, 0, 0 ]
         ])
 
         C = np.eye(6)
 
-        D = np.zeros((6, 5))
+        D = np.zeros((6, 7))
         H = np.zeros((6, 36))
 
         # State-angular velocity interaction terms

@@ -8,50 +8,14 @@ from scipy.linalg import block_diag
 # ----------------------
 # Import sting code
 # ----------------------
-from sting.system.core import System
+#from sting.system.core import System
 from sting.utils.graph_matrices import build_generation_connection_matrix, build_oriented_incidence_matrix
-from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
-
-
-# -----------
-# Sub-classes
-# -----------
-class VariablesSSM(NamedTuple):
-    """
-    All variables in the system for small-signal modeling.
-    """
-    x: DynamicalVariables
-    u: DynamicalVariables
-    y: DynamicalVariables
-
-class ComponentSSM(NamedTuple):
-    """
-    A component of the system that participates in small-signal modeling.
-
-    #### Attributes:
-    - type: `str`
-            inf_src, se_rl, pa_rc, ... etc. 
-    - idx: `int`
-            Index of the component in its corresponding list in the system.
-    """
-    type: str
-    id: int
-
-class ConnectionMatrices(NamedTuple):
-    """
-    Component connection matrices
-    Using a NamedTuple to avoid accessing each element by it's index in a list
-    """
-    F: np.ndarray
-    G: np.ndarray
-    H: np.ndarray
-    L: np.ndarray
 
 # -----------
 # Functions
 # -----------
 
-def get_ccm_matrices(system: System, attribute: str, dimI: int):
+def get_ccm_matrices(system, attribute: str, dimI: int):
     """ 
     Returns the matrices F, G, H, L of the CCM formulation.
     TODO: we are supposed to pass a list of components, not all the system in system.ccm_generators, it may require refactoring code.
@@ -136,7 +100,7 @@ def get_ccm_matrices(system: System, attribute: str, dimI: int):
     return F, G, H, L
 
 
-def build_ccm_permutation(system: System):
+def build_ccm_permutation(system):
     """
     Build the permutation matrices from Lemma 1 and 2.
     """

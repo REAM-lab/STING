@@ -369,7 +369,7 @@ class GFLI16A(Generator):
         for rows, cols, value in idx_u3:
             M2_u3[np.ix_(rows, cols)] = value
 
-        M2 = np.hstack((np.zeros(20, 14*2), M2_u2, M2_u3))
+        M2 = np.hstack((np.zeros((20, 14*2)), M2_u2, M2_u3))
         
         return (L11, L12, L21, L22, M1, M2)
         

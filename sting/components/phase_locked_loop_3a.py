@@ -151,7 +151,7 @@ class PhaseLockedLoop3A:
             [    0,    0, 0, 1], # z_cos
         ])
 
-        D = np.zeros((2, 4))
+        D = np.zeros((3, 2))
 
         u = DynamicalVariables(
             name=['v_bus_D', 'v_bus_Q'],

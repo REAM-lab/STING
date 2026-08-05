@@ -6,8 +6,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag
 
-from sting.system.core import System
-from sting.utils.component_connections import build_ccm_permutation, get_ccm_matrices
+from sting.system.component_connections import build_ccm_permutation, get_ccm_matrices
 from sting.utils.dynamical_systems import DynamicalVariables
 
 
@@ -68,7 +67,7 @@ class QuadraticBilinearModel:
         (L_11, L_12, L_21, L_22, M_1, M_2) = connections
         
         sys = cls.from_stacked(components)
-        I_y = np.eye(L_11.shape[1])
+        I_y = np.eye(L_11.shape[0])
         n, _ = sys.A.shape
 
         inv = np.linalg.inv(I_y - L_11@sys.D)
@@ -92,7 +91,7 @@ class QuadraticBilinearModel:
         H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
         B = sys.B@inv@L_12
         N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
-        C = L_21@sys.C + L_12@sys.D@inv@L_11@sys.C
+        C = L_21@sys.C + L_21@sys.D@inv@L_11@sys.C
         D = L_21@sys.D@inv@L_12 + L_22
 
         u = u if not callable(u) else u(sys.u)
@@ -107,9 +106,16 @@ class QuadraticBilinearModel:
 
         return new_sys
 
-    def from_system(cls, system:System, power_flow_solution):
+    @classmethod
+    def from_system(cls, system, power_flow_solution, timepoint=None):
         # Load all components that are compatible with the component connection method
-        components = system.query("ccm_generators", "ccm_shunts", "ccm_branches").to_list()
+        components = system.query(["ccm_generators", "ccm_shunts", "ccm_branches"]).to_list()
+
+        # Load the ACOPF solution into each component
+        if timepoint is None:
+            t = system.timepoints[0]
+        for c in components:
+            c.load_ac_power_flow_solution(t.name, power_flow_solution)
 
         # Construct component quadratic bilinear models
         for c in components:
@@ -119,7 +125,7 @@ class QuadraticBilinearModel:
         models = [c.qbm for c in components]
 
         # Construct interconnection matrices
-        L11, L12, L21, L22 = get_ccm_matrices(system, attribute="ssm", dimI=2)
+        L11, L12, L21, L22 = get_ccm_matrices(system, attribute="qbm", dimI=2)
         # Permute the F and G 
         T = build_ccm_permutation(system)
         T = block_diag(T, np.eye(L11.shape[0] - T.shape[0]))

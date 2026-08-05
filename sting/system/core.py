@@ -15,7 +15,6 @@ import datetime
 # -----------------------
 from sting.__init__ import __logo__
 import sting.system.stream as sl
-from sting.system.stream import Stream
 
 # -----------------------
 # Import sting components
@@ -204,7 +203,7 @@ class System:
         return component.id
         
 
-    def query(self, components=None) -> 'Stream':
+    def query(self, components=None) -> 'sl.Stream':
         """
         Return a Stream over a set of component types. Analogous to FROM in 
         SQL, specifying which tables to access data from. For example, 

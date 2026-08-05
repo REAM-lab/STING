@@ -110,7 +110,7 @@ class ReactivePowerPI1A:
                 u = DynamicalVariables(name=["q_ref", "q_apc"], init = [q_ref, q]),
                 y = DynamicalVariables(name=['i_ref_q'])
             )
-            return ssm
+            return ssm.to_quadratic_bilinear()
 
     def define_variables_emt_abc(self):
 
