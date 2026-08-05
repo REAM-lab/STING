@@ -1,8 +1,12 @@
 import copy
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
+import plotly.graph_objects as go
+import polars as pl
+from plotly.subplots import make_subplots
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag
 
@@ -149,39 +153,86 @@ class QuadraticBilinearModel:
 
 
     def simulate(
-            self, 
-            t_max: float, 
-            inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
-            x0: list[float] = None, 
-            settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
-    
-            if x0 is None:
-                x0 = self.x.init
-    
-            if inputs is None:
-                inputs = {}
-            inputs = self.vectorize_inputs(inputs)
-                   
-            sol = solve_ivp(
-                fun=self.get_derivatives_step,
-                t_span=[0, t_max],
-                y0=x0,
-                dense_output=settings['dense_output'],  
-                args=(inputs, ),
-                method=settings['method'], 
-                max_step=settings['max_step'])
-                            
-            # Define timepoints that will be used to evaluate the solution of the ODEs
-            if settings['dense_output']:
-                tps = np.linspace(0, t_max, 500)
-                sol = sol.sol(tps)
+        self, 
+        t_max: float, 
+        inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
+        x0: list[float] = None, 
+        settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
 
-            sol.x = sol.y
-            sol.u = np.array([inputs(t) for t in sol.t])
-            sol.y = self.C@sol.x + sol.D@sol.u
+        if x0 is None:
+            x0 = self.x.init
 
-            return tps, sol
+        if inputs is None:
+            inputs = {}
+        inputs = self.vectorize_inputs(inputs)
+                
+        sol = solve_ivp(
+            fun=self.get_derivatives_step,
+            t_span=[0, t_max],
+            y0=x0,
+            dense_output=settings['dense_output'],  
+            args=(inputs, ),
+            method=settings['method'], 
+            max_step=settings['max_step'])
+                        
+        # Define timepoints that will be used to evaluate the solution of the ODEs
+        if settings['dense_output']:
+            tps = np.linspace(0, t_max, 500)
+            sol.y = sol.sol(tps)
+            sol.t = tps
 
+        sol.x = sol.y
+        sol.u = np.array([inputs(t) for t in sol.t]).T
+        sol.y = self.C@sol.x + self.D@sol.u
+
+        return sol
+
+    def write_simulation_csv(self, solution, output_directory):
+        # Add the initial conditions back to the solution (for plotting purposes)
+        for i in range(len(self.x.init)):
+            solution[i] = solution[i] + self.x.init[i]
+        
+        # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.x.component, return_index=True)
+        components = self.x.component[np.sort(comp_idx)]  
+
+        # Write the simulation results to CSV files.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.x.component == component)
+            state_names = self.x.name[self.x.component == component]
+            columns_for_df = ['time'] + state_names.tolist()
+            (pl.DataFrame(
+                data=np.column_stack((solution.t, solution.y[i:i+number_of_states].T)),
+                schema=columns_for_df
+            )
+            .write_csv(os.path.join(self.output_directory, f"{component}.csv"))
+            )
+            i += number_of_states
+
+    def write_simulation_plots(self, solution, output_directory):
+
+         # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.x.component, return_index=True)
+        components = self.x.component[np.sort(comp_idx)] 
+        
+        # Make a html file for each component. Each file plots the states corresponding to each component.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.x.component == component)
+            nrows = int(np.ceil(number_of_states / 2))
+            ncols = 2 if number_of_states > 1 else 1
+            fig = make_subplots(rows=nrows, cols=ncols)
+            for j in range(number_of_states):
+                row = j // ncols + 1
+                col = j % ncols + 1
+                fig.add_trace(go.Scatter(x=solution.t, y=solution.y[i]), row=row, col=col)
+                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
+                fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
+                i += 1
+
+            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
+            fig.write_html(os.path.join(output_directory, f"{component}.html"))
 
     def shift_to_equilibrium(self):
         """Center the dynamics of model about its initial conditions"""

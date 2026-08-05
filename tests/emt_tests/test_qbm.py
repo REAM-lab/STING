@@ -34,7 +34,35 @@ gfli_1 = GFLI16A(
 )
 
 system = datasets.toy_2(case_directory=case_directory)
-system.add(gfli_1)
+# system.add(gfli_1)
 system.apply("post_system_init", system)
 
-main.run_qbm(case_directory=case_directory, system=system)
+sys, qbm = main.run_qbm(case_directory=case_directory, system=system)
+
+# -------------------------------------------------------
+# Run small-signal model and EMT simulations
+# -------------------------------------------------------
+
+# Step function inputs to simulate
+def step1(t):
+    return 0.1 if t >= 0.5 else 0.0
+
+def step2(t):
+    return -0.1 if t >= 0.5 else 0.0
+
+inputs = {
+    'gfli_16a_0': {
+        'p_ref': step1,
+        'q_ref': step2,
+        }
+}
+
+t_max = 1.5 # Simulation length in seconds
+
+
+
+qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, x0=qbm.x.init)
+
+os.makedirs(os.path.join(case_directory, "outputs", "qbm"), exist_ok=True)
+
+qbm.write_simulation_plots(qbm_sol, os.path.join(case_directory, "outputs", "qbm"))
