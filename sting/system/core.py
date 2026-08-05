@@ -25,6 +25,7 @@ from sting.load import Load, ConstantImpedanceLoad, SwitchingLoad
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.voltage_source_4a import VoltageSource4A
+from sting.generator.voltage_source_5a import VoltageSource5A
 from sting.load.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
@@ -58,6 +59,7 @@ class System:
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
     voltage_source_4a: list[VoltageSource4A] = None
+    voltage_source_5a: list[VoltageSource5A] = None
     gfmi_c: list[GFMIc] = None
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
