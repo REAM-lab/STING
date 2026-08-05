@@ -1,6 +1,6 @@
 import os
 
-from sting import main
+from sting import main, datasets
 from sting.system import System
 
 # Core components
@@ -14,39 +14,33 @@ from sting.timescales import Timepoint
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
 os.makedirs(case_directory, exist_ok=True)
 
-# -------------------------------------------------------
-# Construct a simple 2-bus system
-# -------------------------------------------------------
-t1 = Timepoint(name="t1", weight=1)
-# Buses
-bus_1 = Bus(name="lima", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=1, maximum_voltage_pu=1)
-bus_2 = Bus(name="santiago", base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60, minimum_voltage_pu=0.95, maximum_voltage_pu=1.3)
-load_1 = Load(bus="lima", timepoint="t1", load_MW=0, load_MVAR=0)
-load_2 = Load(bus="santiago", timepoint="t1", load_MW=0, load_MVAR=0)
-# Transmission
-line = LinePiModel(
-    name="lima_to_santiago", from_bus="lima", to_bus="santiago",
-    base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5, g_pu=0.05, b_pu=0.06666666666667
-    )
 # Generation
 source_1 = VoltageSource5A(
-    name="lima_source", bus="lima", 
-    minimum_active_power_MW=-200, maximum_active_power_MW=200, minimum_reactive_power_MVAR=-500, maximum_reactive_power_MVAR=500,
+    name="source_1", bus="bus_2", 
+    minimum_active_power_MW=120, maximum_active_power_MW=140, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.01, x_pu=0.5, inertia_constant_s=3, damping_pu=1
+    r_pu=0.001, x_pu=0.1, inertia_constant_s=1, damping_pu=1
 )
 
 source_2 = VoltageSource5A(
-    name="santiago_source", bus="santiago", 
-    minimum_active_power_MW=100, maximum_active_power_MW=100, minimum_reactive_power_MVAR=74, maximum_reactive_power_MVAR=75,
+    name="source_2", bus="bus_3", 
+    minimum_active_power_MW=200, maximum_active_power_MW=250, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
     cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
-    r_pu=0.05, x_pu=0.2, inertia_constant_s=3, damping_pu=1
+    r_pu=0.001, x_pu=0.1, inertia_constant_s=1, damping_pu=1
 )
-system = System(case_directory=case_directory)
+source_3 = VoltageSource5A(
+    name="source_3", bus="bus_5", 
+    minimum_active_power_MW=50, maximum_active_power_MW=100, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+    cost_variable_USDperMWh=0, base_power_MVA=100, base_voltage_kV=230, base_frequency_Hz=60,
+    r_pu=0.001, x_pu=0.1, inertia_constant_s=1, damping_pu=1
+)
+
+system = datasets.wscc_9(case_directory=case_directory)
+system.gfli_16a.clear()
+system.gfmi_18a.clear()
 
 # Build grid model
-for component in [bus_1, bus_2, load_1, load_2, line, source_1, source_2, t1]:
+for component in [ source_1, source_2, source_3 ]:
     system.add(component)
 
 system.apply("post_system_init", system)
