@@ -16,6 +16,19 @@ from sting.utils.tuning import line_ieeerts79
 # -------------------------------------------------------
 
 def wscc_9(case_directory=None):
+    """
+    Create a modified version of the Western System Coordinated Council (WSCC)
+    9 bus test system with the following configuration.
+
+    [GFM 1]──[2]────────[8]────────[7]────────[6]────────[3]──[GFM 2]
+                         │          │          │
+                         │          ▼          │
+                        [9]                   [5]──[GFL 1]
+                         │└────────[4]────────┘│
+                         ▼          │          ▼
+                                    │
+                                   [1]──[Grid]
+    """
     # Timepoint
     t1 = Timepoint(name="t1", weight=1)
 

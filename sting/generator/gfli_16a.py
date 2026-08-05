@@ -209,7 +209,75 @@ class GFLI16A(Generator):
         H[:,[1]] = b
         H[np.ix_([0,1],[8,9])] = R
 
-        return (F,G,H,L) 
+        return (F,G,H,L)
+
+    def _build_quadratic_bilinear_model(self):
+        pass
+
+    def get_interconnections_qbm(self):
+        """
+        Interconnection matrices
+        ------------------------
+        
+        LINEAR INTERCONNECTIONS
+
+        ┌ component ──▶           │ PLL         ┆ APC     ┆ RPC     ┆ ICC      ┆ LCL                         │ Grid inputs
+        │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1       2,3
+        ▼       ▼                 │ ω   sin cos ┆ i_ref_d ┆ i_ref_q ┆ v_vsc_dq ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ │ p_ref  q_ref  v_bus_DQ
+        ──────────────────────────┼─────────────┴─────────┴─────────┴──────────┴─────────────────────────────┼────────────────────────
+        PLL     0,1      v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
+        APC     2        p_ref    │ 0   0   0     0         0         0          0          0        0       │ 1      0      0
+                3       *p_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
+        RPC     4        q_ref    │ 0   0   0     0         0         0          0          0        0       │ 0      1      0
+                5       *q_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
+        ICC     6        i_ref_d  │ 0   0   0     1         0         0          0          0        0       │ 0      0      0
+                7        i_ref_q  │ 0   0   0     0         1         0          0          0        0       │ 0      0      0
+                8,9     *i_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
+                10,11   *v_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0 
+                12       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0
+        LCL     13,14    v_vsc_dq │ 0   0   0     0         0         I₂         0          0        0       │ 0      0      0
+                15,16    v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
+                17       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0
+                18       sin      │ 0   1   0     0         0         0          0          0        0       │ 0      0      0
+                19       cos      │ 0   0   1     0         0         0          0          0        0       │ 0      0      0
+        ──────────────────────────┼──────────────────────────────────────────────────────────────────────────┼────────────────────────
+        Grid    0,1      i_bus_DQ │ 0   0   0     0         0          0         0          I₂         0     │ 0      0      0
+        outputs                  
+
+        NONLINEAR INTERCONNECTIONS (only showing stared inputs)
+
+        Recall the transformation from DQ to dq  
+            i_d =  i_D*cos + i_Q*sin
+            i_q = -i_D*sin + i_Q*cos
+        
+        Active and reactive power
+            p = v_d * i_d + v_q * i_q
+            q = v_q * i_d - v_d * i_q
+
+                                  │ Grid inputs                                            │ Grid inputs
+                                  │ 0,1  2       3                                         │ 0,1  2       3
+        x * u ──▶           sin * │ ref  v_bus_D v_bus_Q         x * u ──▶           cos * │ ref  v_bus_D v_bus_Q
+        ──────────────────────────┼───────────────────────       ──────────────────────────┼───────────────────────
+        ICC     10      *v_bus_d  │ 0    0       1               ICC     10      *v_bus_d  │ 0    1       0
+                11      *v_bus_q  │ 0   -1       0                       11      *v_bus_q  │ 0    0       1
+
+                                  │ PLL           ┆ PC   ┆ ICC  ┆ LCL                               │ Grid inputs
+                                  │ 0,1   3   4   ┆ 5,6  ┆ 7,8  ┆ 9,10     11      12      13,14    │ 0,1  2       3
+        x*x & x*u ──▶   i_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ │ ref  v_bus_D v_bus_Q
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────┼────────────────────────────
+        APC     3       *p_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    1       0
+        RPC     5       *q_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    0       1
+        ICC     8       *i_bus_d  │ 0     0   1     0      0      0        0       0        0       │ 0    0       0
+                9       *i_bus_q  │ 0    -1   0     0      0      0        0       0        0       │ 0    0       0
+
+                                  │ 0,1   3   4   ┆ 5,6  ┆ 7,8  ┆ 9,10     11      12      13,14    │ 0,1  2       3        
+        x*x & x*u ──▶   i_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ │ ref  v_bus_D v_bus_Q
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────┼────────────────────────────
+        APC     3       *p_bus    │ 0     0   0     0      0      0        0       0        0       │ 0    0       1
+        RPC     5       *q_bus    │ 0     0   0     0      0      0        0       0        0       │ 0   -1       0
+        ICC     8       *i_bus_d  │ 0     1   0     0      0      0        0       0        0       │ 0    0       0
+                9       *i_bus_q  │ 0     0   1     0      0      0        0       0        0       │ 0    0       0
+        """
         
 
     def define_variables_emt(self):

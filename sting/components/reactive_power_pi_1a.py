@@ -93,6 +93,25 @@ class ReactivePowerPI1A:
         )
         return ssm
 
+    def get_quadratic_bilinear_model(self, z_rpc, q_ref, q):
+            """
+            Quadratic bilinear dynamics
+            ---------------------------
+            The dynamics of the active power controller are governed by:
+                dz/dt = -k_i * (q_ref - q)
+                i_ref_d = z + -k_p * (q_ref - q)        
+            """
+            ssm = StateSpaceModel(
+                A = np.array([[0]]),
+                B = -self.ki_puHz * np.array([[1, -1]]),
+                C = np.array([[1]]),
+                D = -self.kp_pu * np.array([[1, -1]]),
+                x = DynamicalVariables(name=['z_apc'], init=z_rpc),
+                u = DynamicalVariables(name=["q_ref", "q_apc"], init = [q_ref, q]),
+                y = DynamicalVariables(name=['i_ref_q'])
+            )
+            return ssm
+
     def define_variables_emt_abc(self):
 
         # States 

@@ -227,24 +227,22 @@ class LCLFilter6A:
 
     def get_quadratic_bilinear_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
         """
-        inputs:
-        v_vsc_dq
-        v_bus_dq
-        w
+        u = [v_vsc_dq, v_bus_DQ, ω, sin, cos]
+        x = [i_vsc_dq, i_bus_DQ, v_sh_DQ]
         """
         rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
         wb = self.wbase
 
         A = wb*np.array([
-            [-rf1/xf1  ,   0       ,  0        ,   0       ,       -1/xf1      ,  0          ], # id_vsc
-            [ 0        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1     ], # iq_vsc
-            [0         ,   0       ,  -rf2/xf2 ,   0       ,       1/xf2       ,  0          ], # id_bus
-            [0         ,   0       ,   0       ,   -rf2/xf2,       0           ,  1/xf2      ], # iq_bus
-            [1/csh     ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  0          ], # vd_sh
-            [0         ,   1/csh   ,  0        ,   -1/csh  ,        0          ,  -1/(rsh*csh)] # vq_sh
+            [-rf1/xf1  ,   0       ,  0        ,   0       ,       -1/xf1      ,  0          ], # i_vsc_d
+            [ 0        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1     ], # i_vsc_q
+            [0         ,   0       ,  -rf2/xf2 ,   1       ,       1/xf2       ,  0          ], # i_bus_D
+            [0         ,   0       ,  -1       ,   -rf2/xf2,       0           ,  1/xf2      ], # i_bus_Q
+            [1/csh     ,   0       ,  -1/csh   ,   1       ,       -1/(rsh*csh),  0          ], # v_sh_D
+            [0         ,   1/csh   ,  -1       ,   -1/csh  ,        0          ,  -1/(rsh*csh)] # v_sh_Q
         ])
         B = wb*np.array([
-            # v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w
+            # v_vsc_d,  v_vsc_q,   v_bus_D,    v_bus_Q,      w
             [1/xf1 ,    0      ,   0       ,   0      ,      0 ], 
             [0     ,    1/xf1  ,   0       ,   0      ,     -0 ], 
             [0     ,    0      ,   -1/xf2  ,   0      ,      0 ], 
@@ -259,13 +257,22 @@ class LCLFilter6A:
         H = np.zeros((6, 36))
 
         # State-angular velocity interaction terms
-        N_w =  np.array([
+        N_w = np.array([
             [ 0, 1, 0, 0, 0, 0],
             [-1, 0, 0, 0, 0, 0],
-            [ 0, 0, 0, 1, 0, 0],
-            [ 0, 0,-1, 0, 0, 0],
-            [ 0, 0, 0, 0, 0, 1],
-            [ 0, 0, 0, 0,-1, 0],       
+            [ 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0],
+        ])
+        # Trig interaction terms
+        N_sin = np.array([
+            [ 0, 0, 0, 0, 0, 0], # i_vsc_d
+            [ 0, 0, 0, 0, 0, 0], # i_vsc_q
+            [ 0, 0, 0, 0, 0, 0], # i_bus_D
+            [ 0, 0, 0, 0, 0, 0], # i_bus_Q
+            [ 0, 0, 0, 0, 0, 0], # v_sh_D
+            [ 0, 0, 0, 0, 0, 0], # v_sh_Q
         ])
         N = np.hstack([np.zeros((6,24)), N_w])
 
