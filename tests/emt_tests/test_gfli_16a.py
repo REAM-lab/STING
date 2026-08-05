@@ -26,7 +26,7 @@ gfli_1 = GFLI16A(
     rf1_pu=0.002, xf1_pu=0.07, csh_pu=0.01, rsh_pu=1, 
     txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.003/2, txr_x1_pu=0.08/2, txr_r2_pu=0.003/2, txr_x2_pu=0.08/2, 
     # Phase-locked loop (PLL)
-    kp_pll_pu=100, ki_pll_puHz=2500, tau_pll=1/100,
+    kp_pll_rad_s=100, ki_pll_rad2_s2=2500, tau_pll_s=1/100,
     # Inner current controller
     kp_cc_pu=0.05, ki_cc_puHz=0.6, kff_cc=0.75,
     # Power controllers
