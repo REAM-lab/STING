@@ -9,8 +9,8 @@ import logging
 # Import sting code
 # --------------
 from sting.system.component import Component
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+#from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 
 # Set up logging
 logger = logging.getLogger(__name__)

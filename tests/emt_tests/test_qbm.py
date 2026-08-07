@@ -2,6 +2,7 @@ import os
 
 from sting import main, datasets
 from sting.system import System
+import numpy as np
 
 # Core components
 from sting.generator import VoltageSource4A, GFLI16A
@@ -34,7 +35,7 @@ gfli_1 = GFLI16A(
 )
 
 system = datasets.toy_2(case_directory=case_directory)
-# system.add(gfli_1)
+system.add(gfli_1)
 system.apply("post_system_init", system)
 
 sys, qbm = main.run_qbm(case_directory=case_directory, system=system)
@@ -51,18 +52,24 @@ def step2(t):
     return -0.1 if t >= 0.5 else 0.0
 
 inputs = {
-    'gfli_16a_0': {
-        'p_ref': step1,
-        'q_ref': step2,
+    'voltage_source_4a_0': {
+        'v_ref_d': step1,
+        'v_ref_q': step2,
         }
 }
 
 t_max = 1.5 # Simulation length in seconds
 
 
+qbm.shift_to_equilibrium()
 
-qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, x0=qbm.x.init)
 
+qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, x0=np.zeros_like(qbm.x.init))
 os.makedirs(os.path.join(case_directory, "outputs", "qbm"), exist_ok=True)
-
 qbm.write_simulation_plots(qbm_sol, os.path.join(case_directory, "outputs", "qbm"))
+
+
+main.run_emt(t_max, inputs, case_directory, system=system)
+
+_, ssm = main.run_ssm(case_directory, system=system)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)

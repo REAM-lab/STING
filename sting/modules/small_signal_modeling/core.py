@@ -19,7 +19,7 @@ import logging
 from sting.system import System
 from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
-from sting.system.component_connections import get_ccm_matrices, build_ccm_permutation
+from sting.utils.component_connections import get_ccm_matrices, build_ccm_permutation
 from sting.modules.power_flow.utils import ACPowerFlowSolution
 from sting.utils.matrix_tools import block_permute, matrix_to_csv
 from sting.modules.small_signal_modeling.utils import ComponentSSM, ConnectionMatrices

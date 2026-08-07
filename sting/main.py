@@ -89,7 +89,7 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
 def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=None, system=None):
 
-    from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+    from sting.utils.dynamical_systems import QuadraticBilinearModel
     start_time = time.time()
     
     # Set up logging to file

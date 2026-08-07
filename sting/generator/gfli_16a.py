@@ -16,8 +16,7 @@ from dataclasses import dataclass, field
 # Import sting code
 # ------------------
 from sting.generator.core import Generator
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import PhaseLockedLoop3A, InnerCurrentController2A, LCLFilter6A, ActivePowerPI1A, ReactivePowerPI1A
@@ -287,6 +286,9 @@ class GFLI16A(Generator):
         Grid    0,1      i_bus_DQ │ 0   0   0     0         0          0         0          I₂         0     │ 0      0      0
         outputs                  
 
+        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
+        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([15,16], [2,3], I)]
+
         NONLINEAR INTERCONNECTIONS (only showing stared inputs)
 
         Recall the transformation from DQ to dq  
@@ -305,7 +307,8 @@ class GFLI16A(Generator):
         RPC     5       *q_bus    │ 0     0   0     0      0      0        0      -1        0
         ICC     10      *v_bus_d  │ 0     0   1     0      0      0        0       0        0
                 11      *v_bus_q  │ 0    -1   0     0      0      0        0       0        0
-
+        idx_u2 = [([3], [10], 1), ([5], [11], 1), ([10,11], [2,3], J)]
+        
                         3         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
         (u_3 * x)       v_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
         ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
@@ -313,7 +316,8 @@ class GFLI16A(Generator):
         RPC     5       *q_bus    │ 0     0   0     0      0      0        1       0        0
         ICC     10      *v_bus_d  │ 0     1   0     0      0      0        0       0        0
                 11      *v_bus_q  │ 0     0   1     0      0      0        0       0        0        
-                                
+        idx_u3 = [([3], [11], 1), ([5], [10], 1), ([10,11], [2,3], I)]
+
                         10        │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
         (x_10 * x)      i_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
         ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
@@ -338,7 +342,7 @@ class GFLI16A(Generator):
         L21 = np.zeros((2, 13))
         L22 = np.zeros((2, 4))
 
-        idx_11 = [([6,7], [3,4], I), ([13], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
+        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
         for rows, cols, value in idx_11:
             L11[np.ix_(rows, cols)] = value
 

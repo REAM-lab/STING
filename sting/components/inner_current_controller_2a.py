@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from sting.utils import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
 
 
 # ------------------------------------

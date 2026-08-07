@@ -11,8 +11,7 @@ import polars as pl
 
 # Import sting code
 from sting.branch.core import Branch
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 
 class InitialConditionsEMT(NamedTuple):
     vmag_from_bus: float

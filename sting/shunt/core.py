@@ -10,8 +10,7 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 logger = logging.getLogger(__name__)
 
 # ----------------
