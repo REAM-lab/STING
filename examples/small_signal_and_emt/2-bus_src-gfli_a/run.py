@@ -21,9 +21,14 @@ shape: (19, 5)
 │ -1537.006 ┆ 0.0       ┆ 244.622              ┆ 1.0              ┆ 0.0007                │
 └───────────┴───────────┴──────────────────────┴──────────────────┴───────────────────────┘
 """
+import sys
+sys.path.append('/Users/ruthkravis/Documents/STING')
 
 # Import Python standard and third-party packages
 from pathlib import Path
+import sys 
+sys.path.append("/Users/ruthkravis/Documents/STING")
+
 # Import sting package
 from sting import main
 from sting.system.core import System
@@ -52,8 +57,8 @@ t_max = 2.0 # Simulation length
 
 # Construct system and small-signal model
 _, ssm =  main.run_ssm(case_directory=case_dir)
-ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+#ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation (not implemented yet for gfli_a)
-main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
+#main.run_emt(case_directory=case_dir, inputs=inputs, t_max=t_max)
 
 print('\nok')
