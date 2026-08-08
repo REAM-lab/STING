@@ -8,3 +8,7 @@ from .virtual_inertia_2a import VirtualInertia2A
 from .voltage_droop_controller_1a import VoltageDroopController1A
 from .active_power_pi_1a import ActivePowerPI1A
 from .reactive_power_pi_1a import ReactivePowerPI1A
+from .parallel_rc_shunt_2a import ParallelRCShunt2A
+from .parallel_rc_shunt_2b  import ParallelRCShunt2B
+from .series_rl_branch_2a import SeriesRLBranch2A
+from .series_rl_branch_2b import SeriesRLBranch2B

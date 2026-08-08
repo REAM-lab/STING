@@ -43,13 +43,13 @@ class ParallelRCShunt2B:
             [ -g/b,    1], # Δv_d
             [   -1, -g/b]  # Δv_q
         ])
-        B = np.array([
+        B = wb*np.array([
             #|   Δi_dq   | Δw |
-            [ wb/b,     0,  v_q], 
-            [     0, wb/b, -v_d]
+            [ 1/b,     0,  v_q], 
+            [     0, 1/b, -v_d]
         ])
 
-        u = DynamicalVariables(name=["i_sh_d", "i_sh_q", "w"], init=[i_d, i_q, wb])
+        u = DynamicalVariables(name=["i_sh_d", "i_sh_q", "w"], init=[i_d, i_q, 1])
         x = DynamicalVariables(name=["v_sh_d", "v_sh_q"], init=[v_d, v_q])
         y = copy.deepcopy(x)      
 
@@ -69,17 +69,17 @@ class ParallelRCShunt2B:
             [ wb/b,     0,  0], 
             [     0, wb/b,  0]
         ])
-        N_w = np.array([
+        N_w = wb* np.array([
             [ 0, 1], # w * v_q
             [-1, 0]  # -w * v_d
         ])
-        N = np.hstack(np.zeros(2,8), N_w)
+        N = np.hstack(np.zeros((2,8)), N_w)
 
-        u = DynamicalVariables(name=["i_sh_d", "i_sh_q", "w"], init=[i_d, i_q, wb])
+        u = DynamicalVariables(name=["i_sh_d", "i_sh_q", "w"], init=[i_d, i_q, 1])
         x = DynamicalVariables(name=["v_sh_d", "v_sh_q"], init=[v_d, v_q])
         y = copy.deepcopy(x)          
 
-        return QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), H=np.zeros((2,4)), N=N, u=u, x=x, y=y)
+        return QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 3)), H=np.zeros((2,4)), N=N, u=u, x=x, y=y)
 
 
     def define_variables_emt_abc(self):

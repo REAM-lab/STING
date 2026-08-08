@@ -38,6 +38,8 @@ class InitialConditionsEMT(NamedTuple):
     v_vsc_q: float
     i_vsc_d: float
     i_vsc_q: float
+    i_vsc_D: float
+    i_vsc_Q: float
     v_vsc_a: float
     v_vsc_b: float
     v_vsc_c: float
@@ -178,6 +180,9 @@ class LCLFilter6A:
 
             i_vsc_d=i_vsc_dq.real,
             i_vsc_q=i_vsc_dq.imag,
+
+            i_vsc_D=i_vsc_DQ.real,
+            i_vsc_Q=i_vsc_DQ.imag,
 
             v_vsc_a=v_vsc_a,
             v_vsc_b=v_vsc_b,

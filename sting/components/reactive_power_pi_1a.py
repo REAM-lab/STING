@@ -106,8 +106,8 @@ class ReactivePowerPI1A:
                 B = -self.ki_puHz * np.array([[1, -1]]),
                 C = np.array([[1]]),
                 D = -self.kp_pu * np.array([[1, -1]]),
-                x = DynamicalVariables(name=['z_apc'], init=z_rpc),
-                u = DynamicalVariables(name=["q_ref", "q_apc"], init = [q_ref, q]),
+                x = DynamicalVariables(name=['z_rpc'], init=z_rpc),
+                u = DynamicalVariables(name=["q_ref", "q_rpc"], init = [q_ref, q]),
                 y = DynamicalVariables(name=['i_ref_q'])
             )
             return ssm.to_quadratic_bilinear()

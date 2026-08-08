@@ -38,7 +38,7 @@ class PhaseLockedLoop3A:
     ki_rad2_s2: float
     tau: float
     wbase: float
-    alpha: float = 0
+    alpha: float = 1
 
 
     def get_steady_state(self, v_mag, relative_phase_deg):

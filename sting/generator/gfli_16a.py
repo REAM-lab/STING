@@ -19,7 +19,17 @@ from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.components import PhaseLockedLoop3A, InnerCurrentController2A, LCLFilter6A, ActivePowerPI1A, ReactivePowerPI1A
+from sting.components import (
+    PhaseLockedLoop3A, 
+    InnerCurrentController2A, 
+    LCLFilter6A, 
+    ActivePowerPI1A, 
+    ReactivePowerPI1A,
+    ParallelRCShunt2A,
+    SeriesRLBranch2A,
+    SeriesRLBranch2B
+    )
+
 from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -50,6 +60,11 @@ class GFLI16A(Generator):
 
     # Components
     lcl_filter: LCLFilter6A = field(init=False)
+    # LCL filter components for quadratic bilinear model
+    lcl_br1: SeriesRLBranch2B = field(init=False)
+    lcl_br2: SeriesRLBranch2A = field(init=False)
+    lcl_sh: ParallelRCShunt2A  = field(init=False)
+
     current_controller: InnerCurrentController2A = field(init=False)
     phase_locked_loop: PhaseLockedLoop3A = field(init=False)
     active_power_controller: ActivePowerPI1A = field(init=False)
@@ -57,6 +72,9 @@ class GFLI16A(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
+        self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, 1/self.csh_pu, self.wbase)
         self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
@@ -216,11 +234,10 @@ class GFLI16A(Generator):
         v_mag, phase_deg = self.power_flow_variables.vmag_bus, self.power_flow_variables.vphase_bus
         p_bus, q_bus = self.power_flow_variables.p_bus, self.power_flow_variables.q_bus
         # Initial conditions in the LCL filter
-        i_bus_d, i_bus_q = self.lcl_filter.emt_init.i_bus_d, self.lcl_filter.emt_init.i_bus_q
-        i_vsc_d, i_vsc_q = self.lcl_filter.emt_init.i_vsc_d, self.lcl_filter.emt_init.i_vsc_q
-        v_bus_d, v_bus_q = self.lcl_filter.emt_init.v_bus_d, self.lcl_filter.emt_init.v_bus_q
-        v_sh_D, v_sh_Q = self.lcl_filter.emt_init.v_sh_D, self.lcl_filter.emt_init.v_sh_Q
-        i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
+        init = self.lcl_filter.emt_init
+        i_bus_d, i_bus_q = init.i_bus_d, init.i_bus_q
+        v_bus_d, v_bus_q = init.v_bus_d, init.v_bus_q
+        i_bus_D, i_bus_Q = init.i_bus_D, init.i_bus_Q
         # Current controller initial conditions
         z_cc_d, z_cc_q = self.current_controller.emt_init.z_cc_d, self.current_controller.emt_init.z_cc_q
 
@@ -235,12 +252,25 @@ class GFLI16A(Generator):
             z_cc_d=z_cc_d, z_cc_q=z_cc_q, i_d=i_bus_d, i_q=i_bus_q, v_d=v_bus_d, v_q=v_bus_q, w=1
             )
         cc_qbm = cc_ssm.to_quadratic_bilinear()
-        lcl_qbm = self.lcl_filter.get_quadratic_bilinear_model(
-            i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_D=i_bus_D, i_bus_Q=i_bus_Q, v_sh_D=v_sh_D, v_sh_Q=v_sh_Q)
+
+        br1_qbm = self.lcl_br1.get_quadratic_bilinear_model(
+            v_from_d=init.v_vsc_d, v_from_q=init.v_vsc_q, 
+            v_to_d=init.v_sh_d, v_to_q=init.v_vsc_q,
+            i_d=init.i_vsc_d, i_q=init.i_vsc_q
+            )
+        br2_qbm = self.lcl_br2.get_quadratic_bilinear_model(
+            v_from_D=init.v_sh_D, v_from_Q=init.v_sh_Q,
+            v_to_D=init.v_bus_D, v_to_Q=init.v_bus_Q,
+            i_D=init.i_bus_D, i_Q=init.i_bus_Q
+        )
+        sh_qbm = self.lcl_sh.get_quadratic_bilinear_model(
+            v_D=init.v_sh_D, v_Q=init.v_sh_Q, 
+            i_D=(init.i_vsc_D - init.i_bus_D), i_Q=(init.i_vsc_Q - init.i_bus_Q) 
+        )
 
         # Inverter level inputs and outputs
-        v_bus_D, v_bus_Q = self.lcl_filter.emt_init.v_bus_D, self.lcl_filter.emt_init.v_bus_Q
-        i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
+        v_bus_D, v_bus_Q = init.v_bus_D, init.v_bus_Q
+        i_bus_D, i_bus_Q = init.i_bus_D, init.i_bus_Q
         u = DynamicalVariables(
             name=["p_ref", "q_ref", "v_bus_D", "v_bus_Q"],
             type=["device", "device", "grid", "grid"],
@@ -250,7 +280,7 @@ class GFLI16A(Generator):
             init=[i_bus_D, i_bus_Q])
 
         # Generate small-signal model
-        components = [pll_qbm, apc_qbm, rpc_qbm, cc_qbm, lcl_qbm]
+        components = [pll_qbm, apc_qbm, rpc_qbm, cc_qbm, br1_qbm, br2_qbm, sh_qbm]
         connections = self.get_interconnections_qbm()
         self.qbm = QuadraticBilinearModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
@@ -263,7 +293,7 @@ class GFLI16A(Generator):
         
         LINEAR INTERCONNECTIONS
 
-        ┌ component ──▶           │ PLL         ┆ APC     ┆ RPC     ┆ ICC      ┆ LCL                         │ Grid inputs
+        ┌ component ──▶           │ PLL         ┆ APC     ┆ RPC     ┆ ICC      ┆ RL_1      RL_2      RC      │ Grid inputs
         │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1      2,3
         ▼       ▼                 │ ω   sin cos ┆ i_ref_d ┆ i_ref_q ┆ v_vsc_dq ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ │ p_ref  q_ref  v_bus_DQ
         ──────────────────────────┼─────────────┴─────────┴─────────┴──────────┴─────────────────────────────┼────────────────────────
@@ -277,17 +307,18 @@ class GFLI16A(Generator):
                 8,9     *i_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
                 10,11   *v_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0 
                 12       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0
-        LCL     13,14    v_vsc_dq │ 0   0   0     0         0         I₂         0          0        0       │ 0      0      0
-                15,16    v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
+        RL_1    13,14    v_vsc_dq │ 0   0   0     0         0         I₂         0          0        0       │ 0      0      0
+                15,16   *v_sh_dq  │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
                 17       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0
-                18       sin      │ 0   1   0     0         0         0          0          0        0       │ 0      0      0
-                19       cos      │ 0   0   1     0         0         0          0          0        0       │ 0      0      0
+        RL_2    18,19    v_sh_DQ  │ 0   0   0     0         0         0          0          0        I₂      │ 0      0      0
+                20,21    v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
+        RC      22,23   *i_sh_DQ  │ 0   0   0     0         0         0          0         -I₂       0       │ 0      0      0
         ──────────────────────────┼──────────────────────────────────────────────────────────────────────────┼────────────────────────
         Grid    0,1      i_bus_DQ │ 0   0   0     0         0          0         0          I₂         0     │ 0      0      0
         outputs                  
 
-        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
-        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([15,16], [2,3], I)]
+        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17],[0], 1), ([18,19],[11,12],I), ([22,23],[9,10], -I)]
+        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([20,21], [2,3], I)]
 
         NONLINEAR INTERCONNECTIONS (only showing stared inputs)
 
@@ -318,17 +349,29 @@ class GFLI16A(Generator):
                 11      *v_bus_q  │ 0     0   1     0      0      0        0       0        0        
         idx_u3 = [([3], [11], 1), ([5], [10], 1), ([10,11], [2,3], I)]
 
-                        10        │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
-        (x_10 * x)      i_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
-        ICC     8       *i_bus_d  │ 0     0   1     0      0      0        0       0        0
-                9       *i_bus_q  │ 0    -1   0     0      0      0        0       0        0
+                            2     │ 0,1   2   3   ┆ 4,5,6,7 ┆ 8       9       10      11      12      13
+        (x_2 * x)           sin * │ ...   sin cos ┆ ...     ┆ i_vsc_d i_vsc_q i_bus_D i_bus_Q  v_sh_D v_sh_Q
+        ──────────────────────────┼───────────────┴─────────┴───────────────────────────────────    
+        ICC     8       *i_bus_d  │ 0     0   0     0         0       0        0       1        0       0
+                9       *i_bus_q  │ 0     0   0     0         0       0       -1       0        0       0
+        RL_1    15      *v_sh_d   │ 0     0   0     0         0       0        0       0        0       1
+                16      *v_sh_q   │ 0     0   0     0         0       0        0       0       -1       0
+        RC      22      *i_sh_D   │ 0     0   0     0         0      -1        0       0        0       0
+                23      *i_sh_Q   │ 0     0   0     0         1       0        0       0        0       0
 
-                        11        │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
-        (x_11 * x)      i_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────
-        ICC     8       *i_bus_d  │ 0     1   0     0      0      0        0       0        0
-                9       *i_bus_q  │ 0     0   1     0      0      0        0       0        0        
+        idx_x2 = [([8,9], [10,11], J), ([15,16], [12,13], J), ([22,23], [8,9], J.T)]
+
+                            3     │ 0,1   2   3   ┆ 4,5,6,7 ┆ 8       9       10      11      12      13
+        (x_3 * x)           cos * │ ...   sin cos ┆ ...     ┆ i_vsc_d i_vsc_q i_bus_D i_bus_Q  v_sh_D v_sh_Q
+        ──────────────────────────┼───────────────┴─────────┴────────────────────────────────────────
+        ICC     8       *i_bus_d  │ 0     0   0     0         0       0        1       0        0       0
+                9       *i_bus_q  │ 0     0   0     0         0       0        0       1        0       0
+        RL_1    15      *v_sh_d   │ 0     0   0     0         0       0        0       0        1       0
+                16      *v_sh_q   │ 0     0   0     0         0       0        0       0        0       1
+        RC      22      *i_sh_D   │ 0     0   0     0         1       0        0       0        0       0
+                23      *i_sh_Q   │ 0     0   0     0         0       1        0       0        0       0
+        
+        idx_x3 = [([8,9], [10,11], I), ([15,16], [12,13], I), ([22,23], [8,9], I)]
         """
         # TODOs: 
         # 3) QBM simulations
@@ -337,16 +380,16 @@ class GFLI16A(Generator):
         J = np.array([[0, 1], [-1,0]])
 
         # Linear interconnection matrices
-        L11 = np.zeros((20, 13))
-        L12 = np.zeros((20, 4))
+        L11 = np.zeros((24, 13))
+        L12 = np.zeros((24, 4))
         L21 = np.zeros((2, 13))
         L22 = np.zeros((2, 4))
 
-        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17,18,19], [0,1,2], np.eye(3))]
+        idx_11 = [([6,7], [3,4], I), ([12], [0], 1), ([13,14], [5,6], I), ([17],[0], 1), ([18,19],[11,12],I), ([22,23],[9,10], -I)]
         for rows, cols, value in idx_11:
             L11[np.ix_(rows, cols)] = value
 
-        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([15,16], [2,3], I)]
+        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([20,21], [2,3], I)]
         for rows, cols, value in idx_12:
             L12[np.ix_(rows, cols)] = value
 
@@ -354,17 +397,22 @@ class GFLI16A(Generator):
 
         # Nonlinear interconnection matrices
         # M1 (x \otime x)   
-        M1_x10 = np.zeros((20,14))
-        M1_x11 = np.zeros((20,14))
+        M1_x2 = np.zeros((24,14))
+        M1_x3 = np.zeros((24,14))
 
-        M1_x10[np.ix_([8,9],[2,3])] = J
-        M1_x11[np.ix_([8,9],[2,3])] = I
+        idx_x2 = [([8,9], [10,11], J), ([15,16], [12,13], J), ([22,23], [8,9], J.T)]
+        for rows, cols, value in idx_x2:
+            M1_x2[np.ix_(rows, cols)] = value
 
-        M1 = np.hstack((np.zeros((20, 14*10)), M1_x10, M1_x11, np.zeros((20, 14*2))))
+        idx_x3 = [([8,9], [10,11], I), ([15,16], [12,13], I), ([22,23], [8,9], I)]
+        for rows, cols, value in idx_x3:
+            M1_x3[np.ix_(rows, cols)] = value
+
+        M1 = np.hstack((np.zeros((24, 14*2)), M1_x2, M1_x3, np.zeros((24, 14*10))))
 
         # M2 (u \otimes x)
-        M2_u2 = np.zeros((20,14))
-        M2_u3 = np.zeros((20,14))
+        M2_u2 = np.zeros((24,14))
+        M2_u3 = np.zeros((24,14))
 
         idx_u2 = [([3], [10], 1), ([5], [11], 1), ([10,11], [2,3], J)]
         for rows, cols, value in idx_u2:
@@ -373,7 +421,7 @@ class GFLI16A(Generator):
         for rows, cols, value in idx_u3:
             M2_u3[np.ix_(rows, cols)] = value
 
-        M2 = np.hstack((np.zeros((20, 14*2)), M2_u2, M2_u3))
+        M2 = np.hstack((np.zeros((24, 14*2)), M2_u2, M2_u3))
         
         return (L11, L12, L21, L22, M1, M2)
         

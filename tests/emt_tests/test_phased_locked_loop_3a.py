@@ -27,7 +27,7 @@ inputs = {
 wbase = 2*np.pi*60
 alpha = 5
 # LCL filter model
-pll = PhaseLockedLoop3A(kp_pu=100, ki_puHz=2500, tau=0.01, alpha=alpha, wbase=wbase)
+pll = PhaseLockedLoop3A(kp_rad_s=100, ki_rad2_s2=2500, tau=0.01, alpha=alpha, wbase=wbase)
 
 # Compute initial conditions and small signal model 
 init = pll.get_steady_state(**pf_sol)

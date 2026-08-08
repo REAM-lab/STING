@@ -46,30 +46,36 @@ sys, qbm = main.run_qbm(case_directory=case_directory, system=system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.1 if t >= 0.5 else 0.0
+    return 0.01 if t >= 0.5 else 0.0
 
 def step2(t):
-    return -0.1 if t >= 0.5 else 0.0
+    return 0.0 if t >= 0.5 else 0.0
 
 inputs = {
-    'voltage_source_4a_0': {
-        'v_ref_d': step1,
-        'v_ref_q': step2,
+    'gfli_16a_0': {
+        'p_ref': step1,
+        'q_ref': step2,
         }
 }
 
 t_max = 1.5 # Simulation length in seconds
 
-
 qbm.shift_to_equilibrium()
+
+_, ssm = main.run_ssm(case_directory, system=system)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 
 qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, x0=np.zeros_like(qbm.x.init))
+qbm_sol.y += qbm.y.init.reshape(-1, 1)
+qbm_sol.x += qbm.x.init.reshape(-1, 1)
+
 os.makedirs(os.path.join(case_directory, "outputs", "qbm"), exist_ok=True)
 qbm.write_simulation_plots(qbm_sol, os.path.join(case_directory, "outputs", "qbm"))
 
 
 main.run_emt(t_max, inputs, case_directory, system=system)
 
-_, ssm = main.run_ssm(case_directory, system=system)
-ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+
+
+print("ok")
