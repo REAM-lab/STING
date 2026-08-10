@@ -41,9 +41,11 @@ solvers = [
     "gurobipy",
 ]
 
-# Development tools
+# Development and testing tools
 dev = [
-    "pytest"
+    "pytest",
+    "sympy",
+    "control",
 ]
 all = ["sting[solvers,model_reduction,dev]"]
 

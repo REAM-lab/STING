@@ -38,7 +38,7 @@ class PhaseLockedLoop3A:
     ki_rad2_s2: float
     tau: float
     wbase: float
-    alpha: float = 1
+    alpha: float = 0
 
 
     def get_steady_state(self, v_mag, relative_phase_deg):
@@ -99,6 +99,18 @@ class PhaseLockedLoop3A:
 
 
     def get_quadratic_bilinear_model(self, v_mag, relative_phase_deg):
+        """
+        The quadratic bilinear dynamics of the PLL are given by:
+            d/dt z_pi = ki * v_q
+            d/dt v_q  = (1/tau) * (-v_D*z_s + v_Q*z_c - v_q)
+            d/dt z_s  = z_c * (w - wb)
+                      =  z_c * (kp*v_q + z_pi) - z_c * wb - alpha * (z_c^2 + z_s^2 - 1)
+            d/dt z_c  = -z_s * (kp*v_q + z_pi) + z_s * wb - alpha * (z_c^2 + z_s^2 - 1)
+
+        Note: The output angular velocity is in per unit, that is w = wb * w_pu. 
+            w_pu = 1/wb * (kp * v_q + z_pi)
+        """
+
         phase_rad = relative_phase_deg*np.pi/180
         v_bus_DQ = v_mag * np.exp(phase_rad * 1j)
 
@@ -106,10 +118,10 @@ class PhaseLockedLoop3A:
         a = self.alpha
 
         A = np.array([
-            [-1/tau, 0, 0, 0], # v_filter_q
-            [    ki, 0, 0, 0], # z_pll
-            [     0, 0, 0, 0], # z_sin
-            [     0, 0, 0, 0], # z_cos
+            [-1/tau, 0, 0,  0], # v_filter_q
+            [    ki, 0, 0,  0], # z_pll
+            [     0, 0, 0,-wb], # z_sin
+            [     0, 0,wb,  0], # z_cos
         ])
         B = np.zeros((4, 2))
 
@@ -159,7 +171,7 @@ class PhaseLockedLoop3A:
         y = DynamicalVariables(name=['w', 'sin', 'cos'])
         x = DynamicalVariables(
             name=["v_pll_q", "z_pll", "sin_pll", "cos_pll"], 
-            init=[0, 0, np.sin(phase_rad), np.cos(phase_rad)] 
+            init=[0, wb, np.sin(phase_rad), np.cos(phase_rad)] 
         )
 
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)

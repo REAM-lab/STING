@@ -57,11 +57,14 @@ class SeriesRLBranch2B:
 
         r, x, wb = self.r_pu, self.x_pu, self.wbase
 
-        A = (-r * wb/x) *  np.eye(2)
-        B = np.array([
+        A = wb * np.array([
+            [ -r/x,    0], # i_d
+            [    0, -r/x]  # i_q
+        ])
+        B = wb * np.array([
             #|  v_from_dq  |  v_to_dq  |  w  |
-            [  wb/x,     0, -wb/x,     0,  0], 
-            [     0,  wb/x,     0, -wb/x,  0]
+            [  1/x,     0, -1/x,     0,  0], 
+            [     0,  1/x,     0, -1/x,  0]
         ])
         N_w = wb * np.array([
             [ 0, 1],# w * i_q

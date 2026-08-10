@@ -735,22 +735,29 @@ class QuadraticBilinearModel:
         self, 
         t_max: float, 
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
-        x0: list[float] = None, 
-        settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
+        settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
+        shift=False):
 
-        if x0 is None:
+        if shift:
+            x0 = np.zeros_like(self.x.init)
+            u0 = np.zeros_like(self.u.init)
+            qbm = self.shift_to_equilibrium()
+            #x_offset = self.x.init
+            #u_offset = self.u.init
+
+        else:
             x0 = self.x.init
+            u0 = self.u.init
+            qbm = self
 
-        if inputs is None:
-            inputs = {}
-        inputs = self.vectorize_inputs(inputs)
+        inputs_to_sim = lambda t: self.vectorize_inputs(inputs)(t) + u0
                 
         sol = solve_ivp(
-            fun=self.get_derivatives_step,
+            fun=qbm.get_derivatives_step,
             t_span=[0, t_max],
             y0=x0,
             dense_output=settings['dense_output'],  
-            args=(inputs, ),
+            args=(inputs_to_sim, ),
             method=settings['method'], 
             max_step=settings['max_step'])
                         
@@ -761,16 +768,12 @@ class QuadraticBilinearModel:
             sol.t = tps
 
         sol.x = sol.y
-        sol.u = np.array([inputs(t) for t in sol.t]).T
+        sol.u = np.array([inputs_to_sim(t) for t in sol.t]).T
         sol.y = self.C@sol.x + self.D@sol.u
 
         return sol
 
-    def write_simulation_csv(self, solution, output_directory):
-        # Add the initial conditions back to the solution (for plotting purposes)
-        for i in range(len(self.x.init)):
-            solution[i] = solution[i] + self.x.init[i]
-        
+    def write_simulation_csv(self, solution, output_directory):       
         # Get the components in the same order as solution vector
         _, comp_idx = np.unique(self.x.component, return_index=True)
         components = self.x.component[np.sort(comp_idx)]  
@@ -782,10 +785,10 @@ class QuadraticBilinearModel:
             state_names = self.x.name[self.x.component == component]
             columns_for_df = ['time'] + state_names.tolist()
             (pl.DataFrame(
-                data=np.column_stack((solution.t, solution.y[i:i+number_of_states].T)),
+                data=np.column_stack((solution.t, solution.x[i:i+number_of_states].T)),
                 schema=columns_for_df
             )
-            .write_csv(os.path.join(self.output_directory, f"{component}.csv"))
+            .write_csv(os.path.join(output_directory, f"{component}.csv"))
             )
             i += number_of_states
 
@@ -813,6 +816,40 @@ class QuadraticBilinearModel:
             fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
             fig.write_html(os.path.join(output_directory, f"{component}.html"))
 
+    def write_csv(self, filepath):
+        # Create output directory if it doesn't exist
+        os.makedirs(filepath, exist_ok=True)
+
+        # Export variables
+        self.x.to_dataframe(os.path.join(filepath, "x.csv"))
+        self.u.to_dataframe(os.path.join(filepath, "u.csv"))
+        self.y.to_dataframe(os.path.join(filepath, "y.csv"))
+
+        # Row and column names
+        u = self.u.to_list()
+        y = self.y.to_list()
+        x = self.x.to_list()
+        
+        # Export each matrix
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "A.csv"), matrix=self.A, index=x, columns=x
+        )
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "B.csv"), matrix=self.B, index=x, columns=u
+        )
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "C.csv"), matrix=self.C, index=y, columns=x
+        )
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "D.csv"), matrix=self.D, index=y, columns=u
+        )
+        #matrix_to_csv(
+        #    filepath=os.path.join(filepath, "H.csv"), matrix=self.H, index=x, columns=None
+        #)
+        #matrix_to_csv(
+        #    filepath=os.path.join(filepath, "N.csv"), matrix=self.N, index=x, columns=None
+        #)
+
     def shift_to_equilibrium(self):
         """Center the dynamics of model about its initial conditions"""
         n, m = self.B.shape
@@ -823,15 +860,17 @@ class QuadraticBilinearModel:
         K1 = kronecker_commute(n,n)
         K2 = kronecker_commute(n,m)
 
-        self.A = (
+        A = (
             self.A 
             + self.H @ (K1 + np.eye(n**2)) @ np.kron(x0, np.eye(n)) 
             + self.N @ np.kron(u0, np.eye(n))
         )
-        self.B = (
+        B = (
             self.B 
             + self.N @ K2 @ np.kron(x0, np.eye(m)) 
         )
+
+        return QuadraticBilinearModel(A=A, B=B, C=self.C, D=self.D, N=self.N, H=self.H, x=self.x, u=self.u, y=self.y)
 
     def get_symmetrized(self):
         """Return a new model where H is symmetrized"""
