@@ -1,22 +1,22 @@
-# ------------------------------------------------------------------------------
-# Import libraries
-# ------------------------------------------------------------------------------
-import numpy as np
+import copy
 from dataclasses import dataclass, field
 from typing import NamedTuple
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
-# ---------------------------------------
-# Subclasses
-# ---------------------------------------
+import numpy as np
+
+from sting.utils.dynamical_systems import (
+    DynamicalVariables,
+    QuadraticBilinearModel,
+    StateSpaceModel,
+)
+
+
 class InitialConditionsEMT(NamedTuple):
     angle: float
     w: float
     p_ref: float
 
-# ---------------------------------------
-# Main class
-# ---------------------------------------
+
 @dataclass(slots=True)
 class VirtualInertia2A:
     """
@@ -31,6 +31,7 @@ class VirtualInertia2A:
     h_s: float
     kd_w_pu: float
     w_nom: float
+    alpha: float = 0
 
     emt_init: InitialConditionsEMT = field(init=False)
 
@@ -80,6 +81,66 @@ class VirtualInertia2A:
         d_w_pc = 1/(2 * h) * (p_ref - p - kd_w * (w - 1))
     
         return [d_angle_pc, d_w_pc]
+
+    def get_quadratic_bilinear_model(self, w:float, angle_rad:float, p_ref:float, p:float):
+        """
+        Parameters
+        ----------
+        - w [pu]: Initial angular frequency in per unit (state 1).
+        - angle_rad: Reference angle in radians.
+        - p_ref [pu]: Initial reference active power (input 1).
+        - p [pu]: Initial measured active power (input 3).
+
+        Dynamics
+        --------
+        The quadratic bilinear model dynamics are given by:
+            2h d/dt w  = p_ref - p - kd * (w - 1)
+            d/dt z_sin = z_cos * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
+            d/dt z_cos =-z_sin * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
+
+        States, inputs and outputs:
+            x = [w, sin, cos]
+            u = [p_ref, one, p]
+            y = x
+        Note that the second input is a dummy variable equal to 1 for all time.
+        """
+
+        h, kd, wb, a = self.h_s, self.kd_w_pu, self.w_nom, self.alpha
+
+        A = np.array([
+            [-kd/(2*h),  0,  0], # w_pu
+            [        0,  0,-wb], # sin
+            [        0, wb,  0], # cos
+        ])
+
+        B = np.array([
+        #   | p_ref |  u_one  |    p    |
+            [1/(2*h), kd/(2*h), -1/(2*h)],
+            [      0,        a,        0],
+            [      0,        a,        0], 
+        ])
+
+        H_sin = np.array([
+        #   w*s | s^2 | c*s 
+            [  0,   0,   0],
+            [  0,  -a,   0],
+            [-wb,  -a,   0]
+        ])
+
+        H_cos = np.array([
+        #   w*c | s*c | c^2 
+            [ 0,   0,   0],
+            [wb,   0,  -a],
+            [ 0,   0,  -a]
+        ])
+
+        H = np.hstack((np.zeros((3,3)), H_sin, H_cos))
+
+        x = DynamicalVariables(name=["w", "sin", "cos"], init=[w, np.sin(angle_rad), np.cos(angle_rad)])
+        u = DynamicalVariables(name=["p_ref", "one" ,"p"], init=[p_ref, 1, p])
+        y = copy.deepcopy(x)
+
+        return QuadraticBilinearModel(A=A, B=B, C=np.eye(3), D=np.zeros((3,3)), H=H, N=np.zeros((3,9)), x=x, y=y, u=u)
 
     def get_small_signal_model(self, i_d, i_q, v_d, v_q, angle, p_ref):
         """

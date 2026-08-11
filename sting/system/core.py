@@ -39,7 +39,7 @@ from sting.timescales.core import Scenario, Timepoint, Timeseries
 from sting.policies.carbon_policies.core import CarbonPolicy
 from sting.policies.energy_budgets.core import EnergyBudget
 from sting.policies.transmission_expansion_constraint.core import TransmissionExpansionConstraint
-from sting.generator import GFLI13A, GFLI16A, GFLI16B, GFMI18A
+from sting.generator import GFLI13A, GFLI16A, GFLI16B, GFMI18A, GFMI18B
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ class System:
     gfli_16a: list[GFLI16A] = None
     gfli_16b: list[GFLI16B] = None
     gfmi_18a: list[GFMI18A] = None
+    gfmi_18b: list[GFMI18B] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None

@@ -5,6 +5,7 @@ from .phase_locked_loop_3a import PhaseLockedLoop3A
 from .inner_current_controller_2a import InnerCurrentController2A
 from .inner_current_controller_2b import InnerCurrentController2B
 from .inner_voltage_controller_2a import InnerVoltageController2A
+from .inner_voltage_controller_2b import InnerVoltageController2B
 from .virtual_inertia_2a import VirtualInertia2A
 from .voltage_droop_controller_1a import VoltageDroopController1A
 from .active_power_pi_1a import ActivePowerPI1A

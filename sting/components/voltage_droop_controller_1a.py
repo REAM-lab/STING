@@ -1,27 +1,18 @@
-# -------------------------------------------------------------------------
-# Import libraries
-# -------------------------------------------------------------------------
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-# -------------------------------------------------------------------------
-# Import sting code
-# -------------------------------------------------------------------------
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.dynamical_systems import (
+    StateSpaceModel, 
+    DynamicalVariables)
 
-# ------------------------------------
-# Sub-classes
-# ------------------------------------
+
 class InitialConditionsEMT(NamedTuple):
     """Store the initial conditions of the reactive power controller for the EMT simulation."""
-
     q_ref: float
     v_ref: float
 
-# ------------------------------------
-# Main class
-# ------------------------------------
+
 @dataclass(slots=True)
 class VoltageDroopController1A:
     """
@@ -81,6 +72,47 @@ class VoltageDroopController1A:
         v_q_ref = 0.0
 
         return [v_d_ref, v_q_ref]
+
+    def get_quadratic_bilinear_model(self, q_ref:float, v_ref:float, q:float):
+        """
+        Parameters
+        ----------
+        - q_ref [pu]: Initial reference reactive power (input 1).
+        - v_ref [pu]: Initial reference voltage (input 2).
+        - q [pu]: Initial measured reactive power (input 3).
+
+        Dynamics
+        --------
+        The quadratic bilinear model dynamics are given by:
+            d/dt q_f  = w_q * (q - q_f)
+            
+            v_ref_d = v_ref + k_q * (q_ref - q_f)
+            v_ref_q = 0
+
+        States, inputs and outputs:
+            x = [q_f]
+            u = [q_ref, v_ref, q]
+            y = [v_ref_d, v_ref_q]
+        """
+        w_q, k_q = self.w_q_puHz, self.k_q_pu
+        A = np.array([[-w_q]])
+        B = np.array([[0, 0, w_q]])
+        C = np.array([
+            [-k_q],
+            [ 0  ]
+        ])
+        D = np.array([
+            [k_q, 1, 0],
+            [  0, 0, 0],
+        ])
+
+        x = DynamicalVariables(name=["q_f"], init=[q_ref])
+        u = DynamicalVariables(name=["q_ref", "v_ref", "q"], init=[q_ref, v_ref, q])
+        y = DynamicalVariables( name=["v_d_ref", "v_q_ref"], init=[v_ref, 0])
+
+        ssm = StateSpaceModel(A=A, B=B, C=C, D=D, x=x, y=y, u=u)
+
+        return ssm.to_quadratic_bilinear()
 
     def get_small_signal_model(self, i_d, i_q, v_d, v_q, q_ref, v_ref):
         """

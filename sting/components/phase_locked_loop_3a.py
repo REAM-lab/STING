@@ -170,7 +170,7 @@ class PhaseLockedLoop3A:
             init=[v_bus_DQ.real, v_bus_DQ.imag])
         y = DynamicalVariables(name=['w', 'sin', 'cos'])
         x = DynamicalVariables(
-            name=["v_pll_q", "z_pll", "sin_pll", "cos_pll"], 
+            name=["v_pll_q", "z_pll", "sin", "cos"], 
             init=[0, wb, np.sin(phase_rad), np.cos(phase_rad)] 
         )
 
