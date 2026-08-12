@@ -46,6 +46,11 @@ gfli_1._calculate_emt_initial_conditions()
 gfli_1._build_small_signal_model()
 gfli_1._build_quadratic_bilinear_model()
 
+# Check that initial conditions are an equilibrium
+x0 = gfli_1.qbm.x.init
+u0 = gfli_1.qbm.u.init
+assert np.isclose(gfli_1.qbm.get_derivatives_step(0, x0, lambda t: u0), 0).all()
+
 # Shift the QBM to the initial conditions
 import control as ct
 ssm = ct.ss(gfli_1.ssm.A, gfli_1.ssm.B,gfli_1.ssm.C,gfli_1.ssm.D)
@@ -82,6 +87,11 @@ system.apply("post_system_init", system)
 # Create a QBM and SSM
 sys, qbm = main.run_qbm(case_directory=case_directory, system=system)
 _, ssm = main.run_ssm(case_directory, system=system)
+
+# Check that initial conditions are an equilibrium
+x0 = qbm.x.init
+u0 = qbm.u.init
+assert np.isclose(qbm.get_derivatives_step(0, x0, lambda t: u0), 0, atol=1e-6).all()
 
 # Simulation inputs
 inputs = {

@@ -710,7 +710,7 @@ class QuadraticBilinearModel:
         # Construct interconnection matrices
         L11, L12, L21, L22 = get_ccm_matrices(system, attribute="qbm", dimI=2)
         # Permute the F and G 
-        T = build_ccm_permutation(system)
+        T = build_ccm_permutation(system, attribute="qbm")
         T = block_diag(T, np.eye(L11.shape[0] - T.shape[0]))
         L11 = T @ L11
         L12 = T @ L12

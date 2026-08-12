@@ -95,8 +95,8 @@ class VirtualInertia2A:
         --------
         The quadratic bilinear model dynamics are given by:
             2h d/dt w  = p_ref - p - kd * (w - 1)
-            d/dt z_sin = z_cos * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
-            d/dt z_cos =-z_sin * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
+            d/dt z_sin = wb * z_cos * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
+            d/dt z_cos =wb* -z_sin * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
 
         States, inputs and outputs:
             x = [w, sin, cos]
