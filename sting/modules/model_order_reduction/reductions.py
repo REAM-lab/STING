@@ -104,7 +104,7 @@ class BalancedTruncation(Reducer):
     def reduce(self, sys:LinearSubsystem):
         
         R = sys.W_c[self.gramian_c].T #cholesky(sys.W_c[self.gramian_c], lower=True)
-        L = sys.W_c[self.gramian_c]   #cholesky(sys.W_o[self.gramian_o], lower=False)
+        L = sys.W_o[self.gramian_o]   #cholesky(sys.W_o[self.gramian_o], lower=False)
 
         U, sigma, Vh = svd(L @ R)
         V = Vh.T

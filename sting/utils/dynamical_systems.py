@@ -13,7 +13,7 @@ import polars as pl
 import pylab as plt
 from plotly.subplots import make_subplots
 from scipy.integrate import solve_ivp
-from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov
+from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov, cholesky
 from scipy.linalg.lapack import dpstrf
 matplotlib.use("Agg")
 
@@ -540,7 +540,7 @@ class StateSpaceModel:
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
 
 
-    def gramian(self, kind: Literal["controllability", "observability"], cholesky=False, lower=False):
+    def gramian(self, kind: Literal["controllability", "observability"]):
         """
         Returns the Gramian of the state-space model.
 
@@ -558,11 +558,6 @@ class StateSpaceModel:
                 W = solve_continuous_lyapunov(self.A, -self.B@self.B.T)
             case "observability":
                 W = solve_continuous_lyapunov(self.A.T, -self.C.T@self.C)
-
-        if cholesky:
-            # dpstrf: *PSD* Cholesky factorization
-            W_f, _, _, _= dpstrf(W, lower=lower)
-            return W_f
 
         return W
 

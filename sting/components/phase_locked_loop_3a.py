@@ -123,7 +123,13 @@ class PhaseLockedLoop3A:
             [     0, 0, 0,-wb], # z_sin
             [     0, 0,wb,  0], # z_cos
         ])
-        B = np.zeros((4, 2))
+
+        B = np.array([
+            [0,0,0],
+            [0,0,0],
+            [a,0,0],
+            [a,0,0]
+        ])
 
         # Nonlinear dynamics of sin and cos "lifted" states
         H0 = np.zeros((4,4))
@@ -155,7 +161,7 @@ class PhaseLockedLoop3A:
             [0, 0, 0,    0],
             [0, 0, 0,    0],
         ])
-        N = np.hstack([N_D, N_Q])
+        N = np.hstack([np.zeros((4,4)), N_D, N_Q])
 
         C = np.array([
             [kp/wb, 1/wb, 0, 0], # w
@@ -163,11 +169,11 @@ class PhaseLockedLoop3A:
             [    0,    0, 0, 1], # z_cos
         ])
 
-        D = np.zeros((3, 2))
+        D = np.zeros((3, 3))
 
         u = DynamicalVariables(
-            name=['v_bus_D', 'v_bus_Q'],
-            init=[v_bus_DQ.real, v_bus_DQ.imag])
+            name=['one', 'v_bus_D', 'v_bus_Q'],
+            init=[1, v_bus_DQ.real, v_bus_DQ.imag])
         y = DynamicalVariables(name=['w', 'sin', 'cos'])
         x = DynamicalVariables(
             name=["v_pll_q", "z_pll", "sin", "cos"], 
