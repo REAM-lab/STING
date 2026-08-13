@@ -119,7 +119,7 @@ def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, qbm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
@@ -140,7 +140,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     sys_modifier.create_impedance_loads()
 
     # Run EMT simulation
-    emt_sc = SimulationEMT(system=sys)
+    emt_sc = SimulationEMT(system=sys, output_directory=output_directory)
     emt_sc.sim(t_max, inputs)
 
     return sys
@@ -340,7 +340,8 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
 
 def run_model_reduction(
         reductions:dict[str, Reducer],
-        ssm: SmallSignalModel
+        ssm: SmallSignalModel,
+        output_directory: str = None
         ):
     """
     Routine to construct a small-signal model and then perform model order reduction (MOR)
@@ -375,5 +376,10 @@ def run_model_reduction(
     # Construct the state-space model 
     models = ssm.get_component_attribute("ssm")
     ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=ssm.model.u, y=y)
+
+    if output_directory is None:
+        output_directory = os.path.join(ssm.system.case_directory, "outputs", "model_order_reduction")
+        os.makedirs(output_directory, exist_ok=True)
+        ssm.model.to_csv(output_directory)
 
     return ssm
