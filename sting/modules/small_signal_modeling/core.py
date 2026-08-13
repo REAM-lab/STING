@@ -126,7 +126,7 @@ class SmallSignalModel:
         """
         self.F, self.G, self.H, self.L = get_ccm_matrices(self.system, attribute="ssm", dimI=2)
         # Permute the F and G 
-        T = build_ccm_permutation(self.system)
+        T = build_ccm_permutation(self.system, attribute="ssm")
         T = block_diag(T, np.eye(self.F.shape[0] - T.shape[0]))
 
         self.F = T @ self.F

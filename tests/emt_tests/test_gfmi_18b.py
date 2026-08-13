@@ -10,14 +10,14 @@ from sting.generator import GFMI18B
 from sting.generator.core import PowerFlowVariables
 from sting.utils.dynamical_systems import smooth_step
 
-# matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')
 
 # Set up a temporary directory used by all tests
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
 os.makedirs(case_directory, exist_ok=True)
 
 
-gfm = GFMI18B(
+gfmi_1 = GFMI18B(
     name="gfmi_1", bus="bus_2",
     # Power flow 
     minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
@@ -30,7 +30,7 @@ gfm = GFMI18B(
     # Inner current controller
     kp_cc_pu=4.77, ki_cc_puHz=60, kffv_cc=0,
     # Virtual inertia
-    h_s=2, kd_pu=70, 
+    h_s=2, kd_pu=70, alpha=5,
     # Voltage droop
     k_q_pu=0.2, w_q_puHz=4000
 )
@@ -38,25 +38,25 @@ gfm = GFMI18B(
 # --------------------------------------------------------
 # Check that the linearized QBM and SSM match 
 # --------------------------------------------------------
-gfm.power_flow_variables = PowerFlowVariables(
+gfmi_1.power_flow_variables = PowerFlowVariables(
     p_bus=-1.0000000099749409, 
     q_bus=0.490865108361813, 
     vmag_bus=1.0097648817014873, 
     vphase_bus=-8.816960691471156)
 
-gfm._calculate_emt_initial_conditions()
-gfm._build_small_signal_model()
-gfm._build_quadratic_bilinear_model()
+gfmi_1._calculate_emt_initial_conditions()
+gfmi_1._build_small_signal_model()
+gfmi_1._build_quadratic_bilinear_model()
 
-
-gfm.ssm.to_csv(os.path.join(case_directory, "ssm"))
-gfm.qbm.shift_to_equilibrium().write_csv(os.path.join(case_directory, "qbm"))
+# Check that initial conditions are an equilibrium
+x0 = gfmi_1.qbm.x.init
+u0 = gfmi_1.qbm.u.init
+assert np.isclose(gfmi_1.qbm.get_derivatives_step(0, x0, lambda t: u0), 0).all()
 
 # Shift the QBM to the initial conditions
 import control as ct
-ssm = ct.ss(gfm.ssm.A, gfm.ssm.B,gfm.ssm.C,gfm.ssm.D)
-qbm = gfm.qbm.shift_to_equilibrium()
-# Remove the dummy input
+ssm = ct.ss(gfmi_1.ssm.A, gfmi_1.ssm.B,gfmi_1.ssm.C,gfmi_1.ssm.D)
+qbm = gfmi_1.qbm.shift_to_equilibrium()
 qbm = ct.ss(qbm.A, qbm.B, qbm.C, qbm.D)[:, [0,1,2,4,5]]
 
 # Create a sigma plot
@@ -75,50 +75,46 @@ plt.xscale('symlog')
 plt.yscale('symlog')
 plt.show()
 
-print("ok")
-
 # -------------------------------------------------------
 # Run  EMT simulations
 # -------------------------------------------------------
 
 # Toy 2 bus system
-gfm.power_flow_variables = None
+gfmi_1.power_flow_variables = None
 
 system = datasets.toy_2(case_directory=case_directory)
-system.add(gfm)
+system.add(gfmi_1)
 system.apply("post_system_init", system)
 
 # Create a QBM and SSM
 sys, qbm = main.run_qbm(case_directory=case_directory, system=system)
 _, ssm = main.run_ssm(case_directory, system=system)
 
+# Check that initial conditions are an equilibrium
+x0 = qbm.x.init
+u0 = qbm.u.init
+assert np.isclose(qbm.get_derivatives_step(0, x0, lambda t: u0), 0, atol=1e-6).all()
+
 # Simulation inputs
 inputs = {
     'gfmi_18b_0': {
         'q_ref': lambda t: smooth_step(t, step_time=0.2, initial_value=0.0, final_value=0.5, transient_width=5e-3),
         'p_ref': lambda t: smooth_step(t, step_time=0.2, initial_value=0.0, final_value=-0.5, transient_width=5e-3),
-        'one': lambda t: 1
         },
 }
 
-t_max = 0.05 # Simulation length in seconds
+t_max = 1.5 # Simulation length in seconds
 
 # Small-signal
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Quadratic bilinear
-
-qbm = qbm.shift_to_equilibrium()
-
-qbm.write_csv(os.path.join(case_directory, "outputs","quadratic_bilinear"))
-
-
-#qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, shift=False)
-#os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
-#qbm.write_simulation_plots(qbm_sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
-#qbm.write_simulation_csv(qbm_sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+qbm_sol = qbm.simulate(t_max=t_max, inputs=inputs, shift=False)
+os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
+qbm.write_simulation_plots(qbm_sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+qbm.write_simulation_csv(qbm_sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 # Nonlinear EMT 
-#main.run_emt(t_max, inputs, case_directory, system=system)
-"""
+main.run_emt(t_max, inputs, case_directory, system=system)
+
 # Compare emt vs ssm results
 emt_results = pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18b_0.csv")
 qbm_results = pl.read_csv(f"{case_directory}/outputs/quadratic_bilinear/gfmi_18b_0.csv").rename({"i_br_d": "i_vsc_d", "i_br_q":"i_vsc_q"})
@@ -128,7 +124,7 @@ ssm_results = pl.read_csv(f"{case_directory}/outputs/small_signal_model/gfmi_18b
 fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(8, 6), sharex=True)
 ls = ["-", "--", "-."]
 
-for ax, col in zip(axs.flatten(), ["v_pll_q", "z_apc", "z_rpc", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q"]):
+for ax, col in zip(axs.flatten(), ["w", "q_f","z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q"]):
     i = 0
     for name, df in zip(["EMT", "QBM", "SSM"], [emt_results, qbm_results, ssm_results]):
         ax.plot(df["time"], df[col], label=name, ls=ls[i], color=f"C{i}")
@@ -136,6 +132,6 @@ for ax, col in zip(axs.flatten(), ["v_pll_q", "z_apc", "z_rpc", "z_cc_d", "z_cc_
     ax.set_ylabel(col)
 
 ax.legend()
-plt.show()"""
+plt.show()
 
 print("ok")

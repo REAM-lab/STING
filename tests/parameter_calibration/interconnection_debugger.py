@@ -3,7 +3,18 @@ This is a skeleton script for debugging interconnection matrices for the compone
 1. Paste your interconnection matrices
 2. Define your symbolic inputs and outputs
 3. Check that each row of the resulting vector matches it's expected variable
+
+
+Recall the transformation from DQ to dq  
+    i_d =  i_D*cos + i_Q*sin
+    i_q = -i_D*sin + i_Q*cos
+
+Active and reactive power
+    p = v_d * i_d + v_q * i_q
+    q = v_q * i_d - v_d * i_q
 """
+
+
 
 import numpy as np
 import sympy as sp

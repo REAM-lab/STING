@@ -1,29 +1,33 @@
-# ----------------------
-# Import python packages
-# ----------------------
 import numpy as np
-from typing import NamedTuple
 from scipy.linalg import block_diag
 
-# ----------------------
-# Import sting code
-# ----------------------
-#from sting.system.core import System
-from sting.utils.graph_matrices import build_generation_connection_matrix, build_oriented_incidence_matrix
+from sting.utils.graph_matrices import (
+    build_generation_connection_matrix,
+    build_oriented_incidence_matrix,
+)
 
-# -----------
-# Functions
-# -----------
 
 def get_ccm_matrices(system, attribute: str, dimI: int):
     """ 
-    Returns the matrices F, G, H, L of the CCM formulation.
-    TODO: we are supposed to pass a list of components, not all the system in system.ccm_generators, it may require refactoring code.
-    """
-    gen_buses, gen_ssm = system.ccm_generators.filter(lambda x: getattr(x, attribute) is not None).select("bus_id", attribute)
-    from_bus, to_bus, br_ssm = system.ccm_branches.select("from_bus_id", "to_bus_id", attribute)
+    Returns the matrices the interconnection matrices 
+    of a power system for Component Connection Method (CCM).
+    
+    Parameters
+    ----------
+    system: A STING power system instance.
+    attribute: Model attribute to build CCM matrices for---e.g., "ssm", "qbm", "emt"
+    dimI: If dq = 2, if abc = 3
 
-    sh_ssm, = system.ccm_shunts.select(attribute)
+    Returns
+    -------
+    Interconnection matrices F,G,H, and L such that:
+        u_stack = F * y_stack + G * u_sys
+        y_sys   = H * y_stack + L * u_sys 
+    """
+    gen_buses, gen_models = system.ccm_generators.filter(lambda x: getattr(x, attribute) is not None).select("bus_id", attribute)
+    from_bus, to_bus, br_models = system.ccm_branches.select("from_bus_id", "to_bus_id", attribute)
+
+    sh_models, = system.ccm_shunts.select(attribute)
 
     # Get the number of buses of the full system
     n_buses = len(system.buses)
@@ -40,20 +44,20 @@ def get_ccm_matrices(system, attribute: str, dimI: int):
     un_inc = abs(or_inc)
 
     d_gen, g_gen, y_gen = 0, 0, 0
-    for ssm in gen_ssm:
-        d_gen += ssm.u.n_device  # number of generator device-side inputs
-        g_gen += ssm.u.n_grid  # number of generator grid-side inputs
-        y_gen += len(ssm.y)  # number of generator outputs
+    for model in gen_models:
+        d_gen += model.u.n_device # number of generator device-side inputs
+        g_gen += model.u.n_grid   # number of generator grid-side inputs
+        y_gen += len(model.y)     # number of generator outputs
 
     g_br, y_br = 0, 0
-    for ssm in br_ssm:
-        g_br += ssm.u.n_grid  # number of branch grid-side inputs
-        y_br += len(ssm.y)  # number of branch outputs
+    for model in br_models:
+        g_br += model.u.n_grid # number of branch grid-side inputs
+        y_br += len(model.y)   # number of branch outputs
 
     g_sh, y_sh = 0, 0
-    for ssm in sh_ssm:
-        g_sh += ssm.u.n_grid  # number of shunt grid-side inputs
-        y_sh += len(ssm.y)  # number of shunt outputs
+    for model in sh_models:
+        g_sh += model.u.n_grid # number of shunt grid-side inputs
+        y_sh += len(model.y)   # number of shunt outputs
 
     y = y_gen + y_sh + y_br  # number of system outputs
 
@@ -71,10 +75,10 @@ def get_ccm_matrices(system, attribute: str, dimI: int):
     F33 = np.kron(or_inc, np.eye(dimI))
 
     F41 = np.zeros((g_br, y_gen))
-    # fmt: off
-    F42 = np.kron( 0.5*(np.kron( np.transpose(un_inc) , np.array([[1], [1]]) )
-                        + np.kron( np.transpose(or_inc) , np.array([[-1], [1]]) ) ) 
-                         , np.eye(dimI) )
+    F42 = np.kron( 
+        0.5*(np.kron( np.transpose(un_inc) , np.array([[1], [1]]) )
+        + np.kron( np.transpose(or_inc) , np.array([[-1], [1]]) ) ), 
+        np.eye(dimI) )
     F43 = np.zeros( (g_br, y_br) )
     
     F = np.block( [[F11, F12, F13],
@@ -92,7 +96,7 @@ def get_ccm_matrices(system, attribute: str, dimI: int):
                   [G21],
                   [G31],
                   [G41]])
-    # fmt: on
+    
     # Construct matrix H and L
     H = np.eye(y)
     L = np.zeros((y, d_gen))
@@ -100,9 +104,23 @@ def get_ccm_matrices(system, attribute: str, dimI: int):
     return F, G, H, L
 
 
-def build_ccm_permutation(system):
+def build_ccm_permutation(system, attribute:str):
     """
-    Build the permutation matrices from Lemma 1 and 2.
+    Build the permutation matrices from so that the grid level
+    interconnection matrices from `get_ccm_matrices` will work
+    directly (without the need to permute the device and grid
+    side inputs of generators).
+
+    Parameters
+    ----------
+    system: A STING power system instance.
+    attribute: Model attribute to build CCM matrices for---e.g., "ssm", "qbm".
+
+    Returns
+    -------
+    Permutation matrix T such that 
+        F_new = T * F
+        G_new = T * G
     """
     # Create empty lists for transformations, list order follows that of generator_types_list
     Y1, Y2, T1 = [], [], []
@@ -113,13 +131,13 @@ def build_ccm_permutation(system):
         gens = getattr(system, gen_type)
         n = len(gens)
 
-        if ((n == 0) or (gens[0].ssm is None)):
+        if ((n == 0) or (getattr(gens[0], attribute) is None)):
             continue
 
         # Note: all generators in 'gens' of the same class and will have
         # the same inputs and outputs. Thus, we only need to examine gen_0.
-        d = gens[0].ssm.u.n_device  # number of device-side inputs
-        g = gens[0].ssm.u.n_grid  # number of grid-side inputs
+        d = getattr(gens[0], attribute).u.n_device  # number of device-side inputs
+        g = getattr(gens[0], attribute).u.n_grid  # number of grid-side inputs
 
         # Build transformation (permutation) matrices
         X1 = np.kron(np.eye(n), np.hstack((np.eye(d), np.zeros((d, g)))))
