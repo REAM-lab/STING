@@ -4,12 +4,14 @@ This script demonstrates how to create a reduced-order model of the WSCC (Wester
 """
 import os
 
-import numpy as np
-
-from sting import main, datasets
+from sting import datasets, main
 from sting.modules.model_order_reduction.balanced_truncation import BalancedTruncation
-from sting.modules.model_order_reduction.singular_perturbation import SingularPerturbation
-from sting.modules.model_order_reduction.interconnected_balanced_truncation import InterconnectedBalancedTruncation
+from sting.modules.model_order_reduction.interconnected_balanced_truncation import (
+    InterconnectedBalancedTruncation,
+)
+from sting.modules.model_order_reduction.singular_perturbation import (
+    SingularPerturbation,
+)
 from sting.utils.dynamical_systems import smooth_step
 
 # Location of all outputs from this example
@@ -24,25 +26,30 @@ system.apply("post_system_init", system)
 # Construct a small-signal model---i.e., full-order model (FOM).
 system, ssm = main.run_ssm(system=system)
 
-
 # Create a reduced order model of all components in the zone labeled as "external".
 # We will then connect this reduced order model to the zone labeled "study", which
 # consists of a grid forming inverter (GFMI 18A) at bus 2.
 
 zone_name = "external"  # Zone to reduce
-r = 7                   # Target reduction order of the external zone
+r = 12                  # Target reduction order of the external zone
 
 # Vanilla balanced truncation removing the states that are hardest to control and observe.
-# We will use the "singular perturbation" to eliminate states in order to enforce zero steady-state error
-# at the expense of accuracy in higher-frequency dynamics. 
-balanced_truncation = {zone_name:  BalancedTruncation(r=r, method="singular perturbation")}
+balanced_truncation = {zone_name:  BalancedTruncation(r=r, method="truncate")}
 
 # Singular perturbation converting the fastest modes to algebraic 
 singular_perturbation = {zone_name: SingularPerturbation(r=r, basis="eigen")}
 
+# Interconnected balanced reduction using the *system-level* state-space model to 
+# compute a reduced order model. This functions works a little differently as it 
+# takes a centralized perspective/approach. We will also use "singular perturbation"
+# to eliminate states in order to enforce zero steady-state error---at the expense of 
+# accuracy in higher-frequency dynamics. 
+interconnected_reduction = InterconnectedBalancedTruncation(r={zone_name:r}, method="singular perturbation")
+
 # Construct a reduced-order model (ROM).
 rom1 = main.run_model_reduction(ssm=ssm, reductions=balanced_truncation)
 rom2 = main.run_model_reduction(ssm=ssm, reductions=singular_perturbation)
+rom3 = interconnected_reduction.reduce(ssm)
 
 # COMPARE the dynamics of a step change to the power reference set points of the 
 # grid forming inverter (GFLI 18A) at bus 2
@@ -68,11 +75,6 @@ rom2.output_directory = os.path.join(case_directory, "outputs", "singular_pertur
 os.makedirs(rom2.output_directory , exist_ok=True)
 rom2.simulate_ssm(t_max=t_max, inputs=inputs)
 
-
-
-####
-
-###
-interconnected_bt = InterconnectedBalancedTruncation(r={zone_name:r}, method="singular perturbation")
-
-reduced_ssm = interconnected_bt.reduce(ssm)
+rom3.output_directory = os.path.join(case_directory, "outputs", "interconnection_reduction_simulation")
+os.makedirs(rom3.output_directory , exist_ok=True)
+rom3.simulate_ssm(t_max=t_max, inputs=inputs)

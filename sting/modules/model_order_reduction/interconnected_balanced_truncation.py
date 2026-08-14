@@ -11,7 +11,7 @@ from sting.modules.model_order_reduction.utils import (
 )
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.reduced_order_model.linear_subsystem import LinearSubsystem
-
+from sting.utils.dynamical_systems import StateSpaceModel
 
 @dataclass(slots=True)
 class InterconnectedBalancedTruncation:
@@ -19,10 +19,21 @@ class InterconnectedBalancedTruncation:
     method: Literal["truncate", "singular perturbation"] = "truncate"
 
     def reduce(self, small_signal_model:SmallSignalModel):
-        small_signal_model = copy.deepcopy(small_signal_model)
 
-
-        A,B,C,D = small_signal_model.model.data
+        ssm = copy.deepcopy(small_signal_model)
+        # Interconnect all components in the same zone
+        ssm = ssm.group_by("zone").interconnect()
+        # Construct a state-space model of the full-order model (FOM)
+        model = StateSpaceModel.from_interconnected(
+            components=ssm.get_component_attribute("ssm"), 
+            connections=ssm.ccm_matrices, 
+            u=lambda u: u[u.type == "device"], 
+            y=lambda y: y)
+    
+       # --------------- #
+       # Model reduction #
+       # --------------- #
+        A,B,C,D = model.data
 
         # Solve for the system-level gramians
         P = solve_continuous_lyapunov(A, -B@B.T)
@@ -31,35 +42,50 @@ class InterconnectedBalancedTruncation:
         idx_start, idx_stop = 0, 0
         # Step over each component with a to determine the
         # indices to select from P and Q
-        for c in small_signal_model.components:
-            component = getattr(small_signal_model.system, c.type)[c.id]
+        for c in ssm.components:
+            component = getattr(ssm.system, c.type)[c.id]
             n = component.ssm.A.shape[0]
             idx_stop += n
 
-            if c.type == "linear_subsystem":
+            # If the current component is a subsystem try to reduce it
+            if c.type == "linear_subsystems":
                 sys:LinearSubsystem = component
-                r_i = self.r[sys.zone]
+                r_i = self.r.get(sys.name)
+                # Check for undefined reduction order
                 if r_i == None:
                     continue
+                # Index out the block diagonal matrices of P and Q
                 P_i = P[idx_start:idx_stop, idx_start:idx_stop]
                 Q_i = Q[idx_start:idx_stop, idx_start:idx_stop]
                 
                 if "truncate" == self.method:
-                    T, invT = get_balancing_transform(P, Q, r=r_i)
+                    T, invT = get_balancing_transform(P_i, Q_i, r=r_i)
                     sys_r = sys.full_order_model.coordinate_transform(T=T, invT=invT)
                 
                 elif "singular perturbation" == self.method:
-                    T, invT = get_balancing_transform(P, Q, r=None)
+                    T, invT = get_balancing_transform(P_i, Q_i, r=None)
                     # Transform to balanced 
                     ss_t = sys.full_order_model.coordinate_transform(T=T, invT=invT)
                     sys_r = singular_perturbation(ss=ss_t, r=r_i)
 
-            sys.T_l = invT
-            sys.T_r = T
-            sys.reduced_order_model = sys_r
-            
+                
+
+                # Update the subsystems transform matrices and ROM
+                sys.T_l = invT
+                sys.T_r = T
+                sys.reduced_order_model = sys_r
+
+                # Flip the `ssm` attribute to the reduced order model
+                sys.set_using("reduced_order_model")
+
+            # Increment
             idx_start += n
 
-        small_signal_model.construct_system_ssm(self, write_csv=False, perform_analysis=False)
+        # Construct the system-level reduced order model
+        ssm.model = StateSpaceModel.from_interconnected(
+            components=ssm.get_component_attribute("ssm"), 
+            connections=ssm.ccm_matrices, 
+            u=lambda u: u[u.type == "device"], 
+            y=lambda y: y)
 
-        return small_signal_model
+        return ssm

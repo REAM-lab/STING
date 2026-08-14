@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import solve, eig, cholesky, svd
 
-from sting.utils.dynamical_systems import StateSpaceModel
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.utils.matrix_tools import mat2cell
 
@@ -25,7 +25,8 @@ def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     C_r = C[0,0] - C[0,1]@invA_11@A[1,0]
     D_r = ss.D - C[0,1]@invA_11@B[1,0]
 
-    ss_r = StateSpaceModel(A=A_r, B=B_r, C=C_r, D=D_r)
+
+    ss_r = StateSpaceModel(A=A_r, B=B_r, C=C_r, D=D_r, y=ss.y, u=ss.u, x=ss.x[:r])
 
     return ss_r
     
