@@ -6,3 +6,4 @@ from .gfmi_18b import GFMI18B
 from .gfmi_18p import GFMI18P
 from .voltage_source_4a import VoltageSource4A
 from .voltage_source_5a import VoltageSource5A
+from .synchronous_machine_8a import SM8A
