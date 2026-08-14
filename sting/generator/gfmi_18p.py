@@ -50,7 +50,7 @@ class GFMI18P(Generator):
     k_q_pu: float
     w_q_puHz: float
     # Output-feedback control
-    F: np.ndarray
+    F: np.ndarray = None
 
     # Components
     lcl_filter: LCLFilter6A = field(init=False)

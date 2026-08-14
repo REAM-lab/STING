@@ -76,7 +76,7 @@ class GFLI16B(Generator):
         self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
         self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
         self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
-        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase)
+        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase, alpha=self.alpha_pll)
         self.current_controller = InnerCurrentController2B(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
         self.reactive_power_controller = ReactivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
@@ -270,9 +270,9 @@ class GFLI16B(Generator):
         v_bus_D, v_bus_Q = init.v_bus_D, init.v_bus_Q
         i_bus_D, i_bus_Q = init.i_bus_D, init.i_bus_Q
         u = DynamicalVariables(
-            name=["p_ref", "q_ref", "v_bus_D", "v_bus_Q"],
-            type=["device", "device", "grid", "grid"],
-            init=[p_bus, q_bus, v_bus_D, v_bus_Q])
+            name=["p_ref", "q_ref", "one", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "device", "grid", "grid"],
+            init=[p_bus, q_bus, 1, v_bus_D, v_bus_Q])
         y = DynamicalVariables(
             name=['i_bus_D', 'i_bus_Q'],
             init=[i_bus_D, i_bus_Q])
@@ -292,30 +292,31 @@ class GFLI16B(Generator):
         LINEAR INTERCONNECTIONS
 
         ┌ component ──▶           │ PLL         ┆ APC     ┆ RPC     ┆ ICC      ┆ RL_1      RL_2      RC      │ Grid inputs
-        │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1      2,3
-        ▼       ▼                 │ ω   sin cos ┆ i_ref_d ┆ i_ref_q ┆ v_vsc_dq ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ │ p_ref  q_ref  v_bus_DQ
+        │       ┌ index ──▶       │ 0   1   2   ┆ 3       ┆ 4       ┆ 5,6      ┆ 7,8       9,10      11,12   │ 0      1      2    3,4
+        ▼       ▼                 │ ω   sin cos ┆ i_ref_d ┆ i_ref_q ┆ v_vsc_dq ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ │ p_ref  q_ref  one  v_bus_DQ
         ──────────────────────────┼─────────────┴─────────┴─────────┴──────────┴─────────────────────────────┼────────────────────────
-        PLL     0,1      v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
-        APC     2        p_ref    │ 0   0   0     0         0         0          0          0        0       │ 1      0      0
-                3       *p_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
-        RPC     4        q_ref    │ 0   0   0     0         0         0          0          0        0       │ 0      1      0
-                5       *q_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
-        ICC     6        i_ref_d  │ 0   0   0     1         0         0          0          0        0       │ 0      0      0
-                7        i_ref_q  │ 0   0   0     0         1         0          0          0        0       │ 0      0      0
-                8,9     *i_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
-                10,11   *v_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0 
-        RL_1    12,13    v_vsc_dq │ 0   0   0     0         0         I₂         0          0        0       │ 0      0      0
-                14,15   *v_sh_dq  │ 0   0   0     0         0         0          0          0        0       │ 0      0      0
-                16       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0
-        RL_2    17,18    v_sh_DQ  │ 0   0   0     0         0         0          0          0        I₂      │ 0      0      0
-                19,20    v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      I₂
-        RC      21,22   *i_sh_DQ  │ 0   0   0     0         0         0          0         -I₂       0       │ 0      0      0
+        PLL     0        one      │ 0   0   0     0         0         0          0          0        0       │ 0      0      1      0
+                1,2      v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      I₂
+        APC     3        p_ref    │ 0   0   0     0         0         0          0          0        0       │ 1      0      0      0
+                4       *p_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      0
+        RPC     5        q_ref    │ 0   0   0     0         0         0          0          0        0       │ 0      1      0      0
+                6       *q_bus    │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      0
+        ICC     7        i_ref_d  │ 0   0   0     1         0         0          0          0        0       │ 0      0      0      0
+                9        i_ref_q  │ 0   0   0     0         1         0          0          0        0       │ 0      0      0      0
+                9,10     *i_bus_dq│ 0   0   0     0         0         0          0          0        0       │ 0      0      0      0
+                11,12   *v_bus_dq │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      0 
+        RL_1    13,14    v_vsc_dq │ 0   0   0     0         0         I₂         0          0        0       │ 0      0      0      0
+                15,16   *v_sh_dq  │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      0
+                17       ω        │ 1   0   0     0         0         0          0          0        0       │ 0      0      0      0
+        RL_2    18,19    v_sh_DQ  │ 0   0   0     0         0         0          0          0        I₂      │ 0      0      0      0
+                20,21    v_bus_DQ │ 0   0   0     0         0         0          0          0        0       │ 0      0      0      I₂
+        RC      22,23   *i_sh_DQ  │ 0   0   0     0         0         0          0         -I₂       0       │ 0      0      0      0
         ──────────────────────────┼──────────────────────────────────────────────────────────────────────────┼────────────────────────
-        Grid    0,1      i_bus_DQ │ 0   0   0     0         0          0         0          I₂         0     │ 0      0      0
+        Grid    0,1      i_bus_DQ │ 0   0   0     0         0          0         0          I₂         0     │ 0      0      0      0
         outputs                  
 
-        idx_11 = [([6,7], [3,4], I), ([12,13], [5,6], I), ([17],[0], 1), ([17,18],[11,12],I), ([21,22],[9,10], -I)]
-        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([19,20], [2,3], I)]
+        idx_11 = [([7,8], [3,4], I), ([13,14], [5,6], I), ([17],[0], 1), ([18,19],[11,12],I), ([22,23],[9,10], -I)]
+        idx_12 = [([0],[2],1),([1,2], [3,4], I), ([3],[0], 1), ([5], [1], 1), ([20,21], [3,4], I)]
         NONLINEAR INTERCONNECTIONS (only showing stared inputs)
 
         Recall the transformation from DQ to dq  
@@ -326,95 +327,88 @@ class GFLI16B(Generator):
             p = v_d * i_d + v_q * i_q
             q = v_q * i_d - v_d * i_q
 
-                                  │ PLL           ┆ PC   ┆ ICC  ┆ LCL                                  
-                        2         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
-        (u_2 * x)       v_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
-        APC     3       *p_bus    │ 0     0   0     0      0      0        1       0        0       
-        RPC     5       *q_bus    │ 0     0   0     0      0      0        0      -1        0
-        ICC     10      *v_bus_d  │ 0     0   1     0      0      0        0       0        0
-                11      *v_bus_q  │ 0    -1   0     0      0      0        0       0        0
-        idx_u2 = [([3], [10], 1), ([5], [11], 1), ([10,11], [2,3], J)]
-        
-                        3         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
-        (u_3 * x)       v_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
-        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
-        APC     3       *p_bus    │ 0     0   0     0      0      0        0       1        0       
-        RPC     5       *q_bus    │ 0     0   0     0      0      0        1       0        0
-        ICC     10      *v_bus_d  │ 0     1   0     0      0      0        0       0        0
-                11      *v_bus_q  │ 0     0   1     0      0      0        0       0        0        
-        idx_u3 = [([3], [11], 1), ([5], [10], 1), ([10,11], [2,3], I)]
-
                             2     │ 0,1   2   3   ┆ 4,5,6,7 ┆ 8       9       10      11      12      13
         (x_2 * x)           sin * │ ...   sin cos ┆ ...     ┆ i_vsc_d i_vsc_q i_bus_D i_bus_Q  v_sh_D v_sh_Q
         ──────────────────────────┼───────────────┴─────────┴───────────────────────────────────    
-        ICC     8       *i_bus_d  │ 0     0   0     0         0       0        0       1        0       0
-                9       *i_bus_q  │ 0     0   0     0         0       0       -1       0        0       0
-        RL_1    14      *v_sh_d   │ 0     0   0     0         0       0        0       0        0       1
-                15      *v_sh_q   │ 0     0   0     0         0       0        0       0       -1       0
-        RC      21      *i_sh_D   │ 0     0   0     0         0      -1        0       0        0       0
-                22      *i_sh_Q   │ 0     0   0     0         1       0        0       0        0       0
+        ICC     9       *i_bus_d  │ 0     0   0     0         0       0        0       1        0       0
+                10      *i_bus_q  │ 0     0   0     0         0       0       -1       0        0       0
+        RL_1    15      *v_sh_d   │ 0     0   0     0         0       0        0       0        0       1
+                16      *v_sh_q   │ 0     0   0     0         0       0        0       0       -1       0
+        RC      22      *i_sh_D   │ 0     0   0     0         0      -1        0       0        0       0
+                23      *i_sh_Q   │ 0     0   0     0         1       0        0       0        0       0
 
-        idx_x2 = [([8,9], [10,11], J), ([14,15], [12,13], J), ([21,22], [8,9], J.T)]
+        idx_x2 = [([9,10], [10,11], J), ([15,16], [12,13], J), ([22,23], [8,9], J.T)]
 
                             3     │ 0,1   2   3   ┆ 4,5,6,7 ┆ 8       9       10      11      12      13
         (x_3 * x)           cos * │ ...   sin cos ┆ ...     ┆ i_vsc_d i_vsc_q i_bus_D i_bus_Q  v_sh_D v_sh_Q
         ──────────────────────────┼───────────────┴─────────┴────────────────────────────────────────
-        ICC     8       *i_bus_d  │ 0     0   0     0         0       0        1       0        0       0
-                9       *i_bus_q  │ 0     0   0     0         0       0        0       1        0       0
-        RL_1    14      *v_sh_d   │ 0     0   0     0         0       0        0       0        1       0
-                15      *v_sh_q   │ 0     0   0     0         0       0        0       0        0       1
-        RC      21      *i_sh_D   │ 0     0   0     0         1       0        0       0        0       0
-                22      *i_sh_Q   │ 0     0   0     0         0       1        0       0        0       0
+        ICC     9       *i_bus_d  │ 0     0   0     0         0       0        1       0        0       0
+                10       *i_bus_q │ 0     0   0     0         0       0        0       1        0       0
+        RL_1    15      *v_sh_d   │ 0     0   0     0         0       0        0       0        1       0
+                16      *v_sh_q   │ 0     0   0     0         0       0        0       0        0       1
+        RC      22      *i_sh_D   │ 0     0   0     0         1       0        0       0        0       0
+                23      *i_sh_Q   │ 0     0   0     0         0       1        0       0        0       0
         
-        idx_x3 = [([8,9], [10,11], I), ([14,15], [12,13], I), ([21,22], [8,9], I)]
+        idx_x3 = [([9,10], [10,11], I), ([15,16], [12,13], I), ([22,23], [8,9], I)]
+
+                                  │ PLL           ┆ PC   ┆ ICC  ┆ LCL                                  
+                        3         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (u_3 * x)       v_bus_D * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
+        APC     4       *p_bus    │ 0     0   0     0      0      0        1       0        0       
+        RPC     6       *q_bus    │ 0     0   0     0      0      0        0      -1        0
+        ICC     11      *v_bus_d  │ 0     0   1     0      0      0        0       0        0
+                12      *v_bus_q  │ 0    -1   0     0      0      0        0       0        0
+        idx_u3 = [([4], [10], 1), ([6], [11], -1), ([11,12], [2,3], J)]
+        
+                        4         │ 0,1   2   3   ┆ 4,5  ┆ 6,7  ┆ 8,9      10      11      12,13
+        (u_4 * x)       v_bus_Q * │ z_ab  sin cos ┆ z_dq ┆ z_cc ┆ i_vsc_dq i_bus_D i_bus_Q  v_sh_DQ
+        ──────────────────────────┼───────────────┴──────┴──────┴───────────────────────────────────    
+        APC     4       *p_bus    │ 0     0   0     0      0      0        0       1        0       
+        RPC     6       *q_bus    │ 0     0   0     0      0      0        1       0        0
+        ICC     11      *v_bus_d  │ 0     1   0     0      0      0        0       0        0
+                12      *v_bus_q  │ 0     0   1     0      0      0        0       0        0        
+        idx_u4 = [([4], [11], 1), ([6], [10], 1), ([11,12], [2,3], I)]
         """
         I = np.eye(2)
         J = np.array([[0, 1], [-1,0]])
 
+         # Number of stacked/grid side inputs and outputs
+        u_stack = 24
+        y_stack = 13
+        x_stack = 14
+        u_grid = 5
+        y_grid = 2
+
         # Linear interconnection matrices
-        L11 = np.zeros((23, 13))
-        L12 = np.zeros((23, 4))
-        L21 = np.zeros((2, 13))
-        L22 = np.zeros((2, 4))
+        L11 = np.zeros((u_stack, y_stack))
+        L12 = np.zeros((u_stack, u_grid))
+        L21 = np.zeros((y_grid, y_stack))
+        L22 = np.zeros((y_grid, u_grid))
 
-        idx_11 = [([6,7], [3,4], I), ([12,13], [5,6], I), ([16],[0], 1), ([17,18],[11,12],I), ([21,22],[9,10], -I)]
-        for rows, cols, value in idx_11:
-            L11[np.ix_(rows, cols)] = value
-
-        idx_12 = [([0,1], [2,3], I), ([2],[0], 1), ([4], [1], 1), ([19,20], [2,3], I)]
-        for rows, cols, value in idx_12:
-            L12[np.ix_(rows, cols)] = value
-
-        L21[np.ix_([0,1],[9,10])] = I
+        idx_11 = [([7,8], [3,4], I), ([13,14], [5,6], I), ([17],[0], 1), ([18,19],[11,12],I), ([22,23],[9,10], -I)]
+        idx_12 = [([0],[2],1),([1,2], [3,4], I), ([3],[0], 1), ([5], [1], 1), ([20,21], [3,4], I)]
+        idx_21 = [([0,1],[9,10], I)]
 
         # Nonlinear interconnection matrices
         # M1 (x \otime x)   
-        M1_x2 = np.zeros((23,14))
-        M1_x3 = np.zeros((23,14))
-
-        idx_x2 = [([8,9], [10,11], J), ([14,15], [12,13], J), ([21,22], [8,9], J.T)]
-        for rows, cols, value in idx_x2:
-            M1_x2[np.ix_(rows, cols)] = value
-
-        idx_x3 = [([8,9], [10,11], I), ([14,15], [12,13], I), ([21,22], [8,9], I)]
-        for rows, cols, value in idx_x3:
-            M1_x3[np.ix_(rows, cols)] = value
-
-        M1 = np.hstack((np.zeros((23, 14*2)), M1_x2, M1_x3, np.zeros((23, 14*10))))
+        M1_x2, M1_x3 =  (np.zeros((u_stack, x_stack)) for _ in range(2))
+        idx_x2 = [([9,10], [10,11], J), ([15,16], [12,13], J), ([22,23], [8,9], J.T)]
+        idx_x3 = [([9,10], [10,11], I), ([15,16], [12,13], I), ([22,23], [8,9], I)]
 
         # M2 (u \otimes x)
-        M2_u2 = np.zeros((23,14))
-        M2_u3 = np.zeros((23,14))
+        M2_u3, M2_u4 =  (np.zeros((u_stack, x_stack)) for _ in range(2))
+        idx_u3 = [([4], [10], 1), ([6], [11], -1), ([11,12], [2,3], J)]
+        idx_u4 = [([4], [11], 1), ([6], [10], 1), ([11,12], [2,3], I)]
 
-        idx_u2 = [([3], [10], 1), ([5], [11], -1), ([10,11], [2,3], J)]
-        for rows, cols, value in idx_u2:
-            M2_u2[np.ix_(rows, cols)] = value
-        idx_u3 = [([3], [11], 1), ([5], [10], 1), ([10,11], [2,3], I)]
-        for rows, cols, value in idx_u3:
-            M2_u3[np.ix_(rows, cols)] = value
+        # Fill out each matrix
+        matrix_index_pairs =  [(L11, idx_11), (L12, idx_12), (L21, idx_21), (M1_x2, idx_x2), (M1_x3, idx_x3), (M2_u3, idx_u3), (M2_u4, idx_u4)]
+        for matrix, idx in matrix_index_pairs:
+            for rows, cols, value in idx:
+                matrix[np.ix_(rows, cols)] = value
 
-        M2 = np.hstack((np.zeros((23, 14*2)), M2_u2, M2_u3))
+        M1 = np.hstack((np.zeros((u_stack, 2*x_stack)), M1_x2, M1_x3, np.zeros((u_stack, 10*x_stack))))
+        M2 = np.hstack((np.zeros((u_stack, 3*x_stack)), M2_u3, M2_u4))
         
         return (L11, L12, L21, L22, M1, M2)
         

@@ -30,7 +30,7 @@ gfli_1 = GFLI16B(
     # Inner current controller
     kp_cc_pu=0.05, ki_cc_puHz=0.6, kff_cc=0.75,
     # Power controllers
-    kp_pc_pu=0.1, ki_pc_puHz=200, alpha_pll=0
+    kp_pc_pu=0.1, ki_pc_puHz=200, alpha_pll=5
 )
 
 # --------------------------------------------------------

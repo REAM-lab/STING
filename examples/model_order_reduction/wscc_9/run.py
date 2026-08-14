@@ -4,9 +4,12 @@ This script demonstrates how to create a reduced-order model of the WSCC (Wester
 """
 import os
 
-from sting import main, datasets
-from sting.modules.model_order_reduction.reductions import (
-    BalancedTruncation,
+from sting import datasets, main
+from sting.modules.model_order_reduction.balanced_truncation import BalancedTruncation
+from sting.modules.model_order_reduction.interconnected_balanced_truncation import (
+    InterconnectedBalancedTruncation,
+)
+from sting.modules.model_order_reduction.singular_perturbation import (
     SingularPerturbation,
 )
 from sting.utils.dynamical_systems import smooth_step
@@ -21,24 +24,32 @@ system = datasets.wscc_9(case_directory=case_directory)
 system.apply("post_system_init", system)
 
 # Construct a small-signal model---i.e., full-order model (FOM).
-system, fom = main.run_ssm(system=system)
-
+system, ssm = main.run_ssm(system=system)
 
 # Create a reduced order model of all components in the zone labeled as "external".
 # We will then connect this reduced order model to the zone labeled "study", which
 # consists of a grid forming inverter (GFMI 18A) at bus 2.
 
 zone_name = "external"  # Zone to reduce
-r = 5                   # Target reduction order of the external zone
+r = 12                  # Target reduction order of the external zone
 
 # Vanilla balanced truncation removing the states that are hardest to control and observe.
-# We will use the "singular perturbation" to eliminate states in order to enforce zero steady-state error
-# at the expense of accuracy in higher-frequency dynamics. 
-balanced_truncation = {
-    zone_name:  BalancedTruncation(r=r, gramian_c="lyapunov", gramian_o="lyapunov", method="singular perturbation")
-    }
+balanced_truncation = {zone_name:  BalancedTruncation(r=r, method="truncate")}
+
+# Singular perturbation converting the fastest modes to algebraic 
+singular_perturbation = {zone_name: SingularPerturbation(r=r, basis="eigen")}
+
+# Interconnected balanced reduction using the *system-level* state-space model to 
+# compute a reduced order model. This functions works a little differently as it 
+# takes a centralized perspective/approach. We will also use "singular perturbation"
+# to eliminate states in order to enforce zero steady-state error---at the expense of 
+# accuracy in higher-frequency dynamics. 
+interconnected_reduction = InterconnectedBalancedTruncation(r={zone_name:r}, method="singular perturbation")
+
 # Construct a reduced-order model (ROM).
-rom = main.run_model_reduction(ssm=fom, reductions=balanced_truncation)
+rom1 = main.run_model_reduction(ssm=ssm, reductions=balanced_truncation)
+rom2 = main.run_model_reduction(ssm=ssm, reductions=singular_perturbation)
+rom3 = interconnected_reduction.reduce(ssm)
 
 # COMPARE the dynamics of a step change to the power reference set points of the 
 # grid forming inverter (GFLI 18A) at bus 2
@@ -51,11 +62,19 @@ inputs = {
 t_max = 1.5 # Simulation length in seconds
 
 # Simulate the full-order model
-fom.output_directory = os.path.join(case_directory, "outputs", "full_order_model_simulation")
-os.makedirs(fom.output_directory , exist_ok=True)
-fom.simulate_ssm(t_max=t_max, inputs=inputs)
+ssm.output_directory = os.path.join(case_directory, "outputs", "full_order_model_simulation")
+os.makedirs(ssm.output_directory , exist_ok=True)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
-# Simulate the reduced-order model
-rom.output_directory = os.path.join(case_directory, "outputs", "balanced_truncation_simulation")
-os.makedirs(rom.output_directory , exist_ok=True)
-rom.simulate_ssm(t_max=t_max, inputs=inputs)
+# Simulate the reduced-order models
+rom1.output_directory = os.path.join(case_directory, "outputs", "balanced_truncation_simulation")
+os.makedirs(rom1.output_directory , exist_ok=True)
+rom1.simulate_ssm(t_max=t_max, inputs=inputs)
+
+rom2.output_directory = os.path.join(case_directory, "outputs", "singular_perturbation_simulation")
+os.makedirs(rom2.output_directory , exist_ok=True)
+rom2.simulate_ssm(t_max=t_max, inputs=inputs)
+
+rom3.output_directory = os.path.join(case_directory, "outputs", "interconnection_reduction_simulation")
+os.makedirs(rom3.output_directory , exist_ok=True)
+rom3.simulate_ssm(t_max=t_max, inputs=inputs)

@@ -22,8 +22,6 @@ from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
-from sting.modules.model_order_reduction.core import Reducer
-
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
 
@@ -339,7 +337,7 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
     return uc, system
 
 def run_model_reduction(
-        reductions:dict[str, Reducer],
+        reductions:dict,
         ssm: SmallSignalModel,
         output_directory: str = None
         ):
@@ -362,11 +360,6 @@ def run_model_reduction(
     # Output of system are all outputs (according to defined H matrix)
     y = lambda y: y
     ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=u, y=y)
-
-    # Perform any system-level operations required by each reduction method
-    for reducer in reductions.values():
-        for operation in reducer.system_operations:
-            operation.solve(ssm)
 
     # Construct all reduced order models (ROMs)
     ssm.apply("_construct_rom")
