@@ -123,13 +123,13 @@ class ShuntParallelRC(Shunt):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x, u):
 
         # Get state values
-        v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
+        v_bus_a, v_bus_b, v_bus_c = x
 
         # Get input values
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.u.value
+        i_bus_a, i_bus_b, i_bus_c = u
 
         # Get parameters
         g = self.g_pu
@@ -143,9 +143,9 @@ class ShuntParallelRC(Shunt):
 
         return [d_v_bus_a, d_v_bus_b, d_v_bus_c]
     
-    def get_output_emt(self):
+    def get_output_emt(self, x):
 
-        v_bus_a, v_bus_b, v_bus_c = self.variables_emt.x.value
+        v_bus_a, v_bus_b, v_bus_c = x
 
         return [v_bus_a, v_bus_b, v_bus_c]
     

@@ -177,13 +177,13 @@ class ConstantImpedanceLoad(Load):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x, u):
 
         # Get state values
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c = x
 
         # Get input values
-        v_ground_a, v_ground_b, v_ground_c, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        v_ground_a, v_ground_b, v_ground_c, v_bus_a, v_bus_b, v_bus_c = u
 
         # Get parameters
         r = self.r_pu
@@ -197,9 +197,9 @@ class ConstantImpedanceLoad(Load):
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
 
-    def get_output_emt(self):
+    def get_output_emt(self, x):
         
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
     
