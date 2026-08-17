@@ -15,6 +15,16 @@ from sting.utils.dynamical_systems import DynamicalVariables
 
 matplotlib.use('TkAgg')
 
+"""
+
+% Combine into a MATLAB table and name the columns
+T = table(t, i(:,1), i(:,2), i(:,3), i(:,4), i(:,5), 'VariableNames', {'t', 'id', 'iF', 'iD', 'iq', 'iQ'});
+
+% Write table to CSV (headers are included automatically)
+writetable(T, 'ch8ex2.csv');
+
+"""
+
 # ---------------------------------------------------------------
 # Parameters of a 500 MVA, 30 kV Synchronous Machine. The DC field 
 # voltage is VF = 400 (Hadi Saadat, Ch8 Ex2).
@@ -230,7 +240,7 @@ ax2.plot(df["t"], df["iq"])
 ax3.plot(df["t"], df["iF"])
 
 ls = "--"
-ax1.plot(sol.t, -1e3*i_s_base_kA*sol.y[1], ls=ls)
+ax1.plot(sol.t, 1e3*i_s_base_kA*sol.y[1], ls=ls)
 ax2.plot(sol.t, 1e3*i_s_base_kA*sol.y[2], ls=ls)
 ax3.plot(sol.t, 1e3*i_fd_base_kA*sol.y[4], ls=ls)
 

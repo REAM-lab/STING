@@ -4,6 +4,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple
+from scipy.linalg import inv
 
 # ------------------
 # Import sting code
@@ -66,6 +67,7 @@ class SM8A(Generator):
     w_base: float = None
     R: np.ndarray = None
     L: np.ndarray = None
+    invL: np.ndarray = None
     T: np.ndarray = None
     emt_init: InitialConditionsEMT = field(init=False)
 
@@ -160,6 +162,7 @@ class SM8A(Generator):
 
         self.R = R
         self.L = L
+        self.invL = inv(L)
         self.T = T
 
     def _calculate_emt_initial_conditions(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
@@ -253,7 +256,7 @@ class SM8A(Generator):
         i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
         v = np.array([v_d, v_q, v_0, v_fd, 0, 0, 0])
         wb = self.w_base
-        di_dt = np.linalg.solve(L, wb * v - wb * w * T @ L @ i + wb *R @ i)
+        di_dt =  self.invL @ (wb * v - wb * w * T @ L @ i + wb *R @ i)
 
         return di_dt
 
