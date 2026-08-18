@@ -1,6 +1,6 @@
 # Tutorial: Model Reduction and Control
 
-In this tutorial how STING can be used to construct a reduced-order model of the Western System Coordinating Council (WSCC) 9 bus test system. Using this reduced model we will then construct an output feedback controller to stabilize a problematic grid forming inverter. Finally, we validate that the controller is working properly via electromagnetic transient (EMT) simulation.
+In this tutorial we show how STING can be used to construct a reduced-order model of the Western System Coordinating Council (WSCC) 9 bus test system. Using this reduced model we will then construct an output feedback controller to stabilize a problematic grid forming inverter. Finally, we validate that the controller is working properly via electromagnetic transient (EMT) simulation.
 
 
 ## Background
@@ -23,7 +23,7 @@ This task however presents a challenge. The developer plans to construct a stabi
 Now we will implement this pipeline in STING!
 
 ## Installation
-1. To run this tutorial download (or clone using `git`) the following files: `run.py`, `wscc9.py`, and `control_design.py`.
+1. To run this tutorial download (or clone using `git`) the following files: `run.py`, `wscc9.py`, `control_design.py`, and `plots.py`.
 2. Create and activate a virtual environment:
     ```
     python -m venv .venv 
@@ -110,11 +110,13 @@ applies a $0.1$ per unit step change in the voltage setpoint of GFLI$_2$ Interna
 
 ### Model Reduction
 
-Model reduction can be used to construct an approximate representation of a small-signal model with fewer states. For instance, we may hypothesize that the states $x \in \mathbb{R}^n$ can be reasonably approximated by some lower order state vector $x_r \in \mathbb{R}^r$, where $r < n$. Stated equivalently, there exists a matrix $V \in \mathbb{R}^{n \times r}$ such that $x \approx V x_r$. If we can identify such a $V$ and its left inverse $W^\top$, such that $W^\top V = I$, we can *project* our state-space model into a lower dimension via
+Model reduction can be used to construct an approximate representation of a small-signal model with fewer states. For instance, we may hypothesize that the states $x \in \mathbb{R}^n$ can be reasonably approximated by some lower-order state vector $x_r \in \mathbb{R}^r$, where $r < n$. Stated equivalently, there exists a matrix $V \in \mathbb{R}^{n \times r}$ such that $x \approx V x_r$. If we can identify such a $V$ and its left inverse $W^\top$, such that $W^\top V = I_r$, we can *project* our state-space model into a lower dimension via
+
 $$A_r = W^\top A V \quad \quad B_r = W^\top B$$
 $$C_r =C V \quad \quad D_r = D$$
 
-In this tutorial we will create a reduced order model of all components in the zone labeled as `"external"`. You can refer to `wscc_9.py` to see which components we labeled with `zone="external"` when they were instantiated. After constructing a reduced-order model we will interconnect it will the full-order model of all components in the proposed project. In this manner we are essentially creating a dynamic circuit equivalent model of the grid excluding the project. 
+
+In this tutorial we will create a reduced order model of all components in the zone labeled  `"external"`. You can refer to `wscc_9.py` to see which components we labeled with `zone="external"` when they were instantiated. After constructing a reduced-order model we will interconnect it will the full-order model of all components in the proposed project. In this manner we are essentially creating a dynamic circuit equivalent model of the grid excluding the project. 
 
 Here we will apply balanced truncation to removing the states that are both hard to control and observe. In code we assign a `BalancedTruncation` object to the `"external"` zone, specifying that the resulting model should have $33$ states.
 ```python
@@ -182,9 +184,53 @@ def construct_controller(rom:SmallSignalModel):
     pl.DataFrame(Acl_F).write_csv(os.path.join(cwd, "outputs", "closed_loop_A.csv"))
 ```
 
-First we specify which inputs and outputs are controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems.
+First we specify which inputs and outputs are controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems [PSH2025]. After obtaining a controller $F$ we will place it in closed-loop simulation by defining the following function
 
-### EMT Validation
+```python
+# Initial conditions in the LCL filter
+    x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
+
+    def output_feedback_control(t: float, x: np.ndarray, id: dict):
+
+        F = mas_out.F[0]
+        w0 = 1
+        i_vsc_d0 = x0.i_vsc_d
+        i_vsc_q0 = x0.i_vsc_q
+        i_bus_d0 = x0.i_bus_d
+        i_bus_q0 = x0.i_bus_q
+
+        i_vsc_d, i_vsc_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_vsc_a']], x[id['gfmi_18a_0']['i_vsc_b']], x[id['gfmi_18a_0']['i_vsc_c']], x[id['gfmi_18a_0']['angle']])
+        i_bus_d, i_bus_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_bus_a']], x[id['gfmi_18a_0']['i_bus_b']], x[id['gfmi_18a_0']['i_bus_c']], x[id['gfmi_18a_0']['angle']])
+
+        delta_y = np.array([x[id['gfmi_18a_0']['w']] - w0, 
+                            i_vsc_d - i_vsc_d0, 
+                            i_vsc_q - i_vsc_q0, 
+                            i_bus_d - i_bus_d0, 
+                            i_bus_q - i_bus_q0])
+        delta_u = F @ delta_y
+
+        return delta_u[0]
+```
+In simulation this function accesses the currents in the LCL filter ($i^\text{vsc}_{dq}$ and $i^\text{bus}_{dq}$) and the angular velocity ($\omega$) of GFMI$_2$ and compute the appropriate control response the in the inverters power setpoint ($p^\text{set}$). That is
+
+$$ \Delta p^{\text{set}} = F [\Delta\omega \quad \Delta i^\text{vsc}_d \quad \Delta i^\text{vsc}_q \quad \Delta i^\text{bus}_d \quad \Delta i^\text{bus}_q]^\top$$
+
+Finally, to place this controller in closed loop we need to create a new nested dictionary for simulation inputs. This is done via the following line in `run.py`:
+
+```python
+controller = {'gfmi_18a_0': {'v_ref': step, 'p_ref': output_feedback_control}}
+```
+
+### Results
+Now we will validate that the controller is working as intended by using the full-order nonlinear EMT model. That is
+```python
+main.run_emt(system=system, inputs=controller, t_max=t_max, output_directory=dir_with_ctr)
+```
+Note that now `inputs=controller` so the dynamic response to the same step input will be different. After running `run.py` you can now run `plots.py` to obtain the following figure
+
+<img src="figures/results.png" alt="Main Dashboard" width="1000">
+
+**Fig. 2**: a) Active power injected by GFMI$_2$ obtained from EMT simulation, b) Active power injected by GFMI$_2$ obtained from system-level small-signal state-space model (SSM) and reduced order model (ROM), c) Eigenvalues of the system-level SSM and ROM with output feedback controller, d) Active power injected by GFMI$_2$ with output feedback controller obtained from EMT simulation. Reading the panels from left to right reveals the described pipeline of `run.py`.
 
 ## References
 
