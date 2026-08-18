@@ -8,7 +8,7 @@ In this tutorial we show how STING can be used to construct a reduced-order mode
 
 **Fig 1**: Modified WSCC $230$-kV $9$-bus system.
 
-**The problem:** The setting of this tutorial is a hypothetical interconnection study in the WSCC $230$-kV $9$-bus test system (Fig. 1). A utility is proposing to add a grid forming inverter (GFMI$_2$) and a transmission line to the grid. The utility provides the independent system operator (ISO) with a detailed model of the proposed project that can be used in EMT simulation. Using this model, the ISO determines that if interconnected the new inverter could cause grid instabilities. The ISO concludes that, as is, the proposed project should not be added to the grid. The utility is now tasked with redesigning the control mechanisms of their inverter.
+**The problem:** The setting of this tutorial is a hypothetical interconnection study in the WSCC $230$-kV $9$-bus test system (Fig. 1). A utility is proposing to add a grid forming inverter (GFMI $_2$) and a transmission line to the grid. The utility provides the independent system operator (ISO) with a detailed model of the proposed project that can be used in EMT simulation. Using this model, the ISO determines that if interconnected the new inverter could cause grid instabilities. The ISO concludes that, as is, the proposed project should not be added to the grid. The utility is now tasked with redesigning the control mechanisms of their inverter.
 
 This task however presents a challenge. The developer plans to construct a stabilizing output feedback controller for the inverter. To ensure that the inverter behaves properly when added to the grid, the developer would like to use a model of external grid's dynamics in their controller. While the ISO has a complete model of the system they cannot share it with the developer due to intellectual property concerns []. 
 
@@ -23,8 +23,12 @@ This task however presents a challenge. The developer plans to construct a stabi
 Now we will implement this pipeline in STING!
 
 ## Installation
-1. To run this tutorial download (or clone using `git`) the following files: `run.py`, `wscc9.py`, `control_design.py`, and `plots.py`.
-2. Create and activate a virtual environment:
+1. To run this tutorial the following files: `run.py`, `wscc9.py`, `control_design.py`, and `plots.py`. To download with `git` navigate simply run:
+    ```
+    git clone https://github.com/REAM-lab/STING.git
+    ```
+    and navigate to `tutorials` > `model_reduction_and_control`.
+2. In the directory where you downloaded the `.py` scripts, create and activate a virtual environment:
     ```
     python -m venv .venv 
     source .venv/bin/activate
@@ -44,7 +48,7 @@ After setting up each of the output directories we are calling:
 ```python
 system = wscc_9(case_directory=cwd)
 ```
-This constructs a the WSCC 9 bus system by calling a helper function in `wscc_9.py`. If we look inside this script we first create the bus, line, generator components in STING. For instance, the following code creates a grid following inverter (GFLI$_1$) at bus 5. 
+This constructs a the WSCC 9 bus system by calling a helper function in `wscc_9.py`. If we look inside this script we first create the bus, line, generator components in STING. For instance, the following code creates a grid following inverter (GFLI $_1$) at bus 5. 
 ```python
 gfli_1 = GFLI16A(
         name="gfli_1", bus="bus_5", zone="external",
@@ -92,7 +96,9 @@ system, ssm = main.run_ssm(system=system)
 Internally STING will perform the following operations:
 1. Solve AC power flow to find a steady-state equilibrium point, about which to linearize.
 2. Each component internally computes its initial conditions and small-signal model using the power flow solution.
-3. All of the of the component-level small-signal models are interconnected using the Component Connection Method [[DS1981](#DS1981)] to form a system-level small-signal model.
+3. All of the of the component-level small-signal models are interconnected using the Component Connection Method [[DS81](#DS81)] to form a system-level small-signal model.
+
+For more information on this process see [[[SSH26](#SSH26)]].
 
 > [!NOTE]
 > The Component Connection Method circumvents the need to for automatic differentiation and computing a Jacobian to obtain a small-signal model.
@@ -106,7 +112,7 @@ Here `inputs` is a nested set of dictionaries containing functions. Each functio
 step = make_smooth_step(step_time=0.1, initial_value=0.0, final_value=0.10, transient_width=5e-3)
 inputs = {'gfmi_18a_0': {'v_ref': step}}
 ```
-applies a $0.1$ per unit step change in the voltage setpoint of GFLI$_2$ Internally STING integrates the differential equations using `scipy.integrate.solve_ivp` and writes `.csv` and interactive `.html` plots to the specified outputs folder.
+applies a $0.1$ per unit step change in the voltage setpoint of GFLI $_2$ Internally STING integrates the differential equations using `scipy.integrate.solve_ivp` and writes `.csv` and interactive `.html` plots to the specified outputs folder.
 
 ### Model Reduction
 
@@ -125,7 +131,7 @@ balanced_truncation = {
     }
 rom = main.run_model_reduction(ssm=ssm, reductions=balanced_truncation)
 ```
-Internally, STING will resolve which components should be reduced, based on their zone, and construct the projection matrices $V$ and $W$.
+Internally, STING will resolve which components should be reduced, based on their zone, and construct the projection matrices $V$ and $W$. For more information on this process see [[SSH27](#SSH27)].
 
 Next we report some of the properties of the resulting reduced-order model using the python `control` library.
 ```python
@@ -184,10 +190,10 @@ def construct_controller(rom:SmallSignalModel):
     pl.DataFrame(Acl_F).write_csv(os.path.join(cwd, "outputs", "closed_loop_A.csv"))
 ```
 
-First we specify which inputs and outputs are controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems [PSH2025]. After obtaining a controller $F$ we will place it in closed-loop simulation by defining the following function
+First we specify which inputs and outputs are controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems [[SH26](#SH26)]. After obtaining a controller $F$ we will place it in closed-loop simulation by defining the following function
 
 ```python
-# Initial conditions in the LCL filter
+    # Initial conditions in the LCL filter
     x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
 
     def output_feedback_control(t: float, x: np.ndarray, id: dict):
@@ -211,7 +217,7 @@ First we specify which inputs and outputs are controller will utilize. Then we d
 
         return delta_u[0]
 ```
-In simulation this function accesses the currents in the LCL filter ($i^\text{vsc}_{dq}$ and $i^\text{bus}_{dq}$) and the angular velocity ($\omega$) of GFMI$_2$ and compute the appropriate control response the in the inverters power setpoint ($p^\text{set}$). That is
+In simulation this function accesses the currents in the LCL filter ($i^\text{vsc}_{dq}$ and $i^\text{bus}_{dq}$) and the angular velocity ($\omega$) of GFMI $_2$ and compute the appropriate control response the in the inverters power setpoint ($p^\text{set}$). That is
 
 $$ \Delta p^{\text{set}} = F [\Delta\omega \quad \Delta i^\text{vsc}_d \quad \Delta i^\text{vsc}_q \quad \Delta i^\text{bus}_d \quad \Delta i^\text{bus}_q]^\top$$
 
@@ -230,9 +236,17 @@ Note that now `inputs=controller` so the dynamic response to the same step input
 
 <img src="figures/results.png" alt="Main Dashboard" width="1000">
 
-**Fig. 2**: a) Active power injected by GFMI$_2$ obtained from EMT simulation, b) Active power injected by GFMI$_2$ obtained from system-level small-signal state-space model (SSM) and reduced order model (ROM), c) Eigenvalues of the system-level SSM and ROM with output feedback controller, d) Active power injected by GFMI$_2$ with output feedback controller obtained from EMT simulation. Reading the panels from left to right reveals the described pipeline of `run.py`.
+**Fig. 2**: a) Active power injected by GFMI $_2$ obtained from EMT simulation, b) Active power injected by GFMI $_2$ obtained from system-level small-signal state-space model (SSM) and reduced order model (ROM), c) Eigenvalues of the system-level SSM and ROM with output feedback controller, d) Active power injected by GFMI $_2$ with output feedback controller obtained from EMT simulation. Reading the panels from left to right reveals the described pipeline of `run.py`.
 
 ## References
 
-<a id="DS1981"></a>[DS1981] R. DeCarlo and R. Saeks, *Interconnected Dynamical Systems*. New York
+<a id="DS81"></a>[DS81] R. DeCarlo and R. Saeks, *Interconnected Dynamical Systems*. New York
 Dekker, 1981.
+
+
+
+<a id="SH26"></a> [SH26] P. Serna-Torre and P. Hidalgo-Gonzalez, “Static output feedback control for multi-agent systems using nash equilibrium,” Under review, 2026.
+
+<a id="SSH26"></a>[SSH26] P. Serna-Torre, A. Sedlak, and P. Hidalgo-Gonzalez. "A generalized and open-source state-space framework to derive small-signal models for EMT dynamics of inverter-dominated grids", *TechRxiv*, 2026.
+
+<a id="SSH27"></a>[SSH27] A. Sedlak, P. Serna-Torre, and P. Hidalgo-Gonzalez, “Model reduction of electromagnetic transient dynamics for inverter-based grids: an interconnected systems framework,” *Electric Power Systems Research*, vol. 262, p. 113671, 2027. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S0378779626009648.
