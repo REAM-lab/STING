@@ -60,6 +60,13 @@ gfmi = GFMI18A(
 
 system = System(case_directory=case_directory)
 
+
+
+inputs = {
+    'voltage_source_4a': {
+        'v_ref_d': lambda t, x, idx: 0 + x[idx['voltage_source_4a_0']['i_bus_a']] * 2, 
+        }, 
+}
 # Build grid model
 for component in [bus_1, bus_2, load_1, line_1, source, gfmi, t1]:
     system.add(component)

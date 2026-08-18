@@ -43,7 +43,7 @@ gfmi = GFMI18A(
     minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # LCL filter
-    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
+    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=10,
     txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
     # Inner voltage controller
     kp_vc_pu=0.562, ki_vc_puHz=484.989, kffi_vc=0.80,
@@ -72,12 +72,12 @@ def step2(t):
     return -0.05 if t >= 100 else 0.0
 
 inputs = {
-    'voltage_source_4a': {
+    'voltage_source_4a_0': {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
-        'q_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3)
+        'p_ref': lambda t, x, id: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
+        'q_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3) 
         }
 }
 
@@ -85,11 +85,10 @@ t_max = 1.5 # Simulation length in seconds
 
 
 # Construct system and small-signal model
-_, ssm = main.run_ssm(system=system, case_directory=case_directory)
-ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+#_, ssm = main.run_ssm(system=system, case_directory=case_directory)
+#ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
 main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
-
 
 # Compare emt vs ssm results
 emt_results = pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18a_0.csv")

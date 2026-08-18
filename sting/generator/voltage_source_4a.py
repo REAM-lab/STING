@@ -210,32 +210,32 @@ class VoltageSource4A(Generator):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
     
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
 
         # Get state values
-        i_bus_a, i_bus_b, i_bus_c, angle_ref = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c, angle_ref = x
 
         # Get input values
-        v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = u
 
         v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_ref)
 
         # Get parameters
         r = self.r_pu
-        x = self.x_pu
+        xf = self.x_pu
         wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
-        d_i_bus_a = wb / x * (v_ref_a - v_bus_a - r * i_bus_a)
-        d_i_bus_b = wb / x * (v_ref_b - v_bus_b - r * i_bus_b)
-        d_i_bus_c = wb / x * (v_ref_c - v_bus_c - r * i_bus_c)
+        d_i_bus_a = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
+        d_i_bus_b = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
+        d_i_bus_c = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
         d_angle_ref = wb 
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
     
-    def get_output_emt(self):
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
-        i_bus_a, i_bus_b, i_bus_c, angle_ref = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c, angle_ref = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
     

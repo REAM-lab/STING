@@ -335,16 +335,16 @@ class GFMIc(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """
         It returns a vector with the differential equations that describe the dynamics of the GFMI-VSM.
         This model includes: power controller, voltage controller, and LCL filter.
         """    
         # Get state values 
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = x
         
         # Get input values (external inputs)
-        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = u
 
         # convert relevant quantities to dq 
         v_sh_d, v_sh_q, _ = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle_pc) # for power controller 
@@ -464,9 +464,9 @@ class GFMIc(Generator):
 
         return [d_angle_pc, d_w_pc, d_p_pc, d_q_pc, d_gamma, di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
     
-    def get_output_emt(self):
+    def get_output_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         
-        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        angle_pc, w_pc, p_pc, q_pc, gamma, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
 

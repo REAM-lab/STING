@@ -165,7 +165,7 @@ class GFMI18A(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
 
         # Extract states
         angle, w, \
@@ -174,10 +174,10 @@ class GFMI18A(Generator):
         z_cc_d, z_cc_q, \
         i_vsc_a, i_vsc_b, i_vsc_c, \
         v_sh_a, v_sh_b, v_sh_c, \
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c = x
 
         # Get inputs
-        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = u
 
         # Transform currents and voltages to dq reference frame
         i_vsc_d, i_vsc_q, _ = abc2dq0(i_vsc_a, i_vsc_b, i_vsc_c, angle)
@@ -247,7 +247,7 @@ class GFMI18A(Generator):
         )
         return results
 
-    def get_output_emt(self):
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
         angle, w, \
         q_f, \
@@ -255,7 +255,7 @@ class GFMI18A(Generator):
         z_cc_d, z_cc_q, \
         i_vsc_a, i_vsc_b, i_vsc_c, \
         v_sh_a, v_sh_b, v_sh_c, \
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value      
+        i_bus_a, i_bus_b, i_bus_c = x      
 
         return [i_bus_a, i_bus_b, i_bus_c]
 

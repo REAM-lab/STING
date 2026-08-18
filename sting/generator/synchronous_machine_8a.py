@@ -275,13 +275,13 @@ class SM8A(Generator):
 
         return di_dt
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
 
         angle, \
-        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = self.variables_emt.x.value
+        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
 
         # Get inputs
-        v_fd, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        v_fd, v_bus_a, v_bus_b, v_bus_c = u
 
         # Transform currents and voltages to dq reference frame
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, angle)
@@ -296,10 +296,10 @@ class SM8A(Generator):
 
         return dx_dt
 
-    def get_output_emt(self):
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
         angle, \
-        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = self.variables_emt.x.value
+        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
 
         # Transform currents to abc reference frame
         i_bus_a, i_bus_b, i_bus_c = dq02abc(i_d, i_q, i_0, angle) 
