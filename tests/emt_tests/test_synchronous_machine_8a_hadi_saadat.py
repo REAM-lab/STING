@@ -12,6 +12,7 @@ from sting import datasets, main
 from sting.generator import SM8A
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.dynamical_systems import DynamicalVariables
+from sting.utils.transformations import dq02abc
 
 matplotlib.use('TkAgg')
 
@@ -79,18 +80,15 @@ w_base = 2 * np.pi * rated_frequency_Hz
 
 # Stator
 # ----------------------
-# Peak phase-to-neutral rated voltage
+# Peak phase-to-neutral rated voltage 
 e_s_base_kV = (2/3)**0.5 * rated_kV 
-# Peak line current
+# Peak line current (Kundur, 85)
 i_s_base_kA = rated_MVA / (1.5 * e_s_base_kV )
-
 z_s_base_ohms = e_s_base_kV / i_s_base_kA 
 l_s_base_H = z_s_base_ohms / w_base
 
 # Rotor
 # ----------------------
-# Field
-
 # We need to establish a base voltage or base current for
 # the rotor circuits (Kundur, pg 81). Without a leakage 
 # inductance we will establish a base current for the field 
@@ -99,17 +97,19 @@ l_s_base_H = z_s_base_ohms / w_base
 # The field voltage is 400V and r_f = 0.4 ohms, thus i_fd 
 # at t = 0 will be 400V/0.4ohms = 1000V or 1kV. Recovering
 # l_ad from the assumed base field current as
-#       i_fd_base_kA = (l_ad / l_afd) * i_s_base_kA
+#       i_fd_base_kA = (l_ad / l_afd) * i_s_base_kA     (3.113)
 #       l_afd * (i_fd_base_kA / i_s_base_kA) = l_ad
 # Then we can recover the leakage inductance and l_aq
-#       l_ad = l_d - l_l
-#       l_aq = l_q - l_l
-i_fd_base_kA = excitation_voltage_kV / r_fd
-e_fd_base_kV = rated_MVA / i_fd_base_kA
+#       l_ad = l_d - l_l        (3.111)
+#       l_aq = l_q - l_l        (3.112)
+i_fd_base_kA = excitation_voltage_kV / r_fd # We pick i_fd_base
+e_fd_base_kV = rated_MVA / i_fd_base_kA     # ...and v_fd base follows
+# Recover leakage inductance
 l_ad = l_afd * (i_fd_base_kA / i_s_base_kA)
 l_l = l_d - l_ad
 l_aq = l_q - l_l
 
+# See Kundur 85-86
 z_fd_base_ohms = rated_MVA / i_fd_base_kA**2
 l_fd_base_H = z_fd_base_ohms / w_base
 # Damping d-axis
@@ -124,22 +124,31 @@ l_kq_base_H = z_kq_base_ohms / w_base
 # ---------------------------------------------------------------
 # Per unit parameters
 # ---------------------------------------------------------------
-x_l_pu = l_l / l_s_base_H
-x_ad_pu = l_ad / l_s_base_H
-x_aq_pu = l_aq / l_s_base_H
-# Total inductances
-x_0_pu = l_0 / l_s_base_H
-x_d_pu = x_ad_pu + x_l_pu 
-x_q_pu =  x_aq_pu + x_l_pu 
 
-x_fd_pu = (l_ffd / l_fd_base_H) - x_ad_pu
-x_1d_pu = (l_kkd / l_kd_base_H) - x_ad_pu
-x_1q_pu = (l_kkq / l_kq_base_H) - x_aq_pu
-
+# See Kundur page 76-77
 r_a_pu = r_a / z_s_base_ohms
 r_fd_pu = r_fd / z_fd_base_ohms
 r_1d_pu = r_kd / z_kd_base_ohms
 r_1q_pu = r_kq / z_kq_base_ohms
+
+# In the per unit system chosen by Kundur the following hold (pg. 86)
+#   L_afd = L_fad = L_akd = L_kda = L_ad
+#   L_akq = L_kqa = L_aq
+#   L_fkd = L_kdf
+x_l_pu = l_l / l_s_base_H
+
+x_ad_pu = 1.5 * (l_afd / l_fd_base_H) * (i_s_base_kA / i_fd_base_kA) # (3.101)
+x_f1d_pu = (l_fkd/l_fd_base_H) * (i_kd_base_kA / i_fd_base_kA)       # (3.102)
+x_aq_pu = 1.5 * (l_akq / l_kq_base_H) * (i_s_base_kA / i_kq_base_kA) # (3.105)
+
+# Total inductances
+x_0_pu = l_0 / l_s_base_H
+x_d_pu = x_ad_pu + x_l_pu  # (3.111)
+x_q_pu =  x_aq_pu + x_l_pu # (3.112)
+
+x_fd_pu = (l_ffd / l_fd_base_H) - x_f1d_pu # (3.135)
+x_1d_pu = (l_kkd / l_kd_base_H) - x_f1d_pu # (3.136)
+x_1q_pu = (l_kkq / l_kq_base_H) - x_aq_pu  # (3.137)
 
 # Saadat's model has only one damper in the q-axis. We will assume 
 # parameters for the second q-axis using those from Kundur, Example 4.1
@@ -192,7 +201,7 @@ sm = SM8A(
     cost_variable_USDperMWh=None, base_power_MVA=rated_MVA, base_voltage_kV=rated_kV, base_frequency_Hz=rated_frequency_Hz,
     # Paramters
     x_d_pu=x_d_pu, x_q_pu=x_q_pu, x_0_pu=x_0_pu, 
-    x_l_pu=x_l_pu, r_a_pu=r_a_pu,
+    x_l_pu=x_l_pu, x_f1d_pu=x_f1d_pu, r_a_pu=r_a_pu,
     x_td_pu=x_td_pu, x_tq_pu=x_tq_pu, x_std_pu=x_std_pu, x_stq_pu=x_stq_pu,
     t_td0_s=t_td0_s, t_tq0_s=t_tq0_s, t_std0_s=t_std0_s, t_stq0_s=t_stq0_s    
 )
@@ -219,9 +228,9 @@ def step(t, x):
 # Solve
 sol = solve_ivp(
     fun=step, 
-    y0=[0, 0, 0, 0, i_fd_base_kA, 0, 0, 0], 
-    t_span=[0,5],
-    max_step = 0.001,
+    y0=[0, 0, 0, 0, 1, 0, 0, 0], 
+    t_span=[0,0.8],
+    max_step = 1e-4,
     dense_output=True,
     method="Radau"
     )
@@ -234,21 +243,44 @@ sol = solve_ivp(
 df = pl.read_csv(os.path.join(os.getcwd(), "tests", "emt_tests", "validation_data", "ch8ex2.csv"))
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-
+"""
 ax1.plot(df["t"], df["id"])
 ax2.plot(df["t"], df["iq"])
 ax3.plot(df["t"], df["iF"])
 
 ls = "--"
-ax1.plot(sol.t, 1e3*i_s_base_kA*sol.y[1], ls=ls)
-ax2.plot(sol.t, 1e3*i_s_base_kA*sol.y[2], ls=ls)
+ax1.plot(sol.t, -1e3*i_s_base_kA*sol.y[1], ls=ls)
+ax2.plot(sol.t, -1e3*i_s_base_kA*sol.y[2], ls=ls)
 ax3.plot(sol.t, 1e3*i_fd_base_kA*sol.y[4], ls=ls)
 
 ax1.set_title(r"$i_d$")
 ax2.set_title(r"$i_q$")
 ax3.set_title(r"$i_{fd}$")
+"""
+for ax in (ax1, ax2, ax3):
+    ax.set_xlim(0, 0.8)
 
+d = 0
+theta = w_base*df['t']+d + np.pi/2
+ia = np.sqrt(2/3)*(np.cos(theta)*df["id"] + np.sin(theta)*df["iq"])
+ib = np.sqrt(2/3)*(np.cos(theta-2*np.pi/3)*df["id"] + np.sin(theta-2*np.pi/3)*df["iq"])
+ic = np.sqrt(2/3)*(np.cos(theta+2*np.pi/3)*df["id"]+ np.sin(theta+2*np.pi/3)*df["iq"])
 
+ax1.plot(df["t"], ia)
+ax2.plot(df["t"], ib)
+ax3.plot(df["t"], ic)
+
+theta = sol.y[0]
+id = 1e3*i_s_base_kA*sol.y[1]
+iq = 1e3*i_s_base_kA*sol.y[2]
+
+ia = (np.cos(theta)*id - np.sin(theta)*iq)
+ib = (np.cos(theta-2*np.pi/3)*id - np.sin(theta-2*np.pi/3)*iq)
+ic = (np.cos(theta+2*np.pi/3)*id - np.sin(theta+2*np.pi/3)*iq)
+
+ax1.plot(sol.t, ia)
+ax2.plot(sol.t, ib)
+ax3.plot(sol.t, ic)
 # Plot results
 titles = [r"angle", r"$i_d$", r"$i_q$", r"$i_0$", r"$i_{fd}$", r"$i_{1d}$", r"$i_{1q}$", r"$i_{2q}$"]
 

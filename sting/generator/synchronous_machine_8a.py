@@ -51,6 +51,7 @@ class SM8A(Generator):
     t_std0_s: float
     t_stq0_s: float
     x_l_pu: float
+    x_f1d_pu: float
     r_a_pu: float
     x_0_pu: float
 
@@ -112,58 +113,65 @@ class SM8A(Generator):
         l_0 = self.x_0_pu
         l_ad = self.x_ad_pu
         l_aq = self.x_aq_pu
-        l_ffd = self.x_fd_pu + l_ad
-        l_11d = self.x_1d_pu + l_ad
-        l_11q = self.x_1q_pu + l_aq
-        l_22q = self.x_2q_pu + l_aq
+
+        l_f1d = self.x_f1d_pu
+        l_ffd = self.x_fd_pu + self.x_f1d_pu # Kundur Eq (3.135)
+        l_11d = self.x_1d_pu + self.x_f1d_pu # Kundur Eq (3.136)
+        l_11q = self.x_1q_pu + l_aq          # Kundur Eq (3.137)
+        l_22q = self.x_2q_pu + l_aq          # Kundur Eq (3.138)
 
         r_a = self.r_a_pu
         r_fd = self.r_fd_pu
         r_1d = self.r_1d_pu
         r_1q = self.r_1q_pu
         r_2q = self.r_2q_pu
+        """
+        The following equations come from Kudur (3.120)-(3.133)
 
+        Per unit stator voltage equations
+            v_d = d/dt λ_d - λ_q * ω - r_a * i_d
+            v_q = d/dt λ_q + λ_d * ω - r_a * i_q
+            v_0 = d/dt λ_0 - r_a * i_0
 
-        L_ss = np.array( [[-l_d, 0, 0],
-                          [0, -l_q, 0],
-                          [0, 0, -l_0]])
-        L_sr = np.array( [[l_ad, l_ad, 0, 0],
-                          [0, 0, l_aq, l_aq],
-                          [0, 0, 0, 0]])
-        L_rs = np.array( [[-l_ad, 0, 0],
-                          [-l_ad, 0, 0],
-                          [0, -l_aq, 0],
-                          [0, -l_aq, 0]])
-        L_rr = np.array( [[l_ffd, l_ad, 0, 0],
-                          [l_ad, l_11d, 0, 0],
-                          [0, 0, l_11q, l_aq],
-                          [0, 0, l_aq, l_22q]])
+        Per unit rotor voltage equations
+            v_fd = d/dt λ_fd + r_fd * i_fd
+            0    = d/dt λ_1d + r_1d * i_1d
+            0    = d/dt λ_1q + r_1q * i_1q
+            0    = d/dt λ_2q + r_2q * i_2q
+        
+        Per unit stator flux linkage equations
+            λ_d = -(l_ad + l_l) * i_d + l_ad * i_fd + l_ad * i_1d
+            λ_q = -(l_ad + l_l) * i_q + l_aq * i_1q + l_aq * i_2q 
+            λ_0 = -l_0 * i_0
 
-        L = np.block([[L_ss, L_sr],
-                      [L_rs, L_rr]])
+        Per unit rotor flux linkage equations
+            λ_fd = l_ffd * i_fd + l_f1d * i_1d - l_ad * i_d
+            λ_1d = l_f1d * i_fd + l_11d * i_1d - l_ad * i_d
+            λ_1q = l_11q * i_1q + l_aq * i_2q - l_aq * i_q
+            λ_2q = l_aq * i_1q + l_22q * i_2q - l_aq * i_q
 
-        Ra = np.array([[r_a, 0, 0],
-                       [0, r_a, 0],
-                        [0, 0, r_a]])
-        Rr = -1 * np.array([[r_fd, 0, 0, 0],
-                       [0, r_1d, 0, 0],
-                       [0, 0, r_1q, 0],
-                       [0, 0, 0, r_2q]])
+        In vector notation
+            λ = L * i
+            v = d/dt λ + T * λ * ω - R * i
+        """
 
-        R = np.block([[Ra, np.zeros((3, 4))],
-                      [np.zeros((4, 3)), Rr]])
+        self.L = np.array([
+        #     i_d   i_q   i_0  i_fd  i_1d  i_1q  i_2q 
+            [ -l_d,    0,    0, l_ad, l_ad,    0,    0], # λ_d
+            [    0, -l_q,    0,    0,    0, l_aq, l_aq], # λ_q
+            [    0,    0, -l_0,    0,    0,    0,    0], # λ_0
+            [-l_ad,    0,    0,l_ffd,l_f1d,    0,    0], # λ_fd
+            [-l_ad,    0,    0,l_f1d,l_11d,    0,    0], # λ_1d
+            [-l_aq,    0,    0,    0,    0,l_11q, l_aq], # λ_1q
+            [-l_aq,    0,    0,    0,    0, l_aq,l_22q], # λ_2q
+        ])
+        self.invL = inv(self.L)
 
-        T = np.array([[0, -1, 0],
-                      [1, 0, 0],
-                      [0, 0, 0]])
+        self.R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q, -r_2q])
 
-        T = np.block([[T, np.zeros((3, 4))],
-                      [np.zeros((4, 3)), np.zeros((4, 4))]])
-
-        self.R = R
-        self.L = L
-        self.invL = inv(L)
-        self.T = T
+        self.T = np.zeros((7,7))
+        self.T[0, 1] = -1
+        self.T[1, 0] = +1
 
     def _calculate_emt_initial_conditions(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
 
@@ -249,14 +257,21 @@ class SM8A(Generator):
         )
 
     def get_derivatives_step_emt_dq0(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
- 
+        """
+        In vector notation:
+            λ = L * i
+            v = d/dt λ + ω * T * λ - R * i
+        
+        Thus:
+            L * d/dt i = v - ω * T * L * i + R * i
+        """
         L = self.L
         R = self.R
         T = self.T
         i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
         v = np.array([v_d, v_q, v_0, v_fd, 0, 0, 0])
-        wb = self.w_base
-        di_dt =  self.invL @ (wb * v - wb * w * T @ L @ i + wb *R @ i)
+
+        di_dt = self.w_base * self.invL @ (v - w * T @ L @ i + R @ i)
 
         return di_dt
 
