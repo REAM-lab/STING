@@ -27,23 +27,34 @@ logger = logging.getLogger(__name__)
 # ----------------
 @dataclass(slots=True)
 class SimulationEMT:
+    """
+    Class to simulate the EMT dynamics of a power system.
 
+    #### Attributes:
+    - system: `System`
+            The system to be simulated.
+    - components: `list[Component]`
+            List of components that participate in the EMT simulation.
+    - variables: `VariablesEMT`
+            All variables used for simulation.
+    - ccm_abc_matrices: `list[np.ndarray]`
+            List of CCM matrices in abc frame.
+    """
     system: System
-    components: list[str] = None
-    variables: VariablesEMT = None
-    x_len: int = None
-    y_len: int = None
-    ud_len: int = None
-    x_idx: dict[str, np.ndarray] = None
-    xs_idx: dict[str, dict[str, int]] = None
-    u_idx: dict[str, np.ndarray] = None
-    ud_idx: dict[str, np.ndarray] = None
-    us_idx: dict[str, dict[str, int]] = None
-    y_idx: dict[str, np.ndarray] = None
-    ccm_abc_matrices: list[np.ndarray] = None
+    components: list[Component] = field(init=False)
+    variables: VariablesEMT = field(init=False)
+    ccm_abc_matrices: list[np.ndarray] = field(init=False)
     power_flow_directory: str = None
     output_directory: str = None
 
+    def __post_init__(self):    
+        self.get_components()
+        self.set_output_folder()
+        self.initialize_variables()
+        self.get_variables()
+        self.assign_idx()
+        self.get_ccm_matrices()
+    
     def set_output_folder(self):
         """
         Set up the output folder for storing results.
@@ -60,8 +71,8 @@ class SimulationEMT:
 
         components: list[Component] = []
         for component in self.system:
-            if (    
-                    hasattr(component, "define_variables_emt")
+            if (    hasattr(component, "id_variables_emt") 
+                and hasattr(component, "define_variables_emt")
                 and hasattr(component, "get_derivative_state_emt")
                 and hasattr(component, "get_output_emt")
                 and hasattr(component, "plot_results_emt")
@@ -69,6 +80,15 @@ class SimulationEMT:
                 components.append(Component(type_ = component.type_, id = component.id))
         
         self.components = components
+    
+
+    def apply(self, method: str, *args):
+        """
+        Apply a method to the components for EMT simulation.
+        """
+        for c in self.components:
+               component = getattr(self.system, c.type_)[c.id]
+               getattr(component, method)(*args)
 
     def initialize_variables(self):
         """
@@ -88,21 +108,12 @@ class SimulationEMT:
 
         self.apply("_calculate_emt_initial_conditions")
 
-    def apply(self, method: str, *args):
-        """
-        Apply a method to the components for EMT simulation.
-        """
-        for c in self.components:
-               component = getattr(self.system, c.type_)[c.id]
-               getattr(component, method)(*args)
-
     def get_variables(self):
         """
         Define EMT variables for all components in the system
         """
         self.apply("define_variables_emt")
 
-        # TODO: filter out components using list of components that are not participating in EMT simulation
         generators, = self.system.ccm_generators.select("variables_emt")
         shunts, = self.system.ccm_shunts.select("variables_emt")
         branches, = self.system.ccm_branches.select("variables_emt")
@@ -121,100 +132,47 @@ class SimulationEMT:
         ug = u[u.type == "grid"]
         u = ud + ug
 
-        self.x_len = len(x)
-        self.ud_len = len(ud)
-        self.y_len = len(y)
-
         self.variables = VariablesEMT(x=x, u=u, y=y)
+    
+    def assign_idx(self):
+        """
+        Assign index, e.g., [False, True, False, ...], of the system-wide variables to each component.
+        For example, if the system state vector is [i_bus_a, i_bus_b, i_bus_c, v_bus_a, ...],
+        and a component is an infinite source connected to bus 1, then the index for that component
+        will be [True, True, True, False, ...], indicating that the first three variables in the system state
+        vector correspond to that component.
+        """
 
-        # Create a dictionary to map component names to their corresponding indices in the x, u, and y variables
-        # For example, {'voltage_source_4a_0': [0, 1, 2, 3], 'gfmi_18a_0': [4, 5, 6, 7, 8]}
-        self.x_idx = {}
-        self.u_idx = {}
-        self.ud_idx = {}
-        self.y_idx = {}
-
-        for i, component_name in enumerate(x.component):
-            self.x_idx.setdefault(component_name, []).append(i)
-
-        for i, component_name in enumerate(u.component):
-            self.u_idx.setdefault(component_name, []).append(i)
-
-        for i, component_name in enumerate(ud.component):
-            self.ud_idx.setdefault(component_name, []).append(i)
-
-        for i, component_name in enumerate(y.component):
-            self.y_idx.setdefault(component_name, []).append(i)
-
-        # Create a dictionary: {'voltage_source_4a_0': {i_bus_a : [1]}, 'gfmi_18a_0': {i_bus_c : [2]}}
-        # so we can use xs_idx['voltage_source_4a_0']['i_bus_a']
-        self.xs_idx ={}
-        for i, xs in enumerate(x):
-            component_name = xs.component[0]
-            state_name = xs.name[0]
-            self.xs_idx.setdefault(component_name, {})[state_name] = i
-
-        # Create a dictionary: {'voltage_source_4a_0': {v_ref_d : [1]}, 'gfmi_18a_0': {p_ref : [2]}}
-        self.us_idx ={}
-        for i, us in enumerate(u):
-            component_name = us.component[0]
-            input_name = us.name[0]
-            self.us_idx.setdefault(component_name, {})[input_name] = i
-
+        x, u, y = self.variables
+        for c in self.components:
+                component = getattr(self.system, c.type_)[c.id]
+                id = f"{c.type_}_{c.id}"
+                setattr(component, "id_variables_emt", {    "x": x.component == id, 
+                                                            "u": u.component == id,
+                                                            "y": y.component == id  })
+                                       
     def get_ccm_matrices(self):
         """
         Get the CCM matrices in abc frame for the EMT simulation.
         """
         
         self.ccm_abc_matrices = get_ccm_matrices(self.system, attribute="variables_emt", dimI=3)
+    
 
-    def build_stacked_output(self, x: np.ndarray):
+    def get_input_vector(self, u_signals, t):
 
-        # Define ystack
-        y_stack = np.full(self.y_len, np.nan, dtype=float)
-
-        for c in self.components:
-            x_idx = self.x_idx[c.type_ + "_" + str(c.id)]
-            x_component = x[x_idx]
-            y_idx = self.y_idx[c.type_ + "_" + str(c.id)]
-            y_stack[y_idx] = getattr(self.system, c.type_)[c.id].get_output_emt(x_component)
-
-        return y_stack
-
-    def build_device_input(self, u_signals: dict, x: np.ndarray, t: float):
-        """
-        Get the device input signals for the EMT simulation.
-        """
-
-        #ud = np.full(self.ud_len, np.nan, dtype=float)
-        ud = np.zeros(self.ud_len, dtype=float)
         d_vars = self.variables.u[self.variables.u.type == "device"]
 
-        for component in u_signals:
-            # component = 'gfmi_18a_0'
-            for input in u_signals[component]:
-                # input = 'v_ref_d'
-                ud_idx = self.us_idx[component][input]
-                ud[ud_idx] = u_signals[component][input](t)
-        ud = ud + d_vars.init
-        return ud
+        ud = [u_signals[component][name](t) if u_signals.get(component, {}).get(name) else 0 for (component, name) in zip(d_vars.component, d_vars.name)]
+        ud = np.array(ud) + d_vars.init
 
-    def build_state_derivative(self, x: np.ndarray, ustack: np.ndarray):
-        """
-        Get the state derivative for the EMT simulation.
-        """
+        g_vars = self.variables.u[self.variables.u.type == "grid"]
+        ug = np.full(len(g_vars), np.nan, dtype=float)
 
-        dx_dt = np.full(self.x_len, np.nan, dtype=float)
+        u = np.hstack((ud, ug))
 
-        for c in self.components:
-            x_idx = self.x_idx[c.type_ + "_" + str(c.id)]
-            x_component = x[x_idx]
-            u_idx = self.u_idx[c.type_ + "_" + str(c.id)]
-            u_component = ustack[u_idx]
-            dx_dt[x_idx] = getattr(self.system, c.type_)[c.id].get_derivative_state_emt(x_component, u_component)
-
-        return dx_dt
-
+        return u, ud
+    
     def set_value(self, time, numerical_vector, var_type: str):
         """
         Update the value of the EMT variables based on a numerical vector
@@ -223,8 +181,8 @@ class SimulationEMT:
         for c in self.components:
             component = getattr(self.system, c.type_)[c.id]
             variables = getattr(component, "variables_emt")
-            x_idx = self.x_idx[c.type_ + "_" + str(c.id)]
-            value = numerical_vector[x_idx]
+            idx = getattr(component, "id_variables_emt")
+            value = numerical_vector[idx[var_type]]
 
             var_component = getattr(variables, var_type)
             setattr(var_component, "value", value)
@@ -233,30 +191,52 @@ class SimulationEMT:
     @timeit
     def sim(self, t_max, inputs, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}, components_to_plot=None):
         """
-        Run the EMT simulation for the system.
+        Construction and solution of differential equations for EMT simulation.
         """
-
+        
         F, G, _, _ = self.ccm_abc_matrices
+        x_len = len(self.variables.x)
+        y_len = len(self.variables.y)
 
-        def system_step(t, x, u_signals):
-            """
-            System step for the EMT simulation.
-            """
+        def system_ode(t, x, u_signals):
 
-            # Build device input
-            ud = self.build_device_input(u_signals, x, t)
+            u, ud = self.get_input_vector(u_signals, t)
 
-            # Build output
-            y_stack = self.build_stacked_output(x)
+            y_stack = np.full(y_len, np.nan, dtype=float)
+
+            self.set_value(t, x, "x")
+
+            for c in self.components:
+                component = getattr(self.system, c.type_)[c.id]
+                variables = getattr(component, "variables_emt")
+                idx = getattr(component, "id_variables_emt")
+                
+                # Update input values
+                u_component = getattr(variables, "u")
+                setattr(u_component, "value", u[idx["u"]])
+
+                # Get output values
+                y = getattr(component, "get_output_emt")()
+                y_stack[idx["y"]] = y
 
             ustack = F @ y_stack + G @ ud
 
-            # Build state derivative
-            dx_dt = self.build_state_derivative(x, ustack)
+            dx_stack =  np.full(x_len, np.nan, dtype=float)
 
-            return dx_dt
+            self.set_value(t, ustack, "u")
 
-        solution = solve_ivp(system_step, 
+            for c in self.components:
+                component = getattr(self.system, c.type_)[c.id]
+                variables = getattr(component, "variables_emt")
+                idx = getattr(component, "id_variables_emt")
+
+                # Get derivative of state
+                dx = getattr(component, "get_derivative_state_emt")()
+                dx_stack[idx["x"]] = dx
+
+            return dx_stack
+        
+        solution = solve_ivp(system_ode, 
                         [0, t_max], # timeperiod 
                         self.variables.x.init, # initial conditions
                         dense_output=settings['dense_output'],  
@@ -269,11 +249,12 @@ class SimulationEMT:
             tps = np.linspace(0, t_max, 500)
             solution = solution.sol(tps)
 
-        # Set the value of the EMT variables based on the solution of the ODEs
+        # Update the value of the EMT variables based on the solution of the ODEs
         self.set_value(tps, solution, "x")    
 
         self.write_results_csv(components=components_to_plot)
         self.plot_results(components=components_to_plot)
+
 
     def plot_results(self, components = None):
         """

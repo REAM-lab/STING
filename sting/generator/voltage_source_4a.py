@@ -210,7 +210,7 @@ class VoltageSource4A(Generator):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
     
-    def get_derivative_state_emt(self, x, u):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
 
         # Get state values
         i_bus_a, i_bus_b, i_bus_c, angle_ref = x
@@ -233,7 +233,7 @@ class VoltageSource4A(Generator):
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
     
-    def get_output_emt(self, x):
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
         i_bus_a, i_bus_b, i_bus_c, angle_ref = x
 

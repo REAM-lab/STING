@@ -233,16 +233,16 @@ class GFLI13A(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """
         It returns a vector with the differential equations that describe the dynamics of the GFLI.
         This model includes: pi controller, pll, and LCL filter.
         """    
         # Get state values
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value 
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = x
         
         # Get input values (external inputs)
-        i_ref_d, i_ref_q, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        i_ref_d, i_ref_q, v_bus_a, v_bus_b, v_bus_c = u
 
         # convert relevant quantities to dq (reference frame of the IBR)
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
@@ -274,6 +274,12 @@ class GFLI13A(Generator):
             )
         
         return d_x_cc + d_x_pll + d_x_lcl
+
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
+        
+        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = x
+
+        return [i_bus_a, i_bus_b, i_bus_c]
     
     def plot_results_emt(self):
         """
@@ -297,8 +303,3 @@ class GFLI13A(Generator):
         return results
     
 
-    def get_output_emt(self):
-        
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
-
-        return [i_bus_a, i_bus_b, i_bus_c]

@@ -165,7 +165,7 @@ class GFMI18A(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
 
-    def get_derivative_state_emt(self, x, u):
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
 
         # Extract states
         angle, w, \
@@ -247,7 +247,7 @@ class GFMI18A(Generator):
         )
         return results
 
-    def get_output_emt(self, x):
+    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
         angle, w, \
         q_f, \

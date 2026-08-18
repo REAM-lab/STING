@@ -10,9 +10,6 @@ from sting.bus import Bus
 from sting.load import Load
 from sting.timescales import Timepoint
 from sting.utils.dynamical_systems import smooth_step
-from sting.modules.simulation_emt2.core import SimulationEMT
-from sting.system.operations import SystemModifier
-from sting.modules.power_flow.core import ACPowerFlow
 
 # Set up a temporary directory used by all tests
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
@@ -46,7 +43,7 @@ gfmi = GFMI18A(
     minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
     cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # LCL filter
-    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=1,
+    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=10,
     txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
     # Inner voltage controller
     kp_vc_pu=0.562, ki_vc_puHz=484.989, kffi_vc=0.80,
@@ -79,7 +76,7 @@ inputs = {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
+        'p_ref': lambda t, x, id: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
         'q_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3) 
         }
 }
@@ -91,26 +88,8 @@ t_max = 1.5 # Simulation length in seconds
 #_, ssm = main.run_ssm(system=system, case_directory=case_directory)
 #ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
-#main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
+main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
-pf = ACPowerFlow(system=system)
-pf.solve()
-
-sys_modifier = SystemModifier(system=system)
-sys_modifier.decompose_lines()
-sys_modifier.combine_shunts()
-sys_modifier.create_impedance_loads()
-
-sim = SimulationEMT(system=system)
-
-sim.set_output_folder()
-sim.get_components()
-sim.initialize_variables()
-sim.get_variables()
-sim.get_ccm_matrices()
-sim.sim(t_max, inputs)
-
-"""
 # Compare emt vs ssm results
 emt_results = pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18a_0.csv")
 # Take time, and psh
@@ -160,4 +139,3 @@ ax[1, 1].set_ylabel("Current d [pu]")
 
 # Save the figure
 plt.savefig(f"{case_directory}/outputs/comparison.png")
-"""
