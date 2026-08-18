@@ -584,8 +584,8 @@ def smooth_step(t: float, step_time: float, initial_value: float, final_value: f
 
 
 
-
-
+def make_smooth_step(step_time: float, initial_value: float, final_value: float, transient_width: float):
+    return lambda t: smooth_step(t, step_time, initial_value, final_value, transient_width)
 
 
 @dataclass

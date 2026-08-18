@@ -164,11 +164,21 @@ class SmallSignalModel:
             self.write_csv_ccm_matrices()
 
     @timeit
-    def simulate_ssm(self, t_max: float, inputs: dict[str, dict[str, Callable[[float], float]]] = None, settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001}):
+    def simulate_ssm(
+        self, 
+        t_max: float, 
+        inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
+        settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
+        output_directory=None
+        ):
         """Construction and solution of differential equations associated to system-level small-signal model."""
-        
+        if output_directory is None:
+            output_directory=self.output_directory
+
+        os.makedirs(output_directory, exist_ok=True)
+
         x0 = np.zeros_like(self.model.x.init)
-        tps, solution = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, output_directory=self.output_directory, plot=False)
+        tps, solution = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, output_directory=output_directory, plot=False)
 
         # Add the initial conditions back to the solution (for plotting purposes)
         for i in range(len(self.model.x.init)):
@@ -179,7 +189,7 @@ class SmallSignalModel:
         components_to_plot = self.model.x.component[np.sort(comp_idx)] 
         i = 0 # Initialize counter 
 
-        logger.info(f" - Writing SSM simulation results in {self.output_directory}")
+        logger.info(f" - Writing SSM simulation results in {output_directory}")
 
         # Write the simulation results to CSV files.
         for component in components_to_plot:
@@ -190,10 +200,10 @@ class SmallSignalModel:
                 data=np.column_stack((tps, solution[i:i+number_of_states].T)),
                 schema=columns_for_df
             )
-            .write_csv(os.path.join(self.output_directory, f"{component}.csv")))
+            .write_csv(os.path.join(output_directory, f"{component}.csv")))
             i += number_of_states
 
-        logger.info(f" - Plotting SSM simulation results in {self.output_directory}")
+        logger.info(f" - Plotting SSM simulation results in {output_directory}")
 
         i = 0 # Re-initialize counter to plot the results in the same order as the solution vector    
 
@@ -212,7 +222,7 @@ class SmallSignalModel:
                 i += 1
 
             fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
-            fig.write_html(os.path.join(self.output_directory, f"{component}.html"))
+            fig.write_html(os.path.join(output_directory, f"{component}.html"))
             
     
     def sort_components(self, by):
@@ -253,10 +263,10 @@ class SmallSignalModel:
         from sting.modules.small_signal_modeling.operations import SmallSignalModelGroupBy
         return SmallSignalModelGroupBy(model=self, by=by)
 
-    def write_csv_ccm_matrices(self, output_dir=None):
+    def write_csv_ccm_matrices(self, output_directory=None):
         """Write CCM matrices to CSVs"""
-        if output_dir is None:
-            output_dir = os.path.join(self.output_directory, os.pardir,"component_connection_matrices")
+        if output_directory is None:
+            output_directory = os.path.join(self.output_directory, os.pardir,"component_connection_matrices")
         # State-space models of each component
         models:list[StateSpaceModel] = self.get_component_attribute("ssm")
 
@@ -266,12 +276,12 @@ class SmallSignalModel:
         u_system = self.model.u.to_list()
         y_system = self.model.y.to_list()
         
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(output_directory, exist_ok=True)
         
-        matrix_to_csv(matrix=self.F, filepath=os.path.join(output_dir, "F.csv"), index=u_stack, columns=y_stack)
-        matrix_to_csv(matrix=self.G, filepath=os.path.join(output_dir, "G.csv"), index=u_stack, columns=u_system)
-        matrix_to_csv(matrix=self.H, filepath=os.path.join(output_dir, "H.csv"), index=y_system, columns=y_stack)
-        matrix_to_csv(matrix=self.L, filepath=os.path.join(output_dir, "L.csv"), index=y_system, columns=u_system)
+        matrix_to_csv(matrix=self.F, filepath=os.path.join(output_directory, "F.csv"), index=u_stack, columns=y_stack)
+        matrix_to_csv(matrix=self.G, filepath=os.path.join(output_directory, "G.csv"), index=u_stack, columns=u_system)
+        matrix_to_csv(matrix=self.H, filepath=os.path.join(output_directory, "H.csv"), index=y_system, columns=y_stack)
+        matrix_to_csv(matrix=self.L, filepath=os.path.join(output_directory, "L.csv"), index=y_system, columns=u_system)
 
     # --------------
     # Helpers
