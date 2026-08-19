@@ -2,7 +2,7 @@
 This script demonstrates how to run an eletromagnetic transient simulation (EMT)
 using the WSCC (Western System Coordinated Council) 9 bus test system.
 
-Note: This simulation will take approximately 2-5 minutes to finish.
+Note: This simulation will take approximately ~2 minutes to finish.
 """
 import os
 
