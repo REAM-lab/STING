@@ -7,13 +7,12 @@ import polars as pl
 from scipy.linalg import eigvals, solve_continuous_are
 
 from cmaspy.partial_state_feedback import mas_output_feedback
-from sting.utils.transformations import abc2dq0
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 
 cwd = os.path.join(Path(__file__).resolve().parent)
 
 def construct_controller(rom:SmallSignalModel):
-
+    """Construct a controller using CMAS"""
     A_c = rom.model.A
     B_c = rom.model.B[:, 0:1] # take only p_ref
 
@@ -48,29 +47,7 @@ def construct_controller(rom:SmallSignalModel):
     # Save closed-loop a matrix as csv file
     Acl_F = mas_out.Acl_F
     pl.DataFrame(Acl_F).write_csv(os.path.join(cwd, "outputs", "closed_loop_A.csv"))
+    # Save the feedback controller
+    F = mas_out.F[0]   
 
-    # Initial conditions in the LCL filter
-    x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
-
-    def output_feedback_control(t: float, x: np.ndarray, id: dict):
-
-        F = mas_out.F[0]
-        w0 = 1
-        i_vsc_d0 = x0.i_vsc_d
-        i_vsc_q0 = x0.i_vsc_q
-        i_bus_d0 = x0.i_bus_d
-        i_bus_q0 = x0.i_bus_q
-
-        i_vsc_d, i_vsc_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_vsc_a']], x[id['gfmi_18a_0']['i_vsc_b']], x[id['gfmi_18a_0']['i_vsc_c']], x[id['gfmi_18a_0']['angle']])
-        i_bus_d, i_bus_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_bus_a']], x[id['gfmi_18a_0']['i_bus_b']], x[id['gfmi_18a_0']['i_bus_c']], x[id['gfmi_18a_0']['angle']])
-
-        delta_y = np.array([x[id['gfmi_18a_0']['w']] - w0, 
-                            i_vsc_d - i_vsc_d0, 
-                            i_vsc_q - i_vsc_q0, 
-                            i_bus_d - i_bus_d0, 
-                            i_bus_q - i_bus_q0])
-        delta_u = F @ delta_y
-
-        return delta_u[0]
-
-    return output_feedback_control
+    return F

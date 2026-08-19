@@ -3,13 +3,13 @@ from pathlib import Path
 
 import control as ct
 import numpy as np
+from control_design import construct_controller
+from wscc_9 import wscc_9
 
 from sting import main
 from sting.modules.model_order_reduction.balanced_truncation import BalancedTruncation
 from sting.utils.dynamical_systems import make_smooth_step
-
-from wscc_9 import wscc_9
-from control_design import construct_controller
+from sting.utils.transformations import abc2dq0
 
 # ------------------------------------------------------------
 # Setup output file paths
@@ -35,7 +35,7 @@ t_max = 1.5 # Simulation length in seconds
 # ------------------------------------------------------------
 # Run an EMT simulation 
 # ------------------------------------------------------------
-main.run_emt(system=system, inputs=inputs, t_max=t_max, output_directory=dir_without_ctr)
+#main.run_emt(system=system, inputs=inputs, t_max=t_max, output_directory=dir_without_ctr)
 
 # ------------------------------------------------------------
 # Construct a small-signal model (SSM)
@@ -66,7 +66,30 @@ print("Max eigenvalue of the ROM + study area: ", np.max(np.linalg.eigvals(rom.m
 # ------------------------------------------------------------
 # Output feedback control design
 # ------------------------------------------------------------
-output_feedback_control = construct_controller(rom)
+F = construct_controller(rom)
+
+# Initial conditions in the LCL filter
+w0 = 1
+x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
+y0 = np.array([w0, x0.i_vsc_d, x0.i_vsc_q, x0.i_bus_d, x0.i_bus_q])
+
+def output_feedback_control(t: float, x: np.ndarray, id: dict):
+    # Unpack the states of the GFM
+    i_vsc_abc = (x[id['gfmi_18a_0']['i_vsc_'+p]] for p in ['a','b','c'])
+    i_bus_abc = (x[id['gfmi_18a_0']['i_bus_'+p]] for p in ['a','b','c'])
+    angle = x[id['gfmi_18a_0']['angle']]
+    w = x[id['gfmi_18a_0']['w']]
+
+    # Transform abc to dq0  
+    i_vsc_d, i_vsc_q, _ = abc2dq0(*i_vsc_abc, angle)
+    i_bus_d, i_bus_q, _ = abc2dq0(*i_bus_abc, angle)
+
+    # Control action
+    y = np.array([w, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q])
+    delta_u = F @ (y - y0)
+
+    return delta_u[0]
+
 controller = {'gfmi_18a_0': {'v_ref': step, 'p_ref': output_feedback_control}}
 
 # ------------------------------------------------------------

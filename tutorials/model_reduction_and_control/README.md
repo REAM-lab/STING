@@ -98,7 +98,7 @@ Internally STING will perform the following operations:
 2. Each component internally computes its initial conditions and small-signal model using the power flow solution.
 3. All of the of the component-level small-signal models are interconnected using the Component Connection Method [[DS81](#DS81)] to form a system-level small-signal model.
 
-For more information on this process see [[[SSH26](#SSH26)]].
+For more information on this process see [[SSH26](#SSH26)].
 
 > [!NOTE]
 > The Component Connection Method circumvents the need to for automatic differentiation and computing a Jacobian to obtain a small-signal model.
@@ -188,36 +188,38 @@ def construct_controller(rom:SmallSignalModel):
     # Save closed-loop a matrix as csv file
     Acl_F = mas_out.Acl_F
     pl.DataFrame(Acl_F).write_csv(os.path.join(cwd, "outputs", "closed_loop_A.csv"))
+
+    return mas_out.F[0]
 ```
 
-First we specify which inputs and outputs are controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems [[SH26](#SH26)]. After obtaining a controller $F$ we will place it in closed-loop simulation by defining the following function
+First we specify which inputs and outputs our controller will utilize. Then we design the matrices $Q$ and $R$ for LQR control synthesis and compute a controller using `cmas`, Control of Multi-Agent Systems [[SH26](#SH26)]. After obtaining a controller $F$ we will place it in closed-loop simulation by defining the following function
 
 ```python
-    # Initial conditions in the LCL filter
-    x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
+F = construct_controller(rom)
 
-    def output_feedback_control(t: float, x: np.ndarray, id: dict):
+# Initial conditions in the LCL filter
+w0 = 1
+x0 = rom.system.gfmi_18a[0].lcl_filter.emt_init
+y0 = np.array([w0, x0.i_vsc_d, x0.i_vsc_q, x0.i_bus_d, x0.i_bus_q])
 
-        F = mas_out.F[0]
-        w0 = 1
-        i_vsc_d0 = x0.i_vsc_d
-        i_vsc_q0 = x0.i_vsc_q
-        i_bus_d0 = x0.i_bus_d
-        i_bus_q0 = x0.i_bus_q
+def output_feedback_control(t: float, x: np.ndarray, id: dict):
+    # Unpack the states of the GFM
+    i_vsc_abc = (x[id['gfmi_18a_0']['i_vsc_'+p]] for p in ['a','b','c'])
+    i_bus_abc = (x[id['gfmi_18a_0']['i_bus_'+p]] for p in ['a','b','c'])
+    angle = x[id['gfmi_18a_0']['angle']]
+    w = x[id['gfmi_18a_0']['w']]
 
-        i_vsc_d, i_vsc_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_vsc_a']], x[id['gfmi_18a_0']['i_vsc_b']], x[id['gfmi_18a_0']['i_vsc_c']], x[id['gfmi_18a_0']['angle']])
-        i_bus_d, i_bus_q, _ = abc2dq0(x[id['gfmi_18a_0']['i_bus_a']], x[id['gfmi_18a_0']['i_bus_b']], x[id['gfmi_18a_0']['i_bus_c']], x[id['gfmi_18a_0']['angle']])
+    # Transform abc to dq0  
+    i_vsc_d, i_vsc_q, _ = abc2dq0(*i_vsc_abc, angle)
+    i_bus_d, i_bus_q, _ = abc2dq0(*i_bus_abc, angle)
 
-        delta_y = np.array([x[id['gfmi_18a_0']['w']] - w0, 
-                            i_vsc_d - i_vsc_d0, 
-                            i_vsc_q - i_vsc_q0, 
-                            i_bus_d - i_bus_d0, 
-                            i_bus_q - i_bus_q0])
-        delta_u = F @ delta_y
+    # Control action
+    y = np.array([w, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q])
+    delta_u = F @ (y - y0)
 
-        return delta_u[0]
+    return delta_u[0]
 ```
-In simulation this function accesses the currents in the LCL filter ($i^\text{vsc}_{dq}$ and $i^\text{bus}_{dq}$) and the angular velocity ($\omega$) of GFMI $_2$ and compute the appropriate control response the in the inverters power setpoint ($p^\text{set}$). That is
+In simulation this function accesses the currents in the LCL filter ($i^\text{vsc} _{dq}$ and $i^\text{bus} _{dq}$) and the angular velocity ($\omega$) of GFMI $_2$ and compute the appropriate control response the in the inverters power setpoint ($p^\text{set}$). That is
 
 $$ \Delta p^{\text{set}} = F [\Delta\omega \quad \Delta i^\text{vsc}_d \quad \Delta i^\text{vsc}_q \quad \Delta i^\text{bus}_d \quad \Delta i^\text{bus}_q]^\top$$
 
