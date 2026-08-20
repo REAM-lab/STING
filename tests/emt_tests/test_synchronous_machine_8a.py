@@ -4,12 +4,14 @@ import matplotlib
 import numpy as np
 import polars as pl
 import pylab as plt
+import scipy
 from scipy.integrate import solve_ivp
+import h5py
 
 from sting import datasets, main
 from sting.generator import SM8A
 from sting.generator.core import PowerFlowVariables
-from sting.utils.dynamical_systems import smooth_step
+from sting.utils.dynamical_systems import make_smooth_step
 from sting.utils.transformations import dq02abc, abc2dq0
 
 matplotlib.use('TkAgg')
@@ -47,37 +49,35 @@ v_DQ = v_bus_mag * np.exp(v_bus_angle * np.pi / 180 * 1j)
 sm._calculate_emt_initial_conditions(v_bus_mag=v_bus_mag, v_bus_angle=v_bus_angle, p_bus=p_bus, q_bus=q_bus)
 x0 = np.array([sm.emt_init.angle, sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
 
-v_fd = sm.emt_init.v_fd
-print("Initial field circuit voltage: ", v_fd)
+print("Initial field circuit voltage: ", sm.emt_init.v_fd)
 
 print("Initial angle: ", sm.emt_init.angle * 180 / np.pi)
 print("Initial current magnitude (rms): ", np.sqrt(sm.emt_init.i_d**2 + sm.emt_init.i_q**2))
 print("Initial current angle (in the grid's frame): ", np.arctan2(sm.emt_init.i_Q, sm.emt_init.i_D) * 180 / np.pi)
-print("field voltage factor: ", sm.x_ad_pu/sm.r_fd_pu * sm.emt_init.v_fd)
 
 # Check initial conditions
-L = sm.L
-R = sm.R
-T = sm.T
-i = np.array([sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
-v = np.array([sm.emt_init.v_d, sm.emt_init.v_q, sm.emt_init.v_0, sm.emt_init.v_fd, 0, 0, 0])
-wb = sm.w_base
-di_dt = np.linalg.solve(L, wb * v - wb * 1 * T @ L @ i + wb *R @ i)
-d =  wb * v - wb * 1 * T @ L @ i + wb *R @ i
+#L = sm.L
+#R = sm.R
+#T = sm.T
+#i = np.array([sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
+#v = np.array([sm.emt_init.v_d, sm.emt_init.v_q, sm.emt_init.v_0, sm.emt_init.v_fd, 0, 0, 0])
+#wb = sm.w_base
+#di_dt = np.linalg.solve(L, wb * v - wb * 1 * T @ L @ i + wb *R @ i)
+#d =  wb * v - wb * 1 * T @ L @ i + wb *R @ i
 
 
 inputs = {
-    "v_bus_a": lambda t: 0 if t > 0.1 else np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 + 2 * np.pi * 60 * t),
-    "v_bus_b": lambda t: 0 if t > 0.1 else np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 - 2 * np.pi / 3 + 2 * np.pi * 60 * t),
-    "v_bus_c": lambda t: 0 if t > 0.1 else np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 + 2 * np.pi / 3 + 2 * np.pi * 60 * t),
-    "v_fd": lambda t: sm.emt_init.v_fd,
+    "v_bus_a": lambda t: np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 + 2 * np.pi * 60 * t),
+    "v_bus_b": lambda t: np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 - 2 * np.pi / 3 + 2 * np.pi * 60 * t),
+    "v_bus_c": lambda t: np.sqrt(2) * v_bus_mag * np.cos(v_bus_angle * np.pi / 180 + 2 * np.pi / 3 + 2 * np.pi * 60 * t),
+    "v_fd": make_smooth_step(step_time=1, initial_value=sm.emt_init.v_fd, final_value=sm.emt_init.v_fd + 0.5, transient_width=5e-3)
 }
 
 # eigenvalues
-M = np.linalg.solve(L, wb * R - wb * 1 * T @ L)
-lamb = np.linalg.eigvals(M)
-large_eigenvalue = np.max(np.real(lamb))
-print(f"Eigenvalues of the linearized system: {lamb}")
+#M = np.linalg.solve(L, wb * R - wb * 1 * T @ L)
+#lamb = np.linalg.eigvals(M)
+#large_eigenvalue = np.max(np.real(lamb))
+#print(f"Eigenvalues of the linearized system: {lamb}")
 
 def emt_dynamics(t, x):
     """Wrapper function for ODE simulation step"""
@@ -99,10 +99,11 @@ def emt_dynamics(t, x):
     dx_dt = np.concatenate(([dangle_dt], di_dt))
 
     return dx_dt
- 
+
+t_max = 4.0
 # Solve
 settings = {
-    "t_span": [0,2],
+    "t_span": [0,t_max],
     "max_step": 0.001,
     "dense_output": True,
     "method": "Radau"
@@ -110,17 +111,30 @@ settings = {
 
 emt_sol = solve_ivp(emt_dynamics, y0=x0, **settings)
 
-# Plot results
-titles = [r"angle", r"$i_d$", r"$i_q$", r"$i_0$", r"$i_{fd}$", r"$i_{1d}$", r"$i_{1q}$", r"$i_{2q}$"]
-fig, axs = plt.subplots(2, 3)
-labels = ["EMT", "QBM", "SSM"]
-ls = ["-", "-.", "--"]
+# Define timepoints that will be used to evaluate the solution of the ODEs
+tps = np.linspace(0, t_max, 1000)
+n_tps = len(tps)
+interp_sol = emt_sol.sol(tps)
+angle, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = interp_sol
 
-for j, sol in enumerate([emt_sol]):
+emtdata = {'time': tps, 'i_d': i_d, 'i_q': i_q, 'i_fd': i_fd, 'i_1d': i_1d, 'i_1q': i_1q, 'i_2q': i_2q}
+emtdata = pl.DataFrame(emtdata)
+
+print(emtdata)
+
+matdata = pl.read_csv(f"/Users/psernatorre/Documents/MATLAB/testing_sm/test.csv", has_header=False,
+                      new_columns=["time", "i_q", "i_d", "i_fd", "i_1q", "i_2q",  "i_1d"])
+print(matdata)
+
+fig, ax = plt.subplots(3, 2, sharex=True)
+
+axs = ax.flatten()
+
+for df in [emtdata, matdata]:
  
-    for i, ax in enumerate(axs.flatten()):
-        ax.set_ylabel(titles[i])
-        ax.plot(sol.t, sol.y[i], label=labels[j], ls=ls[j])
+    for i, col in enumerate(["i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q"]):
+        axs[i].set_ylabel(col)
+        axs[i].plot(df['time'], df[col])
 
 plt.legend()
 plt.show()

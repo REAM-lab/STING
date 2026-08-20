@@ -36,6 +36,8 @@ class InitialConditionsEMT(NamedTuple):
     v_a: float
     v_b: float
     v_c: float
+    i_D: float
+    i_Q: float
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -270,9 +272,13 @@ class SM8A(Generator):
         i_bus_d = np.real(i_bus_dq)
         i_bus_q = np.imag(i_bus_dq)
 
-        i_fd = (v_bus_q + self.x_d_pu * i_bus_d + self.r_a_pu * i_bus_q) / self.x_ad_pu
+        # Reciprocal per unit system for the field circuit
+        i_fd = ((v_bus_q + self.x_d_pu * i_bus_d + self.r_a_pu * i_bus_q) / self.x_ad_pu)
+        v_fd = (self.r_fd_pu * i_fd)
 
-        v_fd = self.r_fd_pu * i_fd
+        # Non-reciprocal per unit system for the field circuit
+        v_fd_non = self.k1 * v_fd
+        i_fd_non = self.k2 * i_fd
 
         v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_d, v_bus_q, 0, ref_angle)
 
@@ -281,17 +287,19 @@ class SM8A(Generator):
             i_d = i_bus_d,
             i_q = i_bus_q,
             i_0 = 0,
-            i_fd = i_fd,
+            i_fd = i_fd_non,
             i_1d = 0,
             i_1q = 0,
             i_2q = 0,
-            v_fd = v_fd,
+            v_fd = v_fd_non,
             v_d = v_bus_d,
             v_q = v_bus_q,
             v_0 = 0,
             v_a = v_bus_a,
             v_b = v_bus_b,
-            v_c = v_bus_c
+            v_c = v_bus_c,
+            i_D = i_bus_DQ.real,
+            i_Q = i_bus_DQ.imag
         )
 
 
