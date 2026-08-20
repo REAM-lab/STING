@@ -37,15 +37,23 @@ print(f'r_fd: {sm.r_fd_pu}, r_1d: {sm.r_1d_pu}, r_1q: {sm.r_1q_pu}, r_2q: {sm.r_
 
 # Power flow
 v_bus_mag = 1.0
-v_bus_angle = 30
+v_bus_angle = 0
 p_bus = 1
 q_bus = 0.2
 
 v_DQ = v_bus_mag * np.exp(v_bus_angle * np.pi / 180 * 1j)
 
+# Compute initial conditions for EMT simulation
 sm._calculate_emt_initial_conditions(v_bus_mag=v_bus_mag, v_bus_angle=v_bus_angle, p_bus=p_bus, q_bus=q_bus)
-
 x0 = np.array([sm.emt_init.angle, sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
+
+v_fd = sm.emt_init.v_fd
+print("Initial field circuit voltage: ", v_fd)
+
+print("Initial angle: ", sm.emt_init.angle * 180 / np.pi)
+print("Initial current magnitude (rms): ", np.sqrt(sm.emt_init.i_d**2 + sm.emt_init.i_q**2))
+print("Initial current angle (in the grid's frame): ", np.arctan2(sm.emt_init.i_Q, sm.emt_init.i_D) * 180 / np.pi)
+print("field voltage factor: ", sm.x_ad_pu/sm.r_fd_pu * sm.emt_init.v_fd)
 
 # Check initial conditions
 L = sm.L
