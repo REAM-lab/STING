@@ -94,7 +94,7 @@ def emt_dynamics(t, x):
  
 # Solve
 settings = {
-    "t_span": [0,0.5],
+    "t_span": [0,2],
     "max_step": 0.001,
     "dense_output": True,
     "method": "Radau"

@@ -153,8 +153,8 @@ x_1q_pu = (l_kkq / l_kq_base_H) - x_aq_pu  # (3.137)
 # Saadat's model has only one damper in the q-axis. We will assume 
 # parameters for the second q-axis using those from Kundur, Example 4.1
 # page 153.
-r_2q_pu = 0.006194377297124655
-x_2q_pu = 0.7252252252252251
+r_2q_pu = 1e5#0.006194377297124655
+x_2q_pu = 1e5#0.7252252252252251
 
 """
 x_ad: 1.6600000000000001, x_aq: 1.61, x_fd: 0.16490066225165562, x_1d: 0.1714285714285715, x_1q: 0.7252252252252251, x_2q: 0.125
@@ -203,7 +203,8 @@ sm = SM8A(
     x_d_pu=x_d_pu, x_q_pu=x_q_pu, x_0_pu=x_0_pu, 
     x_l_pu=x_l_pu, x_f1d_pu=x_f1d_pu, r_a_pu=r_a_pu,
     x_td_pu=x_td_pu, x_tq_pu=x_tq_pu, x_std_pu=x_std_pu, x_stq_pu=x_stq_pu,
-    t_td0_s=t_td0_s, t_tq0_s=t_tq0_s, t_std0_s=t_std0_s, t_stq0_s=t_stq0_s    
+    t_td0_s=t_td0_s, t_tq0_s=t_tq0_s, t_std0_s=t_std0_s, t_stq0_s=t_stq0_s,
+    k1 = 1, k2 = 1,
 )
 
 # Confirm that standard parameters we computed correctly
@@ -222,14 +223,14 @@ def step(t, x):
         x=DynamicalVariables(value=x, name=["angle", "i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q", "i_2q"]),
         y=None
     )
-    dx  = sm.get_derivative_state_emt()
+    dx  = sm.get_derivative_state_emt(x, u=[excitation_voltage_kV/e_fd_base_kV, 0, 0, 0])
     return dx
 
 # Solve
 sol = solve_ivp(
     fun=step, 
     y0=[0, 0, 0, 0, 1, 0, 0, 0], 
-    t_span=[0,0.8],
+    t_span=[0, 5],
     max_step = 1e-4,
     dense_output=True,
     method="Radau"
@@ -243,7 +244,7 @@ sol = solve_ivp(
 df = pl.read_csv(os.path.join(os.getcwd(), "tests", "emt_tests", "validation_data", "ch8ex2.csv"))
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-"""
+
 ax1.plot(df["t"], df["id"])
 ax2.plot(df["t"], df["iq"])
 ax3.plot(df["t"], df["iF"])
@@ -256,10 +257,10 @@ ax3.plot(sol.t, 1e3*i_fd_base_kA*sol.y[4], ls=ls)
 ax1.set_title(r"$i_d$")
 ax2.set_title(r"$i_q$")
 ax3.set_title(r"$i_{fd}$")
-"""
+
 for ax in (ax1, ax2, ax3):
     ax.set_xlim(0, 0.8)
-
+"""
 d = 0
 theta = w_base*df['t']+d + np.pi/2
 ia = np.sqrt(2/3)*(np.cos(theta)*df["id"] + np.sin(theta)*df["iq"])
@@ -280,7 +281,7 @@ ic = (np.cos(theta+2*np.pi/3)*id - np.sin(theta+2*np.pi/3)*iq)
 
 ax1.plot(sol.t, ia)
 ax2.plot(sol.t, ib)
-ax3.plot(sol.t, ic)
+ax3.plot(sol.t, ic)"""
 # Plot results
 titles = [r"angle", r"$i_d$", r"$i_q$", r"$i_0$", r"$i_{fd}$", r"$i_{1d}$", r"$i_{1q}$", r"$i_{2q}$"]
 

@@ -51,7 +51,7 @@ class SM8A(Generator):
     t_std0_s: float
     t_stq0_s: float
     x_l_pu: float
-    x_f1d_pu: float
+    x_f1d_pu: float = None
     r_a_pu: float
     x_0_pu: float
 
@@ -66,14 +66,24 @@ class SM8A(Generator):
     r_1q_pu: float = None
     r_2q_pu: float = None
     w_base: float = None
-    R: np.ndarray = None
-    L: np.ndarray = None
-    invL: np.ndarray = None
-    T: np.ndarray = None
+    #R: np.ndarray = None
+    #L: np.ndarray = None
+    #invL: np.ndarray = None
+    #J: np.ndarray = None
+
+    k1: float = None
+    k2: float = None
+    A: np.ndarray = None
+    B: np.ndarray = None
+    N: np.ndarray = None
     emt_init: InitialConditionsEMT = field(init=False)
 
 
     def __post_init__(self):
+        self._compute_fundamental_parameters()
+        self._compute_dynamics_matrices()
+
+    def _compute_fundamental_parameters(self):
 
         self.w_base = 2 * np.pi * self.base_frequency_Hz
 
@@ -106,7 +116,78 @@ class SM8A(Generator):
         self.r_1q_pu = r_1q
         self.r_2q_pu = r_2q
 
+        if self.x_f1d_pu is None:
+            self.x_f1d_pu = self.x_ad_pu
 
+
+    def _compute_dynamics_matrices(self):
+        """
+        -----------------------------------------------------------
+        Machine Dynamics
+        -----------------------------------------------------------
+        The following equations come from Kudur (3.120)-(3.133)
+
+        Per unit stator voltage equations
+            e_d = d/dt λ_d - λ_q * ω - r_a * i_d
+            e_q = d/dt λ_q + λ_d * ω - r_a * i_q
+            e_0 = d/dt λ_0 - r_a * i_0
+
+        Per unit rotor voltage equations
+            e_fd = d/dt λ_fd + r_fd * i_fd
+            0    = d/dt λ_1d + r_1d * i_1d
+            0    = d/dt λ_1q + r_1q * i_1q
+            0    = d/dt λ_2q + r_2q * i_2q
+        
+        Per unit stator flux linkage equations
+            λ_d = -(l_ad + l_l) * i_d + l_ad * i_fd + l_ad * i_1d
+            λ_q = -(l_ad + l_l) * i_q + l_aq * i_1q + l_aq * i_2q 
+            λ_0 = -l_0 * i_0
+
+        Per unit rotor flux linkage equations
+            λ_fd = l_ffd * i_fd + l_f1d * i_1d - l_ad * i_d
+            λ_1d = l_f1d * i_fd + l_11d * i_1d - l_ad * i_d
+            λ_1q = l_11q * i_1q + l_aq * i_2q - l_aq * i_q
+            λ_2q = l_aq * i_1q + l_22q * i_2q - l_aq * i_q
+
+        In vector notation
+            λ = L * i
+            e = d/dt λ + T_ω * λ * ω - R * i
+
+        -----------------------------------------------------------
+        Per unit system
+        -----------------------------------------------------------
+        We mode the field current in the non-reciprocal per unit system.
+        This is done to ensure that the ODEs are well conditioned, that
+        i_fd is close to one. Following Kundur (page 344, 8.3)
+
+            v_fd = (l_adu / r_fd) * e_fd
+            c_fd = l_adu * i_fd
+
+        where v_fd and c_fd are the voltage and current in the non-reciprocal
+        per unit system. We will define T_v and T_i in the vector notation such 
+        that:
+            c = T_i * i
+            v = T_v * e
+
+        Now solving for the dynamics in terms of c and v
+            λ = L * i 
+                = L * invT_i * c
+            
+            invT_v v = d/dt λ + T_ω * λ * ω - R * invT_i * c
+
+        Then:
+            d/dt λ              = R * invT_i * c - ω * (T_ω * λ) - invT_v v
+                                = R * invT_i * c - ω * (T_ω * L * invT_i * c) - invT_v v
+            d/dt L * invT_i * c = R * invT_i * c - ω * (T_ω * L * invT_i * c) - invT_v v
+        
+        and 
+            d/dt c = A*c + B*v + ω*N*c
+
+        where
+            A = T_i * invL * R * invT_i
+            B = T_i * invL * invT_v
+            N = -T_i * invL * T_ω * L * invT_i
+        """
        # Define the inductance matrix
         l_d = self.x_d_pu
         l_q = self.x_q_pu
@@ -125,53 +206,45 @@ class SM8A(Generator):
         r_1d = self.r_1d_pu
         r_1q = self.r_1q_pu
         r_2q = self.r_2q_pu
-        """
-        The following equations come from Kudur (3.120)-(3.133)
-
-        Per unit stator voltage equations
-            v_d = d/dt λ_d - λ_q * ω - r_a * i_d
-            v_q = d/dt λ_q + λ_d * ω - r_a * i_q
-            v_0 = d/dt λ_0 - r_a * i_0
-
-        Per unit rotor voltage equations
-            v_fd = d/dt λ_fd + r_fd * i_fd
-            0    = d/dt λ_1d + r_1d * i_1d
-            0    = d/dt λ_1q + r_1q * i_1q
-            0    = d/dt λ_2q + r_2q * i_2q
         
-        Per unit stator flux linkage equations
-            λ_d = -(l_ad + l_l) * i_d + l_ad * i_fd + l_ad * i_1d
-            λ_q = -(l_ad + l_l) * i_q + l_aq * i_1q + l_aq * i_2q 
-            λ_0 = -l_0 * i_0
 
-        Per unit rotor flux linkage equations
-            λ_fd = l_ffd * i_fd + l_f1d * i_1d - l_ad * i_d
-            λ_1d = l_f1d * i_fd + l_11d * i_1d - l_ad * i_d
-            λ_1q = l_11q * i_1q + l_aq * i_2q - l_aq * i_q
-            λ_2q = l_aq * i_1q + l_22q * i_2q - l_aq * i_q
-
-        In vector notation
-            λ = L * i
-            v = d/dt λ + T * λ * ω - R * i
-        """
-
-        self.L = np.array([
+        L = np.array([
         #     i_d   i_q   i_0  i_fd  i_1d  i_1q  i_2q 
             [ -l_d,    0,    0, l_ad, l_ad,    0,    0], # λ_d
             [    0, -l_q,    0,    0,    0, l_aq, l_aq], # λ_q
             [    0,    0, -l_0,    0,    0,    0,    0], # λ_0
             [-l_ad,    0,    0,l_ffd,l_f1d,    0,    0], # λ_fd
             [-l_ad,    0,    0,l_f1d,l_11d,    0,    0], # λ_1d
-            [-l_aq,    0,    0,    0,    0,l_11q, l_aq], # λ_1q
-            [-l_aq,    0,    0,    0,    0, l_aq,l_22q], # λ_2q
+            [    0,-l_aq,    0,    0,    0,l_11q, l_aq], # λ_1q
+            [    0,-l_aq,    0,    0,    0, l_aq,l_22q], # λ_2q
         ])
-        self.invL = inv(self.L)
+        invL = inv(L)
 
-        self.R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q, -r_2q])
+        R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q, -r_2q])
 
-        self.T = np.zeros((7,7))
-        self.T[0, 1] = -1
-        self.T[1, 0] = +1
+        # Frequency coupling
+        T_w = np.zeros((7,7))
+        T_w[0, 1] = -1
+        T_w[1, 0] = +1
+
+        if self.k1 is None:
+            self.k1 = (l_ad / r_fd)
+
+        if self.k2 is None:
+            self.k2 = l_ad
+
+        # Voltage non-reciprocal transform
+        invT_v = np.diag([1,1,1,(1/self.k1),1,1,1])
+
+        # Current non-reciprocal transform
+        T_i = np.diag([1,1,1,self.k2,1,1,1])
+        invT_i = np.diag([1,1,1,(1/self.k2),1,1,1])
+
+        self.A = self.w_base * (T_i@invL@R@invT_i)
+        self.B = self.w_base * (T_i@invL@invT_v)
+        self.N = self.w_base * (-T_i@invL@T_w@L@invT_i)
+        
+        
 
     def _calculate_emt_initial_conditions(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
 
@@ -257,21 +330,11 @@ class SM8A(Generator):
         )
 
     def get_derivatives_step_emt_dq0(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
-        """
-        In vector notation:
-            λ = L * i
-            v = d/dt λ + ω * T * λ - R * i
-        
-        Thus:
-            L * d/dt i = v - ω * T * L * i + R * i
-        """
-        L = self.L
-        R = self.R
-        T = self.T
+
         i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
         v = np.array([v_d, v_q, v_0, v_fd, 0, 0, 0])
 
-        di_dt = self.w_base * self.invL @ (v - w * T @ L @ i + R @ i)
+        di_dt = self.A@i + self.B@v + w*self.N@i
 
         return di_dt
 
