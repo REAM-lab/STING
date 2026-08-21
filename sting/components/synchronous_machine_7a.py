@@ -41,7 +41,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class SM8A(Generator):
+class SynchronousMachine7A:
     x_d_pu: float 
     x_q_pu: float 
     x_td_pu: float
@@ -67,11 +67,7 @@ class SM8A(Generator):
     r_1d_pu: float = None
     r_1q_pu: float = None
     r_2q_pu: float = None
-    w_base: float = None
-    #R: np.ndarray = None
-    #L: np.ndarray = None
-    #invL: np.ndarray = None
-    #J: np.ndarray = None
+    w_base: float
 
     k1: float = None
     k2: float = None
@@ -86,9 +82,7 @@ class SM8A(Generator):
         self._compute_dynamics_matrices()
 
     def _compute_fundamental_parameters(self):
-
-        self.w_base = 2 * np.pi * self.base_frequency_Hz
-
+        """Compute the machine fundamental parameters from the standard parameters"""
         # Compute unsaturated reactances
         x_ad = self.x_d_pu - self.x_l_pu
         x_aq = self.x_q_pu - self.x_l_pu
@@ -118,6 +112,8 @@ class SM8A(Generator):
         self.r_1q_pu = r_1q
         self.r_2q_pu = r_2q
 
+        # The field to damper inductance, l_f1d, is typically assumed to 
+        # be equal to the inductance l_ad
         if self.x_f1d_pu is None:
             self.x_f1d_pu = self.x_ad_pu
 
@@ -127,7 +123,7 @@ class SM8A(Generator):
         -----------------------------------------------------------
         Machine Dynamics
         -----------------------------------------------------------
-        The following equations come from Kudur (3.120)-(3.133)
+        The following equations come from Kundur (3.120)-(3.133)
 
         Per unit stator voltage equations
             e_d = d/dt λ_d - λ_q * ω - r_a * i_d
@@ -158,9 +154,9 @@ class SM8A(Generator):
         -----------------------------------------------------------
         Per unit system
         -----------------------------------------------------------
-        We model the field current in the non-reciprocal per unit system.
+        We will model the field current in the non-reciprocal per unit system.
         This is done to ensure that the ODEs are well conditioned, that
-        i_fd is close to one. Following Kundur (page 344, 8.3)
+        i_fd is close to one. Following Kundur (page 344, 8.5 - 8.6)
 
             v_fd = (l_adu / r_fd) * e_fd
             c_fd = l_adu * i_fd
@@ -171,21 +167,19 @@ class SM8A(Generator):
             c = T_i * i
             v = T_v * e
 
-        Now solving for the dynamics in terms of c and v
+        Now we can solve for the dynamics in terms of c and v
             λ = L * i 
-                = L * invT_i * c
+              = L * invT_i * c
             
             invT_v v = d/dt λ + T_ω * λ * ω - R * invT_i * c
 
-        Then:
-            d/dt λ              = R * invT_i * c - ω * (T_ω * λ) - invT_v v
-                                = R * invT_i * c - ω * (T_ω * L * invT_i * c) - invT_v v
-            d/dt L * invT_i * c = R * invT_i * c - ω * (T_ω * L * invT_i * c) - invT_v v
-        
-        and 
-            d/dt c = A*c + B*v + ω*N*c
+        Isolating d/dt λ to the left hand side yields
+            d/dt λ              = R * invT_i * c - ω * (T_ω * λ) + invT_v v
+                                = R * invT_i * c - ω * (T_ω * L * invT_i * c) + invT_v v
+            d/dt L * invT_i * c = R * invT_i * c - ω * (T_ω * L * invT_i * c) + invT_v v
+            d/dt c              = A*c + B*v + ω*N*c
 
-        where
+        where the matrices A, B, and N are defined as 
             A = T_i * invL * R * invT_i
             B = T_i * invL * invT_v
             N = -T_i * invL * T_ω * L * invT_i
@@ -229,6 +223,8 @@ class SM8A(Generator):
         T_w[0, 1] = -1
         T_w[1, 0] = +1
 
+        # Constants to convert to and from the non-reciprocal system
+        # See Kundur page (344)
         if self.k1 is None:
             self.k1 = (l_ad / r_fd)
 
@@ -242,13 +238,11 @@ class SM8A(Generator):
         T_i = np.diag([1,1,1,self.k2,1,1,1])
         invT_i = np.diag([1,1,1,(1/self.k2),1,1,1])
 
-        self.A = self.w_base * (T_i@invL@R@invT_i)
-        self.B = self.w_base * (T_i@invL@invT_v)
-        self.N = self.w_base * (-T_i@invL@T_w@L@invT_i)
+        self.A = self.w_base * (T_i @ invL @ R @ invT_i)
+        self.B = self.w_base * (T_i @ invL @ invT_v)
+        self.N = self.w_base * (-T_i @ invL @ T_w @ L @ invT_i)
         
-        
-
-    def _calculate_emt_initial_conditions(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
+    def get_steady_state(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
 
         # Voltage at the point of common coupling (PCC) in DQ reference frame
         v_bus_DQ = v_bus_mag * np.exp(v_bus_angle * np.pi / 180 * 1j)
@@ -302,8 +296,10 @@ class SM8A(Generator):
             i_Q = i_bus_DQ.imag
         )
 
+        return self.emt_init
 
-    def define_variables_emt(self):
+
+    def define_variables_emt_abc(self):
         # States 
         x = DynamicalVariables(
             name = ["i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q", "i_2q"],
@@ -345,34 +341,3 @@ class SM8A(Generator):
         di_dt = self.A@i + self.B@v + w*self.N@i
 
         return di_dt
-
-    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-
-        angle, \
-        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
-
-        # Get inputs
-        v_fd, v_bus_a, v_bus_b, v_bus_c = u
-
-        # Transform currents and voltages to dq reference frame
-        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, angle)
-
-        # Get derivatives of the state variables
-        di_dt = self.get_derivatives_step_emt_dq0(i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_bus_d, v_bus_q, 0, v_fd, 1)
-
-        # Angle
-        dangle_dt = self.w_base
-
-        dx_dt = np.concatenate(([dangle_dt], di_dt))
-
-        return dx_dt
-
-    def get_output_emt(self, x: np.ndarray) -> np.ndarray:
-        
-        angle, \
-        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
-
-        # Transform currents to abc reference frame
-        i_bus_a, i_bus_b, i_bus_c = dq02abc(i_d, i_q, i_0, angle) 
-
-        return [i_bus_a, i_bus_b, i_bus_c]
