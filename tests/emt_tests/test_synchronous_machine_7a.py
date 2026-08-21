@@ -49,7 +49,7 @@ v_DQ = v_bus_mag * np.exp(v_bus_angle * np.pi / 180 * 1j)
 # Compute initial conditions for EMT simulation
 # -------------------------------------------------------
 sm.get_steady_state(v_bus_mag=v_bus_mag, v_bus_angle=v_bus_angle, p_bus=p_bus, q_bus=q_bus)
-x0 = np.array([sm.emt_init.angle, sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
+y0 = np.array([sm.emt_init.angle, sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
 
 print("Initial field circuit voltage: ", sm.emt_init.v_fd)
 print("Initial angle: ", sm.emt_init.angle * 180 / np.pi)
@@ -72,7 +72,7 @@ def v_step(t):
     else:
         delta = 0
 
-    return sm.emt_init.v_fd + delta
+    return sm.emt_init.v_fd + delta*0.1
 
 
 def w_step(t):
@@ -81,7 +81,7 @@ def w_step(t):
     else:
         delta = 0
 
-    return 1 + delta*1
+    return 1 + delta*0.1
 
 
 inputs = {
@@ -96,28 +96,58 @@ inputs = {
 # Solve for EMT dynamics
 # -------------------------------------------------------
 
-def emt_dynamics(t, x):
-    """Wrapper function for ODE simulation step"""
-    angle, \
-    i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
+def wrap(func):
+    def step(t, x):
+        angle, \
+        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = x
+    
+        # Get inputs
+        v_fd, v_bus_a, v_bus_b, v_bus_c = inputs["v_fd"](t), inputs["v_bus_a"](t), inputs["v_bus_b"](t), inputs["v_bus_c"](t)
+        w = inputs["w"](t)
+        # Transform currents and voltages to dq reference frame
+        v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, angle)
+    
+        # Get derivatives of the state variables
+    
+        #  i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w
+        di_dt = func(i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_bus_d, v_bus_q, 0, v_fd, w)
+    
+        # Angle
+        dangle_dt = sm.w_base * w
+    
+        dx_dt = np.concatenate(([dangle_dt], di_dt))
+    
+        return dx_dt
+    
+    return step
 
-    # Get inputs
-    v_fd, v_bus_a, v_bus_b, v_bus_c = inputs["v_fd"](t), inputs["v_bus_a"](t), inputs["v_bus_b"](t), inputs["v_bus_c"](t)
-    w = inputs["w"](t)
-    # Transform currents and voltages to dq reference frame
-    v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, angle)
 
-    # Get derivatives of the state variables
 
-   #  i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w
-    di_dt = sm.get_derivatives_step_emt_dq0(i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_bus_d, v_bus_q, 0, v_fd, w)
 
-    # Angle
-    dangle_dt = sm.w_base * w
+# Compute initial conditions and small signal model 
+init = sm.emt_init
+x0 = np.array([init.i_d, init.i_q, init.i_0, init.i_fd, init.i_1d, init.i_1q, init.i_2q])
+u0 = np.array([init.v_d, init.v_q, init.v_0, init.v_fd,  1])
 
-    dx_dt = np.concatenate(([dangle_dt], di_dt))
+ssm = sm.get_small_signal_model(*x0, *u0)
+qbm = sm.get_quadratic_bilinear_model(*x0, *u0)
 
-    return dx_dt
+def sm_step(i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
+    x = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q]) - x0
+    u = np.array([v_d, v_q, v_0, v_fd, w]) - u0
+    return ssm.A @ x + ssm.B @ u
+
+
+def qb_step(i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
+    x = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
+    u = np.array([v_d, v_q, v_0, v_fd, w])
+    return qbm.A @ x + qbm.B @ u + qbm.H @ np.kron(x,x) + qbm.N @ np.kron(u, x)
+
+
+emt_dynamics = wrap(sm.get_derivatives_step_emt_dq0)
+qbm_dynamics = wrap(qb_step)
+ssm_dynamics = wrap(sm_step)
+
 
 t_max = 4
 # Solve
@@ -128,14 +158,26 @@ settings = {
     "method": "Radau"
 }
 
-sol = solve_ivp(emt_dynamics, y0=x0, **settings)
 
-# Extract STING solution
-t = np.linspace(0, t_max, 1000)
-angle, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = sol.sol(t)
-df_sting = pl.DataFrame(
-    {'time': t, 'i_d': i_d, 'i_q': i_q, 'i_fd': i_fd, 'i_1d': i_1d, 'i_1q': i_1q, 'i_2q': i_2q}
-)
+emt_sol = solve_ivp(emt_dynamics, y0=y0, **settings)
+qbm_sol = solve_ivp(qbm_dynamics, y0=y0, **settings)
+ssm_sol = solve_ivp(ssm_dynamics, y0=y0, **settings)
+ssm_sol.y += y0.reshape(-1, 1)
+
+def sol_to_dataframe(sol):
+    # Extract STING solution
+    t = np.linspace(0, t_max, 1000)
+    angle, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q = sol.sol(t)
+    df = pl.DataFrame(
+        {'time': t, 'i_d': i_d, 'i_q': i_q, 'i_fd': i_fd, 'i_1d': i_1d, 'i_1q': i_1q, 'i_2q': i_2q}
+    )
+
+    return df
+
+df_emt = sol_to_dataframe(emt_sol)
+df_qbm = sol_to_dataframe(qbm_sol)
+df_ssm = sol_to_dataframe(ssm_sol)
+
 
 # -------------------------------------------------------
 # Compare solutions
@@ -150,15 +192,15 @@ with h5py.File(file_path, 'r') as file:
     data = file['ans'][:]
 
 # Simulink outputs follow the same schema as STING
-df_matlab = pl.DataFrame(data, schema=df_sting.columns)
+df_matlab = pl.DataFrame(data, schema=df_emt.columns)
 
 fig, ax = plt.subplots(3, 2, sharex=True)
 axs = ax.flatten()
-ls =["-", "--"]
-label = ["MATLAB", "STING"]
+ls =["-", "-", "--", "-."]
+label = ["MATLAB", "EMT", "QBM", "SSM"]
 
-for j, df in enumerate([df_matlab, df_sting],):
- 
+for j, df in enumerate([df_matlab, df_emt, df_qbm, df_ssm]):
+
     for i, col in enumerate(["i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q"]):
         axs[i].set_ylabel(col)
         axs[i].plot(df['time'], df[col], label=label[j], ls=ls[j])

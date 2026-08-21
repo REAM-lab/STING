@@ -84,6 +84,8 @@ class VirtualInertia2A:
 
     def get_quadratic_bilinear_model(self, w:float, angle_rad:float, p_ref:float, p:float):
         """
+        The contents of this function should not be presented as original work by another author.
+
         Parameters
         ----------
         - w [pu]: Initial angular frequency in per unit (state 1).

@@ -236,10 +236,7 @@ class LCLFilter6A:
 
     def get_quadratic_bilinear_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
         """
-        inputs:
-        v_vsc_dq
-        v_bus_dq
-        w
+        The contents of this function should not be presented as original work by another author.
         """
         rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
         wb = self.wbase

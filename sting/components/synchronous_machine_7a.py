@@ -5,6 +5,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple
 from scipy.linalg import inv
+import copy
 
 # ------------------
 # Import sting code
@@ -239,7 +240,7 @@ class SynchronousMachine7A:
         invT_i = np.diag([1,1,1,(1/self.k2),1,1,1])
 
         self.A = self.w_base * (T_i @ invL @ R @ invT_i)
-        self.B = self.w_base * (T_i @ invL @ invT_v)
+        self.B = self.w_base * (T_i @ invL @ invT_v)[:,:4] # Damper input voltages = 0
         self.N = self.w_base * (-T_i @ invL @ T_w @ L @ invT_i)
         
     def get_steady_state(self, v_bus_mag: float, v_bus_angle: float, p_bus: float, q_bus: float) -> InitialConditionsEMT:
@@ -315,10 +316,10 @@ class SynchronousMachine7A:
 
         # Inputs 
         u = DynamicalVariables(
-            name=["v_fd", "v_bus_a", "v_bus_b", "v_bus_c"],
+            name=["v_fd", "w", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
-            type=["device", "grid", "grid", "grid"],
             init=[  self.emt_init.v_fd,
+                    self.w_base,
                     self.emt_init.v_bus_a,
                     self.emt_init.v_bus_b,
                     self.emt_init.v_bus_c]
@@ -333,10 +334,67 @@ class SynchronousMachine7A:
                   self.emt_init.i_bus_c]
         )
 
+    def get_small_signal_model(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
+        """
+        parameters: initial conditions
+
+        Inputs: "v_fd", "v_d", "v_q", "v_0", "w"
+        """
+        i0 = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q]).reshape(-1,1)
+
+        x = DynamicalVariables(
+            name = ["i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q", "i_2q"],
+            init = i0.flatten()
+        )
+
+        u = DynamicalVariables(
+            name=["v_d", "v_q", "v_0", "v_fd", "w"],
+            init=[v_d, v_q, v_0, v_fd, w]
+        )
+
+        ssm = StateSpaceModel(
+            A = self.A + w*self.N,
+            B = np.hstack([self.B, self.N@i0]),
+            C = np.eye(7),
+            D = np.zeros((7, 5)),
+            x = x,
+            y = copy.deepcopy(x),
+            u = u,
+        )
+        return ssm
+
+    def get_quadratic_bilinear_model(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
+        """
+        The contents of this function should not be presented as original work by another author.
+        """
+        
+        x = DynamicalVariables(
+            name = ["i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q", "i_2q"],
+            init = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
+        )
+
+        u = DynamicalVariables(
+            name=["v_d", "v_q", "v_0", "v_fd", "w"],
+            init=[v_d, v_q, v_0, v_fd, w]
+        )
+
+        ssm = QuadraticBilinearModel(
+            A = self.A,
+            B = np.hstack([self.B, np.zeros((7,1))]),
+            C = np.eye(7),
+            D = np.zeros((7, 5)),
+            H = np.zeros((7, 7*7)),
+            N = np.hstack([np.zeros((7, 4*7)), self.N]),
+            x = x,
+            y = copy.deepcopy(x),
+            u = u,
+        )
+        return ssm
+
     def get_derivatives_step_emt_dq0(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
 
         i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
-        v = np.array([v_d, v_q, v_0, v_fd, 0, 0, 0])
+        v = np.array([v_d, v_q, v_0, v_fd])
 
         di_dt = self.A@i + self.B@v + w*self.N@i
 

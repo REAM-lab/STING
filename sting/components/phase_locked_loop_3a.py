@@ -100,6 +100,8 @@ class PhaseLockedLoop3A:
 
     def get_quadratic_bilinear_model(self, v_mag, relative_phase_deg):
         """
+        The contents of this function should not be presented as original work by another author.
+
         The quadratic bilinear dynamics of the PLL are given by:
             d/dt z_pi = ki * v_q
             d/dt v_q  = (1/tau) * (-v_D*z_s + v_Q*z_c - v_q)
