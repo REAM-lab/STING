@@ -77,3 +77,6 @@ Most of modules additionally require commercial or open-source solvers to run va
     url = {https://github.com/REAM-lab/sting}
 }
 ```
+
+### Research Software Notice
+All work is distributed under the Apache open-source license. However, this repository also contains software developed as part of active research that has not yet been formally published. As a developer, user, or reader of this software you are agreeing to good faith applications of this work. Original research that has not been previously published may not be represented as the independent work of another author. We kindly ask that you adhere to academic integrity and consult with authors if you are unsure what might constitute original unpublished work.

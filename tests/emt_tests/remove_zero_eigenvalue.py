@@ -3,10 +3,17 @@ import numpy as np
 b = 0.1
 kd = 0.05
 
-A = np.array([[0, 1, 0, 0],
-              [-b, -kd, b, 0],
-              [0, 0, 0, 1],
-              [b, 0, -b, -kd]])
+A = np.array([[0, 1, 0, 0],    # θ_1
+              [-b, -kd, b, 0], # w_1
+              [0, 0, 0, 1],    # θ_2
+              [b, 0, -b, -kd]])# w_2
+
+B = np.array([
+    [0, 0, 0, -1],
+    [0, 0, 0, 0],
+    [0, 0, 0, -1],
+    [0, 0, 0, 0],
+])
 
 eig = np.linalg.eigvals(A)
 
@@ -16,7 +23,7 @@ for x in eig:
 
 angle_positions = np.array([1, 0, 1, 0])  # Example angle positions for the states
 
-reference = 1
+reference = 2
 reference = reference - 1  # Convert to zero-based index
 
 # Indices of states with angle positions == 1

@@ -230,7 +230,7 @@ def step(t, x):
 sol = solve_ivp(
     fun=step, 
     y0=[0, 0, 0, 0, 1, 0, 0, 0], 
-    t_span=[0, 5],
+    t_span=[0, 0.8],
     max_step = 1e-4,
     dense_output=True,
     method="Radau"
@@ -251,7 +251,7 @@ ax3.plot(df["t"], df["iF"])
 
 ls = "--"
 ax1.plot(sol.t, -1e3*i_s_base_kA*sol.y[1], ls=ls)
-ax2.plot(sol.t, -1e3*i_s_base_kA*sol.y[2], ls=ls)
+ax2.plot(sol.t, 1e3*i_s_base_kA*sol.y[2], ls=ls)
 ax3.plot(sol.t, 1e3*i_fd_base_kA*sol.y[4], ls=ls)
 
 ax1.set_title(r"$i_d$")
@@ -260,28 +260,7 @@ ax3.set_title(r"$i_{fd}$")
 
 for ax in (ax1, ax2, ax3):
     ax.set_xlim(0, 0.8)
-"""
-d = 0
-theta = w_base*df['t']+d + np.pi/2
-ia = np.sqrt(2/3)*(np.cos(theta)*df["id"] + np.sin(theta)*df["iq"])
-ib = np.sqrt(2/3)*(np.cos(theta-2*np.pi/3)*df["id"] + np.sin(theta-2*np.pi/3)*df["iq"])
-ic = np.sqrt(2/3)*(np.cos(theta+2*np.pi/3)*df["id"]+ np.sin(theta+2*np.pi/3)*df["iq"])
 
-ax1.plot(df["t"], ia)
-ax2.plot(df["t"], ib)
-ax3.plot(df["t"], ic)
-
-theta = sol.y[0]
-id = 1e3*i_s_base_kA*sol.y[1]
-iq = 1e3*i_s_base_kA*sol.y[2]
-
-ia = (np.cos(theta)*id - np.sin(theta)*iq)
-ib = (np.cos(theta-2*np.pi/3)*id - np.sin(theta-2*np.pi/3)*iq)
-ic = (np.cos(theta+2*np.pi/3)*id - np.sin(theta+2*np.pi/3)*iq)
-
-ax1.plot(sol.t, ia)
-ax2.plot(sol.t, ib)
-ax3.plot(sol.t, ic)"""
 # Plot results
 titles = [r"angle", r"$i_d$", r"$i_q$", r"$i_0$", r"$i_{fd}$", r"$i_{1d}$", r"$i_{1q}$", r"$i_{2q}$"]
 

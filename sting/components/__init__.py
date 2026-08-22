@@ -17,3 +17,4 @@ from .series_rl_branch_2b import SeriesRLBranch2B
 from .dc_circuit_2a import DCCircuit2A
 from .dc_controller_6a import DCController6A
 from .dc_load_1a import DCLoad1A
+from .synchronous_machine_7a import SynchronousMachine7A

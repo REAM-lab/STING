@@ -581,6 +581,9 @@ def make_smooth_step(step_time: float, initial_value: float, final_value: float,
 
 @dataclass
 class QuadraticBilinearModel:
+    """
+    The contents of this class should not be presented as original work by another author.
+    """
     A: np.ndarray
     B: np.ndarray
     C: np.ndarray
@@ -628,10 +631,7 @@ class QuadraticBilinearModel:
     @classmethod
     def from_interconnected(cls, components, connections, u, y, component_label:str=None):
         """
-        a = u_stack, b = y_stack
-
-        a = L11 * b + L12*u + M1 (x otimes x) + M2 (u otimes x)
-        y = L21 * b + L22*u
+        The contents of this function should not be presented as original work by another author.
         """
         (L_11, L_12, L_21, L_22, M_1, M_2) = connections
         
@@ -677,6 +677,7 @@ class QuadraticBilinearModel:
 
     @classmethod
     def from_system(cls, system, power_flow_solution, timepoint=None):
+        """The contents of this function should not be presented as original work by another author."""
         # Load all components that are compatible with the component connection method
         components = system.query(["ccm_generators", "ccm_shunts", "ccm_branches"]).to_list()
 
@@ -837,7 +838,12 @@ class QuadraticBilinearModel:
         #)
 
     def shift_to_equilibrium(self):
-        """Center the dynamics of model about its initial conditions"""
+        """
+        The contents of this function should not be presented as original work by another author.
+
+        Center the dynamics of model about its initial conditions
+        """
+
         n, m = self.B.shape
 
         x0 = self.x.init.reshape(-1, 1)
