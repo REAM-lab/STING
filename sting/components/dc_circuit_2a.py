@@ -46,7 +46,12 @@ class DCCircuit2A:
             )
 
     def get_small_signal_model(self, d: float, i_L: float, v_dc: float) -> StateSpaceModel:
+        """
+        Returns the small-signal state-space model of the DC circuit 2A.
+        Equations:
+        dΔi_L/dt = (wbase/l_dc) * (Δv_s - (1 - d) * Δv_dc)
 
+        """
         # Parameters
         wbase = self.wbase
         l_dc = self.l_dc
@@ -93,7 +98,23 @@ class DCCircuit2A:
         return [x, u, y]
 
     def get_derivatives_step_emt_dc(self, i_L: float, v_dc: float, v_s: float, d: float, i_load: float, i_dc: float):
+        """
+        Compute the derivatives of the state variables for the DC circuit 2A model.
+        Differential equations:
+        di_L/dt = (wbase/l_dc) * (v_s - (1 - d) * v_dc)
+        dv_dc/dt = (wbase/c_dc) * (-i_dc - i_load + (1 - d) * i_L)
 
+        Inputs:
+        - i_L: Inductor current [pu]
+        - v_dc: DC bus voltage [pu]
+        - v_s: Source voltage [pu]
+        - d: Duty cycle (0 <= d <= 1)
+        - i_load: Load current [pu]
+        - i_dc: DC current [pu]
+
+        Returns:
+        - List of derivatives [di_L/dt, dv_dc/dt]
+        """
         wb = self.wbase
         l_dc = self.l_dc
         c_dc = self.c_dc
