@@ -18,16 +18,7 @@ from scipy.linalg.lapack import dpstrf
 matplotlib.use("Agg")
 
 import copy
-import os
 from collections.abc import Callable
-from dataclasses import dataclass
-
-import numpy as np
-import plotly.graph_objects as go
-import polars as pl
-from plotly.subplots import make_subplots
-from scipy.integrate import solve_ivp
-from scipy.linalg import block_diag
 
 from sting.utils.component_connections import build_ccm_permutation, get_ccm_matrices
 

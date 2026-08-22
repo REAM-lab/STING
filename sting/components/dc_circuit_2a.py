@@ -20,8 +20,8 @@ class InitialConditionsEMT(NamedTuple):
 # Main class
 # ------------------------------------
 @dataclass(slots=True)
-class DCsideCircuit4A:
-    """DC side circuit 4A model."""
+class DCCircuit2A:
+    """DC side circuit 2A model."""
 
     v_s: float
     l_dc: float
@@ -84,7 +84,13 @@ class DCsideCircuit4A:
 
         )
 
-        return [x, u]
+        y = DynamicalVariables(
+            name=["i_L", "v_dc"],
+            component=f"{self.__class__.__name__}",
+            init=[self.emt_init.i_L, self.emt_init.v_dc]
+        )
+
+        return [x, u, y]
 
     def get_derivatives_step_emt_dc(self, i_L: float, v_dc: float, v_s: float, d: float, i_load: float, i_dc: float):
 

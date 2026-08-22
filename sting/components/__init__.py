@@ -14,3 +14,6 @@ from .parallel_rc_shunt_2a import ParallelRCShunt2A
 from .parallel_rc_shunt_2b  import ParallelRCShunt2B
 from .series_rl_branch_2a import SeriesRLBranch2A
 from .series_rl_branch_2b import SeriesRLBranch2B
+from .dc_circuit_2a import DCCircuit2A
+from .dc_controller_6a import DCController6A
+from .dc_load_1a import DCLoad1A
