@@ -48,9 +48,36 @@ class DCCircuit2A:
     def get_small_signal_model(self, d: float, i_L: float, v_dc: float) -> StateSpaceModel:
         """
         Returns the small-signal state-space model of the DC circuit 2A.
-        Equations:
-        dΔi_L/dt = (wbase/l_dc) * (Δv_s - (1 - d) * Δv_dc)
 
+        Inputs:
+        - d: Initial value of duty cycle 
+        - i_L: Initial value of inductor current [pu]
+        - v_dc: Initial value of DC bus voltage [pu]
+
+        State-space representation in tableau form:
+
+                │   Δx  │   Δu
+        ────────────────────────
+        dΔx/dt  │   A   │   B 
+        ────────────────────────
+        Δy      │   C   │   D
+
+        Define the state vector, input vector, and output vector are:
+        Δx = [Δi_L, Δv_dc]
+        Δu = [Δv_s, Δd, Δi_dc, Δi_load]
+        Δy = [Δi_L, Δv_dc]
+
+        Then, the state-space matrices are defined as follows:
+
+                   │ Δi_L            Δv_dc            │ Δv_s       Δd                Δi_dc        Δi_load
+        ─────────────────────────────────────────────────────────────────────────────────────────────
+        dΔi_L/dt   │ 0               ωb*(dₒ-1)/l_dc   │ ωb*1/l_dc  ωb*(v_dc)ₒ/l_dc   0            0
+        dΔv_dc/dt  │ ωb*(1-dₒ)/c_dc  0                │ 0          -ωb*(i_L)ₒ/c_dc   -ωb*1/c_dc   -ωb*1/c_dc
+        ─────────────────────────────────────────────────────────────────────────────────────────────
+        i_L        │ 1               0                │ 0          0                 0            0
+        v_dc       │ 0               1                │ 0          0                 0            0
+
+        
         """
         # Parameters
         wbase = self.wbase
@@ -101,8 +128,8 @@ class DCCircuit2A:
         """
         Compute the derivatives of the state variables for the DC circuit 2A model.
         Differential equations:
-        di_L/dt = (wbase/l_dc) * (v_s - (1 - d) * v_dc)
-        dv_dc/dt = (wbase/c_dc) * (-i_dc - i_load + (1 - d) * i_L)
+        di_L/dt = (ωb/l_dc) * (v_s - (1 - d) * v_dc)
+        dv_dc/dt = (ωb/c_dc) * (-i_dc - i_load + (1 - d) * i_L)
 
         Inputs:
         - i_L: Inductor current [pu]
