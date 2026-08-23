@@ -10,6 +10,7 @@ from sting.bus import Bus
 from sting.load import Load
 from sting.timescales import Timepoint
 from sting.utils.dynamical_systems import smooth_step
+from sting.utils.plotting_tools import compare_timeseries
 
 
 # Set up a temporary directory used by all tests
@@ -98,3 +99,31 @@ ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
 main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
+# Compare the results of the EMT and small-signal model simulations
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_25a_0.csv"),
+    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/gfmi_25a_0.csv"),
+    left_to_right={ "z_cc_d": "z_cc_d",
+                    "z_cc_q": "z_cc_q",
+                    "v_sh_d": "v_lcl_sh_d",
+                    "v_sh_q": "v_lcl_sh_q", 
+                    "i_bus_d": "i_bus_d", 
+                    "i_bus_q": "i_bus_q",
+                    "i_vsc_d": "i_vsc_d",
+                    "x_1": "x_1",
+                    "x_2": "x_2",
+                    "i_L_f": "i_L_f",
+                    "v_dc_f": "v_dc_f",
+                    "i_dc_f": "i_dc_f",
+                    "i_load_f": "i_load_f",
+                    "x_1": "x_1",
+                    "x_2": "x_2",
+                    "i_L": "i_L",
+                    "v_dc": "v_dc",
+                    "i_load": "i_load"},
+    df1_name="EMT",
+    df2_name="SSM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
