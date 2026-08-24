@@ -20,11 +20,13 @@ import sting.system.stream as sl
 # Import sting components
 # -----------------------
 from sting.system.component import Component, SystemComponent
-from sting.bus.core import Bus, Load
+from sting.bus.core import Bus
+from sting.load import Load, ConstantImpedanceLoad, SwitchingLoad
 from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
-from sting.generator.infinite_source import InfiniteSource
-from sting.generator.switching_load import SwitchingLoad
+from sting.generator.voltage_source_4a import VoltageSource4A
+from sting.generator.voltage_source_5a import VoltageSource5A
+from sting.load.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_d import GFMId
@@ -39,6 +41,7 @@ from sting.timescales.core import Scenario, Timepoint, Timeseries
 from sting.policies.carbon_policies.core import CarbonPolicy
 from sting.policies.energy_budgets.core import EnergyBudget
 from sting.policies.transmission_expansion_constraint.core import TransmissionExpansionConstraint
+from sting.generator import GFLI13A, GFLI16A, GFLI16B, GFMI18A, GFMI18B, GFMI18P, GFMI25A
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -57,17 +60,29 @@ class System:
     generators: list[Generator] = None
     capacity_factors: list[CapacityFactor] = None
     storage: list[Storage] = None
-    infinite_sources: list[InfiniteSource] = None
-    switching_loads: list[SwitchingLoad] = None
+    voltage_source_4a: list[VoltageSource4A] = None
+    voltage_source_5a: list[VoltageSource5A] = None
     gfmi_c: list[GFMIc] = None
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
+<<<<<<< HEAD
     gfli_e: list[GFLIe] = None
     gfli_d: list[GFLId] = None
+=======
+    gfli_13a: list[GFLI13A] = None
+    gfli_16a: list[GFLI16A] = None
+    gfli_16b: list[GFLI16B] = None
+    gfmi_18a: list[GFMI18A] = None
+    gfmi_18b: list[GFMI18B] = None
+    gfmi_18p: list[GFMI18P] = None
+    gfmi_25a: list[GFMI25A] = None
+>>>>>>> origin/main
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None
+    switching_loads: list[SwitchingLoad] = None
+    constant_impedance_loads: list[ConstantImpedanceLoad] = None
     lines: list[LinePiModel] = None
     branch_series_rl: list[BranchSeriesRL] = None
     shunt_parallel_rc: list[ShuntParallelRC] = None
@@ -103,18 +118,6 @@ class System:
                 setattr(self, c.type_, [])
 
         logger.info(f" System initialization completed.")
-
-
-    @classmethod
-    def from_dataset(cls, dataset, case_directory) -> 'System':
-        """
-        Construct a system model from a predefined dataset.
-        """
-        dataset_directory=os.path.join(os.getcwd(), 'sting','datasets', dataset)
-        system = cls.from_csv(case_directory=dataset_directory)
-        system.case_directory = case_directory
-        return system
-
 
     @classmethod
     def from_csv(cls, case_directory = None) -> 'System':
@@ -213,7 +216,7 @@ class System:
         return component.id
         
 
-    def query(self, components=None):
+    def query(self, components=None) -> 'sl.Stream':
         """
         Return a Stream over a set of component types. Analogous to FROM in 
         SQL, specifying which tables to access data from. For example, 
@@ -244,24 +247,35 @@ class System:
 
     @property
     def gens(self):
-        # TODO: We should be more explicit with these properties. It seems like bad
-        # practice to have `sys.generators` and `sys.gens` referring to two different things.
-        # This has the potential to be very confusing from the user perspective. 
-        # Perhaps we can have ccm_generators, ccm_shunts, ccm_branches (and update their tags
-        # as well tags=["ccm_generator"]). Something like this.
-        """Return a lazy Stream (like list) of all components with the tag "generator"."""
+        """Return a lazy Stream (like list) of all components with the tag "generator".
+        It is a list of generic generators, usually used for power flow and capacity expansion.
+        """
         return self.query(self.find_tagged("generator"))
 
     @property
-    def shunts(self):
-        """Return a lazy Stream (like list) of all components with the tag "shunt"."""
-        return self.query(self.find_tagged("shunt"))
+    def ccm_generators(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_generator".
+        It is a list of components that are treated as current generators, that output current into the grid and receive the voltage at its terminals from the grid, 
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_generator"))
 
     @property
-    def branches(self):
-        """Return a lazy Stream (like list) of all components with the tag "branch"."""
-        return self.query(self.find_tagged("branch"))
-    
+    def ccm_shunts(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_shunt".
+        It is a list of components that are treated as shunts, that output voltage at its terminals and receive the current from the grid,
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_shunt"))
+
+    @property
+    def ccm_branches(self):
+        """Return a lazy Stream (like list) of all components with the tag "ccm_branch".
+        It is a list of components that are treated as branches, that output current in both directions and receive the voltages at its terminals from the grid,
+        when building the Component Connection Method (CCM) interconnection matrices.
+        """
+        return self.query(self.find_tagged("ccm_branch"))
+
     # ------------------------------------------------------------
     # Common selections
     # ------------------------------------------------------------

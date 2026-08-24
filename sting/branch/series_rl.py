@@ -11,7 +11,7 @@ import polars as pl
 
 # Import sting code
 from sting.branch.core import Branch
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 
 class InitialConditionsEMT(NamedTuple):
     vmag_from_bus: float
@@ -36,6 +36,7 @@ class BranchSeriesRL(Branch):
     x_pu: float
     emt_init: InitialConditionsEMT = None
     ssm: StateSpaceModel = None
+    qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
     from_bus_id: int = None
@@ -110,6 +111,12 @@ class BranchSeriesRL(Branch):
         y = copy.deepcopy(x)
 
         self.ssm = StateSpaceModel(A=A, B=B, C=C, D=D, u=u, y=y, x=x)
+        return self.ssm
+
+    def _build_quadratic_bilinear_model(self):
+        ssm = self._build_small_signal_model()
+        self.qbm = ssm.to_quadratic_bilinear()
+        return self.qbm
 
     def define_variables_emt(self):
 
@@ -140,30 +147,30 @@ class BranchSeriesRL(Branch):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
 
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x, u):
 
         # Get state values
-        i_br_a, i_br_b, i_br_c = self.variables_emt.x.value
+        i_br_a, i_br_b, i_br_c = x
 
         # Get input values
-        v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = self.variables_emt.u.value
+        v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = u
 
         # Get parameters
         r = self.r_pu
-        x = self.x_pu
+        xf = self.x_pu
         wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
-        d_i_br_a = wb / x   * (v_from_bus_a - v_to_bus_a - r * i_br_a)
-        d_i_br_b = wb / x * (v_from_bus_b - v_to_bus_b - r * i_br_b)
-        d_i_br_c = wb / x * (v_from_bus_c - v_to_bus_c - r * i_br_c)
+        d_i_br_a = wb / xf * (v_from_bus_a - v_to_bus_a - r * i_br_a)
+        d_i_br_b = wb / xf * (v_from_bus_b - v_to_bus_b - r * i_br_b)
+        d_i_br_c = wb / xf * (v_from_bus_c - v_to_bus_c - r * i_br_c)
 
         return [d_i_br_a, d_i_br_b, d_i_br_c]
         
 
-    def get_output_emt(self):
+    def get_output_emt(self, x):
 
-        i_br_a, i_br_b, i_br_c = self.variables_emt.x.value
+        i_br_a, i_br_b, i_br_c = x
 
         return [i_br_a, i_br_b, i_br_c]
     

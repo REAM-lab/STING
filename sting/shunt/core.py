@@ -10,8 +10,7 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
 logger = logging.getLogger(__name__)
 
 # ----------------
@@ -35,10 +34,11 @@ class Shunt(Component):
     base_power_MVA: float
     base_voltage_kV: float
     base_frequency_Hz: float
-    tags: ClassVar[list[str]] = ["shunt"]
+    tags: ClassVar[list[str]] = ["ccm_shunt"]
     bus_id: int = None
     power_flow_variables: PowerFlowVariables = None
     ssm: StateSpaceModel = None
+    qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
 

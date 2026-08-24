@@ -14,7 +14,7 @@ slprj/
 *.asv
 *.html
 sting_log.txt
-**/simulation_emt/*.csv
-**/small_signal_model/*.csv
+*.csv
 # Ignore temp folder used for tests
 tests/tmpdir
+tests/emt_tests/tmpdir

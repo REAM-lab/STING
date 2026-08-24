@@ -1,7 +1,5 @@
-from more_itertools import transpose
 from itertools import tee
 from typing import Iterable, Any
-#import pandas as pd
 import polars as pl
 
 class Stream:
@@ -38,16 +36,16 @@ class Stream:
             for obj in self._iterable
         ]
         
-        return transpose(selection)
+        return zip(*selection)
 
-    def to_list(self):
+    def to_list(self) -> list:
         """Return a list of all items in the generator."""
         return list(self)
 
     def to_table(self, *attrs) -> pl.DataFrame:
         """Return a dataframe with one column per selected attribute."""
         selection = self.select(*attrs)
-        df = pl.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)})
+        df = pl.DataFrame({a: list(gen) for a, gen in zip(attrs, selection)}, strict=False)
         return df
 
 

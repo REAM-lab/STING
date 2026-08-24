@@ -14,7 +14,8 @@ import logging
 # --------------
 from sting.system.component import Component
 from sting.modules.power_flow.utils import ACPowerFlowSolution
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables, QuadraticBilinearModel
+#from sting.utils.quadratic_bilinear_model import QuadraticBilinearModel
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ class Generator(Component):
     base_power_MVA: float = None
     base_voltage_kV: float = None
     base_frequency_Hz: float = None
+    damping_pu: float = None
+    inertia_constant_s: float = None
     technology: str = None
     site: str = None
     cap_existing_power_MW: float = None
@@ -56,13 +59,14 @@ class Generator(Component):
     c1_USDperMWh: float = None
     c2_USDperMWh2: float = None
     emission_rate_tonneCO2perMWh: float = None
-    tags: ClassVar[list[str]] = ["generator"]
+    tags: ClassVar[list[str]] = ["generator", "ccm_generator"]
     bus_id: int = None
     expand_capacity: bool = None
     component_id: str = None
     forced_dispatch_MW: float = None
     power_flow_variables: PowerFlowVariables = None
     ssm: StateSpaceModel = None
+    qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
 

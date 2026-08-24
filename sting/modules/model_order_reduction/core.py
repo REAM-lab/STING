@@ -1,6 +1,3 @@
-# ----------------------
-# Import python packages
-# ----------------------
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from sting.utils.dynamical_systems import StateSpaceModel
@@ -14,4 +11,3 @@ class Reducer(ABC):
     @abstractmethod
     def reduce(self, sys) -> StateSpaceModel:
         pass
-

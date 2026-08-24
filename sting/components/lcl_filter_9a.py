@@ -1,0 +1,363 @@
+from dataclasses import dataclass, field
+from typing import NamedTuple
+
+import numpy as np
+
+from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
+from sting.utils.transformations import abc2dq0, dq02abc
+
+
+class InitialConditionsEMT(NamedTuple):
+    angle_ref: float
+
+    # Bus-side voltage and currents
+    v_bus_d: float
+    v_bus_q: float
+    v_bus_D: float
+    v_bus_Q: float
+    i_bus_d: float
+    i_bus_q: float
+    i_bus_D: float
+    i_bus_Q: float
+    i_bus_a: float
+    i_bus_b: float
+    i_bus_c: float
+    v_bus_a: float
+    v_bus_b: float
+    v_bus_c: float
+    # Shunt voltage
+    v_sh_d: float
+    v_sh_q: float
+    v_sh_D: float
+    v_sh_Q: float
+    v_sh_a: float
+    v_sh_b: float
+    v_sh_c: float
+    # Converter-side voltage and current
+    v_vsc_d: float
+    v_vsc_q: float
+    i_vsc_d: float
+    i_vsc_q: float
+    i_vsc_D: float
+    i_vsc_Q: float
+    v_vsc_a: float
+    v_vsc_b: float
+    v_vsc_c: float
+    i_vsc_a: float
+    i_vsc_b: float
+    i_vsc_c: float
+
+
+@dataclass(slots=True)
+class LCLFilter9A:
+    """
+    The LCL filter connects the VSC to the grid. It has three branches: the first branch (RL) connects
+    the VSC to the shunt element, the second branch is the shunt element (RC), and the third branch (RL)
+    connects the shunt element to the grid. Graphical representation of the LCL filter:
+
+                  rf1   xf1         rf2   xf2
+    Converter ├───VVV───UUU────┬────VVV───UUU───┤ PCC / Grid Bus
+                               │
+                           ┌───┴───┐
+                       rsh <      ─┴─ csh
+                           >      ─┬─
+                           └───┬───┘
+                               │
+                            Neutral
+
+    Parameters:
+    - rf1_pu: resistance [pu] of first branch of filter
+    - xf1_pu: inductance [pu] of first branch of filter
+    - rf2_pu: resistance [pu] of second branch of filter
+    - xf2_pu: inductance [pu] of second branch of filter
+    - rsh_pu: resistance [pu] of series RC shunt
+    - csh_pu: capacitance [pu] of series RC shunt
+    - wbase: nominal frequency [rad/s] of the system
+    """
+    rf1_pu: float
+    xf1_pu: float
+    rsh_pu: float
+    csh_pu: float
+    rf2_pu: float
+    xf2_pu: float
+    wbase: float
+
+    emt_init: InitialConditionsEMT = field(init=False)
+
+    def get_steady_state(self, v_bus_mag, relative_phase_deg, p_bus, q_bus, reference_node: str):
+        """
+        Returns the initial conditions for the EMT simulation based on the steady-state values of the system.
+        Consider that: DQ: reference frame of the grid, dq: reference frame of the inverter
+
+        Inputs:
+        - v_bus_mag [pu]: voltage magnitude at the bus
+        - relative_phase_deg [deg]: voltage phase at the bus
+        - p_bus [pu]: active power at the bus
+        - q_bus [pu]: reactive power at the bus
+        - reference_node [str]: reference node for the voltage angle. Can be 'bus', 'shunt', or 'converter'.
+
+        Outputs:
+        - emt_init: Initial conditions for the EMT simulation
+        """
+                       
+        # Voltage in the end of the LCL filter
+        phase_rad = relative_phase_deg * np.pi / 180
+        v_bus_DQ = v_bus_mag * np.exp(phase_rad * 1j)
+        # Current sent from the end of the LCL filter
+        i_bus_DQ = (p_bus - q_bus * 1j) / np.conjugate(v_bus_DQ)
+        # Voltage across the shunt element in the LCL filter
+        v_lcl_sh_DQ = v_bus_DQ + (self.rf2_pu + self.xf2_pu * 1j) * i_bus_DQ
+        # Current flowing through shunt element of LCL filter
+        i_lcl_sh_DQ = v_lcl_sh_DQ * (self.csh_pu * 1j) + v_lcl_sh_DQ / self.rsh_pu
+        # Current sent from the beginning of the LCL filter
+        i_vsc_DQ = i_bus_DQ + i_lcl_sh_DQ
+        v_vsc_DQ = v_lcl_sh_DQ + (self.rf1_pu + self.xf1_pu * 1j) * i_vsc_DQ
+
+        # Compute the reference angle based on the specified reference node
+        match reference_node:
+            case "bus":
+                angle_ref = relative_phase_deg * np.pi / 180
+            case "shunt":
+                angle_ref = np.angle(v_lcl_sh_DQ) 
+            case "converter":
+                angle_ref = np.angle(v_vsc_DQ) 
+            case _:
+                raise ValueError(f"Invalid reference node: {reference_node}. Must be 'bus', 'shunt', or 'converter'.")
+
+        # We refer the voltage and currents to the synchronous frames of the inverter
+        v_vsc_dq = v_vsc_DQ * np.exp(-angle_ref * 1j)
+        i_vsc_dq = i_vsc_DQ * np.exp(-angle_ref * 1j)
+        v_bus_dq = v_bus_DQ * np.exp(-angle_ref * 1j)
+        i_bus_dq = i_bus_DQ * np.exp(-angle_ref * 1j)
+        v_sh_dq = v_lcl_sh_DQ * np.exp(-angle_ref * 1j)
+
+        # Convert dq0 to abc 
+        i_vsc_a, i_vsc_b, i_vsc_c = dq02abc(np.real(i_vsc_dq), np.imag(i_vsc_dq), 0, angle_ref)
+        i_bus_a, i_bus_b, i_bus_c = dq02abc(np.real(i_bus_dq), np.imag(i_bus_dq), 0, angle_ref)
+        v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(np.real(v_vsc_dq), np.imag(v_vsc_dq), 0, angle_ref)
+        v_sh_a, v_sh_b, v_sh_c = dq02abc(np.real(v_sh_dq), np.imag(v_sh_dq), 0, angle_ref)
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(np.real(v_bus_dq), np.imag(v_bus_dq), 0, angle_ref)
+        
+
+        self.emt_init = InitialConditionsEMT(
+            # Angle (in radians)
+            angle_ref = angle_ref,
+
+            # Bus
+            v_bus_d=v_bus_dq.real,
+            v_bus_q=v_bus_dq.imag,
+
+            v_bus_D=v_bus_DQ.real,
+            v_bus_Q=v_bus_DQ.imag,
+
+            i_bus_d=i_bus_dq.real,
+            i_bus_q=i_bus_dq.imag,
+
+            i_bus_D=i_bus_DQ.real,
+            i_bus_Q=i_bus_DQ.imag,
+
+            i_bus_a=i_bus_a,
+            i_bus_b=i_bus_b,
+            i_bus_c=i_bus_c,
+
+            v_bus_a=v_bus_a,
+            v_bus_b=v_bus_b,
+            v_bus_c=v_bus_c,
+
+            # Shunt
+            v_sh_d=v_sh_dq.real,
+            v_sh_q=v_sh_dq.imag,
+            v_sh_D=v_lcl_sh_DQ.real,
+            v_sh_Q=v_lcl_sh_DQ.imag,
+
+            v_sh_a=v_sh_a,
+            v_sh_b=v_sh_b,
+            v_sh_c=v_sh_c,
+
+            # Converter
+            v_vsc_d=v_vsc_dq.real,
+            v_vsc_q=v_vsc_dq.imag,
+
+            i_vsc_d=i_vsc_dq.real,
+            i_vsc_q=i_vsc_dq.imag,
+
+            i_vsc_D=i_vsc_DQ.real,
+            i_vsc_Q=i_vsc_DQ.imag,
+
+            v_vsc_a=v_vsc_a,
+            v_vsc_b=v_vsc_b,
+            v_vsc_c=v_vsc_c,
+
+            i_vsc_a=i_vsc_a,
+            i_vsc_b=i_vsc_b,
+            i_vsc_c=i_vsc_c
+        )
+
+        return self.emt_init
+   
+
+    def get_small_signal_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
+        rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
+        wb = self.wbase
+
+
+        A = wb*np.array([
+            [-rf1/xf1  ,   1       ,  0        ,   0       ,       -1/xf1      ,  0          ], # id_vsc
+            [-1        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1     ], # iq_vsc
+            [0         ,   0       ,  -rf2/xf2 ,   1       ,       1/xf2       ,  0          ], # id_bus
+            [0         ,   0       ,  -1       ,   -rf2/xf2,       0           ,  1/xf2      ], # iq_bus
+            [1/csh     ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  1          ], # vd_sh
+            [0         ,   1/csh   ,  0        ,   -1/csh  ,       -1          ,  -1/(rsh*csh)] # vq_sh
+        ])
+        B = wb*np.array([
+            # v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w
+            [1/xf1 ,    0      ,   0       ,   0      ,      i_vsc_q ], 
+            [0     ,    1/xf1  ,   0       ,   0      ,     -i_vsc_d ], 
+            [0     ,    0      ,   -1/xf2  ,   0      ,      i_bus_q ], 
+            [0     ,    0      ,   0       ,   -1/xf2 ,     -i_bus_d ],
+            [0     ,    0      ,   0       ,   0      ,      v_sh_q  ],
+            [0     ,    0      ,   0       ,   0      ,     -v_sh_d  ]
+        ])
+
+        ssm = StateSpaceModel(
+            A = A,
+            B = B,
+            C = np.eye(6),
+            D = np.zeros((6,5)),
+            x = DynamicalVariables(
+                name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
+                init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q]
+            ),
+            u = DynamicalVariables(name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w']),
+            y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"]))
+        
+        return ssm
+    
+
+    def get_quadratic_bilinear_model(self, i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q):
+        """
+        The contents of this function should not be presented as original work by another author.
+        """
+        rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
+        wb = self.wbase
+
+        A = wb*np.array([
+            [-rf1/xf1  ,   0       ,  0        ,   0       ,       -1/xf1      ,  0          ], # id_vsc
+            [ 0        ,   -rf1/xf1,  0        ,   0       ,       0           ,  -1/xf1     ], # iq_vsc
+            [0         ,   0       ,  -rf2/xf2 ,   0       ,       1/xf2       ,  0          ], # id_bus
+            [0         ,   0       ,   0       ,   -rf2/xf2,       0           ,  1/xf2      ], # iq_bus
+            [1/csh     ,   0       ,  -1/csh   ,   0       ,       -1/(rsh*csh),  0          ], # vd_sh
+            [0         ,   1/csh   ,  0        ,   -1/csh  ,        0          ,  -1/(rsh*csh)] # vq_sh
+        ])
+        B = wb*np.array([
+            # v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w
+            [1/xf1 ,    0      ,   0       ,   0      ,      0 ], 
+            [0     ,    1/xf1  ,   0       ,   0      ,     -0 ], 
+            [0     ,    0      ,   -1/xf2  ,   0      ,      0 ], 
+            [0     ,    0      ,   0       ,   -1/xf2 ,     -0 ],
+            [0     ,    0      ,   0       ,   0      ,      0 ],
+            [0     ,    0      ,   0       ,   0      ,     -0 ]
+        ])
+
+        C = np.eye(6)
+
+        D = np.zeros((6, 5))
+        H = np.zeros((6, 36))
+
+        # State-angular velocity interaction terms
+        N_w =  np.array([
+            [ 0, 1, 0, 0, 0, 0],
+            [-1, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 1, 0, 0],
+            [ 0, 0,-1, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 1],
+            [ 0, 0, 0, 0,-1, 0],       
+        ])
+        N = np.hstack([np.zeros((6,24)), N_w])
+
+        x = DynamicalVariables(
+            name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
+            init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q,]
+        )
+        u = DynamicalVariables(
+            name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w'],
+            init=[i_vsc_d, i_vsc_q, self.emt_init.v_bus_d, self.emt_init.v_bus_q, self.wbase]
+        )
+        y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q",])
+
+        return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
+
+    def define_variables_emt_abc(self):
+
+        x = DynamicalVariables(
+            name = ["i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            component = f"{self.__class__.__name__}",
+            init =  [self.emt_init.i_vsc_a,
+                    self.emt_init.i_vsc_b,
+                    self.emt_init.i_vsc_c,
+                    self.emt_init.v_sh_a,
+                    self.emt_init.v_sh_b,
+                    self.emt_init.v_sh_c,
+                    self.emt_init.i_bus_a,
+                    self.emt_init.i_bus_b,
+                    self.emt_init.i_bus_c]
+        )
+
+        u = DynamicalVariables(
+            name=["v_vsc_a", "v_vsc_b", "v_vsc_c", "v_bus_a", "v_bus_b", "v_bus_c"],
+            component=f"{self.__class__.__name__}",
+            init=[  self.emt_init.v_vsc_a,
+                    self.emt_init.v_vsc_b,
+                    self.emt_init.v_vsc_c,
+                    self.emt_init.v_bus_a,
+                    self.emt_init.v_bus_b,
+                    self.emt_init.v_bus_c]
+        )
+
+        return [x, u]
+                
+
+    def get_derivatives_step_emt_abc(
+            self, 
+            i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states
+            v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs
+            ):
+        """
+        Returns a step of differential equations that describe the EMT dynamics
+        of the LCL filter with abc inputs.
+        """
+        rf1, xf1, rf2, xf2, rsh, csh = self.rf1_pu, self.xf1_pu, self.rf2_pu, self.xf2_pu, self.rsh_pu, self.csh_pu
+        wb = self.wbase
+
+        # Define ODEs that describe the dynamics of the LCL filter
+        di_vsc_a = wb/xf1 *(v_vsc_a - v_sh_a - rf1 * i_vsc_a)
+        di_vsc_b = wb/xf1 *(v_vsc_b - v_sh_b - rf1 * i_vsc_b)
+        di_vsc_c = wb/xf1 *(v_vsc_c - v_sh_c - rf1 * i_vsc_c)
+
+        dv_sh_a = wb/csh * (-v_sh_a/rsh + i_vsc_a - i_bus_a)
+        dv_sh_b = wb/csh * (-v_sh_b/rsh + i_vsc_b - i_bus_b)
+        dv_sh_c = wb/csh * (-v_sh_c/rsh + i_vsc_c - i_bus_c)
+
+        di_bus_a = wb/xf2 *(v_sh_a - v_bus_a - rf2 * i_bus_a)
+        di_bus_b = wb/xf2 *(v_sh_b - v_bus_b - rf2 * i_bus_b)
+        di_bus_c = wb/xf2 *(v_sh_c - v_bus_c - rf2 * i_bus_c)
+
+        return [di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c]
+    
+    def get_derivatives_step_emt_dq0(
+            self,
+            i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q, # states
+            v_vsc_d,  v_vsc_q,    v_bus_d,   v_bus_q,        w, # inputs
+            ):
+        
+        # Current in branch 1
+        di_vsc_d = (self.wbase / self.xf1_pu)*(-self.rf1_pu * i_vsc_d + v_vsc_d - v_sh_d) + (w * i_vsc_q)
+        di_vsc_q = (self.wbase / self.xf1_pu)*(-self.rf1_pu * i_vsc_q + v_vsc_q - v_sh_q) - (w * i_vsc_d)
+        # Voltage across the capacitor
+        dv_sh_d = (self.wbase / self.csh_pu)*(-v_sh_d/self.rsh_pu + i_vsc_d - i_bus_d) + (w * v_sh_q)
+        dv_sh_q = (self.wbase / self.csh_pu)*(-v_sh_q/self.rsh_pu + i_vsc_q - i_bus_q) - (w * v_sh_d)
+        # Current in branch 2
+        di_bus_d = (self.wbase / self.xf2_pu)*(-self.rf2_pu * i_bus_d + v_sh_d - v_bus_d) + (w * i_bus_q)
+        di_bus_q = (self.wbase / self.xf2_pu)*(-self.rf2_pu * i_bus_q + v_sh_q - v_bus_q) - (w * i_bus_d)
+
+        return np.array([di_vsc_d, di_vsc_q, di_bus_d, di_bus_q, dv_sh_d, dv_sh_q])

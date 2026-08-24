@@ -71,7 +71,7 @@ def build_admittance_matrix_from_lines(num_buses: int, lines: list):
         z = complex(line.r_pu, line.x_pu)
         y = 1.0 / z
 
-        y_shunt = complex(line.g_pu, line.b_pu)
+        y_shunt = complex(line.g_pu/2, line.b_pu/2)  # Shunt admittance is split between the two buses
 
         Y[i, j] -= y
         Y[j, i] -= y

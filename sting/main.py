@@ -4,6 +4,7 @@
 import os
 import logging
 import time
+import copy
 
 # ------------------
 # Import sting code
@@ -12,14 +13,14 @@ from sting.system.core import System
 from sting.system.component import Component
 from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
+from sting.modules.power_flow.utils import load_ac_power_flow_solution
 from sting.modules.simulation_emt.core import SimulationEMT
 from sting.modules.small_signal_modeling.core import SmallSignalModel
 from sting.modules.capacity_expansion.core import CapacityExpansion
 from sting.modules.unit_commitment.core import UnitCommitment
 from sting.modules.kron_reduction.core import KronReduction
 from sting.utils.runtime_tools import setup_logging_file
-from sting.utils.dynamical_systems import StateSpaceModel
-from sting.modules.model_order_reduction.core import Reducer
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 
 logging.basicConfig(level=logging.INFO,
                         format='%(message)s')
@@ -74,6 +75,7 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
     sys_modifier.combine_shunts()
+    sys_modifier.create_impedance_loads()
 
     # Construct small-signal model
     ssm = SmallSignalModel(system=sys)
@@ -83,7 +85,39 @@ def run_ssm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, ssm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None):
+def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=None, system=None):
+
+    from sting.utils.dynamical_systems import QuadraticBilinearModel
+    start_time = time.time()
+    
+    # Set up logging to file
+    setup_logging_file(case_directory)
+
+    if system is not None:
+        sys = system
+    else:
+        # Load system from CSV files
+        sys = System.from_csv(case_directory=case_directory)
+
+    # Run power flow
+    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
+    pf.solve()
+    pf_sol = load_ac_power_flow_solution(pf.output_directory)
+
+    # Break down lines into branches and shunts for small-signal modeling
+    sys_modifier = SystemModifier(system=sys)
+    sys_modifier.decompose_lines()
+    sys_modifier.combine_shunts()
+    sys_modifier.create_impedance_loads()
+
+    qbm = QuadraticBilinearModel.from_system(system=sys, power_flow_solution=pf_sol)
+    # TODO: Optional modal analysis and write CSVs
+
+    logger.info(f"\n>> Run completed in {time.time() - start_time:.2f} seconds.\n")
+
+    return sys, qbm
+
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
@@ -101,12 +135,10 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
     sys_modifier = SystemModifier(system=sys)
     sys_modifier.decompose_lines()
     sys_modifier.combine_shunts()
+    sys_modifier.create_impedance_loads()
 
-    # Construct small-signal model
-    ssm = SmallSignalModel(system=sys)
-    ssm.construct_system_ssm()
-
-    emt_sc = SimulationEMT(system=sys)
+    # Run EMT simulation
+    emt_sc = SimulationEMT(system=sys, output_directory=output_directory)
     emt_sc.sim(t_max, inputs)
 
     return sys
@@ -305,29 +337,16 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
     return uc, system
 
 def run_model_reduction(
-        reductions:dict[str, Reducer],
-        file_name,
-        case_directory=os.getcwd(),
-        model_settings=None, 
-        solver_settings=None,
+        reductions:dict,
+        ssm: SmallSignalModel,
+        output_directory: str = None
         ):
     """
     Routine to construct a small-signal model and then perform model order reduction (MOR)
     on each subsystem.
     """
-    setup_logging_file(case_directory)
-
-    # Load system and find feasible point for SSM
-    sys = System.from_csv(case_directory=case_directory)
-    pf = ACPowerFlow(system=sys, model_settings=model_settings, solver_settings=solver_settings)
-    pf.solve()
-
-    # Construct the full-order small-signal model
-    sys_modifier = SystemModifier(system=sys)
-    sys_modifier.decompose_lines()
-    sys_modifier.combine_shunts()
-    ssm = SmallSignalModel(system=sys)
     # Interconnect all components in the same zone
+    ssm = copy.deepcopy(ssm)
     ssm = ssm.group_by("zone").interconnect()
 
     # Add a model reduction algorithm to each subsystem
@@ -336,20 +355,24 @@ def run_model_reduction(
 
     # Construct a state-space model of the full-order model (FOM)
     models = ssm.get_component_attribute("ssm")
-    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
+    # Input of system are device inputs (according to defined G matrix)
+    u = lambda u: u[u.type == "device"]
+    # Output of system are all outputs (according to defined H matrix)
+    y = lambda y: y
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=u, y=y)
 
-    # Perform any system-level operations required by each reduction method
-    for reducer in reductions.values():
-        for operation in reducer.system_operations:
-            operation.solve(ssm)
-
-    # Construct all ROMs and switch from FOM to ROM
+    # Construct all reduced order models (ROMs)
     ssm.apply("_construct_rom")
+    # Switch from using FOMs to ROMs 
     ssm.apply("set_using", "reduced_order_model")
 
-    # Construct the state-space model
+    # Construct the state-space model 
     models = ssm.get_component_attribute("ssm")
-    rom = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=None, y=None)
-    rom.to_csv(os.path.join(case_directory, "outputs", file_name))
-    
-    return ssm, ssm.model, rom
+    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=ssm.model.u, y=y)
+
+    if output_directory is None:
+        output_directory = os.path.join(ssm.system.case_directory, "outputs", "model_order_reduction")
+        os.makedirs(output_directory, exist_ok=True)
+        ssm.model.to_csv(output_directory)
+
+    return ssm

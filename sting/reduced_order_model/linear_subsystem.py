@@ -4,7 +4,6 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Literal
-from control import gram, StateSpace
 # -------------
 # Import sting code
 # -------------
@@ -18,7 +17,7 @@ class Gramian:
     """State-space model gramians factored in *upper* Cholesky W = X' X"""
     type: Literal["controllability", "observability"]
 
-    state_space: StateSpace = None
+    state_space: StateSpaceModel = None
     subsystem: np.ndarray = None
     lyapunov: np.ndarray = None
     # structured: Not implemented
@@ -29,7 +28,7 @@ class Gramian:
         W = getattr(self, key)
 
         if (W is None) and (key == "subsystem"):
-            W = gram(self.state_space, self.type[0]+"f")
+            W = self.state_space.gramian(kind=self.type, cholesky=True)
             self.subsystem = W
         
         return W
@@ -50,7 +49,7 @@ class LinearSubsystem(Component):
     T_r: np.ndarray = None # right projection matrix
 
     def __post_init__(self):
-        sys = self.full_order_model.to_python_control()
+        sys = self.full_order_model
         self.W_c.state_space = sys
         self.W_o.state_space = sys
 

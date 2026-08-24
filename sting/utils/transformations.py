@@ -35,3 +35,109 @@ def dq02abc(x_d, x_q, x_0, theta):
     x_a, x_b, x_c = x_abc[0], x_abc[1], x_abc[2]
 
     return x_a, x_b, x_c
+
+def R_dq2DQ(theta):
+    R = np.array([
+        [ np.cos(theta),-np.sin(theta) ],
+        [ np.sin(theta), np.cos(theta) ]
+    ])
+    return R
+
+
+def R_DQ2dq(theta):
+    return R_dq2DQ(theta).T
+
+
+def dq2DQ(x_d: float, x_q: float, theta: float) -> tuple[float, float]:
+    """
+    Transforms dq coordinates to DQ coordinates.
+    dq frame is usually considered as the device reference frame,
+    while DQ frame is usually considered as the grid reference frame.
+    
+    Inputs:
+    - x_d (float): value of quantity, e.g, voltage or current, of axis d.
+    - x_q (float): value of quantity, e.g, voltage or current, of axis q.
+    - theta (float): angle in radians applied to the transformation.
+
+    Outputs:
+    ------
+    x_D (float): value of axis D.
+    x_Q (float): value of axis Q.
+    """
+    R = R_dq2DQ(theta)
+    x_DQ = np.matmul(R, np.array([ x_d, x_q ]))
+
+    return x_DQ[0], x_DQ[1]
+
+def DQ2dq(x_D: float, x_Q: float, theta: float) -> tuple[float, float]:
+    """
+    Transforms DQ coordinates to dq coordinates.
+    DQ frame is usually considered as the grid reference frame,
+    while dq frame is usually considered as the device reference frame.
+    
+    Inputs:
+    - x_D (float): value of quantity, e.g, voltage or current, of axis D.
+    - x_Q (float): value of quantity, e.g, voltage or current, of axis Q.
+    - theta (float): angle in radians applied to the transformation.
+
+    Outputs:
+    ------
+    x_d (float): value of axis d.
+    x_q (float): value of axis q.
+    """
+    R = R_DQ2dq(theta)
+    x_dq = np.matmul(R, np.array([ x_D, x_Q ]))
+    
+    return x_dq[0], x_dq[1]
+
+
+
+def d_dq2DQ_dangle(x_d: float, x_q: float, theta: float) -> np.ndarray:
+    """
+    Returns the derivatives of the transformation dq2DQ with respect to the angle theta.
+    dq frame is usually considered as the device reference frame,
+    while DQ frame is usually considered as the grid reference frame.
+
+    Inputs:
+    - x_d (float): initial condition of quantity of axis d.
+    - x_q (float): initial condition of quantity of axis q.
+    - theta (float): angle in radians.
+
+    Returns:
+    - d_dq2DQ_dangle (numpy.ndarray): derivatives of the transformation with respect to the angle theta.
+    it is vector of size 2x1.
+    """
+
+    U =  np.array([
+            [ -np.sin(theta),-np.cos(theta) ],
+            [ np.cos(theta), -np.sin(theta) ]
+    ])
+
+    d_dq2DQ_dangle = np.matmul(U, np.array([ x_d, x_q ]))
+
+    return d_dq2DQ_dangle
+
+def d_DQ2dq_dangle(x_D: float, x_Q: float, theta: float) -> np.ndarray:
+    """
+    Returns the derivatives of the transformation DQ2dq with respect to the angle theta.
+    DQ frame is usually considered as the grid reference frame,
+    while dq frame is usually considered as the device reference frame.
+
+    Inputs:
+    - x_D (float): initial condition of quantity of axis D.
+    - x_Q (float): initial condition of quantity of axis Q.
+    - theta (float): angle in radians.
+
+    Returns:
+    - d_DQ2dq_dangle (numpy.ndarray): derivatives of the transformation with respect to the angle theta.
+    it is vector of size 2x1.
+    """
+
+    U =  np.array([
+            [ -np.sin(theta), np.cos(theta) ],
+            [ -np.cos(theta),-np.sin(theta) ]
+    ])
+
+    d_DQ2dq_dangle = np.matmul(U, np.array([ x_D, x_Q ]))
+
+    return d_DQ2dq_dangle

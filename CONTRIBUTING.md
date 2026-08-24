@@ -8,6 +8,7 @@ Below is a list of people and organizations that have contributed source code to
 - Adam Sedlak $^1$ (<asedlak@ucsd.edu>)
 - Patricia Hidalgo-Gonzalez $^1$ (<phidalgogonzalez@ucsd.edu>)
 - Paul Serna-Torre $^1$ $^\dagger$ (<psernatorre@ucsd.edu>)
+- Indu Manogaran $^1$
 - Ruth Kravis $^2$
 
 **Organizations**
@@ -17,4 +18,5 @@ $2$. University of California Berkeley (Energy Modeling, Analysis, and Control).
 $\dagger$. Lead author.
 
 ## Papers
-1. P. Serna-Torre, A. Sedlak, and P. Hidalgo-Gonzalez "A Generalized and Open-Source State-Space Framework to Derive Small-Signal Models for EMT dynamics of Inverter-Dominated Grids", [*TechRxiv*, 2026](https://www.techrxiv.org/doi/full/10.36227/techrxiv.177220455.58382442/v1).
+1. P. Serna-Torre, A. Sedlak, and P. Hidalgo-Gonzalez. "A generalized and open-source state-space framework to derive small-signal models for EMT dynamics of inverter-dominated grids", [*TechRxiv*](https://www.techrxiv.org/doi/full/10.36227/techrxiv.177220455.58382442/v1), 2026.
+2. A. Sedlak, P. Serna-Torre, and P. Hidalgo-Gonzalez. "Model reduction of electromagnetic transient dynamics for inverter-based grids: an interconnected systems framework", [*Electric Power Systems Research*](https://www.sciencedirect.com/science/article/pii/S0378779626009648), 2027.
