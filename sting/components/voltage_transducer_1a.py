@@ -56,25 +56,33 @@ class VoltageTransducer1A:
         """
         The contents of this function should not be presented as original work by another author.
 
-                δ = v_d^2 + v_q^2 - v_mag^2
-        d/dt v_c1 = (1/tau) * (-v_c1 + v_mag + δ / (2*v_mag) )
-        
-        Note: Inputs must be squared voltages.
-        """
-        v_mag = (v_d**2 + v_q**2)**0.5
-        c1 = 1/(2*v_mag)
-        c0 = v_mag - c1*v_mag**2
+        d/dt v_c2 = (1/tau) * (-v_c2 + v_d^2 + v_q^2)
+             v_c1 = c0*u_one + c1*v_c2 + c2*v_c2**2
 
+        Note: Inputs must be squared voltages. Assumes small deviations
+            in voltage and small time constant.
+        """
+        v2_mag = (v_d**2 + v_q**2)
         ssm = StateSpaceModel(
             A=np.array([[-1/self.tau_s]]),
-            B=(1/self.tau_s) * np.array([[c0, c1, c1]]),
+            B=(1/self.tau_s) * np.array([[1, 1]]),
             C=np.array([[1]]),
-            D=np.zeros((1,3)),
-            x=DynamicalVariables(name=['v_c'], init=[v_mag]),
-            y=DynamicalVariables(name=['v_c'], init=[v_mag]),
-            u=DynamicalVariables(name=['one', 'v_d^2', 'v_q^2'], init=[1, v_d, v_q]),
+            D=np.zeros((1,2)),
+            x=DynamicalVariables(name=['v_c'], init=[v2_mag]),
+            y=DynamicalVariables(name=['v_c'], init=[v2_mag]),
+            u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d, v_q]),
         )
         return ssm.to_quadratic_bilinear()
+
+    def get_taylor_series_constants(self, v_mag):
+        df =  1/(2*v_mag)
+        ddf = -1/(8*v_mag**3)
+
+        c0 = v_mag + df*(-v_mag**2) + ddf*(v_mag**4)
+        c1 = df - 2*ddf*(v_mag**2)
+        c2 = ddf
+
+        return (c0, c1, c2)
 
     def get_derivatives_step_emt_dq0(self, v_c1, v_d, v_q) -> float:
         u = (v_d**2 + v_q**2)**0.5
