@@ -180,19 +180,19 @@ class GFLI13A(Generator):
 
         ┌ component ──▶           │ PLL    ┆ ICC       ┆ LCL                            │ Grid inputs
         │       ┌ index ──▶       │ 0   1  ┆ 2,3       ┆ 4,5        6,7        8,9      │ 0         1           2,3
-        ▼       ▼                 │ Δω  Δϕ ┆ Δv_vsc_dq ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δi_ref_d  Δi_ref_q    Δv_bus_DQ
+        ▼       ▼                 │ Δϕ  Δω ┆ Δv_vsc_dq ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δi_ref_d  Δi_ref_q    Δv_bus_DQ
         ──────────────────────────┼────────┴───────────┴────────────────────────────────┼────────────────────────────
         PLL     0,1    Δv_bus_DQ  │  0  0    0           0          0           0       │ 0         0           I₂
         ICC     2      Δi_ref_d   │  0  0    0           0          0           0       │ 1         0           0
                 3      Δi_ref_q   │  0  0    0           0          0           0       │ 0         1           0
                 4,5    Δi_bus_dq  │  0  0    0           0          I₂          0       │ 0         0           0
-                6,7    Δv_bus_dq  │  0  a    0           0          0           0       │ 0         0           Rᵀ
-                8      Δw         │  1  0    0           0          0           0       │ 0         0           0
+                6,7    Δv_bus_dq  │  a  0    0           0          0           0       │ 0         0           Rᵀ
+                8      Δw         │  0  1    0           0          0           0       │ 0         0           0
         LCL     9,10   Δv_vsc_dq  │  0  0    I₂          0          0           0       │ 0         0           0
-                11,12  Δv_bus_dq  │  0  a    0           0          0           0       │ 0         0           Rᵀ
-                13     Δw         │  1  0    0           0          0           0       │ 0         0           0
+                11,12  Δv_bus_dq  │  a  0    0           0          0           0       │ 0         0           Rᵀ
+                13     Δw         │  0  1    0           0          0           0       │ 0         0           0
         ──────────────────────────┼─────────────────────────────────────────────────────┼────────────────────────────
-        Grid    0,1     Δi_bus_DQ │  0  b    0           0          R           0       │ 0         0           0
+        Grid    0,1     Δi_bus_DQ │  b  0    0           0          R           0       │ 0         0           0
         outputs                  
         """
 
@@ -210,7 +210,7 @@ class GFLI13A(Generator):
 
         # Entries in F and G entered as tuples: (row_idx, col_idx, values)
         idx_F =[
-            ([4,5], [6, 7], I), ([6,7], [1], a), ([8], [0], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [0], 1)
+            ([4,5], [6, 7], I), ([6,7], [0], a), ([8], [1], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [1], 1)
             ]
         for rows, cols, value in idx_F:
             F[np.ix_(rows, cols)] = value
@@ -222,7 +222,7 @@ class GFLI13A(Generator):
         for rows, cols, value in idx_G:
             G[np.ix_(rows, cols)] = value
         # Add values to H
-        H[:,[1]] = b
+        H[:,[0]] = b
         H[np.ix_([0,1],[6,7])] = R
 
         return (F,G,H,L)
