@@ -49,7 +49,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True)
-class LCLFilter6A:
+class LCLFilter9A:
     """
     The LCL filter connects the VSC to the grid. It has three branches: the first branch (RL) connects
     the VSC to the shunt element, the second branch is the shunt element (RC), and the third branch (RL)

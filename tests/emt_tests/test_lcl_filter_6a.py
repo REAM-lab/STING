@@ -1,6 +1,7 @@
 import matplotlib
 
-from sting.components import LCLFilter6A
+from sting import main
+from sting.components import LCLFilter9A
 
 matplotlib.use('TkAgg')
 import numpy as np
@@ -26,7 +27,7 @@ inputs = {
 
 wbase = 2*np.pi*60
 # LCL filter model
-lcl = LCLFilter6A(rf1_pu=0.001, xf1_pu=0.02, rf2_pu=0.001, xf2_pu=0.01, csh_pu=0.001, rsh_pu=1, wbase=wbase)
+lcl = LCLFilter9A(rf1_pu=0.001, xf1_pu=0.02, rf2_pu=0.001, xf2_pu=0.01, csh_pu=0.001, rsh_pu=1, wbase=wbase)
 
 # Compute initial conditions and small signal model 
 init = lcl.get_steady_state(**pf_sol, reference_node="bus")

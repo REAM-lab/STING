@@ -20,7 +20,7 @@ from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
-from sting.components import PhaseLockedLoop2A, InnerCurrentController2A, LCLFilter6A
+from sting.components import PhaseLockedLoop2A, InnerCurrentController2A, LCLFilter9A
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -46,12 +46,12 @@ class GFLI13A(Generator):
     kff_cc: float
 
     # Components
-    lcl_filter: LCLFilter6A = field(init=False)
+    lcl_filter: LCLFilter9A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
     phase_locked_loop: PhaseLockedLoop2A = field(init=False)
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_pu, self.ki_pll_puHz, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
 

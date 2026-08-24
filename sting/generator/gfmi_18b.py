@@ -13,11 +13,11 @@ import numpy as np
 from sting.components import (
     InnerCurrentController2B,
     InnerVoltageController2B,
-    LCLFilter6A,
+    LCLFilter9A,
     ParallelRCShunt2A,
     SeriesRLBranch2A,
     SeriesRLBranch2B,
-    VirtualInertia2A,
+    RotationalInertia2A,
     VoltageDroopController1A,
 )
 from sting.generator.core import Generator
@@ -68,7 +68,7 @@ class GFMI18B(Generator):
     w_q_puHz: float
 
     # Components
-    lcl_filter: LCLFilter6A = field(init=False)
+    lcl_filter: LCLFilter9A = field(init=False)
     # LCL filter components for quadratic bilinear model
     lcl_br1: SeriesRLBranch2B = field(init=False)
     lcl_br2: SeriesRLBranch2A = field(init=False)
@@ -76,18 +76,18 @@ class GFMI18B(Generator):
     
     voltage_controller: InnerVoltageController2B = field(init=False)
     current_controller: InnerCurrentController2B = field(init=False)
-    virtual_inertia: VirtualInertia2A = field(init=False)
+    virtual_inertia: RotationalInertia2A = field(init=False)
     voltage_droop: VoltageDroopController1A = field(init=False)
 
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
         self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
         self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
         self.voltage_controller = InnerVoltageController2B(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2B(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
-        self.virtual_inertia = VirtualInertia2A(self.h_s, self.kd_pu, self.wbase, self.alpha)
+        self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, self.alpha)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
 
     @property

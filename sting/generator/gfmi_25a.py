@@ -28,8 +28,8 @@ from sting.components import (
     DCLoad1A,
     InnerCurrentController2A,
     InnerVoltageController2A,
-    LCLFilter6A,
-    VirtualInertia2A,
+    LCLFilter9A,
+    RotationalInertia2A,
     VoltageDroopController1A,
     )
 from sting.utils.transformations import R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
@@ -84,20 +84,20 @@ class GFMI25A(Generator):
     #SOC_init_pu: float # initial battery state of charge (pu)
 
     # Components
-    lcl_filter: LCLFilter6A = field(init=False)
+    lcl_filter: LCLFilter9A = field(init=False)
     voltage_controller: InnerVoltageController2A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
-    virtual_inertia: VirtualInertia2A = field(init=False)
+    virtual_inertia: RotationalInertia2A = field(init=False)
     voltage_droop: VoltageDroopController1A = field(init=False)
     dc_controller: DCController6A = field(init=False)
     dc_circuit: DCCircuit2A = field(init=False)
     dc_load: DCLoad1A = field(init=False)
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.voltage_controller = InnerVoltageController2A(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
-        self.virtual_inertia = VirtualInertia2A(self.h_s, self.kd_pu, self.wbase)
+        self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
         self.dc_controller = DCController6A(self.Ti_L_s, self.Tv_dc_s, self.Ti_dc_s, self.Ti_load_s, self.kp_vdc_pu, self.ki_vdc_puHz, self.kp_iL_pu, self.ki_iL_puHz, self.kff_idc, self.kff_iload)
         self.dc_circuit = DCCircuit2A(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.wbase)

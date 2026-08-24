@@ -1,6 +1,7 @@
 import matplotlib
 
-from sting.components import VirtualInertia2A
+from sting import main
+from sting.components import RotationalInertia2A
 
 matplotlib.use('TkAgg')
 import numpy as np
@@ -39,7 +40,7 @@ derivative_emt_inputs = {
     "p": lambda t: delta_inputs['v_d'](t) * delta_inputs['i_d'](t) + delta_inputs['v_q'](t) * delta_inputs['i_q'](t) + init['p']}
 
 # Model
-mod = VirtualInertia2A(h_s= 2, kd_w_pu=70, w_nom=2*np.pi*60)
+mod = RotationalInertia2A(h_s= 2, kd_w_pu=70, w_nom=2*np.pi*60)
 ssm = mod.get_small_signal_model(i_d = init['i_d'], i_q = init['i_q'], v_d = init['v_d'], v_q = init['v_q'], angle = 0, p_ref = init['p'])
 
 # Differential equations

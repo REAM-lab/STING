@@ -18,9 +18,9 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True)
-class VirtualInertia2A:
+class RotationalInertia2A:
     """
-    The virtual inertia model is a second-order model that emulates the dynamics of a synchronous generator.
+    Second-order model of the rotational inertia of a turbine shaft.
 
     Parameters:
     - kd_w_pu: damping gain [pu] of the active power controller

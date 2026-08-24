@@ -22,7 +22,7 @@ from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import (
     PhaseLockedLoop3A, 
     InnerCurrentController2B, 
-    LCLFilter6A, 
+    LCLFilter9A, 
     ActivePowerPI1A, 
     ReactivePowerPI1A,
     ParallelRCShunt2A,
@@ -60,7 +60,7 @@ class GFLI16B(Generator):
     ki_pc_puHz: float
 
     # Components
-    lcl_filter: LCLFilter6A = field(init=False)
+    lcl_filter: LCLFilter9A = field(init=False)
     # LCL filter components for quadratic bilinear model
     lcl_br1: SeriesRLBranch2B = field(init=False)
     lcl_br2: SeriesRLBranch2A = field(init=False)
@@ -72,7 +72,7 @@ class GFLI16B(Generator):
     reactive_power_controller: ReactivePowerPI1A = field(init=False)
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
         self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
         self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)

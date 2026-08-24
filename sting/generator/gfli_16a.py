@@ -22,7 +22,7 @@ from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import (
     PhaseLockedLoop3A, 
     InnerCurrentController2A, 
-    LCLFilter6A, 
+    LCLFilter9A, 
     ActivePowerPI1A, 
     ReactivePowerPI1A,
     ParallelRCShunt2A,
@@ -59,14 +59,14 @@ class GFLI16A(Generator):
     ki_pc_puHz: float
 
     # Components
-    lcl_filter: LCLFilter6A = field(init=False)
+    lcl_filter: LCLFilter9A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
     phase_locked_loop: PhaseLockedLoop3A = field(init=False)
     active_power_controller: ActivePowerPI1A = field(init=False)
     reactive_power_controller: ReactivePowerPI1A = field(init=False)
 
     def __post_init__(self):
-        self.lcl_filter = LCLFilter6A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
+        self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
