@@ -60,7 +60,7 @@ pip install sting-py
 sting-example 9_bus_ssm
 ```
 
-You can also see the prior steps executed in the following video clip.
+You can also see the prior steps executed in the following video clip. Refresh your browser to repeat the clip.
 
 <img src="images/install_sting.gif" alt="Project demo" width="800">
 
