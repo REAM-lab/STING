@@ -10,6 +10,7 @@ from sting.bus import Bus
 from sting.load import Load
 from sting.timescales import Timepoint
 from sting.utils.dynamical_systems import smooth_step
+from sting.utils.plotting_tools import compare_timeseries
 
 # Set up a temporary directory used by all tests
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
@@ -76,66 +77,33 @@ inputs = {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': lambda t, x, id: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
+        'p_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
         'q_ref': lambda t: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3) 
         }
 }
 
 t_max = 1.5 # Simulation length in seconds
 
-
 # Construct system and small-signal model
-#_, ssm = main.run_ssm(system=system, case_directory=case_directory)
-#ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+_, ssm = main.run_ssm(system=system, case_directory=case_directory)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 # Run EMT simulation
 main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
 
-# Compare emt vs ssm results
-emt_results = pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18a_0.csv")
-# Take time, and psh
-time_emt = emt_results.select("time").to_numpy().flatten()
-p_sh_emt = emt_results.select("p_sh").to_numpy().flatten()
-q_sh_emt = emt_results.select("q_sh").to_numpy().flatten()
-v_sh_d_emt = emt_results.select("v_sh_d").to_numpy().flatten()
-v_sh_q_emt = emt_results.select("v_sh_q").to_numpy().flatten()
-i_bus_d_emt = emt_results.select("i_bus_d").to_numpy().flatten()
-i_bus_q_emt = emt_results.select("i_bus_q").to_numpy().flatten
-
-ssm_results = pl.read_csv(f"{case_directory}/outputs/small_signal_model/gfmi_18a_0.csv")
-time_ssm = ssm_results.select("time").to_numpy().flatten()
-v_sh_d_ssm = ssm_results.select("v_lcl_sh_d").to_numpy().flatten()
-v_sh_q_ssm = ssm_results.select("v_lcl_sh_q").to_numpy().flatten()
-i_bus_d_ssm = ssm_results.select("i_bus_d").to_numpy().flatten()
-i_bus_q_ssm = ssm_results.select("i_bus_q").to_numpy().flatten()
-
-# Compute power
-p_sh_ssm = v_sh_d_ssm*i_bus_d_ssm + v_sh_q_ssm*i_bus_q_ssm
-q_sh_ssm = v_sh_q_ssm*i_bus_d_ssm - v_sh_d_ssm*i_bus_q_ssm
-
-# Plot:
-fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(8, 6))
-ax[0, 0].plot(time_emt, p_sh_emt, label="EMT")
-ax[0, 0].plot(time_ssm, p_sh_ssm, label="SSM")
-ax[0, 0].set_xlabel("Time [s]")
-ax[0, 0].set_ylabel("Power [pu]")
-ax[0, 0].legend() 
-
-ax[0, 1].plot(time_emt, v_sh_d_emt, label="EMT")
-ax[0, 1].plot(time_ssm, v_sh_d_ssm, label="SSM")
-ax[0, 1].set_xlabel("Time [s]")
-ax[0, 1].set_ylabel("Voltage d [pu]")
-ax[0, 1].legend()
-
-ax[1, 0].plot(time_emt, q_sh_emt, label="EMT")
-ax[1, 0].plot(time_ssm, q_sh_ssm, label="SSM")
-ax[1, 0].set_xlabel("Time [s]")
-ax[1, 0].set_ylabel("Reactive Power [pu]")
-
-ax[1, 1].plot(time_emt, i_bus_d_emt, label="SSM")
-ax[1, 1].plot(time_emt, i_bus_d_ssm, label="EMT")
-ax[1, 1].set_xlabel("Time [s]")
-ax[1, 1].set_ylabel("Current d [pu]")
-
-
-# Save the figure
-plt.savefig(f"{case_directory}/outputs/comparison.png")
+# Compare the results of the EMT and small-signal model simulations
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18a_0.csv"),
+    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/gfmi_18a_0.csv"),
+    left_to_right={ "z_cc_d": "z_cc_d",
+                    "z_cc_q": "z_cc_q",
+                    "v_sh_d": "v_lcl_sh_d",
+                    "v_sh_q": "v_lcl_sh_q", 
+                    "i_bus_d": "i_bus_d", 
+                    "i_bus_q": "i_bus_q",
+                    "i_vsc_d": "i_vsc_d",},
+    df1_name="EMT",
+    df2_name="SSM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
