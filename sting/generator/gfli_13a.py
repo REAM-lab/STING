@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from sting.generator.core import Generator
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
-from sting.utils.transformations import dq02abc, abc2dq0
+from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle, abc2dq0, dq02abc
 from sting.components import PhaseLockedLoop2A, InnerCurrentController2A, LCLFilter9A
 
 
@@ -38,8 +38,8 @@ class GFLI13A(Generator):
     txr_r2_pu: float
     txr_x2_pu: float
     # Phase-locked loop parameters
-    kp_pll_pu: float
-    ki_pll_puHz: float
+    kp_pll_rad_s: float
+    ki_pll_rad2_s2: float
     # Current controller parameters
     kp_cc_pu: float
     ki_cc_puHz: float
@@ -52,7 +52,7 @@ class GFLI13A(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_pu, self.ki_pll_puHz, self.wbase)
+        self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
 
     @property
@@ -118,7 +118,7 @@ class GFLI13A(Generator):
         i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
         # Inputs and outputs
         u = DynamicalVariables(
-            name=["i_bus_d_ref", "i_bus_q_ref", "v_bus_D", "v_bus_Q"],
+            name=["i_ref_d", "i_ref_q", "v_bus_D", "v_bus_Q"],
             type=["device", "device", "grid", "grid"],
             init=[i_bus_d, i_bus_q, v_bus_D, v_bus_Q])
 
@@ -127,79 +127,111 @@ class GFLI13A(Generator):
             init=[i_bus_D, i_bus_Q])
 
         # Generate small-signal model
-        components = [cc_ssm, pll_ssm, lcl_ssm]
+        components = [pll_ssm, cc_ssm, lcl_ssm]
         connections = self.get_interconnections_ssm(v_bus_D, v_bus_Q, i_bus_d, i_bus_q, phase_deg)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
         return self.ssm
 
     def get_interconnections_ssm(self, v_bus_D, v_bus_Q, i_bus_d, i_bus_q, relative_phase_deg):
+        """
+        Construct the interconnection matrices F, H, G, and L that satisfies:
+        u_stack = F * y_stack + G * u_sys
+        y_sys   = H * y_stack + L * u_sys
 
-        sin = np.sin(relative_phase_deg * np.pi / 180)
-        cos = np.cos(relative_phase_deg * np.pi / 180)
+        Given the tableau form:
 
-        R = np.array([
-            [ cos,-sin],
-            [ sin, cos]
-        ])
-        dRdt = np.array([
-            [-sin,-cos],
-            [ cos,-sin]
-        ])
+                │   y_stack  │   u_sys
+        ───────────────────────────────────────────────
+        u_stack │   F        │   G
+        ───────────────────────────────────────────────
+        y_sys   │   H        │   L
 
-        v_D, v_Q = (dRdt.T @ np.array([[v_bus_D],[v_bus_Q]])).flatten()
-        i_d, i_q = (dRdt @ np.array([[i_bus_d],[i_bus_q]])).flatten()
+        where:
+        u_stack = [u_pll, u_inner_current_controller, u_lcl_filter]
+        y_stack = [y_pll, y_inner_current_controller, y_lcl_filter]
+        y_sys   = [Δi_bus_D, Δi_bus_Q]
+        u_sys   = [Δi_d_ref, Δi_q_ref, Δv_bus_D, Δv_bus_Q]
+
+        note that:
+        u_pll = [Δv_bus_D, Δv_bus_Q] (2 inputs)
+        u_inner_current_controller = [Δi_ref_dq, Δi_vsc_dq, Δv_sh_dq, Δω] (7 inputs)
+        u_lcl_filter = [Δv_vsc_dq, Δv_bus_dq, Δω] (5 inputs)
         
-        F = np.array([
-            # v_vsc_dq | delta | w | i_vsc_dq| i_bus_dq | v_f_dq 
-            [0,0,  0,0,0,0,0,0,0,0], # i_ref_dq
-            [0,0,  0,0,0,0,0,0,0,0], 
-            [0,0,  0,0,0,0,1,0,0,0], # i_bus_dq
-            [0,0,  0,0,0,0,0,1,0,0], 
-            [0,0,v_D,0,0,0,0,0,0,0], # v_bus_dq
-            [0,0,v_Q,0,0,0,0,0,0,0],
-            [0,0,  0,0,0,0,0,0,0,0],# v_bus_DQ
-            [0,0,  0,0,0,0,0,0,0,0],
-            [1,0,  0,0,0,0,0,0,0,0], # v_vsc_dq
-            [0,1,  0,0,0,0,0,0,0,0],
-            [0,0,v_D,0,0,0,0,0,0,0], # v_bus_dq
-            [0,0,v_Q,0,0,0,0,0,0,0],
-            [0,0,  0,1,0,0,0,0,0,0], # w
-        ])
+        y_pll = [Δϕ, Δω] (2 outputs)
+        y_inner_current_controller = [Δv_ref_dq] (2 outputs)
+        y_lcl_filter = [Δi_vsc_dq, Δi_bus_dq, Δv_sh_dq] (6 outputs)
 
-        G = np.array([
-            # i_ref_dq | v_bus_DQ
-            [1,0,0,0],
-            [0,1,0,0],
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,R[0,0],R[1,0]],
-            [0,0,R[0,1],R[1,1]],
-            [0,0,1,0],
-            [0,0,0,1],
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,R[0,0],R[1,0]],
-            [0,0,R[0,1],R[1,1]],
-            [0,0,0,0]
-        ])
+        thus: u_stack has 2 + 7 + 5 = 14 inputs, y_stack has 2 + 2 + 6 = 10 outputs, y_sys has 2 outputs, and u_sys has 4 inputs.
 
-        H = np.array([
-            # v_vsc_dq | delta | w | i_vsc_dq| i_bus_dq | v_f_dq 
-            [0,0,i_d,0,0,0,R[0,0],R[0,1],0,0], # i_bus_DQ
-            [0,0,i_q,0,0,0,R[1,0],R[1,1],0,0],
-        ])
+        Interconnection matrices
+        ------------------------
+        Recall that to linearize the transformation from DQ to dq (and vice versa)
+            Δv_dq = Uᵀ*(v_DQ)ₒ*Δϕ + Rᵀ*Δv_DQ 
+            Δi_DQ = U *(i_dq)ₒ*Δϕ + R *Δi_dq 
+        where
+            R = [ cosϕₒ  -sinϕₒ ]
+                [ sinϕₒ   cosϕₒ ]
+            U = d/dϕₒ R 
+        and we will define
+            a := Uᵀ*(v_DQ)ₒ
+            b := U *(i_dq)ₒ
 
-        L = np.zeros((2,4))
 
-        return F, G, H, L
+        ┌ component ──▶           │ PLL    ┆ ICC       ┆ LCL                            │ Grid inputs
+        │       ┌ index ──▶       │ 0   1  ┆ 2,3       ┆ 4,5        6,7        8,9      │ 0         1           2,3
+        ▼       ▼                 │ Δω  Δϕ ┆ Δv_vsc_dq ┆ Δi_vsc_dq  Δi_bus_dq  Δv_sh_dq │ Δi_ref_d  Δi_ref_q    Δv_bus_DQ
+        ──────────────────────────┼────────┴───────────┴────────────────────────────────┼────────────────────────────
+        PLL     0,1    Δv_bus_DQ  │  0  0    0           0          0           0       │ 0         0           I₂
+        ICC     2      Δi_ref_d   │  0  0    0           0          0           0       │ 1         0           0
+                3      Δi_ref_q   │  0  0    0           0          0           0       │ 0         1           0
+                4,5    Δi_bus_dq  │  0  0    0           0          I₂          0       │ 0         0           0
+                6,7    Δv_bus_dq  │  0  a    0           0          0           0       │ 0         0           Rᵀ
+                8      Δw         │  1  0    0           0          0           0       │ 0         0           0
+        LCL     9,10   Δv_vsc_dq  │  0  0    I₂          0          0           0       │ 0         0           0
+                11,12  Δv_bus_dq  │  0  a    0           0          0           0       │ 0         0           Rᵀ
+                13     Δw         │  1  0    0           0          0           0       │ 0         0           0
+        ──────────────────────────┼─────────────────────────────────────────────────────┼────────────────────────────
+        Grid    0,1     Δi_bus_DQ │  0  b    0           0          R           0       │ 0         0           0
+        outputs                  
+        """
 
+        angle = relative_phase_deg * np.pi / 180
+        R = R_dq2DQ(angle)
+        I = np.eye(2)
+
+        a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
+        b = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
+
+        F = np.zeros((14, 10))
+        G = np.zeros((14, 4))
+        H = np.zeros((2, 10))
+        L = np.zeros((2, 4))
+
+        # Entries in F and G entered as tuples: (row_idx, col_idx, values)
+        idx_F =[
+            ([4,5], [6, 7], I), ([6,7], [1], a), ([8], [0], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [0], 1)
+            ]
+        for rows, cols, value in idx_F:
+            F[np.ix_(rows, cols)] = value
+        
+        idx_G = [
+            ([2], [0], 1), ([3], [1], 1), ([0,1], [2,3], I), 
+            ([6,7], [2,3], R.T), ([11,12], [2,3], R.T)
+            ]
+        for rows, cols, value in idx_G:
+            G[np.ix_(rows, cols)] = value
+        # Add values to H
+        H[:,[1]] = b
+        H[np.ix_([0,1],[6,7])] = R
+
+        return (F,G,H,L)
 
     def define_variables_emt(self):
 
         # States 
         x = DynamicalVariables(
-            name = ['z_cc_d', 'z_cc_q', 'theta_pll', 'gamma_pll', "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
+            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c"],
             component = f"{self.type_}_{self.id}",
             init = [self.current_controller.emt_init.z_cc_d, 
                     self.current_controller.emt_init.z_cc_q,
