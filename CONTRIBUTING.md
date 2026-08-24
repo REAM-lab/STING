@@ -8,6 +8,7 @@ Below is a list of people and organizations that have contributed source code to
 - Adam Sedlak $^1$ (<asedlak@ucsd.edu>)
 - Patricia Hidalgo-Gonzalez $^1$ (<phidalgogonzalez@ucsd.edu>)
 - Paul Serna-Torre $^1$ $^\dagger$ (<psernatorre@ucsd.edu>)
+- Indu Manogaran $^1$
 - Ruth Kravis $^2$
 
 **Organizations**

@@ -1,34 +1,82 @@
 # :zap:sting:zap:
 
-Welcome! This repository contains sting—**S**pecialized **T**ool for **IN**verter-based **G**rids. STING is an open-source software that is able to run:
+Welcome! This repository contains STING—**S**pecialized **T**ool for **IN**verter-based **G**rids. STING is an open-source software that is able to run:
 
 - AC Power Flow
 - Stochastic capacity expansion
 - Kron reduction
-- Large-scale model reduction
+- Model order reduction
 - Small-signal modeling
-- Electromagnetic simulation
+- Electromagnetic transient simulation
 
 
-## Installation 
-STING is now available on PyPI (https://pypi.org/project/sting-py/)! To get the latest version of STING please install in Editable Mode, rather than through PyPI.
+## Minimum requirements to run STING
+
+> Please install Python 3.14
+
+We are actively working to support STING in the latest version of Python.
+
+> Please install all relevant solvers for your use case before running STING.
+
+Most of modules additionally require solvers that solve optimization models. For example, solving optimal power flow is needed to find an equilibrium point for small-signal modeling. We currently support and use the following libraries:
+
+| Solver | How to install        | Use                                          |
+|--------|-----------------------|----------------------------------------------|
+| IPOPT  | `brew install ipopt`  | ACOPF, Small signal modeling, EMT simulation |
+| Gurobi | `pip install gurobipy`| Capacity expansion                           |
+| MOSEK  | `pip install mosek`   | Capacity expansion                           |
+
+
+## Install STING 
+STING is available on PyPI (https://pypi.org/project/sting-py/)! 
+
 > [!WARNING]  
-> STING has been packaged under the name `sting-py`.
+> STING has been packaged in PyPI under the name `sting-py`.
 
-To install using pip use:
+To install follow the steps:
+
+1. Create a folder where you plan to have your case studies:
+```
+mkdir sting_env
+```
+2. Go to the folder:
+```
+cd sting_env
+```
+3. Create a python environment:
+```
+python3.14 -m venv .venv
+```
+4. Activate the python environment:
+```
+source .venv/bin/activate
+```
+5. Install STING in your python environment:
 ```
 pip install sting-py
 ```
-### Installing STING in Editable Mode
+6. Execute an example. This example is the construction of the state-space matrices of the small-signal model of a 9 bus system.
+```
+sting-example 9_bus_ssm
+```
 
-1. **Download STING**: Make sure you have [python3.13](https://www.python.org/downloads/release/python-31311/) installed on your computer. Using [`pyenv`](https://github.com/pyenv/pyenv) can be helpful for managing multiple versions of python on your PC. Start by cloning this repository and navigating into the STING directory.
+You can also see the prior steps executed in the following video clip. Refresh your browser to repeat the clip.
+
+<img src="images/install_sting.gif" alt="Project demo" width="800">
+
+
+Alternatively, you can also install STING in Editable Mode directly from this repository. We recommend this installation if you want to get the latest version, develop new models, and explore the framework of the modules.
+
+### Install STING in Editable Mode
+
+1. **Download STING**: Make sure you have [python3.14](https://www.python.org/downloads/release/python-31311/) installed on your computer. Using [`pyenv`](https://github.com/pyenv/pyenv) can be helpful for managing multiple versions of python on your PC. Start by cloning this repository and navigating into the STING directory.
     ```
     git clone https://github.com/REAM-lab/sting
     cd sting
     ```
     Next, create a virtual environment and download all required packages.
     ```
-    python3.13 -m venv .venv 
+    python3.14 -m venv .venv 
     source .venv/bin/activate
     pip install -e .  
     ```
@@ -38,7 +86,7 @@ pip install sting-py
 
 ### Installing STING in Project Configuration
 For research projects we recommend creating a separate directory for your project files and scripts—isolating them from the source files of STING. To install and configure STING in this manner perform the following steps.
-1.  **Download STING**: If you haven't already, install [python3.13](https://www.python.org/downloads/release/python-31311/) and clone STING
+1.  **Download STING**: If you haven't already, install [python3.14] and clone STING
     ```
     git clone https://github.com/REAM-lab/sting
     ```
@@ -46,24 +94,12 @@ For research projects we recommend creating a separate directory for your projec
     ```
     mkdir my_project
     cd my_project
-    python3.13 -m venv .venv 
+    python3.14 -m venv .venv 
     source .venv/bin/activate
     pip install -e ../sting/.
     ```
 3. **Visual Studio Code (Optional)**: If you are using Visual Studio Code as a text editor you can add STING as an "extra path". To do so go to `Preferences > Settings` and search for extra paths. Under `Python > Analysis: Extra Paths` add the global path of STING on your machine—for instance `Users/your_name/python/sting`.
 
-### Solvers
-
-Most of modules additionally require commercial or open-source solvers to run various optimization models. For example, solving optimal power flow is needed to find an equilibrium point for small-signal modeling. We currently support and use the following libraries:
-
-| Solver | How to install        | Use                |
-|--------|-----------------------|--------------------|
-| IPOPT  | `brew install ipopt`  | ACOPF              |
-| Gurobi | `pip install gurobipy`| Capacity expansion |
-| MOSEK  | `pip install mosek`   | Capacity expansion |
-
-> [!IMPORTANT]  
-> Please install all relevant solvers for your use case before running STING.
 
 
 ## Citing
