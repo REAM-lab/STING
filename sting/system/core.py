@@ -66,10 +66,8 @@ class System:
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
-<<<<<<< HEAD
     gfli_e: list[GFLIe] = None
     gfli_d: list[GFLId] = None
-=======
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
     gfli_16b: list[GFLI16B] = None
@@ -77,7 +75,6 @@ class System:
     gfmi_18b: list[GFMI18B] = None
     gfmi_18p: list[GFMI18P] = None
     gfmi_25a: list[GFMI25A] = None
->>>>>>> origin/main
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None
