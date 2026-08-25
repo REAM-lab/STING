@@ -9,10 +9,11 @@ from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
 class InitialConditionsEMT(NamedTuple):
     x_t1: float
     x_t2: float
+    t_m: float
 
 
 @dataclass(slots=True)
-class Turbine2A:
+class SteamTurbine2A:
     """
     A 2nd order simplified model of a steam turbine assuming that 
     the crossover time constant is negligible compared to the reheater
@@ -52,14 +53,14 @@ class Turbine2A:
             [  0,  1], 
             [-a0,-a1]
         ])
-        self.B = np.array([0],[1])
-        self.C = np.array([b0, b1])
+        self.B = np.array([[0],[1]])
+        self.C = np.array([[b0, b1]])
 
-    def get_steady_state(self, v_cv:float) -> InitialConditionsEMT:
+    def get_steady_state(self, v_cv:float, t_m:float=None) -> InitialConditionsEMT:
         u0 = np.array([v_cv])
         x0 = np.linalg.solve(self.A, -self.B@u0)
 
-        self.emt_init = InitialConditionsEMT(*x0)
+        self.emt_init = InitialConditionsEMT(*x0, t_m=t_m)
         return self.emt_init
 
     def get_small_signal_model(self, x_t1:float, x_t2:float, v_cv:float):
@@ -80,9 +81,9 @@ class Turbine2A:
     def get_derivatives_step_emt(self, x_t1:float, x_t2:float, v_cv:float) -> float:
         x = np.array([x_t1, x_t2])
         dx = self.A@x + self.B@np.array([v_cv])
-        return dx
+        return list(dx)
 
     def get_algebraics_step_emt(self, x_t1:float, x_t2:float) -> float:
         x = np.array([x_t1, x_t2])
         y = self.C@x
-        return y
+        return y[0]

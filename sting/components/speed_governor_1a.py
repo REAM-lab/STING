@@ -11,7 +11,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True)
-class Governor1A:
+class SpeedGovernor1A:
     """
     A 1st order model of a governor with speed-droop.
     
@@ -56,4 +56,4 @@ class Governor1A:
 
     def get_derivatives_step_emt(self, x_gov:float, p_ref:float, w:float) -> float:
         dx_gov = (1/self.tau_s) * (p_ref - (1/self.kr_pu) * w - x_gov)
-        return np.array([dx_gov])
+        return [dx_gov]

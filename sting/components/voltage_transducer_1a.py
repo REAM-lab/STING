@@ -57,7 +57,7 @@ class VoltageTransducer1A:
         The contents of this function should not be presented as original work by another author.
 
         d/dt v_c2 = (1/tau) * (-v_c2 + v_d^2 + v_q^2)
-             v_c1 = c0*u_one + c1*v_c2 + c2*v_c2**2
+             v_c = c0*u_one + c1*v_c2 + c2*v_c2**2
 
         Note: Inputs must be squared voltages. Assumes small deviations
             in voltage and small time constant.
@@ -88,4 +88,4 @@ class VoltageTransducer1A:
         u = (v_d**2 + v_q**2)**0.5
         dv_c1 = (1/self.tau_s) * (u - v_c1)
 
-        return np.array([dv_c1])
+        return [dv_c1]

@@ -11,12 +11,12 @@ from sting.components import ExcitationSystem4A, VoltageTransducer1A
 
 matplotlib.use('TkAgg')
 
-transducer = VoltageTransducer1A(tau_s=1e-5)
+transducer = VoltageTransducer1A(tau_s=5e-2)
 exciter = ExcitationSystem4A(
-    k_a=300, t_a=0.001,
-    k_e=1, t_e=1.15,
-    t_b=0.006, t_c=0.173,
-    k_f=0.001, t_f=0.1,
+    ka_pu=300, ta_s=0.001,
+    ke_pu=1, te_s=1.15,
+    tb_s=0.006, tc_s=0.173,
+    kf_pu=0.001, tf_s=0.1,
 )
 
 inputs = {
@@ -46,7 +46,7 @@ e_ssm = exciter.get_small_signal_model(
     v_s=0
 )
 t_qbm = transducer.get_quadratic_bilinear_model(v_d=inputs["v_d"](0), v_q=inputs["v_q"](0))
-
+c0, c1, c2 = transducer.get_taylor_series_constants(v_mag=v_mag)
 def emt_dynamics(t, x):
     v_c1, x_l, x_a, x_e, x_f = x 
     v_ref, v_d, v_q = [u(t) for _, u in inputs.items()]
@@ -58,8 +58,9 @@ def emt_dynamics(t, x):
 def qbm_dynamics(t, x):
     v_c1, x_l, x_a, x_e, x_f = x 
     v_ref, v_d, v_q = [u(t) for _, u in inputs.items()]
-    dx1 = t_qbm.A@np.array([v_c1]) + t_qbm.B@np.array([1, v_d**2, v_q**2])
-    dx2 = exciter.get_derivatives_step_emt_dq0(x_l, x_a, x_e, x_f, v_ref, v_c1, 0)
+    dx1 = t_qbm.A@np.array([v_c1]) + t_qbm.B@np.array([v_d**2, v_q**2])
+    v_c = c0 + c1*v_c1 + c2*v_c1**2
+    dx2 = exciter.get_derivatives_step_emt_dq0(x_l, x_a, x_e, x_f, v_ref, v_c, 0)
 
     return np.concat([dx1, dx2])
 
@@ -91,8 +92,11 @@ settings = {
 emt_sol = solve_ivp(emt_dynamics, y0=y0, **settings)
 emt_sol.y[3] += inputs["v_ref"](0)
 
-qbm_sol = solve_ivp(qbm_dynamics, y0=y0, **settings)
+y0_qbm = y0.copy()
+y0_qbm[0] *= y0_qbm[0]
+qbm_sol = solve_ivp(qbm_dynamics, y0=y0_qbm, **settings)
 qbm_sol.y[3] += inputs["v_ref"](0)
+qbm_sol.y[0] = qbm_sol.y[0]**0.5
 
 ssm_sol = solve_ivp(ssm_dynamics, y0=y0*0, **settings)
 ssm_sol.y += y0.reshape(-1, 1)
