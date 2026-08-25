@@ -47,7 +47,7 @@ class PhaseLockedLoop2A:
         )
 
     def get_small_signal_model(self, v_bus_mag, relative_phase_deg):
-        kp, ki = self.kp_rad_sec, self.ki_rad2_sec2
+        kp, ki = self.kp_rad_s, self.ki_rad2_s2
         # Compute the reference phase angle in radians
         v_mag, phase_rad = v_bus_mag, (relative_phase_deg*np.pi/180)
         wb = self.wbase
@@ -89,7 +89,7 @@ class PhaseLockedLoop2A:
 
         # States 
         x = DynamicalVariables(
-            name = ['theta_pll', 'z_pll'],
+            name = ["theta_pll", "z_pll"],
             component = f"{self.__class__.__name__}",
             init = [self.emt_init.theta_pll, self.emt_init.z_pll]
         )
@@ -124,7 +124,7 @@ class PhaseLockedLoop2A:
         _, v_q, _ = abc2dq0(v_a, v_b, v_c, theta_pll)
 
         # Compute the derivatives of the state variables for the EMT simulation step
-        d_theta_pll = (self.kp_pu * v_q) + z_pll + self.wbase
-        d_z_pll = self.ki_puHz * v_q
+        d_theta_pll = (self.kp_rad_s * v_q) + z_pll + self.wbase
+        d_z_pll = self.ki_rad2_s2 * v_q
 
         return [d_theta_pll, d_z_pll]
