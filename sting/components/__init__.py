@@ -15,6 +15,7 @@ from .parallel_rc_shunt_2b  import ParallelRCShunt2B
 from .series_rl_branch_2a import SeriesRLBranch2A
 from .series_rl_branch_2b import SeriesRLBranch2B
 from .synchronous_machine_7a import SynchronousMachine7A
+from .synchronous_machine_6a import SynchronousMachine6A
 from .excitation_system_4a import ExcitationSystem4A
 from .voltage_transducer_1a import VoltageTransducer1A
 from .dc_circuit_2a import DCCircuit2A
