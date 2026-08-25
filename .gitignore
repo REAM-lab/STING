@@ -15,6 +15,7 @@ slprj/
 *.html
 sting_log.txt
 *.csv
+*.mat
 # Ignore temp folder used for tests
 tests/tmpdir
 tests/emt_tests/tmpdir

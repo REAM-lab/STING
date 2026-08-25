@@ -10,6 +10,8 @@ from sting.utils.dynamical_systems import (
     StateSpaceModel,
 )
 
+
+
 @dataclass(slots=True)
 class ParallelRCShunt2B:
     """
@@ -28,9 +30,6 @@ class ParallelRCShunt2B:
     g_pu: float # conductance
     b_pu: float # susceptance
     wbase: float
-
-    def get_steady_state(self, v_d:float, v_q:float, i_d: float, i_q:float):
-        pass
 
     def get_small_signal_model(self, v_d:float, v_q:float, i_d: float, i_q:float):
         """
