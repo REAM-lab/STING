@@ -26,7 +26,6 @@ from sting.generator.core import Generator, CapacityFactor
 from sting.storage.core import Storage
 from sting.generator.voltage_source_4a import VoltageSource4A
 from sting.generator.voltage_source_5a import VoltageSource5A
-from sting.load.switching_load import SwitchingLoad
 from sting.generator.gfli_a import GFLIa
 from sting.generator.gfmi_c import GFMIc
 from sting.generator.gfmi_d import GFMId

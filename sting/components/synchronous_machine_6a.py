@@ -67,9 +67,10 @@ class SynchronousMachine6A:
     x_0_pu: float
     x_ad_pu: float
     x_aq_pu: float
-    x_fd_pu: float
-    x_1d_pu: float
-    x_1q_pu: float
+    x_ffd_pu: float
+    x_f1d_pu: float
+    x_11d_pu: float
+    x_11q_pu: float
     r_a_pu: float
     r_fd_pu: float
     r_1d_pu: float
@@ -93,10 +94,10 @@ class SynchronousMachine6A:
         l_ad = self.x_ad_pu
         l_aq = self.x_aq_pu
 
-        l_f1d = self.x_ad_pu
-        l_ffd = self.x_fd_pu + l_f1d
-        l_11d = self.x_1d_pu + l_f1d
-        l_11q = self.x_1q_pu + l_aq                 
+        l_ffd = self.x_ffd_pu
+        l_f1d = self.x_f1d_pu
+        l_11d = self.x_11d_pu
+        l_11q = self.x_11q_pu          
 
         r_a = self.r_a_pu
         r_fd = self.r_fd_pu
