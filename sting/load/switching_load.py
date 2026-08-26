@@ -24,10 +24,14 @@ from sting.modules.simulation_emt.utils import VariablesEMT
 class SwitchingLoad(Generator):
     r_pu: float
     x_pu: float
-    ton_sec: float
-    toff_sec: float
     tags: ClassVar[list[str]] = ["ccm_generator"]
 
+    def load_ac_power_flow_solution(self, timepoint, pf_solution):
+        return
+
+    def _calculate_emt_initial_conditions(self):
+        return
+    
     def define_variables_emt(self):
         
         # States
@@ -44,7 +48,7 @@ class SwitchingLoad(Generator):
         # ------
 
         u = DynamicalVariables(
-            name=["v_ground", "v_bus_a", "v_bus_b", "v_bus_c"],
+            name=["connect", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
             type=["device", "grid", "grid", "grid"],
             init=[0, 0, 0, 0],
@@ -58,33 +62,35 @@ class SwitchingLoad(Generator):
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
     
-    def get_derivative_state_emt(self):
+    def get_derivative_state_emt(self, x, u):
 
         # Get state values
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c = x
 
         # Get input values
-        t = self.variables_emt.x.time
-        if self.ton_sec <= t < self.toff_sec:
-            v_ground, v_bus_a, v_bus_b, v_bus_c = self.variables_emt.u.value
+        connect = u[0]
+
+        # Get input values
+        if connect:
+            v_bus_a, v_bus_b, v_bus_c = u[1], u[2], u[3]
         else:
-            v_ground, v_bus_a, v_bus_b, v_bus_c = 0, 0, 0, 0
+            v_bus_a, v_bus_b, v_bus_c = 0, 0, 0
 
         # Get parameters
-        r = self.r_pu
-        x = self.x_pu
+        rf = self.r_pu
+        xf = self.x_pu
         wb = 2 * np.pi * self.base_frequency_Hz
 
         # Differential equations
-        d_i_bus_a = wb / x * (v_ground - v_bus_a - r * i_bus_a)
-        d_i_bus_b = wb / x * (v_ground - v_bus_b - r * i_bus_b)
-        d_i_bus_c = wb / x * (v_ground - v_bus_c - r * i_bus_c)
+        d_i_bus_a = wb / xf * (0 - v_bus_a - rf * i_bus_a)
+        d_i_bus_b = wb / xf * (0 - v_bus_b - rf * i_bus_b)
+        d_i_bus_c = wb / xf * (0 - v_bus_c - rf * i_bus_c)
 
         return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
     
-    def get_output_emt(self):
+    def get_output_emt(self, x):
         
-        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+        i_bus_a, i_bus_b, i_bus_c = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
     
@@ -102,10 +108,14 @@ class SwitchingLoad(Generator):
         
         i_bus_d, i_bus_q, _ = zip(*map(abc2dq0, i_bus_a, i_bus_b, i_bus_c, angle_ref))
 
+        # Power
+        p = self.r_pu * (np.array(i_bus_d) ** 2 + np.array(i_bus_q) ** 2)
+        q = self.x_pu * (np.array(i_bus_d) ** 2 + np.array(i_bus_q) ** 2)
+
         results = DynamicalVariables(
-            name=["i_bus_d", "i_bus_q"],
+            name=["i_bus_d", "i_bus_q", "p", "q"],
             component=f"{self.type_}_{self.id}",
-            value=[i_bus_d, i_bus_q],
+            value=[i_bus_d, i_bus_q, p, q],
             time=time,
         )
         return results

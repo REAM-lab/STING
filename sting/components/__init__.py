@@ -20,5 +20,7 @@ from .series_rl_branch_2b import SeriesRLBranch2B
 from .speed_governor_1a import SpeedGovernor1A
 from .steam_turbine_2a import SteamTurbine2A
 from .synchronous_machine_7a import SynchronousMachine7A
+from .synchronous_machine_6a import SynchronousMachine6A
+from .excitation_system_4a import ExcitationSystem4A
 from .voltage_droop_controller_1a import VoltageDroopController1A
 from .voltage_transducer_1a import VoltageTransducer1A
