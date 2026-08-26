@@ -17,26 +17,6 @@ from sting.modules.simulation_emt.utils import VariablesEMT
 
 from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
 
-def abc2dq_H(x_a, x_b, x_c, theta):
-    K = (2/3)*np.array([ [ 1/2,   1/2,            1/2],
-                         [np.cos(theta),  np.cos(theta-2*np.pi/3), np.cos(theta+2*np.pi/3)], 
-                         [np.sin(theta), np.sin(theta-2*np.pi/3), np.sin(theta+2*np.pi/3)]])
-        
-    x_0dq = np.matmul(K, np.array([ x_a, x_b, x_c ]))
-    x_0, x_d, x_q = x_0dq[0], x_0dq[1], x_0dq[2]
-
-    return x_0, x_d, x_q
-
-def dq2abc_H(x_0, x_d, x_q, theta):
-    K = np.array([ [1, np.cos(theta),              np.sin(theta)],
-                   [1, np.cos(theta - 2*np.pi/3),  np.sin(theta - 2*np.pi/3)],
-                   [1, np.cos(theta + 2*np.pi/3),  np.sin(theta + 2*np.pi/3)]])
-    
-    x_abc = np.matmul(K, np.array([ x_0, x_d, x_q ]))
-    x_a, x_b, x_c = x_abc[0], x_abc[1], x_abc[2]
-
-    return x_a, x_b, x_c
-
 # ------------------
 # Import sting code
 # ------------------
@@ -85,6 +65,47 @@ class SynchronousMachine6A:
     def __post_init__(self):
         self._compute_dynamics_matrices()
 
+    @classmethod
+    def from_standard_parameters(cls,   x_d_pu, x_q_pu, x_l_pu, x_0_pu,
+                                        x_td_pu, x_tq_pu, 
+                                        x_std_pu, x_stq_pu,
+                                        t_td0_s, t_tq0_s, t_std0_s, t_stq0_s,
+                                        r_a_pu,
+                                        w_base,
+                                        x_f1d_pu=None):
+        """Compute the machine fundamental parameters from the standard parameters"""
+        # Compute unsaturated reactances
+        x_ad = x_d_pu - x_l_pu
+        x_aq = x_q_pu - x_l_pu
+
+        # Compute rotor leakage reactances
+        x_fd = ( 1/(x_td_pu - x_l_pu) - 1/(x_ad) )**(-1)  
+        x_1q = ( 1/(x_tq_pu - x_l_pu) - 1/(x_aq) )**(-1)
+
+        x_1d = ( 1/(x_std_pu - x_l_pu) - 1/(x_fd) - 1/(x_ad) )**(-1)
+        x_2q = ( 1/(x_stq_pu - x_l_pu) - 1/(x_1q) - 1/(x_aq) )**(-1)
+
+        # Compute rotor resistances
+        r_fd = 1/(t_td0_s * w_base) * (x_ad + x_fd)
+        r_1d = 1/(t_std0_s * w_base) * (x_1d + (x_ad * x_fd)/(x_ad + x_fd))
+
+        r_1q = 1/(t_tq0_s * w_base) * (x_aq + x_1q)
+        r_2q = 1/(t_stq0_s * w_base) * (x_2q + (x_aq * x_1q)/(x_aq + x_1q))
+
+        # The field to damper inductance, l_f1d, is typically assumed to 
+        # be equal to the inductance l_ad
+        if x_f1d_pu is None:
+            x_f1d_pu = x_ad
+
+        return cls(
+                x_d_pu=x_d_pu, x_q_pu=x_q_pu, x_0_pu=x_0_pu,
+                x_ad_pu=x_ad, x_aq_pu=x_aq,
+                x_fd_pu=x_fd, x_1d_pu=x_1d, x_1q_pu=x_1q, x_2q_pu=x_2q,
+                r_fd_pu=r_fd, r_1d_pu=r_1d, r_1q_pu=r_1q, r_2q_pu=r_2q,
+                w_base=w_base,
+                x_f1d_pu=x_f1d_pu
+                )
+        
     def _compute_dynamics_matrices(self):
 
         # Define the inductance matrix
