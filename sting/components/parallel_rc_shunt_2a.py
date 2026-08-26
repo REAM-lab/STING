@@ -48,7 +48,7 @@ class ParallelRCShunt2A:
         if (v_D is None) or (v_Q is None):
             raise ValueError("Have not implemented initial conditions yet.")
 
-        v_a, v_b, v_c = dq02abc(v_D, v_Q, 0, np.angle(v_D + 1j*v_Q))
+        v_a, v_b, v_c = dq02abc(v_D, v_Q, 0, 0)
 
         self.emt_init = InitialConditionsEMT(
             i_D=i_D, 

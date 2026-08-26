@@ -46,8 +46,8 @@ class SeriesRLBranch2A:
         if (i_D is None) or (i_Q is None):
             raise ValueError("Have not implemented initial conditions yet.")
 
-        i_a, i_b, i_c = dq02abc(i_D, i_Q, 0, np.angle(i_D + 1j*i_Q))
-        v_to_a, v_to_b, v_to_c = dq02abc(v_to_D, v_to_Q, 0, np.angle(v_to_D + 1j*v_to_Q))
+        i_a, i_b, i_c = dq02abc(i_D, i_Q, 0, 0)
+        v_to_a, v_to_b, v_to_c = dq02abc(v_to_D, v_to_Q, 0, 0)
         
         self.emt_init = InitialConditionsEMT(
             v_from_D=v_from_D,

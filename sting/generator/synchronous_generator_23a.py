@@ -153,10 +153,10 @@ class SynchronousGenerator23A(Generator):
             v_D=v_sh_DQ.real, v_Q=v_sh_DQ.imag,
         )
         sm_init = self.machine.get_steady_state(
-            v_ref_angle = np.angle(v_sh_DQ), 
-            v_ref_mag = v_ref_mag,
-            p_ref = p_ref,
-            q_ref = q_ref,
+            v_angle_deg = np.angle(v_sh_DQ, deg=True), 
+            v_mag = v_ref_mag,
+            p = p_ref,
+            q = q_ref,
         )
         t_e = self.machine.electrical_torque(
             i_d=sm_init.i_d, i_fd=sm_init.i_fd, i_1d=sm_init.i_1d,
@@ -166,7 +166,8 @@ class SynchronousGenerator23A(Generator):
 
         self.transducer.get_steady_state(v_d=v_sh_DQ.real, v_q=v_sh_DQ.imag)
         self.exciter.get_steady_state(v_ref=v_ref_mag, v_c=v_ref_mag, v_s=0)
-        gov_init = self.governor.get_steady_state(p_ref=p_ref, w=1)
+        # Governor states are the change relative to nominal
+        gov_init = self.governor.get_steady_state(p_ref=0, w=0)
         self.turbine.get_steady_state(v_cv=gov_init.x_gov, t_m=t_m)
         self.shaft.get_steady_state(p_ref=p_ref, angle=self.machine.emt_init.angle, w=1)
 
@@ -253,9 +254,10 @@ class SynchronousGenerator23A(Generator):
         # -------------------- #
         # The speed-governor state *is* the change in the turbine control valve
         v_cv = x_gov
-        # Compute the exciter output field voltage
-        # Note: This step is adding the initial field voltage back
-        v_fd = self.exciter.get_algebraics_step_emt_dq0(x_l=x_l, x_a=x_a, x_e=x_e, x_f=x_f)
+        delta_p_ref = p_ref - self.shaft.emt_init.p_ref
+        delta_w = w - 1
+        # Compute the exciter output field voltage by adding the initial field voltage back
+        v_fd = x_e + self.machine.emt_init.v_fd
         # Shunt voltage abc to dq0
         v_sh_d, v_sh_q, v_sh_0 = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle)
         # Synchronous machine dq0 to abc
@@ -278,7 +280,7 @@ class SynchronousGenerator23A(Generator):
         # ----------------------- #
         dx = []
         dx += self.shaft.get_derivatives_step_emt_abc(w=w, p_ref=p_ref, p=p)
-        dx += self.governor.get_derivatives_step_emt(x_gov=x_gov, p_ref=p_ref, w=w)
+        dx += self.governor.get_derivatives_step_emt(x_gov=x_gov, p_ref=delta_p_ref, w=delta_w)
         dx += self.turbine.get_derivatives_step_emt(x_t1=x_t1, x_t2=x_t2, v_cv=v_cv)
         dx += self.machine.get_derivatives_step_emt_dq0(
             i_d=i_d, i_q=i_q, i_0=i_0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, i_2q=i_2q,
@@ -312,4 +314,36 @@ class SynchronousGenerator23A(Generator):
         return [i_bus_a, i_bus_b, i_bus_c]
     
     def plot_results_emt(self):
-        pass
+        angle, w, \
+        x_gov, x_t1, x_t2, \
+        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, \
+        v_c, x_l, x_a, x_e, x_f, \
+        v_sh_a, v_sh_b, v_sh_c, \
+        i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
+
+        # Transform abc to dq0
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle)])
+
+        names = [
+            "angle", "w", 
+            "governor", "turbine_x1", "turbine_x2", 
+            "i_stator_d", "i_stator_q", "i_stator_0", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", 
+            "transducer_vmag","exciter_leadlag","exciter_amplifier","exciter_exciter","exciter_damper", 
+            "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"
+        ]
+        values = [
+            angle, w,
+            x_gov, x_t1, x_t2,
+            i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q,
+            v_c, x_l, x_a, x_e, x_f, 
+            v_sh_d, v_sh_q, i_bus_d, i_bus_q 
+            ]
+
+        results = DynamicalVariables(
+            name=names,
+            component=f"{self.type_}_{self.id}",
+            value=values,
+            time=self.variables_emt.x.time
+        )
+        return results

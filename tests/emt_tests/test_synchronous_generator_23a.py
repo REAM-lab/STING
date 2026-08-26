@@ -15,11 +15,20 @@ from sting.utils.transformations import dq02abc, abc2dq0
 
 matplotlib.use('TkAgg')
 
+# Set up a temporary directory used by all tests
+case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
+os.makedirs(case_directory, exist_ok=True)
+
+
 gen = SynchronousGenerator23A(
-    bus="bus_1",
+    bus="bus_2", name="gen1",
+    # Power flow 
+    minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+    cost_variable_USDperMWh=10,
+    # Per unit system
     base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # Shaft, governor and turbine parameters Kundur (page 598)
-    h_s=10, kd_w_pu=1,                         # Shaft
+    h_s=10, kd_w_pu=1,                       # Shaft
     kr_pu=0.05, tau_g_s=0.2,                 # Governor
     tau_rh_s=7.0, f_hp_pu=0.3, tau_ch_s=0.3, # Turbine parameters
     # Machine parameters Kundur (page 155)
@@ -30,7 +39,7 @@ gen = SynchronousGenerator23A(
     # Excitor parameters Kundur (page 364)
     ka_pu=187, ta_s=0.89, te_s=1.15, kf_pu=0.058,
     tf_s=0.62, tb_s=0.06, tc_s=0.173, tau_v_s=0.05,
-    ke_pu=1, # TODO: Compute this value
+    ke_pu=1, 
     # Shunt
     csh_pu=0.066, rsh_pu=10,
     # Branch and transformer
@@ -38,15 +47,25 @@ gen = SynchronousGenerator23A(
     txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
 )
 
-# Power flow
+system = datasets.toy_2(case_directory=case_directory)
+system.add(gen)
+system.apply("post_system_init", system)
+
+inputs = {
+    "synchronous_generator_23a_0": {
+        "p_ref": lambda t: 0.1 if t > 0.1 else 0
+    }
+}
+t_max=2
+
+main.run_emt(t_max, inputs, case_directory, system=system)
+
+"""# Power flow
 pf_sol = PowerFlowVariables(
     vmag_bus = 1.0,
-    vphase_bus= 0,
+    vphase_bus= 10,
     p_bus = 1,
     q_bus = 0.2)
-
-
-
 
 gen.power_flow_variables = pf_sol
 gen._calculate_emt_initial_conditions()
@@ -64,7 +83,7 @@ gen.define_variables_emt()
 
 dx = gen.get_derivative_state_emt(x=gen.variables_emt.x.init, u=u0)
 
-for i, x in enumerate(np.array(dx) - np.array(gen.variables_emt.x.init)):
-    print(gen.variables_emt.x.name[i], x)
+for i, x in enumerate(dx):
+    print(gen.variables_emt.x.name[i], x)"""
 
 print("ok")

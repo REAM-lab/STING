@@ -162,8 +162,3 @@ class ExcitationSystem4A:
         u = np.array([v_ref, v_c, v_s])
 
         return list(self.A@x + self.B@u)
-
-    def get_algebraics_step_emt_dq0(self, x_l: float, x_a: float, x_e: float, x_f: float):
-        x = np.array([x_l, x_a, x_e, x_f])
-
-        return (self.C@x + self.emt_init.v_ref)[0]
