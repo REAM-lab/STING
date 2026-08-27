@@ -4,7 +4,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import NamedTuple
-from scipy.linalg import inv
+from scipy.linalg import inv, solve
 import copy
 
 # ------------------
@@ -215,7 +215,7 @@ class SynchronousMachine7A:
             [    0,-l_aq,    0,    0,    0,l_11q, l_aq], # λ_1q
             [    0,-l_aq,    0,    0,    0, l_aq,l_22q], # λ_2q
         ])
-        invL = inv(L)
+        invL = solve(L, np.eye(7))
 
         R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q, -r_2q])
 

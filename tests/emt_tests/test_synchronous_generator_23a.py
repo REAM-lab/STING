@@ -39,7 +39,9 @@ gen = SynchronousGenerator23A(
     # Excitor parameters Kundur (page 364)
     ka_pu=187, ta_s=0.89, te_s=1.15, kf_pu=0.058,
     tf_s=0.62, tb_s=0.06, tc_s=0.173, tau_v_s=0.05,
-    ke_pu=1, 
+    ke_pu=1,
+    #ka_pu=300, ta_s=0.001, ke_pu=1, te_s=0.0001, tb_s=0.0001, tc_s=0, kf_pu=0.001, tf_s=0.1,
+    #tau_v_s=20e-3, 
     # Shunt
     csh_pu=0.066, rsh_pu=10,
     # Branch and transformer
@@ -56,7 +58,7 @@ inputs = {
         "p_ref": lambda t: 0.1 if t > 0.1 else 0
     }
 }
-t_max=2
+t_max=10
 
 main.run_emt(t_max, inputs, case_directory, system=system)
 

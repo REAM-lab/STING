@@ -162,7 +162,7 @@ class SynchronousGenerator23A(Generator):
             i_d=sm_init.i_d, i_fd=sm_init.i_fd, i_1d=sm_init.i_1d,
             i_q=sm_init.i_q, i_1q=sm_init.i_1q, i_2q=sm_init.i_2q)
         # Initial per unit mechanical torque by balancing torques
-        t_m = p_ref + t_e
+        t_m = t_e
 
         self.transducer.get_steady_state(v_d=v_sh_DQ.real, v_q=v_sh_DQ.imag)
         self.exciter.get_steady_state(v_ref=v_ref_mag, v_c=v_ref_mag, v_s=0)
@@ -238,7 +238,7 @@ class SynchronousGenerator23A(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
     
-    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+    def __get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         # Unpacking states and inputs
         angle, w, \
         x_gov, x_t1, x_t2, \
@@ -279,7 +279,7 @@ class SynchronousGenerator23A(Generator):
         # Differential operations #
         # ----------------------- #
         dx = []
-        dx += self.shaft.get_derivatives_step_emt_abc(w=w, p_ref=p_ref, p=p)
+        dx += self.shaft.get_derivatives_step_emt_abc(w=w, p_ref=t_m, p=t_e)
         dx += self.governor.get_derivatives_step_emt(x_gov=x_gov, p_ref=delta_p_ref, w=delta_w)
         dx += self.turbine.get_derivatives_step_emt(x_t1=x_t1, x_t2=x_t2, v_cv=v_cv)
         dx += self.machine.get_derivatives_step_emt_dq0(
@@ -300,6 +300,77 @@ class SynchronousGenerator23A(Generator):
             v_from_a=v_sh_a, v_from_b=v_sh_b, v_from_c=v_sh_c, 
             v_to_a=v_bus_a, v_to_b=v_bus_b, v_to_c=v_bus_c
             )
+
+        return dx
+
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        # Unpacking states and inputs
+        angle, w, \
+        x_gov, x_t1, x_t2, \
+        i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, \
+        v_c, x_l, x_a, x_e, x_f, \
+        v_sh_a, v_sh_b, v_sh_c, \
+        i_bus_a, i_bus_b, i_bus_c = x
+
+        p_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = u
+
+        # -------------------- #
+        # Algebraic operations #
+        # -------------------- #
+        # The speed-governor state *is* the change in the turbine control valve
+        v_cv = x_gov
+        delta_p_ref = p_ref - self.shaft.emt_init.p_ref
+        delta_w = w - 1
+        # Compute the exciter output field voltage by adding the initial field voltage back
+        v_fd = x_e + self.machine.emt_init.v_fd
+        # Shunt voltage abc to dq0
+
+        v_DQ = self.rc_shunt.emt_init.v_D + 1j*self.rc_shunt.emt_init.v_Q
+        v_dq = v_DQ*np.exp(-1j*self.machine.emt_init.angle)
+
+        v_sh_d, v_sh_q, v_sh_0 = abc2dq0(v_sh_a, v_sh_b, v_sh_c, angle)
+        # Synchronous machine dq0 to abc
+        i_sm_a, i_sm_b, i_sm_c = dq02abc(
+            self.machine.emt_init.i_d, self.machine.emt_init.i_q, i_0, angle)
+        # Flow of current into the shunt by KCL
+        i_sh_a = i_sm_a - i_bus_a
+        i_sh_b = i_sm_b - i_bus_b
+        i_sh_c = i_sm_c - i_bus_c
+        # Change in mechanical torque on the turbine
+        delta_t_m = self.turbine.get_algebraics_step_emt(x_t1=x_t1, x_t2=x_t2)
+        # Add back initial conditions to get absolute torque
+        t_m = self.turbine.emt_init.t_m + delta_t_m
+        # Air gap torque
+        t_e = self.machine.electrical_torque( 
+            i_d=i_d, i_q=i_q, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, i_2q=i_2q)
+        # Net accelerating torque on the shaft
+        p = t_m - t_e
+        # ----------------------- #
+        # Differential operations #
+        # ----------------------- #
+        dx = []
+        dx += self.shaft.get_derivatives_step_emt_abc(w=w, p_ref=t_m, p=t_e)
+        dx += self.governor.get_derivatives_step_emt(x_gov=x_gov, p_ref=delta_p_ref, w=delta_w)
+        dx += self.turbine.get_derivatives_step_emt(x_t1=x_t1, x_t2=x_t2, v_cv=v_cv)
+        dx += self.machine.get_derivatives_step_emt_dq0(
+            i_d=i_d, i_q=i_q, i_0=i_0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, i_2q=i_2q,
+            v_d=v_dq.real, v_q=v_dq.imag, v_0=v_sh_0, v_fd=v_fd, w=w
+            )
+        dx += self.transducer.get_derivatives_step_emt_dq0(v_c1=v_c, v_d=v_dq.real, v_q=v_dq.imag)
+        dx += self.exciter.get_derivatives_step_emt_dq0(
+            x_l=x_l, x_a=x_a, x_e=x_e, x_f=x_f, 
+            v_ref=v_ref, v_c=v_c, v_s=0
+            )
+        dx += self.rc_shunt.get_derivatives_step_emt_abc(
+            v_sh_a=v_sh_a, v_sh_b=v_sh_b, v_sh_c=v_sh_c, 
+            i_sh_a=i_sh_a, i_sh_b=i_sh_b, i_sh_c=i_sh_c
+            )
+        dx += self.rl_branch.get_derivatives_step_emt_abc(
+            i_a=i_bus_a, i_b=i_bus_b, i_c=i_bus_c,
+            v_from_a=v_sh_a, v_from_b=v_sh_b, v_from_c=v_sh_c, 
+            v_to_a=v_bus_a, v_to_b=v_bus_b, v_to_c=v_bus_c
+            )
+        #dx[0] = self.wbase
 
         return dx
 
