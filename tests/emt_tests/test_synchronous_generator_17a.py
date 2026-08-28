@@ -3,15 +3,10 @@ import os
 import matplotlib
 import numpy as np
 import polars as pl
-import pylab as plt
-from scipy.integrate import solve_ivp
 
 from sting import datasets, main
 from sting.generator import SynchronousGenerator17A
-
-from sting.generator.core import PowerFlowVariables
-from sting.utils.dynamical_systems import make_smooth_step
-from sting.utils.transformations import dq02abc, abc2dq0
+from sting.utils.plotting_tools import compare_timeseries
 
 matplotlib.use('TkAgg')
 
@@ -52,6 +47,24 @@ inputs = {
         "v_ref": lambda t: 0.1 if t > 0.1 else 0
     }
 }
-t_max=10
+t_max=5
 
 main.run_emt(t_max, inputs, case_directory, system=system)
+_, ssm = main.run_ssm(case_directory, system=system)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+
+
+# Compare the results of the EMT and small-signal model simulations
+file = "synchronous_generator_17a_0.csv"
+cols_emt =["i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
+cols_ssm = ["i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_ssm)),
+    df1_name="EMT",
+    df2_name="SSM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)

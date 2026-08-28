@@ -140,11 +140,77 @@ class SynchronousGenerator17A(Generator):
             q = q_ref,
         )
         self.transducer.get_steady_state(v_d=v_sh_DQ.real, v_q=v_sh_DQ.imag)
-        self.exciter.get_steady_state(v_ref=v_ref_mag, v_c=v_ref_mag, v_s=0)
+        self.exciter.get_steady_state(v_ref=v_ref_mag, v_mag=v_ref_mag, v_stab=0)
 
 
     def _build_small_signal_model(self):
-        pass
+
+        machine_ssm = self.machine.get_small_signal_model(
+            i_d   = self.machine.emt_init.i_d,
+            i_q   = self.machine.emt_init.i_q,
+            i_0   = 0,
+            i_fd  = self.machine.emt_init.i_fd,
+            i_1d  = self.machine.emt_init.i_1d,
+            i_1q  = self.machine.emt_init.i_1q,
+            i_2q  = self.machine.emt_init.i_2q,
+            v_d   = self.machine.emt_init.v_d, 
+            v_q   = self.machine.emt_init.v_q, 
+            v_0   = 0, 
+            v_fd  = self.machine.emt_init.v_fd, 
+            w     = 1
+        )
+
+        transducer_ssm = self.transducer.get_small_signal_model(
+            v_d = self.rc_shunt.emt_init.v_D,
+            v_q = self.rc_shunt.emt_init.v_Q,
+        )
+        exciter_ssm = self.exciter.get_small_signal_model(
+            x_l = self.exciter.emt_init.x_l,
+            x_a = self.exciter.emt_init.x_a,
+            x_e = self.exciter.emt_init.x_e,
+            x_f = self.exciter.emt_init.x_f,
+            v_ref = self.exciter.emt_init.v_ref,
+            v_mag = self.transducer.emt_init.v_mag,
+            v_stab = 0,
+        )
+
+        shunt_ssm = self.rc_shunt.get_small_signal_model(
+            v_D = self.rc_shunt.emt_init.v_D,
+            v_Q = self.rc_shunt.emt_init.v_Q, 
+            i_D = self.rc_shunt.emt_init.i_D,
+            i_Q = self.rc_shunt.emt_init.i_Q,  
+        )
+        branch_ssm = self.rl_branch.get_small_signal_model(
+            v_from_D = self.rl_branch.emt_init.v_from_D,
+            v_from_Q = self.rl_branch.emt_init.v_from_Q,
+            v_to_D   = self.rl_branch.emt_init.v_to_D,
+            v_to_Q   = self.rl_branch.emt_init.v_to_Q,
+            i_D      = self.rl_branch.emt_init.i_D,
+            i_Q      = self.rl_branch.emt_init.i_Q,
+        )
+
+        u = DynamicalVariables(
+            name=["v_ref", "v_bus_D", "v_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            type=["device", "grid", "grid"],
+            init=[
+                self.machine.emt_init.v_fd, 
+                self.rl_branch.emt_init.v_to_D,
+                self.rl_branch.emt_init.v_to_Q]
+        )
+
+        y = DynamicalVariables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            init=[self.rl_branch.emt_init.i_D, self.rl_branch.emt_init.i_Q]
+        )
+
+        # Generate small-signal model
+        components = [machine_ssm, transducer_ssm, exciter_ssm, shunt_ssm, branch_ssm]
+        connections = self.get_interconnections_ssm(self.machine.emt_init.angle)
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.ssm
 
     def get_interconnections_ssm(self, angle_rad):
         """       
@@ -177,6 +243,8 @@ class SynchronousGenerator17A(Generator):
         Grid    0,1      i_bus_DQ  │ 0      0     0      0         0        0       0           I₂         │ 0      0
         outputs 
         """
+        
+        
         # Number of stacked/grid side inputs and outputs
         u_stack = 16
         y_stack = 13
@@ -194,10 +262,9 @@ class SynchronousGenerator17A(Generator):
         L22 = np.zeros((y_grid, u_grid))
 
         # Row, column, value tuples for each matrix
-        idx_11 = []
-
-        idx_12 = []
-        idx_21 = []
+        idx_11 = [([0,1],[9,10],R.T), ([3],[8], 1), ([5,6],[9,10],I), ([8],[7],1), ([10,11],[11,12],-I), ([10,11], [0,1], R), ([12,13],[9,10],I)]
+        idx_12 = [([7],[0],1), ([14,15],[1,2],I)]
+        idx_21 =[([0,1],[11,12],I)]
 
         # Fill out each matrix
         matrix_index_pairs =  [(L11, idx_11), (L12, idx_12), (L21, idx_21)]
@@ -299,7 +366,7 @@ class SynchronousGenerator17A(Generator):
         dx += self.transducer.get_derivatives_step_emt_dq0(v_mag=v_mag, v_d=v_sh_d, v_q=v_sh_q)
         dx += self.exciter.get_derivatives_step_emt_dq0(
             x_l=x_l, x_a=x_a, x_e=x_e, x_f=x_f, 
-            v_ref=v_ref, v_mag=v_mag, v_s=0
+            v_ref=v_ref, v_mag=v_mag, v_stab=0
             )
         dx += self.rc_shunt.get_derivatives_step_emt_abc(
             v_sh_a=v_sh_a, v_sh_b=v_sh_b, v_sh_c=v_sh_c, 
@@ -331,14 +398,15 @@ class SynchronousGenerator17A(Generator):
         i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
 
         # Transform abc to dq0
-        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle)])
-        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle)])
+        grid_angle = self.wbase*self.variables_emt.x.time
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, grid_angle)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, grid_angle)])
 
         names = [
             "angle",
             "i_stator_d", "i_stator_q", "i_stator_0", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", 
             "transducer_vmag","exciter_leadlag","exciter_amplifier","exciter_exciter","exciter_damper", 
-            "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"
+            "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"
         ]
         values = [
             angle,
