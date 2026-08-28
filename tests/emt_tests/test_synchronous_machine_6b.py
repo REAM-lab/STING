@@ -143,7 +143,7 @@ for eig in eigenvalues:
 v_fd = 400/v_fd_base
 def step(t, x):
     i_d, i_q, i_0, i_fd, i_1d, i_1q, angle = x
-    dx  = sm.get_derivatives_step_emt_dq0( i_d, i_q, i_0, i_fd, i_1d, i_1q, 0, 0, 0, v_fd, 1)
+    dx  = sm.get_derivatives_step_emt_dq0(i_d=i_d, i_q=i_q, i_0=i_0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, v_d=0, v_q=0, v_0=0, v_fd=v_fd, w=1)
     d_angle = w_base 
     return np.concatenate((dx, [d_angle]))
 
@@ -153,7 +153,7 @@ x0 = [0, # i_0
       v_fd/r_fd_pu, # i_fd
       0, # i_1d
       0, # i_1q 
-      np.pi/2] # angle
+      -np.pi/2] # angle
 # Solve
 sol = solve_ivp(
     fun=step, 
@@ -168,8 +168,8 @@ sol = solve_ivp(
 #sin(a+pi/2) = cos(a)
 
 # Transform to abc
-i_d = -sol.y[0]
-i_q = -sol.y[1]
+i_d = sol.y[0]
+i_q = sol.y[1]
 i_0 = sol.y[2]
 i_fd = sol.y[3]
 i_1d = sol.y[4]

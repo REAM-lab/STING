@@ -447,4 +447,4 @@ class SynchronousMachine7A:
         psi_d = -self.x_d_pu*i_d + self.x_ad_pu*(i_fd + i_1d)
         psi_q = -self.x_q_pu*i_q + self.x_aq_pu*(i_1q + i_2q)
 
-        return psi_d*i_d - psi_q*i_q
+        return psi_d*i_q - psi_q*i_d

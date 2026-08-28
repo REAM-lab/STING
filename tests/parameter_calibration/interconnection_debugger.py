@@ -14,8 +14,6 @@ Active and reactive power
     q = v_q * i_d - v_d * i_q
 """
 
-
-
 import numpy as np
 import sympy as sp
 

@@ -238,7 +238,7 @@ class SynchronousGenerator23A(Generator):
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
     
-    def __get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         # Unpacking states and inputs
         angle, w, \
         x_gov, x_t1, x_t2, \
@@ -303,7 +303,7 @@ class SynchronousGenerator23A(Generator):
 
         return dx
 
-    def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+    def __get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         # Unpacking states and inputs
         angle, w, \
         x_gov, x_t1, x_t2, \

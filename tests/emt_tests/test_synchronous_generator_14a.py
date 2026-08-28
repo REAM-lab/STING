@@ -13,6 +13,8 @@ from sting.generator.core import PowerFlowVariables
 from sting.utils.dynamical_systems import make_smooth_step
 from sting.utils.transformations import dq02abc, abc2dq0
 
+from sting.utils.plotting_tools import compare_timeseries
+
 matplotlib.use('TkAgg')
 
 # Set up a temporary directory used by all tests
@@ -23,12 +25,12 @@ os.makedirs(case_directory, exist_ok=True)
 gen = SynchronousGenerator14A(
     bus="bus_2", name="gen1",
     # Power flow 
-    minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+    minimum_active_power_MW=40, maximum_active_power_MW=50, minimum_reactive_power_MVAR=-10, maximum_reactive_power_MVAR=10,
     cost_variable_USDperMWh=10,
     # Per unit system
     base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
     # Shaft, governor and turbine parameters Kundur (page 598)
-    h_s=10, kd_w_pu=100,                       # Shaft
+    h_s=2, kd_w_pu=100,                       # Shaft
     kr_pu=0.05, tau_g_s=0.2,                 # Governor
     # Machine parameters Kundur (page 155)
     x_d_pu=1.81, x_q_pu=1.76, x_l_pu = 0.15, r_a_pu=0.003, 
@@ -48,38 +50,32 @@ system.apply("post_system_init", system)
 
 inputs = {
     "synchronous_generator_14a_0": {
-        #"p_ref": lambda t: -0.1 if t > 0.1 else 0,
-        #"v_ref": lambda t: 0.1 if t > 0.1 else 0
+        "p_ref": lambda t: -0.2 if t > 0.1 else 0,
+        "v_ref": lambda t: 0.2 if t > 1.1 else 0
     }
 }
-t_max=0.8
+t_max=2.5
 
 main.run_emt(t_max, inputs, case_directory, system=system)
+_, ssm = main.run_ssm(case_directory, system=system)
+ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
-"""# Power flow
-pf_sol = PowerFlowVariables(
-    vmag_bus = 1.0,
-    vphase_bus= 10,
-    p_bus = 1,
-    q_bus = 0.2)
 
-gen.power_flow_variables = pf_sol
-gen._calculate_emt_initial_conditions()
-inputs = {
-    "p_ref": lambda t: gen.shaft.emt_init.p_ref,
-    "v_set": lambda t: gen.machine.emt_init.v_fd,
-    "v_bus_a": lambda t: np.sqrt(2) * pf_sol.vmag_bus * np.cos(pf_sol.vphase_bus * np.pi / 180 + 2 * np.pi * 60 * t),
-    "v_bus_b": lambda t: np.sqrt(2) * pf_sol.vmag_bus * np.cos(pf_sol.vphase_bus * np.pi / 180 - (2 * np.pi / 3) + 2 * np.pi * 60 * t),
-    "v_bus_c": lambda t: np.sqrt(2) * pf_sol.vmag_bus * np.cos(pf_sol.vphase_bus * np.pi / 180 + (2 * np.pi / 3) + 2 * np.pi * 60 * t),
-}
+# Compare the results of the EMT and small-signal model simulations
+file = "synchronous_generator_14a_0.csv"
+cols_emt =["w", "governor", "i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
+cols_ssm = ["w", "x_gov", "i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_ssm)),
+    df1_name="EMT",
+    df2_name="SSM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
 
-u0 = [u(0) for u in inputs.values()]
 
-gen.define_variables_emt()
-
-dx = gen.get_derivative_state_emt(x=gen.variables_emt.x.init, u=u0)
-
-for i, x in enumerate(dx):
-    print(gen.variables_emt.x.name[i], x)"""
 
 print("ok")

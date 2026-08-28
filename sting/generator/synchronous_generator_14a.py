@@ -1,10 +1,7 @@
-import os
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
 import numpy as np
-import plotly.graph_objects as go
-import polars as pl
 
 from sting.components import (
     ParallelRCShunt2A,
@@ -15,8 +12,7 @@ from sting.components import (
 )
 from sting.generator.core import Generator
 from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
-from sting.utils.transformations import abc2dq0, dq02abc
-
+from sting.utils.transformations import dq02abc, abc2dq0, R_dq2DQ, R_DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
 
 class VariablesEMT(NamedTuple):
     x: DynamicalVariables
@@ -27,7 +23,10 @@ class VariablesEMT(NamedTuple):
 @dataclass(slots=True, kw_only=True, eq=False)
 class SynchronousGenerator14A(Generator):
     """
-    pass
+    Models a synchronous generator consisting of a:
+    - 7th order machine
+    - 3rd order governor + rotational inertia
+    - 4th order RC shunt + transformer
     """
     # Shaft
     h_s: float
@@ -144,7 +143,164 @@ class SynchronousGenerator14A(Generator):
 
 
     def _build_small_signal_model(self):
-        pass
+
+        # Initial conditions of the machine
+        i_d = self.machine.emt_init.i_d
+        i_q = self.machine.emt_init.i_q
+        i_fd = self.machine.emt_init.i_fd
+        i_1d = self.machine.emt_init.i_1d
+        i_1q = self.machine.emt_init.i_1q
+        i_2q = self.machine.emt_init.i_2q
+        angle = self.machine.emt_init.angle
+
+        psi_d = -self.machine.x_d_pu*i_d + self.machine.x_ad_pu*(i_fd + i_1d)
+        psi_q = -self.machine.x_q_pu*i_q + self.machine.x_aq_pu*(i_1q + i_2q)
+        t_e = self.machine.electrical_torque(
+            i_d=i_d, i_fd=i_fd, i_1d=i_1d, i_q=i_q, i_1q=i_1q, i_2q=i_2q
+        )
+        # T_e = λ_d*i_q - λ_q*i_d
+        shaft_ssm = self.shaft.get_small_signal_model(
+            i_d=i_d, i_q=i_q, v_d=-psi_q, v_q=psi_d, p_ref=t_e, angle=angle
+        )
+        # Note: Governor states are the change relative to nominal
+        governor_ssm = self.governor.get_small_signal_model(
+            x_gov=self.governor.emt_init.x_gov, p_ref=0, w=0
+        )
+        machine_ssm = self.machine.get_small_signal_model(
+            i_d=i_d, i_q=i_q, i_0=0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, i_2q=i_2q,
+            v_d=self.machine.emt_init.v_d, v_q=self.machine.emt_init.v_q, v_0=0, 
+            v_fd=self.machine.emt_init.v_fd, w=1
+        )
+        shunt_ssm = self.rc_shunt.get_small_signal_model(
+            v_D=self.rc_shunt.emt_init.v_D,
+            v_Q=self.rc_shunt.emt_init.v_Q, 
+            i_D=self.rc_shunt.emt_init.i_D,
+            i_Q=self.rc_shunt.emt_init.i_Q,  
+        )
+        branch_ssm = self.rl_branch.get_small_signal_model(
+            v_from_D=self.rl_branch.emt_init.v_from_D,
+            v_from_Q=self.rl_branch.emt_init.v_from_Q,
+            v_to_D=self.rl_branch.emt_init.v_to_D,
+            v_to_Q=self.rl_branch.emt_init.v_to_Q,
+            i_D=self.rl_branch.emt_init.i_D,
+            i_Q=self.rl_branch.emt_init.i_Q,
+        )
+
+        u = DynamicalVariables(
+            name=["p_ref", "v_ref", "v_bus_D", "v_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            type=["device", "device", "grid", "grid"],
+            init=[
+                self.shaft.emt_init.p_ref, 
+                self.machine.emt_init.v_fd, 
+                self.rl_branch.emt_init.v_to_D,
+                self.rl_branch.emt_init.v_to_Q]
+        )
+
+        y = DynamicalVariables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            init=[self.rl_branch.emt_init.i_D, self.rl_branch.emt_init.i_Q]
+        )
+
+        # Generate small-signal model
+        components = [shaft_ssm, governor_ssm, machine_ssm, shunt_ssm, branch_ssm]
+        connections = self.get_interconnections_ssm(
+            i_stator_d=i_d, 
+            i_stator_q=i_q, 
+            v_shunt_D=self.rc_shunt.emt_init.v_D, 
+            v_shunt_Q=self.rc_shunt.emt_init.v_Q, 
+            angle_rad=angle)
+        self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.ssm
+
+    def get_interconnections_ssm(self, i_stator_d, i_stator_q, v_shunt_D, v_shunt_Q, angle_rad):
+        """       
+        Interconnection matrices
+        ------------------------
+        Recall that to linearize the transformation from DQ to dq (and vice versa)
+            Δv_dq = Uᵀ*(v_DQ)ₒ*Δϕ + Rᵀ*Δv_DQ 
+            Δi_DQ = U *(i_dq)ₒ*Δϕ + R *Δi_dq 
+        where
+            R = [ cosϕₒ  -sinϕₒ ]
+                [ sinϕₒ   cosϕₒ ]
+            U = d/dϕₒ R 
+        and we will define
+            a := Uᵀ*(v_DQ)ₒ
+            b := U *(i_dq)ₒ
+
+        The air gap torque of the machine is
+            T_e = λ_d*i_q - λ_q*i_d
+
+            λ_d = -x_d*i_d + x_ad*(i_fd + i_1d)
+           -λ_q = x_q*i_q - x_aq*(i_1q + i_2q)
+
+        And by Kirchhoff's current law (KCL)
+            i_sh = i_sm - i_bus
+
+            
+
+        ┌ component ──▶            | Shaft  ┆ Gov. ┆ Machine                                ┆ Shunt     ┆ Branch     │ Grid inputs
+        │       ┌ index ──▶        │ 0   1  ┆  2   ┆ 3     4     5     6      7      8,9    ┆ 10,11     ┆ 12,13      │ 0      1      2,3 
+        ▼       ▼                  │ Δϕ  Δω ┆ Δp_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_sh_DQ  ┆ Δi_bus_DQ  │ Δp_ref Δv_ref Δv_bus_DQ
+        ───────────────────────────┼────────┴──────┴────────────────────────────────────────┴───────────┴────────────┼───────────────────────
+        Shaft   0        Δp_m      │ 0   0    1      0     0     0     0      0      0         0           0         │ 0      0      0     
+                1        Δi_d      │ 0   0    0      1     0     0     0      0      0         0           0         │ 0      0      0 
+                2        Δi_q      │ 0   0    0      0     1     0     0      0      0         0           0         │ 0      0      0 
+                3       -Δλ_q      │ 0   0    0      0     x_q   0     0      0     -x_aq      0           0         │ 0      0      0 
+                4        Δλ_d      │ 0   0    0     -x_d   0     0     x_ad   x_ad   0         0           0         │ 0      0      0 
+        Gov.    5        Δp_ref    │ 0   0    0      0     0     0     0      0      0         0           0         │ 1      0      0 
+                6        Δω        │ 0   1    0      0     0     0     0      0      0         0           0         │ 0      0      0 
+        Mach.   7,8      Δv_sh_dq  │ a   0    0      0     0     0     0      0      0         Rᵀ          0         │ 0      0      0 
+                9        Δv_0      │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      0      0 
+                10       Δv_fd     │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      1      0 
+                11       Δω        │ 0   1    0      0     0     0     0      0      0         0           0         │ 0      0      0 
+        Shunt   12,13    Δi_sh_DQ  │ b   0    0         R        0     0      0      0         0          -I₂        │ 0      0      0 
+        Branch  14,15    Δv_sh_DQ  │ 0   0    0      0     0     0     0      0      0         I₂          0         │ 0      0      0 
+                16,17    Δv_bus_DQ │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      0      I₂
+        ───────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┼───────────────────────
+        Grid    0,1      i_bus_DQ  │ 0   0    0      0     0     0     0      0      0         0           I₂        │ 0      0      0 
+        outputs 
+        """
+        # Number of stacked/grid side inputs and outputs
+        u_stack = 18
+        y_stack = 14
+        u_grid = 4
+        y_grid = 2
+
+        # Variables in the interconnections
+        I = np.eye(2)
+        a = d_DQ2dq_dangle(v_shunt_D, v_shunt_Q, angle_rad).reshape(2,1)
+        b = d_dq2DQ_dangle(i_stator_d, i_stator_q, angle_rad).reshape(2,1)
+        R = R_dq2DQ(angle_rad)
+        x_d = self.machine.x_d_pu
+        x_ad= self.machine.x_ad_pu
+        x_q = self.machine.x_q_pu
+        x_aq= self.machine.x_aq_pu
+
+        # Interconnection matrices
+        L11 = np.zeros((u_stack, y_stack))
+        L12 = np.zeros((u_stack, u_grid))
+        L21 = np.zeros((y_grid, y_stack))
+        L22 = np.zeros((y_grid, u_grid))
+
+        # Row, column, value tuples for each matrix
+        idx_11 = [
+            ([0],[2],1), ([1,2],[3,4],I), ([3],[4],x_q), ([3],[9],-x_aq), ([3],[8],-x_aq), ([4],[3],-x_d), 
+            ([4],[6],x_ad), ([4],[7],x_ad), ([6],[1],1), ([7,8],[0],a), ([7,8],[10,11],R.T), ([11], [1], 1), 
+            ([12,13],[0],b), ([12,13],[3,4],R), ([12,13],[12,13],-I), ([14,15],[10,11],I)]
+
+        idx_12 = [([5],[0],1), ([10],[1],1),([16,17],[2,3],I)]
+        idx_21 = [([0,1],[12,13],I)]
+
+        # Fill out each matrix
+        matrix_index_pairs =  [(L11, idx_11), (L12, idx_12), (L21, idx_21)]
+        for matrix, idx in matrix_index_pairs:
+            for rows, cols, value in idx:
+                matrix[np.ix_(rows, cols)] = value
+
+        return (L11,L12,L21,L22)
 
     def _build_quadratic_bilinear_model(self):
         pass
@@ -264,14 +420,16 @@ class SynchronousGenerator14A(Generator):
         i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
 
         # Transform abc to dq0
-        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, angle)])
-        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, angle)])
+
+        grid_angle = self.wbase*self.variables_emt.x.time
+        v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, grid_angle)])
+        i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, grid_angle)])
 
         names = [
             "angle", "w", 
             "governor",
             "i_stator_d", "i_stator_q", "i_stator_0", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", 
-            "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"
+            "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"
         ]
         values = [
             angle, w,

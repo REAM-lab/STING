@@ -48,7 +48,7 @@ v_DQ = v_bus_mag * np.exp(v_bus_angle * np.pi / 180 * 1j)
 # -------------------------------------------------------
 # Compute initial conditions for EMT simulation
 # -------------------------------------------------------
-sm.get_steady_state(v_ref_mag=v_bus_mag, v_ref_angle=v_bus_angle, p_ref=p_bus, q_ref=q_bus)
+sm.get_steady_state(v_mag=v_bus_mag, v_angle_deg=v_bus_angle, p=p_bus, q=q_bus)
 y0 = np.array([sm.emt_init.angle, sm.emt_init.i_d, sm.emt_init.i_q, sm.emt_init.i_0, sm.emt_init.i_fd, sm.emt_init.i_1d, sm.emt_init.i_1q, sm.emt_init.i_2q])
 
 print("Initial field circuit voltage: ", sm.emt_init.v_fd)
