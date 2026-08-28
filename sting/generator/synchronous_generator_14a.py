@@ -243,9 +243,9 @@ class SynchronousGenerator14A(Generator):
 
         ┌ component ──▶            | Shaft  ┆ Gov. ┆ Machine                                ┆ Shunt     ┆ Branch     │ Grid inputs
         │       ┌ index ──▶        │ 0   1  ┆  2   ┆ 3     4     5     6      7      8,9    ┆ 10,11     ┆ 12,13      │ 0      1      2,3 
-        ▼       ▼                  │ Δϕ  Δω ┆ Δp_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_sh_DQ  ┆ Δi_bus_DQ  │ Δp_ref Δv_ref Δv_bus_DQ
+        ▼       ▼                  │ Δϕ  Δω ┆ Δt_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_sh_DQ  ┆ Δi_bus_DQ  │ Δp_ref Δv_ref Δv_bus_DQ
         ───────────────────────────┼────────┴──────┴────────────────────────────────────────┴───────────┴────────────┼───────────────────────
-        Shaft   0        Δp_m      │ 0   0    1      0     0     0     0      0      0         0           0         │ 0      0      0     
+        Shaft   0        Δt_m      │ 0   0    1      0     0     0     0      0      0         0           0         │ 0      0      0     
                 1        Δi_d      │ 0   0    0      1     0     0     0      0      0         0           0         │ 0      0      0 
                 2        Δi_q      │ 0   0    0      0     1     0     0      0      0         0           0         │ 0      0      0 
                 3       -Δλ_q      │ 0   0    0      0     x_q   0     0      0     -x_aq      0           0         │ 0      0      0 
