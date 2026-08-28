@@ -146,60 +146,46 @@ class SynchronousGenerator17A(Generator):
     def _build_small_signal_model(self):
         pass
 
-    def get_interconnections_ssm(self, i_stator_d, i_stator_q, v_shunt_D, v_shunt_Q, angle_rad):
+    def get_interconnections_ssm(self, angle_rad):
         """       
         Interconnection matrices
         ------------------------
-        Recall that to linearize the transformation from DQ to dq (and vice versa)
-            Δv_dq = Uᵀ*(v_DQ)ₒ*Δϕ + Rᵀ*Δv_DQ 
-            Δi_DQ = U *(i_dq)ₒ*Δϕ + R *Δi_dq 
+        Assuming constant frequency
+            Δv_dq = Rᵀ*Δv_DQ 
+            Δi_DQ = R *Δi_dq 
         where
             R = [ cosϕₒ  -sinϕₒ ]
                 [ sinϕₒ   cosϕₒ ]
-            U = d/dϕₒ R 
-        and we will define
-            a := Uᵀ*(v_DQ)ₒ
-            b := U *(i_dq)ₒ
 
-            ['v_ref', 'v_c', 'v_s']
 
-        ┌ component ──▶            | Machine                     ┆ Transducer ┆ Exciter                             ┆ Shunt     ┆ Branch     │ Grid inputs
-        │       ┌ index ──▶        │ 0      1     2      3,4,5   ┆ 6      7      8,9    ┆ 10,11     ┆ 12,13      │ 0      1      2,3 
-        ▼       ▼                  │ Δi_dq  Δi_0  Δi_fd  Δi_dq12 ┆ Δϕ  Δω ┆ Δp_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_sh_DQ  ┆ Δi_bus_DQ  │ Δp_ref Δv_ref Δv_bus_DQ
-        ───────────────────────────┼────────┴──────┴────────────────────────────────────────┴───────────┴────────────┼───────────────────────
-        Shaft   0        Δp_m      │ 0   0    1      0     0     0     0      0      0         0           0         │ 0      0      0     
-                1        Δi_d      │ 0   0    0      1     0     0     0      0      0         0           0         │ 0      0      0 
-                2        Δi_q      │ 0   0    0      0     1     0     0      0      0         0           0         │ 0      0      0 
-                3       -Δλ_q      │ 0   0    0      0     x_q   0     0      0     -x_aq      0           0         │ 0      0      0 
-                4        Δλ_d      │ 0   0    0     -x_d   0     0     x_ad   x_ad   0         0           0         │ 0      0      0 
-        Gov.    5        Δp_ref    │ 0   0    0      0     0     0     0      0      0         0           0         │ 1      0      0 
-                6        Δω        │ 0   1    0      0     0     0     0      0      0         0           0         │ 0      0      0 
-        Mach.   7,8      Δv_sh_dq  │ a   0    0      0     0     0     0      0      0         Rᵀ          0         │ 0      0      0 
-                9        Δv_0      │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      0      0 
-                10       Δv_fd     │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      1      0 
-                11       Δω        │ 0   1    0      0     0     0     0      0      0         0           0         │ 0      0      0 
-        Shunt   12,13    Δi_sh_DQ  │ b   0    0         R        0     0      0      0         0          -I₂        │ 0      0      0 
-        Branch  14,15    Δv_sh_DQ  │ 0   0    0      0     0     0     0      0      0         I₂          0         │ 0      0      0 
-                16,17    Δv_bus_DQ │ 0   0    0      0     0     0     0      0      0         0           0         │ 0      0      I₂
-        ───────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┼───────────────────────
-        Grid    0,1      i_bus_DQ  │ 0   0    0      0     0     0     0      0      0         0           I₂        │ 0      0      0 
+        ┌ component ──▶            | Machine                     ┆ Trans. ┆ Exci. ┆ Shunt     ┆  Branch    │ Grid inputs
+        │       ┌ index ──▶        │ 0,1    2     3      4,5,6   ┆ 7      ┆ 8     ┆ 9,10      ┆ 11,12      │ 0      1,2 
+        ▼       ▼                  │ Δi_dq  Δi_0  Δi_fd  Δi_dq12 ┆ Δv_mag ┆ Δv_fd ┆ Δv_sh_DQ  ┆ Δi_bus_DQ  │ Δv_ref Δv_bus_DQ
+        ───────────────────────────┼─────────────────────────────┴────────┴───────┴───────────┴────────────┼──────────────────
+        Mach.   0,1      Δv_sh_dq  │ 0      0     0      0         0        0       Rᵀ          0          │ 0      0
+                2        Δv_0      │ 0      0     0      0         0        0       0           0          │ 0      0
+                3        Δv_fd     │ 0      0     0      0         0        1       0           0          │ 0      0
+                4        Δω        │ 0      0     0      0         0        0       0           0          │ 0      0
+        Trans.  5,6      Δv_dq     │ 0      0     0      0         0        0       I₂          0          │ 0      0
+        Exciter 7        Δv_ref    │ 0      0     0      0         0        0       0           0          │ 1      0
+                8        Δv_mag    │ 0      0     0      0         1        0       0           0          │ 0      0
+                9        Δv_stab   │ 0      0     0      0         0        0       0           0          │ 0      0
+        Shunt   10,11    Δi_sh_DQ  │ R      0     0      0         0        0       0          -I₂         │ 0      0
+        Branch  12,13    Δv_sh_DQ  │ 0      0     0      0         0        0       I₂          0          │ 0      0
+                14,15    Δv_bus_DQ │ 0      0     0      0         0        0       0           0          │ 0      I₂
+        ───────────────────────────┼───────────────────────────────────────────────────────────────────────┼──────────────────
+        Grid    0,1      i_bus_DQ  │ 0      0     0      0         0        0       0           I₂         │ 0      0
         outputs 
         """
         # Number of stacked/grid side inputs and outputs
-        u_stack = 18
-        y_stack = 14
-        u_grid = 4
+        u_stack = 16
+        y_stack = 13
+        u_grid = 3
         y_grid = 2
 
         # Variables in the interconnections
         I = np.eye(2)
-        a = d_DQ2dq_dangle(v_shunt_D, v_shunt_Q, angle_rad).reshape(2,1)
-        b = d_dq2DQ_dangle(i_stator_d, i_stator_q, angle_rad).reshape(2,1)
         R = R_dq2DQ(angle_rad)
-        x_d = self.machine.x_d_pu
-        x_ad= self.machine.x_ad_pu
-        x_q = self.machine.x_q_pu
-        x_aq= self.machine.x_aq_pu
 
         # Interconnection matrices
         L11 = np.zeros((u_stack, y_stack))
@@ -208,13 +194,10 @@ class SynchronousGenerator17A(Generator):
         L22 = np.zeros((y_grid, u_grid))
 
         # Row, column, value tuples for each matrix
-        idx_11 = [
-            ([0],[2],1), ([1,2],[3,4],I), ([3],[4],x_q), ([3],[9],-x_aq), ([3],[8],-x_aq), ([4],[3],-x_d), 
-            ([4],[6],x_ad), ([4],[7],x_ad), ([6],[1],1), ([7,8],[0],a), ([7,8],[10,11],R.T), ([11], [1], 1), 
-            ([12,13],[0],b), ([12,13],[3,4],R), ([12,13],[12,13],-I), ([14,15],[10,11],I)]
+        idx_11 = []
 
-        idx_12 = [([5],[0],1), ([10],[1],1),([16,17],[2,3],I)]
-        idx_21 = [([0,1],[12,13],I)]
+        idx_12 = []
+        idx_21 = []
 
         # Fill out each matrix
         matrix_index_pairs =  [(L11, idx_11), (L12, idx_12), (L21, idx_21)]
@@ -239,7 +222,7 @@ class SynchronousGenerator17A(Generator):
             ("i_damper_1q", self.machine.emt_init.i_1q),  
             ("i_damper_2q", self.machine.emt_init.i_2q),  
             # Transducer + exciter
-            ("transducer_vmag", self.transducer.emt_init.v_c1),
+            ("transducer_vmag", self.transducer.emt_init.v_mag),
             ("exciter_leadlag", self.exciter.emt_init.x_l),
             ("exciter_amplifier", self.exciter.emt_init.x_a),
             ("exciter_exciter", self.exciter.emt_init.x_e),
@@ -283,7 +266,7 @@ class SynchronousGenerator17A(Generator):
         # Unpacking states and inputs
         angle, \
         i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, \
-        v_c, x_l, x_a, x_e, x_f, \
+        v_mag, x_l, x_a, x_e, x_f, \
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c = x
 
@@ -313,10 +296,10 @@ class SynchronousGenerator17A(Generator):
             i_d=i_d, i_q=i_q, i_0=i_0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, i_2q=i_2q,
             v_d=v_sh_d, v_q=v_sh_q, v_0=v_sh_0, v_fd=v_fd, w=w
             )
-        dx += self.transducer.get_derivatives_step_emt_dq0(v_c1=v_c, v_d=v_sh_d, v_q=v_sh_q)
+        dx += self.transducer.get_derivatives_step_emt_dq0(v_mag=v_mag, v_d=v_sh_d, v_q=v_sh_q)
         dx += self.exciter.get_derivatives_step_emt_dq0(
             x_l=x_l, x_a=x_a, x_e=x_e, x_f=x_f, 
-            v_ref=v_ref, v_c=v_c, v_s=0
+            v_ref=v_ref, v_mag=v_mag, v_s=0
             )
         dx += self.rc_shunt.get_derivatives_step_emt_abc(
             v_sh_a=v_sh_a, v_sh_b=v_sh_b, v_sh_c=v_sh_c, 
@@ -334,7 +317,7 @@ class SynchronousGenerator17A(Generator):
     def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         angle, \
         i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, \
-        v_c, x_l, x_a, x_e, x_f, \
+        v_mag, x_l, x_a, x_e, x_f, \
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c = x
 
@@ -343,7 +326,7 @@ class SynchronousGenerator17A(Generator):
     def plot_results_emt(self):
         angle, \
         i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, \
-        v_c, x_l, x_a, x_e, x_f, \
+        v_mag, x_l, x_a, x_e, x_f, \
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c = self.variables_emt.x.value
 
@@ -360,7 +343,7 @@ class SynchronousGenerator17A(Generator):
         values = [
             angle,
             i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q,
-            v_c, x_l, x_a, x_e, x_f, 
+            v_mag, x_l, x_a, x_e, x_f, 
             v_sh_d, v_sh_q, i_bus_d, i_bus_q 
             ]
 
