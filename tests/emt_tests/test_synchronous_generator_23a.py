@@ -10,7 +10,6 @@ from sting.utils.plotting_tools import compare_timeseries
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
 os.makedirs(case_directory, exist_ok=True)
 
-
 gen = SynchronousGenerator23A(
     bus="bus_2", name="gen1",
     # Power flow 
