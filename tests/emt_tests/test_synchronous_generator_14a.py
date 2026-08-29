@@ -84,9 +84,6 @@ compare_timeseries(
 
 
 # Compare the results of the EMT and small-signal model simulations
-file = "synchronous_generator_14a_0.csv"
-cols_emt =["w", "governor", "i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
-cols_ssm = ["w", "x_gov", "i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
 compare_timeseries(
     df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
     df2=pl.read_csv(f"{case_directory}/outputs/quadratic_bilinear/{file}"),

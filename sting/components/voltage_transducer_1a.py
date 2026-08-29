@@ -70,7 +70,7 @@ class VoltageTransducer1A:
             D=np.zeros((1,2)),
             x=DynamicalVariables(name=['v_mag^2'], init=[v2_mag]),
             y=DynamicalVariables(name=['v_mag^2'], init=[v2_mag]),
-            u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d, v_q]),
+            u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d**2, v_q**2]),
         )
         return ssm.to_quadratic_bilinear()
 

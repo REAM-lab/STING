@@ -48,16 +48,27 @@ inputs = {
     }
 }
 t_max=5
-
+# EMT
 main.run_emt(t_max, inputs, case_directory, system=system)
+# SSM
 _, ssm = main.run_ssm(case_directory, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+# QBM 
+_, qbm = main.run_qbm(case_directory, system=system)
+sol = qbm.simulate(t_max=t_max, inputs=inputs)
+qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 
 
 # Compare the results of the EMT and small-signal model simulations
 file = "synchronous_generator_17a_0.csv"
-cols_emt =["i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
-cols_ssm = ["i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
+cols_emt =[
+    "i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", 
+    "exciter_leadlag","exciter_amplifier","exciter_exciter","exciter_damper",
+    "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
+cols_ssm = [
+    "i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q",
+    "x_l", "x_a", "x_e", "x_f",
+    "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
 compare_timeseries(
     df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
     df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/{file}"),
@@ -65,6 +76,19 @@ compare_timeseries(
     df1_name="EMT",
     df2_name="SSM",
     figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
+
+
+# Compare the results of the EMT and small-signal model simulations
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/quadratic_bilinear/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_ssm)),
+    df1_name="EMT",
+    df2_name="QBM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot_qbm.html",
     df1_color="blue",
     df2_color="red"
 )
