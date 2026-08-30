@@ -26,12 +26,12 @@ class ExcitationSystem4A:
     an amplifier, an exciter, and a stabilizer/damping sensor.
                ┌───┐    
     v_ref ────▶│ + │
-    v_c   ────▶│ - │     ┌───────────────────┐     ┌───────────────┐     ┌───────────────┐
-    v_s   ────▶│ + │────▶│ 1+s*t_c / 1+s*t_b │────▶│ k_a / 1+s*t_a │────▶│ 1 / k_e+s*t_a │───┬───▶ Δv_fd
-         ┌────▶│ - │     └───────────────────┘     └───────────────┘     └───────────────┘   │
-         │     └───┘                 ┌───────────────┐                                       │
-         └───────────────────────────│ k_f / 1+s*t_f │───────────────────────────────────────┘
-                                     └───────────────┘
+    v_c   ────▶│ - │     ┌─────────────────┐     ┌─────────────┐     ┌─────────────┐
+    v_s   ────▶│ + │────▶│ 1+s*tc / 1+s*tb │────▶│ ka / 1+s*ta │────▶│ 1 / ke+s*ta │───┬───▶ Δv_fd
+         ┌────▶│ - │     └─────────────────┘     └─────────────┘     └─────────────┘   │
+         │     └───┘                 ┌─────────────┐                                   │
+         └───────────────────────────│ kf / 1+s*tf │───────────────────────────────────┘
+                                     └─────────────┘
     
     This model is closely related to the DC1A/DC2A excitation systems without regulator output limits.
     See Kundur (page 363) or [1] for more details.
@@ -47,23 +47,23 @@ class ExcitationSystem4A:
     The dynamics governing the excitation system are given by the following equations:
              
              u_l = v_ref + v_s - v_c - v_f
-        d/dt x_l = -(1/t_b) * x_l + (t_c/t_b - 1) * u_l
-             y_l = -(1/t_b) * x_l + (t_c/t_b) * u_l
-        d/dt x_a = (1/t_a) * (k_a * y_l - x_a)
-        d/dt x_e = (1/t_e) * (x_a - k_e * x_e)
-        d/dt x_f = (1/t_f) * (k_f * x_e - x_f)
-           Δv_fd = (1/t_f) * (k_f * x_e - x_f)
+        d/dt x_l = -(1/tb) * x_l + (tc/tb - 1) * u_l
+             y_l = -(1/tb) * x_l + (tc/tb) * u_l
+        d/dt x_a = (1/ta) * (ka * y_l - x_a)
+        d/dt x_e = (1/te) * (x_a - ke * x_e)
+        d/dt x_f = (1/tf) * (kf * x_e - x_f)
+           Δv_fd = (1/tf) * (kf * x_e - x_f)
         
     """
 
-    t_b: float
-    t_c: float
-    k_a: float
-    t_a: float
-    t_e: float
-    k_e: float
-    t_f: float
-    k_f: float
+    tb_s: float
+    tc_s: float
+    ka_pu: float
+    ta_s: float
+    te_s: float
+    ke_pu: float
+    tf_s: float
+    kf_pu: float
 
     A: np.ndarray = None
     B: np.ndarray = None
@@ -74,28 +74,28 @@ class ExcitationSystem4A:
     def __post_init__(self):
         # Construct each component model
         lead_lag = StateSpaceModel(
-            A=np.array([[-1/self.t_b]]),
-            B=np.array([[self.t_c/self.t_b -1]]),
-            C=np.array([[-1/self.t_b]]),
-            D=np.array([[self.t_c/self.t_b]])
+            A=np.array([[-1/self.tb_s]]),
+            B=np.array([[self.tc_s/self.tb_s -1]]),
+            C=np.array([[-1/self.tb_s]]),
+            D=np.array([[self.tc_s/self.tb_s]])
         )
         amplifier = StateSpaceModel(
-            A=np.array([[-1/self.t_a]]),
-            B=np.array([[self.k_a/self.t_a]]),
+            A=np.array([[-1/self.ta_s]]),
+            B=np.array([[self.ka_pu/self.ta_s]]),
             C=np.array([[1]]),
             D=np.array([[0]])
         )
         exciter = StateSpaceModel(
-            A=np.array([[-self.k_e/self.t_e]]),
-            B=np.array([[1/self.t_e]]),
+            A=np.array([[-self.ke_pu/self.te_s]]),
+            B=np.array([[1/self.te_s]]),
             C=np.array([[1]]),
             D=np.array([[0]])
         )
         stabilizer = StateSpaceModel(
-            A=np.array([[-1/self.t_f]]),
-            B=np.array([[self.k_f/self.t_f]]),
-            C=np.array([[-1/self.t_f]]),
-            D=np.array([[self.k_f/self.t_f]]),
+            A=np.array([[-1/self.tf_s]]),
+            B=np.array([[self.kf_pu/self.tf_s]]),
+            C=np.array([[-1/self.tf_s]]),
+            D=np.array([[self.kf_pu/self.tf_s]]),
         )
         # Interconnection matrices
         F = np.array([
@@ -161,9 +161,4 @@ class ExcitationSystem4A:
         x = np.array([x_l, x_a, x_e, x_f])
         u = np.array([v_ref, v_c, v_s])
 
-        return self.A@x + self.B@u
-
-    def get_algebraics_step_emt_dq0(self, x_l: float, x_a: float, x_e: float, x_f: float):
-        x = np.array([x_l, x_a, x_e, x_f])
-
-        return self.C@x + self.emt_init.v_ref
+        return list(self.A@x + self.B@u)

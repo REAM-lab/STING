@@ -192,25 +192,4 @@ class BranchSeriesRL(Branch):
             time=time
         )
         return results
-
-
-    def compare_ssm_emt(self, emt_directory, ssm_directory):
-        # Read the SSM and EMT states
-        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
-        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
-
-        # Transform EMT abc states to dq0 states
-        angle_ref =  2 * np.pi * self.base_frequency_Hz * emt["time"].to_numpy()
-        i_a, i_b, i_c = [c.to_numpy() for c in emt.select("i_br_a","i_br_b","i_br_c")]
-        i_emt_D, i_emt_Q, _ = zip(*map(abc2dq0, i_a, i_b, i_c, angle_ref))
-
-        # Unpack the SSM dq states
-        i_ssm_D, i_ssm_Q = [c.to_numpy() for c in ssm.select("i_br_D", "i_br_Q")]
-
-        # Return deltas
-        return {
-            f"({self.type_}_{self.id}, i_br_D)": (i_emt_D, i_ssm_D),
-            f"({self.type_}_{self.id}, i_br_Q)": (i_emt_Q, i_ssm_Q)
-        }
-
         

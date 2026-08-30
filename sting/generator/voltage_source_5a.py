@@ -248,34 +248,3 @@ class VoltageSource5A(Generator):
             time=t,
         )
         return results
-
-
-    def compare_ssm_emt(self, emt_directory, ssm_directory):
-        # Read the SSM and EMT states
-        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
-        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
-
-        # Transform EMT abc states to dq0 states
-        
-        i_a, i_b, i_c, angle_ref, omega = [c.to_numpy() for c in emt.select("i_bus_a", "i_bus_b", "i_bus_c", "angle_ref", "omega")]
-        i_emt_d, i_emt_q, _ = zip(*map(abc2dq0, i_a, i_b, i_c, angle_ref))
-        t = emt["time"].to_numpy()
-        
-        wb = 2.0 * np.pi * self.base_frequency_Hz
-        angle_ref_init = self.emt_init.angle_ref * np.pi / 180.0
-
-        delta_emt_dev = (angle_ref - angle_ref_init - wb * t)
-        omega_emt_dev = omega - wb
-        i_emt_d_dev = i_emt_d - self.emt_init.i_bus_d
-        i_emt_q_dev = i_emt_q - self.emt_init.i_bus_q
-
-        # Unpack the SSM dq states
-        delta_ssm, omega_ssm, i_ssm_d, i_ssm_q = [c.to_numpy() for c in ssm.select("delta", "omega", "i_bus_d", "i_bus_q")]
-
-        # Return deltas
-        return {
-            f"({self.type_}_{self.id}, delta)": (delta_emt_dev, delta_ssm),
-            f"({self.type_}_{self.id}, omega)": (omega_emt_dev, omega_ssm),
-            f"({self.type_}_{self.id}, i_bus_d)": (i_emt_d_dev, i_ssm_d),
-            f"({self.type_}_{self.id}, i_bus_q)": (i_emt_q_dev, i_ssm_q)
-        }

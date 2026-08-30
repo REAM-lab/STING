@@ -255,23 +255,3 @@ class VoltageSource4A(Generator):
             time=t,
         )
         return results
-
-
-    def compare_ssm_emt(self, emt_directory, ssm_directory):
-        # Read the SSM and EMT states
-        emt = pl.read_csv(os.path.join(emt_directory, f"{self.type_}_{self.id}_states.csv"))
-        ssm = pl.read_csv(os.path.join(ssm_directory, f"{self.type_}_{self.id}_states.csv"))
-
-        # Transform EMT abc states to dq0 states
-        
-        i_a, i_b, i_c, angle_ref = [c.to_numpy() for c in emt.select("i_bus_a", "i_bus_b", "i_bus_c", "angle_ref")]
-        i_emt_d, i_emt_q, _ = zip(*map(abc2dq0, i_a, i_b, i_c, angle_ref))
-
-        # Unpack the SSM dq states
-        i_ssm_d, i_ssm_q = [c.to_numpy() for c in ssm.select("i_bus_d", "i_bus_q")]
-
-        # Return deltas
-        return {
-            f"({self.type_}_{self.id}, i_bus_d)": (i_emt_d, i_ssm_d),
-            f"({self.type_}_{self.id}, i_bus_q)": (i_emt_q, i_ssm_q)
-        }
