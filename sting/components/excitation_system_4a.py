@@ -26,8 +26,8 @@ class ExcitationSystem4A:
     an amplifier, an exciter, and a stabilizer/damping sensor.
                ┌───┐    
     v_ref ────▶│ + │
-    v_c   ────▶│ - │     ┌─────────────────┐     ┌─────────────┐     ┌─────────────┐
-    v_s   ────▶│ + │────▶│ 1+s*tc / 1+s*tb │────▶│ ka / 1+s*ta │────▶│ 1 / ke+s*ta │───┬───▶ Δv_fd
+    v_mag ────▶│ - │     ┌─────────────────┐     ┌─────────────┐     ┌─────────────┐
+    v_stab ───▶│ + │────▶│ 1+s*tc / 1+s*tb │────▶│ ka / 1+s*ta │────▶│ 1 / ke+s*ta │───┬───▶ Δv_fd
          ┌────▶│ - │     └─────────────────┘     └─────────────┘     └─────────────┘   │
          │     └───┘                 ┌─────────────┐                                   │
          └───────────────────────────│ kf / 1+s*tf │───────────────────────────────────┘
@@ -46,7 +46,7 @@ class ExcitationSystem4A:
     --------
     The dynamics governing the excitation system are given by the following equations:
              
-             u_l = v_ref + v_s - v_c - v_f
+             u_l = v_ref + v_stab - v_mag - v_f
         d/dt x_l = -(1/tb) * x_l + (tc/tb - 1) * u_l
              y_l = -(1/tb) * x_l + (tc/tb) * u_l
         d/dt x_a = (1/ta) * (ka * y_l - x_a)
@@ -116,7 +116,7 @@ class ExcitationSystem4A:
         model = StateSpaceModel.from_interconnected(
             components=[lead_lag, amplifier, exciter, stabilizer],
             connections=[F,G,H,L],
-            u=DynamicalVariables(name=['v_ref', 'v_c', 'v_s']),
+            u=DynamicalVariables(name=['v_ref', 'v_mag', 'v_stab']),
             y=DynamicalVariables(name=['v_fd'])
         )
         # Save the state-space matrices
@@ -124,17 +124,17 @@ class ExcitationSystem4A:
         self.B = model.B
         self.C = model.C
 
-    def get_steady_state(self, v_ref: float, v_c: float, v_s: float):
+    def get_steady_state(self, v_ref: float, v_mag: float, v_stab: float):
         """
         0 = A*x0 + B*u0
         x0 = -invA * B * u0
         """
-        u0 = np.array([v_ref, v_c, v_s])
+        u0 = np.array([v_ref, v_mag, v_stab])
         x0 = np.linalg.solve(self.A, -self.B@u0)
 
         self.emt_init = InitialConditionsEMT(*x0, v_ref=v_ref)
 
-    def get_small_signal_model(self, x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_c: float, v_s: float):
+    def get_small_signal_model(self, x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_mag: float, v_stab: float):
         ssm = StateSpaceModel(
             A=self.A,
             B=self.B,
@@ -144,8 +144,8 @@ class ExcitationSystem4A:
                 name=['x_l', 'x_a', 'x_e', 'x_f'],
                 init=[x_l, x_a, x_e, x_f]),
             u=DynamicalVariables(
-                name=['v_ref', 'v_c', 'v_s'],
-                init=[v_ref, v_c, v_s]),
+                name=['v_ref', 'v_mag', 'v_stab'],
+                init=[v_ref, v_mag, v_stab]),
             y=DynamicalVariables(
                 name=['v_fd'],
                 init=[0])
@@ -153,12 +153,12 @@ class ExcitationSystem4A:
         return ssm
         
 
-    def get_quadratic_bilinear_model(self,  x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_c: float, v_s: float):
-        ssm = self.get_small_signal_model(x_l, x_a, x_e, x_f, v_ref, v_c, v_s)
+    def get_quadratic_bilinear_model(self,  x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_mag: float, v_stab: float):
+        ssm = self.get_small_signal_model(x_l, x_a, x_e, x_f, v_ref, v_mag, v_stab)
         return ssm.to_quadratic_bilinear()
 
-    def get_derivatives_step_emt_dq0(self, x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_c: float, v_s: float) -> float:
+    def get_derivatives_step_emt_dq0(self, x_l: float, x_a: float, x_e: float, x_f: float, v_ref: float, v_mag: float, v_stab: float) -> float:
         x = np.array([x_l, x_a, x_e, x_f])
-        u = np.array([v_ref, v_c, v_s])
+        u = np.array([v_ref, v_mag, v_stab])
 
         return list(self.A@x + self.B@u)

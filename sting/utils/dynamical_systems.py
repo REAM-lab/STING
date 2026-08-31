@@ -596,7 +596,35 @@ class QuadraticBilinearModel:
     y: DynamicalVariables = None
 
     def __post_init__(self):
-        pass
+        # Check that sizes match for A,B,C,D and inputs/outputs
+        A_x, A_z = self.A.shape
+        B_x, B_u = self.B.shape
+        C_y, C_x = self.C.shape
+        D_y, D_u = self.D.shape
+        H_x, H_y = self.H.shape
+        N_x, N_y = self.N.shape
+
+        assert A_x == A_z, "A is not square."
+        assert A_x == B_x, "Incorrect dimensions for A and B."
+        assert A_x == C_x, "Incorrect dimensions for A and C."
+        assert D_y == C_y, "Incorrect dimensions for C and D."
+        assert D_u == B_u, "Incorrect dimensions for B and D."
+
+        assert H_x == A_x, "Incorrect dimensions for H and A"
+        assert H_x**2 == H_y, "H is not a cube"
+        assert N_x == A_x, "Incorrect dimensions for H and A"
+        assert N_y == A_x*B_u, "Incorrect dimensions for N"
+
+        if self.u is None:
+            self.u = DynamicalVariables(np.array([f"u{i}" for i in range(B_u)]))
+        if self.y is None:
+            self.y = DynamicalVariables(np.array([f"y{i}" for i in range(C_y)]))
+        if self.x is None:
+            self.x = DynamicalVariables(np.array([f"x{i}" for i in range(A_x)]))
+
+        assert len(self.u) == B_u
+        assert len(self.y) == C_y
+        assert len(self.x) == A_x
 
 
     @classmethod

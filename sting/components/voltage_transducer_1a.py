@@ -10,7 +10,7 @@ from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearM
 # Sub-classes
 # ------------------------------------
 class InitialConditionsEMT(NamedTuple):
-    v_c1: float
+    v_mag: float
 
 # ------------------------------------
 # Main class
@@ -22,7 +22,7 @@ class VoltageTransducer1A:
     no load compensation.
 
              ┌─────────────────────┐    ┌─────────────┐
-    v_dq ───▶│ (v_d^2 + v_q^2)^0.5 │───▶│ 1 / 1+s*tau │───▶ v_c
+    v_dq ───▶│ (v_d^2 + v_q^2)^0.5 │───▶│ 1 / 1+s*tau │───▶ v_mag
              └─────────────────────┘    └─────────────┘
     """
     tau_s: float # Filter time constant, in seconds.
@@ -31,13 +31,13 @@ class VoltageTransducer1A:
 
 
     def get_steady_state(self, v_d, v_q):
-        v_c1 = ( v_d**2 + v_q**2 )**0.5
+        v_mag = ( v_d**2 + v_q**2 )**0.5
 
-        self.emt_init = InitialConditionsEMT(v_c1=v_c1)
+        self.emt_init = InitialConditionsEMT(v_mag=v_mag)
 
     def get_small_signal_model(self, v_d, v_q):
         """
-        d/dt v_c1 = (1/tau) * [-v_c1 + (v_d0 * Δv_d + v_q0 * Δv_q ) / v_mag0]
+        d/dt v_mag = (1/tau) * [-v_mag + (v_d0 * Δv_d + v_q0 * Δv_q ) / v_mag0]
         """
         v_mag = (v_d**2 + v_q**2)**0.5
         ssm = StateSpaceModel(
@@ -45,8 +45,8 @@ class VoltageTransducer1A:
             B=(self.tau_s * v_mag)**-1 * np.array([[v_d, v_q]]),
             C=np.array([[1]]),
             D=np.zeros((1,2)),
-            x=DynamicalVariables(name=['v_c'], init=[v_mag]),
-            y=DynamicalVariables(name=['v_c'], init=[v_mag]),
+            x=DynamicalVariables(name=['v_mag'], init=[v_mag]),
+            y=DynamicalVariables(name=['v_mag'], init=[v_mag]),
             u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d, v_q]),
         )
 
@@ -56,8 +56,8 @@ class VoltageTransducer1A:
         """
         The contents of this function should not be presented as original work by another author.
 
-        d/dt v_c2 = (1/tau) * (-v_c2 + v_d^2 + v_q^2)
-             v_c = c0*u_one + c1*v_c2 + c2*v_c2**2
+        d/dt v_mag^2 = (1/tau) * (-v_mag^2 + v_d^2 + v_q^2)
+             v_mag = c0*u_one + c1*v_mag^2 + c2*v_mag^4
 
         Note: Inputs must be squared voltages. Assumes small deviations
             in voltage and small time constant.
@@ -68,9 +68,9 @@ class VoltageTransducer1A:
             B=(1/self.tau_s) * np.array([[1, 1]]),
             C=np.array([[1]]),
             D=np.zeros((1,2)),
-            x=DynamicalVariables(name=['v_c'], init=[v2_mag]),
-            y=DynamicalVariables(name=['v_c'], init=[v2_mag]),
-            u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d, v_q]),
+            x=DynamicalVariables(name=['v_mag^2'], init=[v2_mag]),
+            y=DynamicalVariables(name=['v_mag^2'], init=[v2_mag]),
+            u=DynamicalVariables(name=['v_d', 'v_q'], init=[v_d**2, v_q**2]),
         )
         return ssm.to_quadratic_bilinear()
 
@@ -84,8 +84,8 @@ class VoltageTransducer1A:
 
         return (c0, c1, c2)
 
-    def get_derivatives_step_emt_dq0(self, v_c1, v_d, v_q) -> float:
+    def get_derivatives_step_emt_dq0(self, v_mag, v_d, v_q) -> float:
         u = (v_d**2 + v_q**2)**0.5
-        dv_c1 = (1/self.tau_s) * (u - v_c1)
+        dv_mag = (1/self.tau_s) * (u - v_mag)
 
-        return [dv_c1]
+        return [dv_mag]

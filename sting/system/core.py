@@ -1,46 +1,59 @@
 # -----------------------
 # Import Python packages
 # -----------------------
-import os
-import itertools
-from typing import get_type_hints
-from dataclasses import dataclass, fields
-import polars as pl
-import time
-import logging
 import datetime
+import itertools
+import logging
+import os
+import time
+from dataclasses import dataclass, fields
+from typing import get_type_hints
+
+import polars as pl
+
+import sting.system.stream as sl
 
 # -----------------------
 # Import sting code
 # -----------------------
 from sting.__init__ import __logo__
-import sting.system.stream as sl
+from sting.branch.series_rl import BranchSeriesRL
+from sting.bus.core import Bus
+from sting.generator import (
+    GFLI13A,
+    GFLI16A,
+    GFLI16B,
+    GFMI18A,
+    GFMI18B,
+    GFMI18P,
+    GFMI25A,
+    SynchronousGenerator14A,
+    SynchronousGenerator17A,
+    SynchronousGenerator23A,
+    VoltageSource4A,
+    VoltageSource5A,
+)
+from sting.generator.core import CapacityFactor, Generator
+from sting.generator.gfli_a import GFLIa
+from sting.generator.gfmi_c import GFMIc
+from sting.generator.gfmi_d import GFMId
+from sting.generator.gfmi_e import GFMIe
+from sting.line.pi_model import LinePiModel
+from sting.load import ConstantImpedanceLoad, Load, SwitchingLoad
+from sting.policies.carbon_policies.core import CarbonPolicy
+from sting.policies.energy_budgets.core import EnergyBudget
+from sting.policies.transmission_expansion_constraint.core import (
+    TransmissionExpansionConstraint,
+)
+from sting.reduced_order_model.linear_subsystem import LinearSubsystem
+from sting.shunt.parallel_rc import ShuntParallelRC
+from sting.storage.core import Storage
 
 # -----------------------
 # Import sting components
 # -----------------------
 from sting.system.component import Component, SystemComponent
-from sting.bus.core import Bus
-from sting.load import Load, ConstantImpedanceLoad, SwitchingLoad
-from sting.generator.core import Generator, CapacityFactor
-from sting.storage.core import Storage
-from sting.generator.voltage_source_4a import VoltageSource4A
-from sting.generator.voltage_source_5a import VoltageSource5A
-from sting.generator.gfli_a import GFLIa
-from sting.generator.gfmi_c import GFMIc
-from sting.generator.gfmi_d import GFMId
-from sting.generator.gfmi_e import GFMIe
-from sting.generator.gfli_e import GFLIe
-from sting.generator.gfli_d import GFLId
-from sting.reduced_order_model.linear_subsystem import LinearSubsystem
-from sting.line.pi_model import LinePiModel
-from sting.branch.series_rl import BranchSeriesRL
-from sting.shunt.parallel_rc import ShuntParallelRC
 from sting.timescales.core import Scenario, Timepoint, Timeseries
-from sting.policies.carbon_policies.core import CarbonPolicy
-from sting.policies.energy_budgets.core import EnergyBudget
-from sting.policies.transmission_expansion_constraint.core import TransmissionExpansionConstraint
-from sting.generator import GFLI13A, GFLI16A, GFLI16B, GFMI18A, GFMI18B, GFMI18P, GFMI25A, SynchronousGenerator23A
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -65,8 +78,6 @@ class System:
     gfmi_d: list[GFMId] = None
     gfmi_e: list[GFMIe] = None
     gfli_a: list[GFLIa] = None
-    gfli_e: list[GFLIe] = None
-    gfli_d: list[GFLId] = None
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
     gfli_16b: list[GFLI16B] = None
@@ -74,6 +85,8 @@ class System:
     gfmi_18b: list[GFMI18B] = None
     gfmi_18p: list[GFMI18P] = None
     gfmi_25a: list[GFMI25A] = None
+    synchronous_generator_14a: list[SynchronousGenerator14A] = None
+    synchronous_generator_17a: list[SynchronousGenerator17A] = None
     synchronous_generator_23a: list[SynchronousGenerator23A] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None

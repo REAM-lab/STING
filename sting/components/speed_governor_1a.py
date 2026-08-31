@@ -43,7 +43,7 @@ class SpeedGovernor1A:
             A=np.array([[-1/self.tau_s]]),
             B=(1/self.tau_s) *np.array([[1, -1/self.kr_pu]]),
             C=np.array([[1]]),
-            D=np.array([[0]]),
+            D=np.array([[0, 0]]),
             x=DynamicalVariables(name=['x_gov'], init=[x_gov]),
             u=DynamicalVariables(name=['p_ref', 'w'], init=[p_ref, w]),
             y=DynamicalVariables(name=['x_gov'], init=[x_gov]),

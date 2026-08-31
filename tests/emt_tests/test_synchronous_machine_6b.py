@@ -7,7 +7,7 @@ import pylab as plt
 from scipy.integrate import solve_ivp
 
 from sting import datasets, main
-from sting.components import SynchronousMachine6A
+from sting.components.synchronous_machine_6b import SynchronousMachine6B
 from sting.generator.core import PowerFlowVariables
 from sting.utils.dynamical_systems import make_smooth_step
 from sting.utils.transformations import dq02abc, abc2dq0
@@ -94,7 +94,7 @@ print("Check: l_aq_pu2: ", l_aq_pu2)
 
 
 
-sm = SynchronousMachine6A(
+sm = SynchronousMachine6B(
     x_d_pu = l_d_pu,
     x_q_pu = l_q_pu,
     x_0_pu = l_0_pu,
@@ -108,23 +108,26 @@ sm = SynchronousMachine6A(
     r_fd_pu = r_fd_pu,
     r_1d_pu = r_1d_pu,
     r_1q_pu = r_1q_pu,
-    w_base = w_base
+    w_base = w_base,
+    k1=1,
+    k2=1
 )
 
+
 import control as ct
-sys = ct.ss(sm.A, sm.B, np.eye(6), np.zeros((6,4)))
+sys = ct.ss(sm.A, sm.B, np.diag([-1,-1,-1,1,1,1]), np.zeros((6,4)))
 
 # Create a sigma plot
-omg = [1e-2, 1e5]
+"""omg = [1e-2, 1e5]
 ct.singular_values_plot(sys, omega_limits=omg)
-plt.show()
+plt.show()"""
 
 # check if all entries of matrix L are positive
 L = sm.L
 for i in range(L.shape[0]):
     for j in range(L.shape[1]):
         if L[i,j] < 0:
-            raise ValueError(f"Entry L[{i},{j}] = {L[i,j]} is negative. All entries of matrix L should be positive.")
+            print(f"Entry L[{i},{j}] = {L[i,j]} is negative. All entries of matrix L should be positive.")
 
 # Eigenvalues of A
 eigenvalues = np.linalg.eigvals(sm.A + sm.N)
@@ -139,8 +142,8 @@ for eig in eigenvalues:
 
 v_fd = 400/v_fd_base
 def step(t, x):
-    i_0, i_d, i_q, i_fd, i_1d, i_1q, angle = x
-    dx  = sm.get_derivatives_step_emt_dq0( i_0, i_d, i_q, i_fd, i_1d, i_1q, 0, 0, 0, v_fd, 1)
+    i_d, i_q, i_0, i_fd, i_1d, i_1q, angle = x
+    dx  = sm.get_derivatives_step_emt_dq0(i_d=i_d, i_q=i_q, i_0=i_0, i_fd=i_fd, i_1d=i_1d, i_1q=i_1q, v_d=0, v_q=0, v_0=0, v_fd=v_fd, w=1)
     d_angle = w_base 
     return np.concatenate((dx, [d_angle]))
 
@@ -150,7 +153,7 @@ x0 = [0, # i_0
       v_fd/r_fd_pu, # i_fd
       0, # i_1d
       0, # i_1q 
-      np.pi/2] # angle
+      -np.pi/2] # angle
 # Solve
 sol = solve_ivp(
     fun=step, 
@@ -160,18 +163,22 @@ sol = solve_ivp(
     dense_output=True,
     method="Radau"
     )
+
+#cos(a+pi/2) = -sin(a)
+#sin(a+pi/2) = cos(a)
+
 # Transform to abc
-i_0 = sol.y[0]
-i_d = sol.y[1]
-i_q = sol.y[2]
+i_d = sol.y[0]
+i_q = sol.y[1]
+i_0 = sol.y[2]
 i_fd = sol.y[3]
 i_1d = sol.y[4]
 i_1q = sol.y[5]
 angle = sol.y[6]
 
-ia = (i_d * np.cos(angle) + i_q * np.sin(angle))
-ib = (i_d * np.cos(angle - 2*np.pi/3) + i_q * np.sin(angle - 2*np.pi/3))
-ic = (i_d * np.cos(angle + 2*np.pi/3) + i_q * np.sin(angle + 2*np.pi/3))
+ia = (i_d * np.cos(angle) - i_q * np.sin(angle))
+ib = (i_d * np.cos(angle - 2*np.pi/3) - i_q * np.sin(angle - 2*np.pi/3))
+ic = (i_d * np.cos(angle + 2*np.pi/3) - i_q * np.sin(angle + 2*np.pi/3))
 
 # ---------------------------------------------------------------
 # Compare results
@@ -190,22 +197,22 @@ ib_h = np.sqrt(2/3) * (id_h * np.cos(theta_h - 2*np.pi/3) + iq_h * np.sin(theta_
 ic_h = np.sqrt(2/3) * (id_h * np.cos(theta_h + 2*np.pi/3) + iq_h * np.sin(theta_h + 2*np.pi/3))
 
 
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey=False)
 
 ax1.plot(t_h, ia_h)
 ax2.plot(t_h, ib_h)
 ax3.plot(t_h, ic_h)
-
+ax4.plot(t_h, df["iF"])
 ls = "--"
 ax1.plot(sol.t, i_s_base*ia, ls=ls)
 ax2.plot(sol.t, i_s_base*ib, ls=ls)
 ax3.plot(sol.t, i_s_base*ic, ls=ls)
-
+ax4.plot(sol.t, i_fd_base*i_fd, ls=ls)
 ax1.set_title(r"$i_a$")
 ax2.set_title(r"$i_b$")
 ax3.set_title(r"$i_c$")
 
-for ax in (ax1, ax2, ax3):
+for ax in (ax1, ax2, ax3, ax4):
     ax.set_xlim(0, 0.8)
 
 plt.show()

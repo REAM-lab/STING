@@ -42,32 +42,21 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class SynchronousMachine7A:
+class SynchronousMachine6B:
     x_d_pu: float 
     x_q_pu: float 
-    x_td_pu: float
-    x_tq_pu: float
-    x_std_pu: float
-    x_stq_pu: float
-    t_td0_s: float
-    t_tq0_s: float
-    t_std0_s: float
-    t_stq0_s: float
-    x_l_pu: float
-    x_f1d_pu: float = None
-    r_a_pu: float
     x_0_pu: float
-
-    x_ad_pu: float = None
-    x_aq_pu: float = None
-    x_fd_pu: float = None
-    x_1d_pu: float = None
-    x_1q_pu: float = None
-    x_2q_pu: float = None
-    r_fd_pu: float = None
-    r_1d_pu: float = None
-    r_1q_pu: float = None
-    r_2q_pu: float = None
+    x_ad_pu: float
+    x_aq_pu: float
+    x_ffd_pu: float
+    x_f1d_pu: float
+    x_11d_pu: float
+    x_11q_pu: float
+    r_a_pu: float
+    r_fd_pu: float
+    r_1d_pu: float
+    r_1q_pu: float
+    w_base: float
     w_base: float
 
     k1: float = None
@@ -75,48 +64,16 @@ class SynchronousMachine7A:
     A: np.ndarray = None
     B: np.ndarray = None
     N: np.ndarray = None
+    L: np.ndarray = None
     emt_init: InitialConditionsEMT = field(init=False)
 
 
     def __post_init__(self):
-        self._compute_fundamental_parameters()
+        #self._compute_fundamental_parameters()
         self._compute_dynamics_matrices()
 
     def _compute_fundamental_parameters(self):
-        """Compute the machine fundamental parameters from the standard parameters"""
-        # Compute unsaturated reactances
-        x_ad = self.x_d_pu - self.x_l_pu
-        x_aq = self.x_q_pu - self.x_l_pu
-
-        # Compute rotor leakage reactances
-        x_fd = ( 1/(self.x_td_pu - self.x_l_pu) - 1/(x_ad) )**(-1)  
-        x_1q = ( 1/(self.x_tq_pu - self.x_l_pu) - 1/(x_aq) )**(-1)
-
-        x_1d = ( 1/(self.x_std_pu - self.x_l_pu) - 1/(x_fd) - 1/(x_ad) )**(-1)
-        x_2q = ( 1/(self.x_stq_pu - self.x_l_pu) - 1/(x_1q) - 1/(x_aq) )**(-1)
-
-        # Compute rotor resistances
-        r_fd = 1/(self.t_td0_s * self.w_base) * (x_ad + x_fd)
-        r_1d = 1/(self.t_std0_s * self.w_base) * (x_1d + (x_ad * x_fd)/(x_ad + x_fd))
-
-        r_1q = 1/(self.t_tq0_s * self.w_base) * (x_aq + x_1q)
-        r_2q = 1/(self.t_stq0_s * self.w_base) * (x_2q + (x_aq * x_1q)/(x_aq + x_1q))
-
-        self.x_ad_pu = x_ad
-        self.x_aq_pu = x_aq
-        self.x_fd_pu = x_fd
-        self.x_1d_pu = x_1d
-        self.x_1q_pu = x_1q
-        self.x_2q_pu = x_2q
-        self.r_fd_pu = r_fd
-        self.r_1d_pu = r_1d
-        self.r_1q_pu = r_1q
-        self.r_2q_pu = r_2q
-
-        # The field to damper inductance, l_f1d, is typically assumed to 
-        # be equal to the inductance l_ad
-        if self.x_f1d_pu is None:
-            self.x_f1d_pu = self.x_ad_pu
+        pass
 
 
     def _compute_dynamics_matrices(self):
@@ -193,34 +150,31 @@ class SynchronousMachine7A:
         l_aq = self.x_aq_pu
 
         l_f1d = self.x_f1d_pu
-        l_ffd = self.x_fd_pu + self.x_f1d_pu # Kundur Eq (3.135)
-        l_11d = self.x_1d_pu + self.x_f1d_pu # Kundur Eq (3.136)
-        l_11q = self.x_1q_pu + l_aq          # Kundur Eq (3.137)
-        l_22q = self.x_2q_pu + l_aq          # Kundur Eq (3.138)
+        l_ffd = self.x_ffd_pu
+        l_11d = self.x_11d_pu
+        l_11q = self.x_11q_pu
 
         r_a = self.r_a_pu
         r_fd = self.r_fd_pu
         r_1d = self.r_1d_pu
         r_1q = self.r_1q_pu
-        r_2q = self.r_2q_pu
         
 
-        L = np.array([
+        self.L = np.array([
         #     i_d   i_q   i_0  i_fd  i_1d  i_1q  i_2q 
-            [ -l_d,    0,    0, l_ad, l_ad,    0,    0], # λ_d
-            [    0, -l_q,    0,    0,    0, l_aq, l_aq], # λ_q
-            [    0,    0, -l_0,    0,    0,    0,    0], # λ_0
-            [-l_ad,    0,    0,l_ffd,l_f1d,    0,    0], # λ_fd
-            [-l_ad,    0,    0,l_f1d,l_11d,    0,    0], # λ_1d
-            [    0,-l_aq,    0,    0,    0,l_11q, l_aq], # λ_1q
-            [    0,-l_aq,    0,    0,    0, l_aq,l_22q], # λ_2q
+            [ -l_d,    0,    0, l_ad, l_ad,    0], # λ_d
+            [    0, -l_q,    0,    0,    0, l_aq], # λ_q
+            [    0,    0, -l_0,    0,    0,    0], # λ_0
+            [-l_ad,    0,    0,l_ffd,l_f1d,    0], # λ_fd
+            [-l_ad,    0,    0,l_f1d,l_11d,    0], # λ_1d
+            [    0,-l_aq,    0,    0,    0,l_11q], # λ_1q
         ])
-        invL = solve(L, np.eye(7))
+        invL = solve(self.L, np.eye(6))
 
-        R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q, -r_2q])
+        R = np.diag([r_a, r_a, r_a, -r_fd, -r_1d, -r_1q,])
 
         # Frequency coupling
-        T_w = np.zeros((7,7))
+        T_w = np.zeros((6,6))
         T_w[0, 1] = -1
         T_w[1, 0] = +1
 
@@ -233,15 +187,15 @@ class SynchronousMachine7A:
             self.k2 = l_ad
 
         # Voltage non-reciprocal transform
-        invT_v = np.diag([1,1,1,(1/self.k1),1,1,1])
+        invT_v = np.diag([1,1,1,(1/self.k1),1,1])
 
         # Current non-reciprocal transform
-        T_i = np.diag([1,1,1,self.k2,1,1,1])
-        invT_i = np.diag([1,1,1,(1/self.k2),1,1,1])
+        T_i = np.diag([1,1,1,self.k2,1,1])
+        invT_i = np.diag([1,1,1,(1/self.k2),1,1])
 
         self.A = self.w_base * (T_i @ invL @ R @ invT_i)
         self.B = self.w_base * (T_i @ invL @ invT_v)[:,:4] # Damper input voltages = 0
-        self.N = self.w_base * (-T_i @ invL @ T_w @ L @ invT_i)
+        self.N = self.w_base * (-T_i @ invL @ T_w @ self.L @ invT_i)
         
     def get_steady_state(self, v_mag: float, v_angle_deg: float, p: float, q: float) -> InitialConditionsEMT:
         """
@@ -345,15 +299,14 @@ class SynchronousMachine7A:
     def define_variables_emt_abc(self):
         # States 
         x = DynamicalVariables(
-            name = ["i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q", "i_2q"],
+            name = ["i_d", "i_q", "i_0", "i_fd", "i_1d", "i_1q"],
             component = f"{self.type_}_{self.id}",
             init = [self.emt_init.i_d,
                     self.emt_init.i_q,
                     self.emt_init.i_0,
                     self.emt_init.i_fd,
                     self.emt_init.i_1d,
-                    self.emt_init.i_1q,
-                    self.emt_init.i_2q]
+                    self.emt_init.i_1q]
         )
 
         # Inputs 
@@ -433,18 +386,20 @@ class SynchronousMachine7A:
         )
         return ssm
 
-    def get_derivatives_step_emt_dq0(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q, v_d, v_q, v_0, v_fd, w):
+    def get_derivatives_step_emt_dq0(self, i_d, i_q, i_0, i_fd, i_1d, i_1q, v_d, v_q, v_0, v_fd, w):
 
-        i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q, i_2q])
+        i = np.array([i_d, i_q, i_0, i_fd, i_1d, i_1q])
         v = np.array([v_d, v_q, v_0, v_fd])
 
         di_dt = self.A@i + self.B@v + w*self.N@i
 
         return list(di_dt)
 
-    def electrical_torque(self, i_d, i_q, i_fd, i_1d, i_1q, i_2q):
+    def electrical_torque(self, i_d, i_q, i_fd, i_1d, i_1q):
         """Return the per unit air gap electrical torque"""
         psi_d = -self.x_d_pu*i_d + self.x_ad_pu*(i_fd + i_1d)
-        psi_q = -self.x_q_pu*i_q + self.x_aq_pu*(i_1q + i_2q)
+        psi_q = -self.x_q_pu*i_q + self.x_aq_pu*(i_1q)
 
-        return psi_d*i_q - psi_q*i_d
+        print(1/0) # Check the psi_q 
+
+        return psi_d*i_d - psi_q*i_q

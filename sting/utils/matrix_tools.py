@@ -25,6 +25,15 @@ def csv_to_matrix(filepath):
     return matrix, index, columns
 
 
+def coordinates_to_matrix(shape, data:list):
+    """Construct an array from list of row, column value tuples"""
+    A = np.zeros(shape)
+    for rows, cols, value in data:
+        A[np.ix_(rows, cols)] = value
+
+    return A
+
+
 def mat2cell(A: np.ndarray, m: list, n: list) -> np.ndarray:
     """Python clone of MATLAB mat2cell"""
     if m is None:
