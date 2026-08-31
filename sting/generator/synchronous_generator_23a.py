@@ -17,9 +17,9 @@ from sting.components import (
     VoltageTransducer1A
 )
 from sting.generator.core import Generator
-from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
+from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, QuadraticBilinearModel
 from sting.utils.transformations import dq02abc, abc2dq0, R_dq2DQ, R_DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
-
+from sting.utils.matrix_tools import coordinates_to_matrix
 
 class VariablesEMT(NamedTuple):
     x: DynamicalVariables
@@ -313,12 +313,6 @@ class SynchronousGenerator23A(Generator):
         ───────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────
         Grid    0,1      i_bus_DQ  │ 0   0    0       0       0     0     0     0      0      0        0        0       0           I₂        │ 0      0      0 
         outputs 
-
-
-        [
-            
-            
-            
         """
         
 
@@ -362,7 +356,217 @@ class SynchronousGenerator23A(Generator):
         return (L11,L12,L21,L22)
 
     def _build_quadratic_bilinear_model(self):
-        pass
+        t_e = self.machine.electrical_torque(
+            i_d   = self.machine.emt_init.i_d,
+            i_q   = self.machine.emt_init.i_q,
+            i_fd  = self.machine.emt_init.i_fd,
+            i_1d  = self.machine.emt_init.i_1d,
+            i_1q  = self.machine.emt_init.i_1q,
+            i_2q  = self.machine.emt_init.i_2q,
+        )
+        # T_e = λ_d*i_q - λ_q*i_d
+        shaft_qbm = self.shaft.get_quadratic_bilinear_model(
+            angle_rad=self.machine.emt_init.angle, w=1, p_ref=t_e, p=t_e
+        )
+        # Note: Governor states are the change relative to nominal
+        governor_qbm = self.governor.get_quadratic_bilinear_model(
+            x_gov=self.governor.emt_init.x_gov, p_ref=0, w=0
+        )
+        turbine_qbm = self.turbine.get_quadratic_bilinear_model(
+            x_t1=self.turbine.emt_init.x_t1,
+            x_t2=self.turbine.emt_init.x_t2,
+            u_vlv=0
+        )
+        machine_qbm = self.machine.get_quadratic_bilinear_model(
+            i_d   = self.machine.emt_init.i_d,
+            i_q   = self.machine.emt_init.i_q,
+            i_0   = 0,
+            i_fd  = self.machine.emt_init.i_fd,
+            i_1d  = self.machine.emt_init.i_1d,
+            i_1q  = self.machine.emt_init.i_1q,
+            i_2q  = self.machine.emt_init.i_2q,
+            v_d   = self.machine.emt_init.v_d, 
+            v_q   = self.machine.emt_init.v_q, 
+            v_0   = 0, 
+            v_fd  = self.machine.emt_init.v_fd, 
+            w     = 1
+        )
+        transducer_qbm = self.transducer.get_quadratic_bilinear_model(
+            v_d = self.rc_shunt.emt_init.v_D,
+            v_q = self.rc_shunt.emt_init.v_Q,
+        )
+        exciter_qbm = self.exciter.get_quadratic_bilinear_model(
+            x_l = self.exciter.emt_init.x_l,
+            x_a = self.exciter.emt_init.x_a,
+            x_e = self.exciter.emt_init.x_e,
+            x_f = self.exciter.emt_init.x_f,
+            v_ref = self.exciter.emt_init.v_ref,
+            v_mag = self.transducer.emt_init.v_mag,
+            v_stab = 0,
+        )
+        shunt_qbm = self.rc_shunt.get_quadratic_bilinear_model(
+            v_D = self.rc_shunt.emt_init.v_D,
+            v_Q = self.rc_shunt.emt_init.v_Q, 
+            i_D = self.rc_shunt.emt_init.i_D,
+            i_Q = self.rc_shunt.emt_init.i_Q,  
+        )
+        branch_qbm = self.rl_branch.get_quadratic_bilinear_model(
+            v_from_D = self.rl_branch.emt_init.v_from_D,
+            v_from_Q = self.rl_branch.emt_init.v_from_Q,
+            v_to_D   = self.rl_branch.emt_init.v_to_D,
+            v_to_Q   = self.rl_branch.emt_init.v_to_Q,
+            i_D      = self.rl_branch.emt_init.i_D,
+            i_Q      = self.rl_branch.emt_init.i_Q,
+        )
+        u = DynamicalVariables(
+            name=["p_ref", "v_ref", "one", "v_bus_D", "v_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            type=["device", "device", "device", "grid", "grid"],
+            init=[
+                self.shaft.emt_init.p_ref,
+                self.exciter.emt_init.v_ref, 
+                1,
+                self.rl_branch.emt_init.v_to_D,
+                self.rl_branch.emt_init.v_to_Q]
+        )
+
+        y = DynamicalVariables(
+            name=["i_bus_D", "i_bus_Q"],
+            component=f"{self.type_}_{self.id}",
+            init=[self.rl_branch.emt_init.i_D, self.rl_branch.emt_init.i_Q]
+        )
+
+        # Generate small-signal model
+        c0, c1, c2 = self.transducer.get_taylor_series_constants(self.transducer.emt_init.v_mag)
+        v_fd = self.machine.emt_init.v_fd
+        p_ref = self.shaft.emt_init.p_ref
+        t_m = self.turbine.emt_init.t_m
+        components = [shaft_qbm, governor_qbm, turbine_qbm, machine_qbm, transducer_qbm, exciter_qbm, shunt_qbm, branch_qbm]
+        connections = self.get_interconnections_qbm(t_m, p_ref, v_fd, c0, c1, c2)
+        self.qbm = QuadraticBilinearModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
+
+        return self.qbm
+
+
+    def get_interconnections_qbm(self, t_m, p_ref, v_fd, c0, c1, c2):
+        """
+        ┌ component ──▶            | Shaft      ┆ Gov.   ┆ Turb. ┆ Machine                 ┆ Trans.  ┆ Exci.  ┆ Shunt   ┆ Branch   │ Grid inputs
+        │       ┌ index ──▶        │ 0  1   2   ┆ 3      ┆ 4     ┆ 5,6,7  8,9      10,11   ┆ 12      ┆ 13     ┆ 14,15   ┆ 16,17    │ 0      1      2    3,4 
+        ▼       ▼                  │ ω  sin cos ┆ Δu_vlv ┆ Δt_m  ┆ i_dq0  i_fd/1d  i_1q/2q ┆ v_mag^2 ┆ Δv_fd  ┆ v_sh_DQ ┆ i_bus_DQ │ p_ref  v_ref  one  v_bus_DQ
+        ───────────────────────────┼────────────┴────────┴───────┴─────────────────────────┴─────────┴────────┴─────────┴──────────┼───────────────────────
+        Shaft   0        t_m       │ 0   0    0   0        1       0      0        0         0         0        0         0        │ 0      0    t_m(0) 0   
+                1        one       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      1    0   
+                2       *t_e       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+        Gov.    3        Δp_ref    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 1      0    -p(0)  0  
+                4        Δω        │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0     -1    0   
+        Turbine 5        Δu_vlv    │ 0   0    0   1        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+        Mach.   6,7     *v_sh_dq   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+                8        v_0       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+                9        v_fd      │ 0   0    0   0        0       0      0        0         0         1        0         0        │ 0      0    v_fd0  0   
+                10       ω         │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+        Trans.  11,12   *v_dq      │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+        Exciter 13       v_ref     │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      1      0    0   
+                14      *v_mag     │ 0   0    0   0        0       0      0        0         c1        0        0         0        │ 0      0      c0   0   
+                15       v_stab    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
+        Shunt   16,17   *i_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        0        -I₂       │ 0      0      0    0   
+        Branch  18,19    v_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        I₂        0        │ 0      0      0    0   
+                20,21    v_bus_DQ  │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    I₂   
+        ───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────
+        Grid    0,1      i_bus_DQ  │ 0   0    0   0        0       0      0        0         0         0        0         I₂       │ 0      0      0    0 
+
+        idx_11 = [([0],[4],1), ([4],[0],1), ([5],[3],1), ([9],[13],1), ([10],[0],1), ([14],[12],c1), ([16,17],[16,17],-I), ([18,19],[14,15],I)]
+        idx_12 = [([0],[2],t_m), ([1],[2],1), ([3],[0],1), ([3],[2],-p_ref), ([4],[2],-1), ([9],[2], v_fd), ([13],[1],1), ([14],[2],c0), ([20,21],[3,4],I)]
+        idx_21 = [([0,1],[16,17],I)]
+
+        ## Rotational Transformations ##
+                                   | Shaft       ┆GovTb┆ Machine            ┆Trans. + Exci.  ┆ Shunt
+                             1     │ 0   1   2   ┆3,4,5┆ 6,7  8   9,10,11,12┆ 13,14,15,16,17 ┆ 18,19    
+        (x_1 * x)            sin * │ ω   sin cos ┆ ... ┆ i_dq i_0 i_dampers ┆ ...            ┆ v_sh_DQ  ....
+        ───────────────────────────┼─────────────┴─────┴────────────────────┴────────────────┴─────────────────
+        Mach.   6,7     *v_sh_dq   │ 0   0   0     0     0    0   0           0                J₂             
+        Shunt   16,17   *i_sh_DQ   │ 0   0   0     0    -J₂   0   0           0                0 
+
+                             2     │ 0   1   2   ┆3,4,5┆ 6,7  8   9,10,11,12┆ 13,14,15,16,17 ┆ 18,19
+        (x_2 * x)            cos * │ ω   sin cos ┆ ... ┆ i_dq i_0 i_dampers ┆ ...            ┆ v_sh_DQ  ....
+        ───────────────────────────┼─────────────┴─────┴────────────────────┴────────────────┴─────────────────
+        Mach.   6,7     *v_sh_dq   │ 0   0   0     0     0    0   0           0                I₂             
+        Shunt   16,17   *i_sh_DQ   │ 0   0   0     0     I₂   0   0           0                0 
+        
+        idx_x1 = [([6,7],[18,19],J),([16,17],[6,7],-J)]
+        idx_x2 = [([6,7],[18,19],I),([16,17],[6,7],I)
+
+        ## Torque ##
+                                   | ShftGovTb ┆ Machine         
+                             2     │0,1,2,3,4,5┆ 6    7    8    9     10    11    12
+        (x_6 * x)            i_d * │ ...       ┆ i_d  i_q  i_0  i_fd  i_1d  i_1q  i_2q 
+        ───────────────────────────┼───────────┴─────────────────────────────────────
+        Shaft   2           *t_e   │ 0           0    x_q  0    0     0    -x_aq  -x_aq
+        
+                             2     │0,1,2,3,4,5┆ 6    7    8    9     10    11    12
+        (x_7 * x)            i_q * │ ...       ┆ i_d  i_q  i_0  i_fd  i_1d  i_1q  i_2q 
+        ───────────────────────────┼───────────┴─────────────────────────────────────
+        Shaft   2           *t_e   │ 0          -x_d  0    0    x_ad  x_ad  0     0 
+
+        idx_x6 = [([2],[7],x_q), ([2],[11],-x_aq), ([2],[12],-x_aq)]
+        idx_x7 = [([2],[6],-x_d), ([2],[9],x_ad), ([2],[10],x_ad)]
+
+        ## Transducer ##
+                      18        19
+        11      v_d = V_sh_D**2
+        12      v_q =           v_sh_Q**2
+
+                             13
+        14      v_mag = c2 * v_mag^2**2
+
+        idx_x18 = [([11],[18],1)]
+        idx_x19 = [([12],[19],1)]
+        idx_x14 = [([14],[13],c2)]
+
+        """
+        # Number of stacked/grid side inputs and outputs
+        u_stack = 22
+        y_stack = 18
+        x_stack = 22
+        u_grid = 5
+        y_grid = 2
+
+        # Variables in the interconnections
+        I = np.eye(2)
+        J = np.array([[0, 1], [-1,0]])
+        x_d = self.machine.x_d_pu
+        x_ad= self.machine.x_ad_pu
+        x_q = self.machine.x_q_pu
+        x_aq= self.machine.x_aq_pu
+
+        # Matrix data in (row, column, value) format
+        idx_11 = [([0],[4],1), ([4],[0],1), ([5],[3],1), ([9],[13],1), ([10],[0],1), ([14],[12],c1), ([16,17],[16,17],-I), ([18,19],[14,15],I)]
+        idx_12 = [([0],[2],t_m), ([1],[2],1), ([3],[0],1), ([3],[2],-p_ref), ([4],[2],-1), ([9],[2], v_fd), ([13],[1],1), ([14],[2],c0), ([20,21],[3,4],I)]
+
+        idx_x1 = [([6,7],[18,19],J),([16,17],[6,7],-J)]
+        idx_x2 = [([6,7],[18,19],I),([16,17],[6,7],I)]
+        idx_x6 = [([2],[7],x_q), ([2],[11],-x_aq), ([2],[12],-x_aq)]
+        idx_x7 = [([2],[6],-x_d), ([2],[9],x_ad), ([2],[10],x_ad)]
+
+        # Linear interconnection matrices
+        L11 = coordinates_to_matrix(shape=(u_stack, y_stack), data=idx_11)
+        L12 = coordinates_to_matrix(shape=(u_stack, u_grid), data=idx_12)
+        L21 = coordinates_to_matrix(shape=(y_grid, y_stack), data=[([0,1],[16,17],I)])
+        L22 = np.zeros((y_grid, u_grid))
+
+        # Nonlinear interconnection matrices        
+        M1_x1 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x1)
+        M2_x2 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x2)
+        M1_x6 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x6)
+        M1_x7 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x7)
+        M1_x13 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([14],[13],c2)])
+        M1_x18 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([11],[18],1)])
+        M1_x19 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([12],[19],1)])
+        
+        Z = np.zeros((u_stack, x_stack))
+        M1 = np.hstack([Z, M1_x1, M2_x2, Z, Z, Z, M1_x6, M1_x7] + 5*[Z] + [M1_x13] + 4*[Z] + [M1_x18, M1_x19, Z, Z])
+        M2 = np.zeros((u_stack, x_stack*u_grid))
+        
+        return (L11, L12, L21, L22, M1, M2)
 
     def define_variables_emt(self):
         states = [

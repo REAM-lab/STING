@@ -13,7 +13,6 @@ Active and reactive power
     p = v_d * i_d + v_q * i_q
     q = v_q * i_d - v_d * i_q
 """
-
 import numpy as np
 import sympy as sp
 
@@ -24,7 +23,7 @@ from sting import datasets, main
 from sting.generator import SynchronousGenerator23A
 
 # 1. Replace this device with a class instance that you want to test
-device =  SynchronousGenerator23A(
+gen = SynchronousGenerator23A(
     bus="bus_2", name="gen1",
     # Power flow 
     minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
@@ -51,7 +50,7 @@ device =  SynchronousGenerator23A(
     txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
 )
 
-L11, L12, L21, L22 = device.get_interconnections_ssm(1,1,1,1,0)
+L11, L12, L21, L22, M1, M2 = gen.get_interconnections_qbm(1,1,1,1,2,3)
 
 # --------------
 # Inputs/Outputs
@@ -64,21 +63,17 @@ def vectorize(x):
 # state, output, and input names. For instance: ['i_bus_d', 'i_bus_q', ...] 
 
 
-u_stack = vectorize(['p_ref', 'i_d', 'i_q', 'v_d', 'v_q', 'p_ref', 'w', 'u_vlv', 'v_d',
-       'v_q', 'v_0', 'v_fd', 'w', 'v_d', 'v_q', 'v_ref', 'v_mag',
-       'v_stab', 'i_sh_D', 'i_sh_Q', 'v_from_D', 'v_from_Q', 'v_to_D',
-       'v_to_Q'])
-y_stack = vectorize(['angle', 'w', 'x_gov', 'y0', 'i_d', 'i_q', 'i_0', 'i_fd', 'i_1d',
-       'i_1q', 'i_2q', 'v_mag', 'v_fd', 'v_sh_D', 'v_sh_Q', 'i_br_D',
-       'i_br_Q'])
-u_grid = vectorize(["p_ref", "v_ref", "v_bus_D", "v_bus_Q"])
+u_grid = vectorize(["p_ref",  "v_ref",  "one", "v_bus_D", "v_bus_Q"])
 y_grid = vectorize(["i_bus_D", "i_bus_Q"])
 
+y_stack = vectorize(['w', 'sin', 'cos', 'x_gov', 'y0', 'i_d', 'i_q', 'i_0', 'i_fd', 'i_1d', 'i_1q', 'i_2q', 'v_mag^2', 'v_fd', 'v_sh_D', 'v_sh_Q', 'i_br_D', 'i_br_Q']) 
+x_stack = vectorize(['w', 'sin', 'cos', 'x_gov', 'x_t1', 'x_t2', 'i_d', 'i_q', 'i_0', 'i_fd', 'i_1d', 'i_1q', 'i_2q', 'v_mag^2', 'x_l', 'x_a', 'x_e', 'x_f', 'v_sh_D', 'v_sh_Q', 'i_br_D', 'i_br_Q'])
+u_stack = vectorize(['p_ref', 'one', 'p', 'p_ref', 'w', 'u_vlv', 'v_d', 'v_q', 'v_0', 'v_fd', 'w', 'v_d', 'v_q', 'v_ref', 'v_mag', 'v_stab', 'i_sh_D', 'i_sh_Q', 'v_from_D', 'v_from_Q', 'v_to_D', 'v_to_Q'])
 
 # ---------------------------
 # Component Connection Method
 # ---------------------------
-u_out = Matrix(L11) @ y_stack + Matrix(L12) @ u_grid
+u_out = Matrix(L11) @ y_stack + Matrix(L12) @ u_grid  + Matrix(M1)@ TensorProduct(x_stack, x_stack) + Matrix(M2) @ TensorProduct(u_grid, x_stack)
 y_out = Matrix(L21) @ y_stack + Matrix(L22) @ u_grid
 
 print("Expected vs. actual inputs")

@@ -44,27 +44,39 @@ system.apply("post_system_init", system)
 inputs = {
     "synchronous_generator_23a_0": {
         "p_ref": lambda t: -0.5 if t > 0.1 else 0,
-        #"v_ref": lambda t: 0.2 if t > 1.1 else 0
+        "v_ref": lambda t: 0.2 if t > 1.1 else 0
     }
 }
 t_max=2.5
 
+# EMT
 main.run_emt(t_max, inputs, case_directory, system=system)
+# SSM
 _, ssm = main.run_ssm(case_directory, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
+# QBM 
+_, qbm = main.run_qbm(case_directory, system=system)
+sol = qbm.simulate(t_max=t_max, inputs=inputs)
+os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
+print(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+
+
+
 
 # Compare the results of the EMT and small-signal model simulations
 file = "synchronous_generator_23a_0.csv"
 cols_emt =[
     "w", "governor", "turbine_x1", "turbine_x2", 
     "i_stator_d", "i_stator_q", "i_field_d", "i_damper_1d", "i_damper_1q", "i_damper_2q", 
-    "transducer_vmag","exciter_leadlag","exciter_amplifier","exciter_exciter","exciter_damper", 
+    "exciter_leadlag","exciter_amplifier","exciter_exciter","exciter_damper", 
     "v_shunt_D", "v_shunt_Q", "i_bus_D", "i_bus_Q"]
 cols_ssm = [
     "w", "x_gov", "x_t1", "x_t2", 
     "i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", 
-    "v_mag", "x_l", "x_a", "x_e", "x_f",
+    "x_l", "x_a", "x_e", "x_f",
     "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
+
 compare_timeseries(
     df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
     df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/{file}"),
@@ -72,6 +84,18 @@ compare_timeseries(
     df1_name="EMT",
     df2_name="SSM",
     figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
+
+# Compare the results of the EMT and small-signal model simulations
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/quadratic_bilinear/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_ssm)),
+    df1_name="EMT",
+    df2_name="QBM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot_qbm.html",
     df1_color="blue",
     df2_color="red"
 )
