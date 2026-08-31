@@ -47,8 +47,6 @@ class Generator(Component):
     base_power_MVA: float = None
     base_voltage_kV: float = None
     base_frequency_Hz: float = None
-    damping_pu: float = None
-    inertia_constant_s: float = None
     technology: str = None
     site: str = None
     cap_existing_power_MW: float = None
@@ -61,6 +59,8 @@ class Generator(Component):
     emission_rate_tonneCO2perMWh: float = None
     tags: ClassVar[list[str]] = ["generator", "ccm_generator"]
     bus_id: int = None
+    slack: bool = False
+    phase_angle_name: str = None
     expand_capacity: bool = None
     component_id: str = None
     forced_dispatch_MW: float = None
@@ -68,7 +68,6 @@ class Generator(Component):
     ssm: StateSpaceModel = None
     qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
-    id_variables_emt: dict = None
 
     def post_system_init(self, system):
         self.bus_id = next((n for n in system.buses if n.name == self.bus)).id

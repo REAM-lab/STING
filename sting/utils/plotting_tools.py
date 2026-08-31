@@ -1,8 +1,11 @@
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-import polars as pl
 import os
 from datetime import datetime
+
+import numpy as np
+import plotly.graph_objects as go
+import polars as pl
+from plotly.subplots import make_subplots
+
 
 def compare_timeseries( df1: pl.DataFrame, 
                         df2: pl.DataFrame,
@@ -110,3 +113,41 @@ def compare_timeseries( df1: pl.DataFrame,
 )
     fig.write_html(figure_filepath)
 
+
+
+def plot_eigenvalues(
+    fig, 
+    A: np.ndarray,
+    marker_color="blue",
+    marker_symbol="circle",
+    marker_size=8,
+    title="Eigenvalues",
+):
+
+    eigenvalues = np.linalg.eigvals(A)
+
+    fig.add_trace(
+        go.Scatter(
+            x=eigenvalues.real,
+            y=eigenvalues.imag,
+            mode="markers",
+            marker=dict(
+                color=marker_color,
+                symbol=marker_symbol,
+                size=marker_size,
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Real",
+        yaxis_title="Imaginary",
+        template="plotly_white",
+    )
+
+    # Useful for eigenvalue plots: show the real and imaginary axes
+    fig.add_hline(y=0, line_width=1, line_color="gray")
+    fig.add_vline(x=0, line_width=1, line_color="gray")
+
+    return fig

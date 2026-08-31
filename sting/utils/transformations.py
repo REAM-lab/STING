@@ -140,4 +140,4 @@ def d_DQ2dq_dangle(x_D: float, x_Q: float, theta: float) -> np.ndarray:
 
     d_DQ2dq_dangle = np.matmul(U, np.array([ x_D, x_Q ]))
 
-    return d_DQ2dq_dangle
+    return d_DQ2dq_dangle    

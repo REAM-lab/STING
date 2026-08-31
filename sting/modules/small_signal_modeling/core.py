@@ -307,3 +307,55 @@ class SmallSignalModel:
             component = getattr(self.system, c.type)[c.id]
             if hasattr(component, method):
                 getattr(component, method)(*args) 
+
+    def query(self):
+        from sting.system.stream import Stream
+        components = [getattr(self.system, c.type)[c.id] for c in self.components]
+        return Stream(components, index_map=self.system.class_to_type)
+
+
+    def set_reference_phase_angle(self):
+
+        # Create a set of strings for all state variables that are phase angles
+        c_type, c_id, x = self.query().select("type_", "id", "phase_angle_name")
+        phase_angle_states = {f"{c_type}_{c_id}_{x}" for c_type, c_id, x in zip(c_type, c_id, x) if x}
+
+        # Slack component is defined as the first generator where the slack attribute is true
+        slack = next(self.query().filter(lambda x: hasattr(x, "slack") and x.slack))
+        slack_name = f"{slack.type_}_{slack.id}"
+
+        # Transformation matrix
+        n, _ = self.model.A.shape
+        T = np.eye(n)
+        col_j = np.zeros(n)
+
+        for i, (component, state) in enumerate(zip(self.model.x.component, self.model.x.name)):
+            # All non phase angle states remain unchanged
+            if (f"{component}_{state}" not in phase_angle_states):
+                continue
+            # Save the index of the slack generators phase state
+            if (component == slack_name):
+                j = i
+            # The phase of all other generators is *relative* to the slack
+            # generator. That is: phase_i ← phase_i - phase_j
+            else:
+                col_j[i] = -1
+
+        T[:,j] += col_j
+        invT = np.linalg.inv(T)
+
+        # Drop the reference phase angle from the new system
+        T_r = np.delete(T, j, axis=0)
+        invT_r = np.delete(invT, j, axis=1)
+
+        # Keep all states except the reference phase
+        mask = np.ones(n, dtype=bool)
+        mask[j] = False
+
+        ssm = self.model.coordinate_transform(
+            invT=T_r, 
+            T=invT_r, 
+            name=self.model.x.name[mask], 
+            component=self.model.x.component[mask])
+
+        return ssm

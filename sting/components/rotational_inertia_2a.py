@@ -32,6 +32,7 @@ class RotationalInertia2A:
     kd_w_pu: float
     w_nom: float
     alpha: float = 0
+    phase_angle_name: str = "phase"
 
     emt_init: InitialConditionsEMT = field(init=False)
 
@@ -216,12 +217,12 @@ class RotationalInertia2A:
             C = C,
             D = D,
             x = DynamicalVariables(
-                name=["angle", "w"],
+                name=["phase", "w"],
                 init=[angle, 1]
             ),
             u = DynamicalVariables(name=["p_ref", "i_d", "i_q", "v_d", "v_q"],
                                    init=[p_ref, i_d, i_q, v_d, v_q]),
-            y = DynamicalVariables( name=["angle", "w"],
+            y = DynamicalVariables( name=["phase", "w"],
                                     init=[angle, 1])
         )
         return ssm

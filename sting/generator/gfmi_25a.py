@@ -103,6 +103,8 @@ class GFMI25A(Generator):
         self.dc_circuit = DCCircuit2A(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.wbase)
         self.dc_load = DCLoad1A(self.Tload_s)
 
+        self.phase_angle_name = self.virtual_inertia.phase_angle_name
+
 
     @property
     def rf2_pu(self):

@@ -65,6 +65,8 @@ class GFMI18A(Generator):
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
 
+        self.phase_angle_name = self.virtual_inertia.phase_angle_name
+
     @property
     def rf2_pu(self):
         return (self.txr_r1_pu + self.txr_r2_pu) * self.base_power_MVA / self.txr_power_MVA
