@@ -27,6 +27,8 @@ from sting.generator import (
     GFMI18B,
     GFMI18P,
     GFMI25A,
+    GFLI23A,
+    GFLI16C,
     SynchronousGenerator14A,
     SynchronousGenerator17A,
     SynchronousGenerator23A,
@@ -85,6 +87,8 @@ class System:
     gfmi_18b: list[GFMI18B] = None
     gfmi_18p: list[GFMI18P] = None
     gfmi_25a: list[GFMI25A] = None
+    gfli_23a: list[GFLI23A] = None 
+    gfli_16c: list[GFLI16C] = None 
     synchronous_generator_14a: list[SynchronousGenerator14A] = None
     synchronous_generator_17a: list[SynchronousGenerator17A] = None
     synchronous_generator_23a: list[SynchronousGenerator23A] = None

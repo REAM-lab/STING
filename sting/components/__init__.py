@@ -1,5 +1,7 @@
 from .active_power_pi_1a import ActivePowerPI1A
 from .dc_circuit_2a import DCCircuit2A
+from .dc_circuit_1a import DCCircuit1A
+from .dc_voltage_controller_1a import DCVoltageController1A
 from .dc_controller_6a import DCController6A
 from .dc_load_1a import DCLoad1A
 from .excitation_system_4a import ExcitationSystem4A
