@@ -80,6 +80,7 @@ class GFLI16B(Generator):
         self.current_controller = InnerCurrentController2B(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
         self.reactive_power_controller = ReactivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
+        self.phase_angle_name = self.phase_locked_loop.phase_angle_name
 
     @property
     def rf2_pu(self):

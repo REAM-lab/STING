@@ -98,6 +98,7 @@ class SynchronousGenerator17A(Generator):
             te_s=self.te_s, ke_pu=self.ke_pu, tf_s=self.tf_s, kf_pu=self.kf_pu)
         self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
         self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
+        self.phase_angle_name = self.shaft.phase_angle_name
 
     def _calculate_emt_initial_conditions(self):
         # Unpack AC OPF solution

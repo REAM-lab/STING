@@ -45,6 +45,7 @@ class VoltageSource5A(Generator):
     x_pu: float
     inertia_constant_s: float
     damping_pu: float
+    phase_angle_name: str = "delta"
 
     emt_init: InitialConditionsEMT = None
 

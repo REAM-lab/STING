@@ -39,6 +39,7 @@ class PhaseLockedLoop3A:
     tau: float
     wbase: float
     alpha: float = 0
+    phase_angle_name: str = "phase"
 
 
     def get_steady_state(self, v_mag, relative_phase_deg):
@@ -91,7 +92,7 @@ class PhaseLockedLoop3A:
             u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
             y = DynamicalVariables(name=['w', 'phase']),
             x = DynamicalVariables(
-                name=["v_pll_q", "z_pll", "phase_pll"], 
+                name=["v_pll_q", "z_pll", "phase"], 
                 init=[0, 0, phase_rad] 
                 )
             )

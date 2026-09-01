@@ -11,6 +11,9 @@ class Stream:
 
     def __iter__(self):
         return iter(self._iterable)
+
+    def __next__(self):
+        return next(self._iterable)
     
     def copy(self):
         it1, it2 = tee(self._iterable, 2)

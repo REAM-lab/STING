@@ -30,6 +30,7 @@ class PhaseLockedLoop2A:
     kp_rad_s: float
     ki_rad2_s2: float
     wbase: float
+    phase_angle_name: str = "phase"
 
     emt_init: InitialConditionsEMT = field(init=False)
 
@@ -79,7 +80,7 @@ class PhaseLockedLoop2A:
             u = DynamicalVariables(name=['v_bus_D', 'v_bus_Q']),
             y = DynamicalVariables(name=['phase', 'w']),
             x = DynamicalVariables(
-                name=["z_pll", "phase_pll"], 
+                name=["z_pll", "phase"], 
                 init=[0, phase_rad] 
                 )
             )

@@ -520,13 +520,15 @@ class StateSpaceModel:
 
         return ax
     
-    def coordinate_transform(self, T:np.ndarray, invT:np.ndarray): #-> StateSpaceModel:
+    def coordinate_transform(self, T:np.ndarray, invT:np.ndarray, name=None, component=None): #-> StateSpaceModel:
         """Perform a coordinate transformation z = Tx (analogous to MATLAB ss2ss)"""
         A_t = invT @ self.A @ T
         B_t = invT @ self.B
         C_t = self.C @ T
         # Compute the new states initial conditions
-        x = DynamicalVariables(name=[f"x{i}" for i in range(T.shape[1])], init=invT@self.x.init)
+        if (name is None):
+            name = [f"x{i}" for i in range(T.shape[1])]
+        x = DynamicalVariables(name=name, component=component, init=invT@self.x.init)
 
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
 
