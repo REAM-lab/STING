@@ -1,9 +1,13 @@
-import numpy as np
-from scipy.linalg import solve, eig, cholesky, svd
+import warnings
 
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+import numpy as np
+from scipy.linalg import cholesky, eig, solve, svd
+from slycot import sb03od
+
 from sting.modules.small_signal_modeling.core import SmallSignalModel
+from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel
 from sting.utils.matrix_tools import mat2cell
+
 
 def singular_perturbation(ss:StateSpaceModel, r:int) -> StateSpaceModel:
     """
@@ -66,14 +70,16 @@ def get_jordan_real_transform(A:np.ndarray):
     return T, invT
 
 
-def get_balancing_transform(P, Q, r:int=None):
+def get_balancing_transform(P, Q, r:int=None, R=None, L=None):
     """
     Return the balancing transformation (or projection matrices)
     such that the controllability and observability gramians of
     the state-space model are equal and diagonal.
     """
-    R = cholesky(P, lower=True)
-    L = cholesky(Q, lower=True)
+    if R is None:
+        R = cholesky(P, lower=True)
+    if L is None:
+        L = cholesky(Q, lower=True)
     
     U, sigma, Vh = svd(L.T @ R)
     V = Vh.T
@@ -97,3 +103,69 @@ def get_balancing_transform(P, Q, r:int=None):
         invT = S_r @ U_r.T @ L.T
 
     return T, invT
+
+
+def controllability_cholesky(A, B, lower=False):
+    """
+    Compute a factor R such that
+        P = R.T @ R
+
+    where P solves
+        A @ P + P @ A.T + B @ B.T = 0.
+    """
+    n, m = B.shape
+    
+    # Store B.T in the first m rows
+    B_pad = np.zeros((n, n))
+    B_pad[:m, :n] = B.T
+
+    X, scale, w = sb03od(
+        n=n,
+        m=m,
+        A=A.T.copy(),
+        Q=np.zeros_like(A),
+        B=B_pad,
+        dico='C',
+        fact='N',
+        trans='N',
+    )
+    if scale != 1:
+        warnings.warn(f"[!] Warning scale = {scale}. Gramian may not be well conditioned.")
+
+    if lower:
+        X = X.T
+
+    return X, scale
+
+
+def observability_cholesky(A, C, lower=False):
+    """
+    Compute a factor L such that
+        Q = L.T @ L
+
+    where Q solves
+        A.T @ Q + Q @ A + C.T @ C = 0.
+    """
+
+    p, n = C.shape
+
+    C_pad = np.zeros((n, n))
+    C_pad[:n, :p] = C.T
+
+    X, scale, w = sb03od(
+        n,
+        p,
+        A.copy(),
+        np.zeros_like(A),
+        C_pad.T.copy(),
+        dico='C',
+        fact='N',
+        trans='N',
+    )
+
+    if scale != 1:
+        warnings.warn(f"[!] Warning scale = {scale}. Gramian may not be well conditioned.")
+    if lower:
+        X = X.T
+
+    return X, scale
