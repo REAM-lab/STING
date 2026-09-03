@@ -1,2 +1,0 @@
-﻿name,from_bus,to_bus,cap_existing_power_MW,expand_capacity,r_pu,x_pu,g_pu,b_pu,efficiency
-line,north,south,100,FALSE,,,,,1

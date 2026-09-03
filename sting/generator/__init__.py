@@ -5,6 +5,8 @@ from .gfmi_18a import GFMI18A
 from .gfmi_18b import GFMI18B
 from .gfmi_18p import GFMI18P
 from .gfmi_25a import GFMI25A
+from .gfli_23a import GFLI23A
+from .gfli_16c import GFLI16C
 from .voltage_source_4a import VoltageSource4A
 from .voltage_source_5a import VoltageSource5A
 from .synchronous_generator_14a import SynchronousGenerator14A
