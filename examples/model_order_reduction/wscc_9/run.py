@@ -34,7 +34,7 @@ zone_name = "external"  # Zone to reduce
 r = 12                  # Target reduction order of the external zone
 
 # Vanilla balanced truncation removing the states that are hardest to control and observe.
-balanced_truncation = {zone_name:  BalancedTruncation(r=r, method="truncate")}
+balanced_truncation = {zone_name:  BalancedTruncation(r=r, method="singular perturbation", library='scipy')}
 
 # Singular perturbation converting the fastest modes to algebraic 
 singular_perturbation = {zone_name: SingularPerturbation(r=r, basis="eigen")}

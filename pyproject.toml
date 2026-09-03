@@ -32,6 +32,7 @@ dependencies = [
     "plotly",
     "networkx",
     "pyomo",
+    "slycot"
 ]
 
 [project.optional-dependencies]
