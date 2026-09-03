@@ -66,7 +66,7 @@ def get_jordan_real_transform(A:np.ndarray):
     return T, invT
 
 
-def get_balancing_transform(P, Q, r:int=None):
+def get_balancing_transform(P, Q, r:int=None, tol:int=0):
     """
     Return the balancing transformation (or projection matrices)
     such that the controllability and observability gramians of
@@ -78,9 +78,11 @@ def get_balancing_transform(P, Q, r:int=None):
     U, sigma, Vh = svd(L.T @ R)
     V = Vh.T
 
+    hsv = np.where(sigma > tol, sigma**(-0.5), 0)
+
     if r is None:
         # Compute the full transform
-        S = np.diag(sigma**(-0.5))
+        S = np.diag(hsv)
 
         # Full similarity transformation matrices (T is square)
         T = R @ V @ S
@@ -89,7 +91,7 @@ def get_balancing_transform(P, Q, r:int=None):
     else:
         # Compute the projection matrices directly
         U_r = U[:, :r]
-        S_r = np.diag(sigma[:r]**(-0.5))
+        S_r = np.diag(hsv[:r]**(-0.5))
         V_r = V[:, :r]
 
         # Reduced similarity transformation matrices (T_r is not square)
