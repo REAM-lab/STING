@@ -50,14 +50,14 @@ class BalancedTruncation:
             if self.method == 'truncate':
                 Nr, Ar, Br, Cr, hsv = ab09ad(
                     dico='C', job='B', equil='N', n=n, m=m, p=p, 
-                    A=A, B=B, C=C, nr=self.r, tol=self.tol)
+                    A=A, B=B, C=C, nr=self.r, tol=0)
                 Dr = D
 
             elif self.method == "singular perturbation":
                 Nr, Ar, Br, Cr, Dr, Ns, hsv = ab09nd(
                     dico='C', job='B', equil='N', n=n, m=m, p=p, 
                     A=A, B=B, C=C, D=D,
-                    alpha=0, nr=self.r, tol1=self.tol, tol2=0.0)
+                    alpha=0, nr=self.r, tol1=0, tol2=0.0)
 
             x = DynamicalVariables(name=[f"x{i}" for i in range(self.r)], component='rom', init=np.zeros(self.r))
             sys_r = StateSpaceModel(A=Ar, B=Br,C=Cr,D=Dr, x=x, u=sys.full_order_model.u, y=sys.full_order_model.y)
@@ -69,11 +69,11 @@ class BalancedTruncation:
             Q = solve_continuous_lyapunov(A.T, -C.T@C)
 
             if "truncate" == self.method:
-                T, invT = get_balancing_transform(P, Q, r=self.r, tol=self.tol)
+                T, invT = get_balancing_transform(P, Q, r=self.r)
                 sys_r = sys.full_order_model.coordinate_transform(T=T, invT=invT)
 
             elif "singular perturbation" == self.method:
-                T, invT = get_balancing_transform(P, Q, r=None, tol=self.tol)
+                T, invT = get_balancing_transform(P, Q, r=None)
                 # Transform to balanced 
                 ss_t = sys.full_order_model.coordinate_transform(T=T, invT=invT)
                 sys_r = singular_perturbation(ss=ss_t, r=self.r)
