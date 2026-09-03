@@ -153,11 +153,11 @@ def observability_cholesky(A, C, lower=False):
     C_pad[:n, :p] = C.T
 
     X, scale, w = sb03od(
-        n,
-        p,
-        A.copy(),
-        np.zeros_like(A),
-        C_pad.T.copy(),
+        n=n,
+        m=p,
+        A=A.copy(),
+        Q=np.zeros_like(A),
+        B=C_pad.T.copy(),
         dico='C',
         fact='N',
         trans='N',

@@ -20,37 +20,30 @@ from sympy import Matrix
 from sympy.physics.quantum import TensorProduct
 
 from sting import datasets, main
-from sting.generator import SynchronousGenerator23A
+from sting.generator import GFMI18A
 
 # 1. Replace this device with a class instance that you want to test
-gen = SynchronousGenerator23A(
-    bus="bus_2", name="gen1",
+gfmi = GFMI18A(
+    name="santiago_gfmi", bus="santiago",
     # Power flow 
-    minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
-    cost_variable_USDperMWh=10,
-    # Per unit system
-    base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
-    # Shaft, governor and turbine parameters Kundur (page 598)
-    h_s=2.0, kd_w_pu=1,                      # Shaft
-    kr_pu=0.05, tau_g_s=0.2,                 # Governor
-    tau_rh_s=7.0, f_hp_pu=0.3, tau_ch_s=0.3, # Turbine parameters
-    # Machine parameters Kundur (page 155)
-    x_d_pu=1.81, x_q_pu=1.76, x_l_pu = 0.15, r_a_pu=0.003, 
-    x_td_pu=0.3, x_tq_pu=0.65, x_std_pu=0.23, x_stq_pu=0.25,
-    t_td0_s=8.0, t_tq0_s=1, t_std0_s=0.03, t_stq0_s=0.07,
-    x_0_pu=0.25,
-    # Excitor parameters Kundur (page 364)
-    ka_pu=187, ta_s=0.89, te_s=1.15, kf_pu=0.058,
-    tf_s=0.62, tb_s=0.06, tc_s=0.173, tau_v_s=0.05,
-    ke_pu=1,
-    # Shunt
-    csh_pu=0.066, rsh_pu=10,
-    # Branch and transformer
-    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, 
-    txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
+    minimum_active_power_MW=80, maximum_active_power_MW=80, minimum_reactive_power_MVAR=50, maximum_reactive_power_MVAR=51,
+    cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
+    # LCL filter
+    rf1_pu=0.005, xf1_pu=0.15, csh_pu=0.066, rsh_pu=10,
+    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.01, txr_x1_pu=0.1, txr_r2_pu=0.02, txr_x2_pu=0.1, 
+    # Inner voltage controller
+    kp_vc_pu=0.562, ki_vc_puHz=484.989, kffi_vc=0.80,
+    # Inner current controller
+    kp_cc_pu=4.77, ki_cc_puHz=60, kffv_cc=0,
+    # Virtual inertia
+    h_s=2, kd_pu=70, 
+    # Voltage droop
+    k_q_pu=0.2, w_q_puHz=4000
 )
 
-L11, L12, L21, L22, M1, M2 = gen.get_interconnections_qbm(1,1,1,1,2,3)
+x = np.array([[1],[1]])
+
+L11, L12, L21, L22, M1, M2 = gfmi.get_interconnections_qbm(x,x,x,x)
 
 # --------------
 # Inputs/Outputs
@@ -63,12 +56,19 @@ def vectorize(x):
 # state, output, and input names. For instance: ['i_bus_d', 'i_bus_q', ...] 
 
 
-u_grid = vectorize(["p_ref",  "v_ref",  "one", "v_bus_D", "v_bus_Q"])
+u_grid = vectorize(["p_ref", "q_ref","v_ref","ω_slack","one", "v_bus_D", "v_bus_Q"])
 y_grid = vectorize(["i_bus_D", "i_bus_Q"])
 
-y_stack = vectorize(['w', 'sin', 'cos', 'x_gov', 'y0', 'i_d', 'i_q', 'i_0', 'i_fd', 'i_1d', 'i_1q', 'i_2q', 'v_mag^2', 'v_fd', 'v_sh_D', 'v_sh_Q', 'i_br_D', 'i_br_Q']) 
-x_stack = vectorize(['w', 'sin', 'cos', 'x_gov', 'x_t1', 'x_t2', 'i_d', 'i_q', 'i_0', 'i_fd', 'i_1d', 'i_1q', 'i_2q', 'v_mag^2', 'x_l', 'x_a', 'x_e', 'x_f', 'v_sh_D', 'v_sh_Q', 'i_br_D', 'i_br_Q'])
-u_stack = vectorize(['p_ref', 'one', 'p', 'p_ref', 'w', 'u_vlv', 'v_d', 'v_q', 'v_0', 'v_fd', 'w', 'v_d', 'v_q', 'v_ref', 'v_mag', 'v_stab', 'i_sh_D', 'i_sh_Q', 'v_from_D', 'v_from_Q', 'v_to_D', 'v_to_Q'])
+y_stack = vectorize(['w', 'sin', 'cos', 'v_d_ref', 'v_q_ref', 'i_out_d', 'i_out_q',
+       'v_out_d', 'v_out_q', 'i_br_d', 'i_br_q', 'i_br_D', 'i_br_Q',
+       'v_sh_D', 'v_sh_Q']) 
+x_stack = vectorize(['w', 'sin', 'cos', 'q_f', 'z_vc_d', 'z_vc_q', 'z_cc_d', 'z_cc_q',
+       'i_br_d', 'i_br_q', 'i_br_D', 'i_br_Q', 'v_sh_D', 'v_sh_Q'])
+u_stack = vectorize(['p_ref', 'w_slack', 'one', 'p', 'q_ref', 'v_ref', 'q', 'v_ref_d',
+       'v_ref_q', 'v_d', 'v_q', 'i_d', 'i_q', 'w', 'i_d_ref', 'i_q_ref',
+       'i_d', 'i_q', 'v_d', 'v_q', 'w*i_d', 'w*i_q', 'v_from_d',
+       'v_from_q', 'v_to_d', 'v_to_q', 'w', 'v_from_D', 'v_from_Q',
+       'v_to_D', 'v_to_Q', 'i_sh_D', 'i_sh_Q'])
 
 # ---------------------------
 # Component Connection Method

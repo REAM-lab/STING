@@ -98,29 +98,29 @@ class RotationalInertia2A:
         --------
         The quadratic bilinear model dynamics are given by:
             2h d/dt w  = p_ref - p - kd * (w - 1)
-            d/dt z_sin = wb * z_cos * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
-            d/dt z_cos =wb* -z_sin * (w - 1) - alpha * (z_sin^2 + z_cos^2 - 1) 
+            d/dt z_sin = wb * z_cos * (w - w_slack) - alpha * (z_sin^2 + z_cos^2 - 1) 
+            d/dt z_cos =wb* -z_sin * (w - w_slack) - alpha * (z_sin^2 + z_cos^2 - 1) 
 
         States, inputs and outputs:
             x = [w, sin, cos]
-            u = [p_ref, one, p]
+            u = [p_ref, w_slack, one, p]
             y = x
-        Note that the second input is a dummy variable equal to 1 for all time.
+        Note that the third input is a dummy variable equal to 1 for all time.
         """
-
+        Z = np.zeros((3,3))
         h, kd, wb, a = self.h_s, self.kd_w_pu, self.w_nom, self.alpha
 
         A = np.array([
             [-kd/(2*h),  0,  0], # w_pu
-            [        0,  0,-wb], # sin
-            [        0, wb,  0], # cos
+            [        0,  0,  0], # sin
+            [        0,  0,  0], # cos
         ])
 
         B = np.array([
-        #   | p_ref |  u_one  |    p    |
-            [1/(2*h), kd/(2*h), -1/(2*h)],
-            [      0,        a,        0],
-            [      0,        a,        0], 
+        #   | p_ref | w_slack  | u_one |    p    |
+            [1/(2*h), 0,        kd/(2*h), -1/(2*h)],
+            [      0, 0,        a,               0],
+            [      0, 0,        a,               0], 
         ])
 
         H_sin = np.array([
@@ -136,14 +136,20 @@ class RotationalInertia2A:
             [wb,   0,  -a],
             [ 0,   0,  -a]
         ])
+        H = np.hstack((Z, H_sin, H_cos))
 
-        H = np.hstack((np.zeros((3,3)), H_sin, H_cos))
+        N_w = wb * np.array([
+            [0, 0, 0],
+            [0, 0,-1],
+            [0, 1, 0],
+        ])
+        N = np.hstack([Z, N_w, Z, Z])
 
         x = DynamicalVariables(name=["w", "sin", "cos"], init=[w, np.sin(angle_rad), np.cos(angle_rad)])
-        u = DynamicalVariables(name=["p_ref", "one" ,"p"], init=[p_ref, 1, p])
+        u = DynamicalVariables(name=["p_ref", "w_slack", "one" ,"p"], init=[p_ref, 1, 1, p])
         y = copy.deepcopy(x)
 
-        return QuadraticBilinearModel(A=A, B=B, C=np.eye(3), D=np.zeros((3,3)), H=H, N=np.zeros((3,9)), x=x, y=y, u=u)
+        return QuadraticBilinearModel(A=A, B=B, C=np.eye(3), D=np.zeros((3,4)), H=H, N=N, x=x, y=y, u=u)
 
     def get_small_signal_model(self, i_d, i_q, v_d, v_q, angle, p_ref):
         """
