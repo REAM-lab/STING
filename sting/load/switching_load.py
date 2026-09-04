@@ -16,6 +16,7 @@ from sting.utils.dynamical_systems import DynamicalVariables
 from sting.utils.transformations import abc2dq0
 from sting.generator.core import Generator
 from sting.modules.simulation_emt.utils import VariablesEMT
+from sting.modules.power_flow.utils import ACPowerFlowSolution
 
 # -------------
 # Main class
@@ -119,3 +120,9 @@ class SwitchingLoad(Generator):
             time=time,
         )
         return results
+    
+    def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
+        return 
+
+    def _calculate_emt_initial_conditions(self):
+        return 

@@ -19,3 +19,4 @@ sting_log.txt
 # Ignore temp folder used for tests
 tests/tmpdir
 tests/emt_tests/tmpdir
+.vscode/
