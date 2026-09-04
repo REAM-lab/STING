@@ -63,6 +63,7 @@ class GFMI18A(Generator):
     # Virtual inertia parameters
     h_s: float
     kd_pu: float
+    alpha: float = 1
     # Voltage droop parameters
     k_q_pu: float
     w_q_puHz: float
@@ -87,7 +88,7 @@ class GFMI18A(Generator):
         self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
         self.voltage_controller = InnerVoltageController2A(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
-        self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase)
+        self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
 
         self.phase_angle_name = self.virtual_inertia.phase_angle_name

@@ -46,45 +46,12 @@ inputs = {
         'v_ref_d': lambda t: 0
         }, 
     'gfmi_18a_0': {
-        'p_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3),
-        'q_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=-0.10, transient_width=5e-3) 
+        'v_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
+        'p_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
+        'q_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=-0.50, transient_width=5e-3) 
         }
 }
 t_max = 1.5 # Simulation length in seconds
-
-"""
-
-# Construct system and small-signal model
-_, ssm = main.run_ssm(system=system, case_directory=case_directory)
-ssm.simulate_ssm(t_max=t_max, inputs=inputs)
-# Run EMT simulation
-main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
-
-# Compare the results of the EMT and small-signal model simulations
-compare_timeseries(
-    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/gfmi_18a_0.csv"),
-    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/gfmi_18a_0.csv"),
-    left_to_right={ "z_cc_d": "z_cc_d",
-                    "z_cc_q": "z_cc_q",
-                    "v_sh_d": "v_lcl_sh_d",
-                    "v_sh_q": "v_lcl_sh_q", 
-                    "i_bus_d": "i_bus_d", 
-                    "i_bus_q": "i_bus_q",
-                    "i_vsc_d": "i_vsc_d",},
-    df1_name="EMT",
-    df2_name="SSM",
-    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
-    df1_color="blue",
-    df2_color="red"
-)"""
-
-
-
-"""
-
-"""
-
-
 
 # EMT
 main.run_emt(t_max, inputs, case_directory, system=system)

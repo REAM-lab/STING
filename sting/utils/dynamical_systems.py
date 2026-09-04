@@ -628,6 +628,53 @@ class QuadraticBilinearModel:
         assert len(self.y) == C_y
         assert len(self.x) == A_x
 
+    def __getitem__(self, key):
+        """TODO: This function is untested...."""
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise IndexError(
+                "Indexing must be of the form sys[outputs, inputs]"
+            )
+        n, m = self.B.shape
+        p, n = self.C.shape
+
+        output_idx, input_idx = key
+        output_idx = self._normalize_index(output_idx, p)
+        input_idx = self._normalize_index(input_idx, m)
+
+        A = self.A.copy()
+        B = self.B[:, input_idx]
+        C = self.C[output_idx, :]
+        D = self.D[np.ix_(output_idx, input_idx)]
+        H = self.H.copy()
+        N = np.hstack(np.hsplit(self.N, m)[input_idx])
+        u = self.u[input_idx]
+        y = self.y[output_idx]
+        x = copy.deepcopy(self.x)
+
+        return QuadraticBilinearModel(A=A,B=B,C=C,D=D,N=N,H=H,x=x,u=u,y=y)
+
+
+    @staticmethod
+    def _normalize_index(idx, n):
+        if isinstance(idx, slice):
+            return np.arange(n)[idx]
+
+        if np.isscalar(idx):
+            idx = int(idx)
+            if idx < 0:
+                idx += n
+            if not 0 <= idx < n:
+                raise IndexError("index out of range")
+            return np.array([idx])
+
+        idx = np.asarray(idx, dtype=int)
+        idx = np.where(idx < 0, idx + n, idx)
+
+        if np.any((idx < 0) | (idx >= n)):
+            raise IndexError("index out of range")
+
+        return idx
+
 
     @classmethod
     def from_stacked(cls, components: list[Callable]):
@@ -860,6 +907,7 @@ class QuadraticBilinearModel:
         matrix_to_csv(
             filepath=os.path.join(filepath, "D.csv"), matrix=self.D, index=y, columns=u
         )
+        # TODO add save options for H and N
         #matrix_to_csv(
         #    filepath=os.path.join(filepath, "H.csv"), matrix=self.H, index=x, columns=None
         #)
@@ -921,7 +969,7 @@ class QuadraticBilinearModel:
                 return np.hstack([H_i.flatten(order="F").reshape(-1, 1) for H_i in np.hsplit(self.H, n)]).T
 
 
-    def pg_project(self, W, V):
+    def project(self, W, V, name=None, component=None):
         A = W@self.A@V
         B = W@self.B
         C = self.C@V
@@ -929,9 +977,12 @@ class QuadraticBilinearModel:
         H = W@self.H@np.kron(V,V)
         N = W@self.N@np.kron(np.eye(self.B.shape[1]),V)
 
-        x0 = W@self.x0
+        if (name is None):
+            name = [f"x{i}" for i in range(V.shape[1])]
 
-        return #QuadraticBilinearModel(A, B, C, self.D, H, N, M, x0=x0, y0=self.y0, u0=self.u0, post_solve=self.post_solve)
+        x = DynamicalVariables(name=name, component=component, init=W@self.x.init)
+
+        return QuadraticBilinearModel(A=A,B=B,C=C,D=self.D,H=H,N=N,x=x,y=self.y, u=self.u)
 
         
     def vectorize_inputs(self, inputs):
