@@ -14,10 +14,10 @@ from sting.components import (
     InnerCurrentController2A,
     InnerVoltageController2A,
     LCLFilter9A,
-    ParallelRCShunt2A,
+    #ParallelRCShunt2A,
     RotationalInertia2A,
-    SeriesRLBranch2A,
-    SeriesRLBranch2B,
+    #SeriesRLBranch2A,
+    #SeriesRLBranch2B,
     VoltageDroopController1A,
 )
 from sting.generator.core import Generator
@@ -71,9 +71,9 @@ class GFMI18A(Generator):
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
     # LCL filter components for quadratic bilinear model
-    lcl_br1: SeriesRLBranch2B = field(init=False)
-    lcl_br2: SeriesRLBranch2A = field(init=False)
-    lcl_sh: ParallelRCShunt2A  = field(init=False)
+    #lcl_br1: SeriesRLBranch2B = field(init=False)
+    #lcl_br2: SeriesRLBranch2A = field(init=False)
+    #lcl_sh: ParallelRCShunt2A  = field(init=False)
     
     voltage_controller: InnerVoltageController2A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
@@ -83,9 +83,9 @@ class GFMI18A(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
-        self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
-        self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
+        #self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
+        #self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
+        #self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
         self.voltage_controller = InnerVoltageController2A(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)

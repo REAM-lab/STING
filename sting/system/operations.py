@@ -153,7 +153,7 @@ class SystemModifier:
         shared_columns = ["bus", "base_power_MVA", "base_voltage_kV", "base_frequency_Hz", "zone"]
         # DataFrame with effective shunt parameters
         shunt_df = (
-            self.system.query(["shunt_parallel_rc"])
+            self.system.query(["parallel_rc_shunt_2a"])
             .to_table("bus_id", "g_pu", "b_pu", *shared_columns)
         )
 
@@ -187,10 +187,10 @@ class SystemModifier:
         )
 
         # Total number of shunts to remove and create
-        original_n = len(self.system.shunt_parallel_rc)
+        original_n = len(self.system.parallel_rc_shunt_2a)
         reduced_n = shunt_df.height
         # Clear all existing parallel RC shunts
-        self.system.shunt_parallel_rc.clear()
+        self.system.parallel_rc_shunt_2a.clear()
 
         # Add each effective/combined parallel RC shunt to the pa_rc components
         for row in shunt_df.iter_rows(named=True):

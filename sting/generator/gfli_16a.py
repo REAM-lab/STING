@@ -25,9 +25,9 @@ from sting.components import (
     LCLFilter9A, 
     ActivePowerPI1A, 
     ReactivePowerPI1A,
-    ParallelRCShunt2A,
-    SeriesRLBranch2A,
-    SeriesRLBranch2B
+    #ParallelRCShunt2A,
+    #SeriesRLBranch2A,
+    #SeriesRLBranch2B
     )
 
 from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle

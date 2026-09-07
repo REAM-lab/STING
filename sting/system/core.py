@@ -22,11 +22,9 @@ from sting.bus.core import Bus
 from sting.generator import (
     GFLI13A,
     GFLI16A,
-    GFLI16B,
     GFLI16C,
     GFLI23A,
     GFMI18A,
-    GFMI18B,
     GFMI18P,
     GFMI25A,
     SynchronousGenerator14A,
@@ -91,9 +89,7 @@ class System:
     gfli_a: list[GFLIa] = None
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
-    gfli_16b: list[GFLI16B] = None # Deprecated
     gfmi_18a: list[GFMI18A] = None
-    gfmi_18b: list[GFMI18B] = None # Deprecated
     gfmi_18p: list[GFMI18P] = None # Deprecated
     gfmi_25a: list[GFMI25A] = None
     gfli_23a: list[GFLI23A] = None 
@@ -106,8 +102,8 @@ class System:
     switching_loads: list[SwitchingLoad] = None
     constant_impedance_loads: list[ConstantImpedanceLoad] = None
     # Circuits
-    branch_series_rl: list[SeriesRLBranch2A] = None
-    shunt_parallel_rc: list[ParallelRCShunt2A] = None
+    series_rl_branch_2a: list[SeriesRLBranch2A] = None
+    parallel_rc_shunt_2a: list[ParallelRCShunt2A] = None
     # Abstract models
     linear_subsystems: list[LinearSubsystem] = None
     
