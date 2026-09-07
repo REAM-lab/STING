@@ -10,18 +10,17 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from sting.branch.series_rl_branch_2a import SeriesRLBranch2A
 from sting.components import (
     InnerCurrentController2A,
     InnerVoltageController2A,
     LCLFilter9A,
-    #ParallelRCShunt2A,
     RotationalInertia2A,
-    #SeriesRLBranch2A,
-    #SeriesRLBranch2B,
     VoltageDroopController1A,
 )
 from sting.generator.core import Generator
 from sting.modules.simulation_emt.utils import VariablesEMT
+from sting.shunt.parallel_rc_shunt_2a import ParallelRCShunt2A
 from sting.utils.dynamical_systems import (
     DynamicalVariables,
     QuadraticBilinearModel,
@@ -71,9 +70,9 @@ class GFMI18A(Generator):
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
     # LCL filter components for quadratic bilinear model
-    #lcl_br1: SeriesRLBranch2B = field(init=False)
-    #lcl_br2: SeriesRLBranch2A = field(init=False)
-    #lcl_sh: ParallelRCShunt2A  = field(init=False)
+    lcl_br1: SeriesRLBranch2A = field(init=False)
+    lcl_br2: SeriesRLBranch2A = field(init=False)
+    lcl_sh: ParallelRCShunt2A  = field(init=False)
     
     voltage_controller: InnerVoltageController2A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
@@ -83,9 +82,9 @@ class GFMI18A(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        #self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
-        #self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
-        #self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
+        self.lcl_br1 = SeriesRLBranch2A(r_pu=self.rf1_pu, x_pu=self.xf1_pu, base_frequency_Hz=self.base_frequency_Hz)
+        self.lcl_br2 = SeriesRLBranch2A(r_pu=self.rf2_pu, x_pu=self.xf2_pu, base_frequency_Hz=self.base_frequency_Hz)
+        self.lcl_sh = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, base_frequency_Hz=self.base_frequency_Hz)
         self.voltage_controller = InnerVoltageController2A(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)
@@ -498,7 +497,7 @@ class GFMI18A(Generator):
             w=1
         )
         # Convert to a QBM model and set initial conditions to zero
-        ivc_qbm =  ivc_qbm.to_quadratic_bilinear()
+        ivc_qbm = ivc_qbm.to_quadratic_bilinear()
         ivc_qbm.x.init *= 0
         ivc_qbm.y.init *= 0
         ivc_qbm.u.init *= 0
@@ -519,21 +518,23 @@ class GFMI18A(Generator):
             v_to_d = init.v_sh_d, 
             v_to_q = init.v_vsc_q,
             i_d = init.i_vsc_d, 
-            i_q = init.i_vsc_q
+            i_q = init.i_vsc_q,
+            name="vsc"
             )
         br2_qbm = self.lcl_br2.get_quadratic_bilinear_model(
-            v_from_D = init.v_sh_D, 
-            v_from_Q = init.v_sh_Q,
-            v_to_D = init.v_bus_D, 
-            v_to_Q = init.v_bus_Q,
-            i_D = init.i_bus_D, 
-            i_Q = init.i_bus_Q
+            v_from_d = init.v_sh_D, 
+            v_from_q = init.v_sh_Q,
+            v_to_d = init.v_bus_D, 
+            v_to_q = init.v_bus_Q,
+            i_d = init.i_bus_D, 
+            i_q = init.i_bus_Q,
+            name="bus"
         )
         sh_qbm = self.lcl_sh.get_quadratic_bilinear_model(
-            v_D = init.v_sh_D, 
-            v_Q = init.v_sh_Q, 
-            i_D = (init.i_vsc_D - init.i_bus_D), 
-            i_Q = (init.i_vsc_Q - init.i_bus_Q) 
+            v_d = init.v_sh_D, 
+            v_q = init.v_sh_Q, 
+            i_d = (init.i_vsc_D - init.i_bus_D), 
+            i_q = (init.i_vsc_Q - init.i_bus_Q) 
         )
 
         # Inputs and outputs
@@ -600,22 +601,25 @@ class GFMI18A(Generator):
                 16,17    i_vsc_dq  │ 0   0   0     0          0           0           I₂        0         0       │ 0       0     0      0        0    0
                 18,19   *v_sh_dq   │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0
                 20,21   *ω×i_vsc_dq│ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0        
-        RL1     22,23    v_vsc_dq  │ 0   0   0     0          0           I₂          0         0         0       │ 0       0     0      0        0    0
-                24,25   *v_sh_dq   │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0
-                26       ω         │ 1   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0
-        RL2     27,28    v_sh_DQ   │ 0   0   0     0          0           0           0         0         I₂      │ 0       0     0      0        0    0
-                29,30    v_bus_DQ  │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    I₂
-        RC      31,32   *i_sh_DQ   │ 0   0   0     0          0           0           0        -I₂        0       │ 0       0     0      0        0    0
+        RL1     22       ω         │ 1   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0
+                23,24    v_vsc_dq  │ 0   0   0     0          0           I₂          0         0         0       │ 0       0     0      0        0    0
+                25,26   *v_sh_dq   │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    0
+        RL2     27       ω_slack   │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      1        0    0   
+                28,29    v_sh_DQ   │ 0   0   0     0          0           0           0         0         I₂      │ 0       0     0      0        0    0
+                30,31    v_bus_DQ  │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      0        0    I₂
+        RC      32       ω_slack   │ 0   0   0     0          0           0           0         0         0       │ 0       0     0      1        0    0  
+                33,34   *i_sh_DQ   │ 0   0   0     0          0           0           0        -I₂        0       │ 0       0     0      0        0    0
         ───────────────────────────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────
         Grid    0,1      i_bus_DQ  │ 0   0   0     0          0           0           0         I₂        0       │ 0       0     0      0    0
         outputs
 
         idx_11 = [
             ([7,8],[3,4],I), ([13],[0],1), ([14,15],[5,6],I), ([16,17],[9,10],I), 
-            ([22,23],[7,8],I), ([26],[0],1), ([27,28],[13,14],I),([31,32],[11,12],-I)]
+            ([22],[0],1), ([23,24],[7,8],I),([28,29],[13,14],I), ([33,34],[11,12],-I)]
         idx_12 = [
-            ([0],[0],1), ([1,2],[3,4],I), ([4,5],[1,2],I), ([29,30],[5,6],I), ([7,8],[4],-v_ref_dq),
-            ([9,10],[4],-v_sh_dq), ([11,12],[4],-i_bus_dq), ([13],[4],-1), ([14,15],[4],i_ref_dq)]
+            ([0],[0],1), ([1,2],[3,4],I), ([4,5],[1,2],I), ([30,31],[5,6],I), ([7,8],[4],-v_ref_dq),
+            ([9,10],[4],-v_sh_dq), ([11,12],[4],-i_bus_dq), ([13],[4],-1), ([14,15],[4],i_ref_dq),
+            ([27],[3],1), ([32],[3],1)]
         idx_21 = [([0,1],[11,12],I)]
 
         Nonlinear Interconnections
@@ -632,8 +636,8 @@ class GFMI18A(Generator):
         IVC     9,10    *v_sh_dq   │ 0   0   0     0     0         0         0         J₂       
                 11,12   *i_bus_dq  │ 0   0   0     0     0         0         J₂        0 
         ICC     18,19   *v_sh_dq   │ 0   0   0     0     0         0         0         J₂
-        RL1     24,25   *v_sh_dq   │ 0   0   0     0     0         0         0         J₂
-        RC      31,32   *i_sh_DQ   │ 0   0   0     0     0        -J₂        0         0 
+        RL1     25,26   *v_sh_dq   │ 0   0   0     0     0         0         0         J₂
+        RC      33,34   *i_sh_DQ   │ 0   0   0     0     0        -J₂        0         0 
 
                              2     │ 0   1   2   ┆ 3   ┆ 4,5,6,7 ┆ 8,9       10,11     12,13    
         (x_2 * x)            cos * │ ω   sin cos ┆ q_f ┆ ...     ┆ i_vsc_dq  i_bus_DQ  v_sh_DQ
@@ -641,8 +645,8 @@ class GFMI18A(Generator):
         IVC     9,10    *v_sh_dq   │ 0   0   0     0     0         0         0         I₂       
                 11,12   *i_bus_dq  │ 0   0   0     0     0         0         I₂        0 
         ICC     18,19   *v_sh_dq   │ 0   0   0     0     0         0         0         I₂
-        RL1     24,25   *v_sh_dq   │ 0   0   0     0     0         0         0         I₂
-        RC      31,32   *i_sh_DQ   │ 0   0   0     0     0         I₂        0         0 
+        RL1     25,26   *v_sh_dq   │ 0   0   0     0     0         0         0         I₂
+        RC      33,34   *i_sh_DQ   │ 0   0   0     0     0         I₂        0         0 
 
                                    | VI APC      ┆ RPC ┆ IVC/ICC ┆ RL_1      RL_2              RC     
                           12       │ 0   1   2   ┆ 3   ┆ 4,5,6,7 ┆ 8,9       10       11       12,13    
@@ -658,8 +662,8 @@ class GFMI18A(Generator):
         RPC     6       *q_shunt   │ 0   0   0     0     0         0         1        0        0 
 
         idx_x0 = [([20,21],[8,9],I)]
-        idx_x1 = [([9,10],[12,13],J), ([11,12],[10,11],J), ([18,19],[12,13],J), ([24,25],[12,13],J), ([31,32],[8,9],J.T)]
-        idx_x2 = [([9,10],[12,13],I), ([11,12],[10,11],I), ([18,19],[12,13],I), ([24,25],[12,13],I), ([31,32],[8,9],I)]
+        idx_x1 = [([9,10],[12,13],J), ([11,12],[10,11],J), ([18,19],[12,13],J), ([25,26],[12,13],J), ([33,34],[8,9],J.T)]
+        idx_x2 = [([9,10],[12,13],I), ([11,12],[10,11],I), ([18,19],[12,13],I), ([25,26],[12,13],I), ([33,34],[8,9],I)]
         idx_x12 = [([3],[10],1), ([6],[11],-1)]
         idx_x13 = [([3],[11],1), ([6],[10],1)]
         """
@@ -668,7 +672,7 @@ class GFMI18A(Generator):
         J = np.array([[0, 1], [-1,0]])
 
         # Number of stacked/grid side inputs and outputs
-        u_stack = 33
+        u_stack = 35
         y_stack = 15
         x_stack = 14
         u_grid = 7
@@ -677,13 +681,14 @@ class GFMI18A(Generator):
         # Matrix data in (row, column, value) format
         idx_11 = [
             ([7,8],[3,4],I), ([13],[0],1), ([14,15],[5,6],I), ([16,17],[9,10],I), 
-            ([22,23],[7,8],I), ([26],[0],1), ([27,28],[13,14],I),([31,32],[11,12],-I)]
+            ([22],[0],1), ([23,24],[7,8],I),([28,29],[13,14],I), ([33,34],[11,12],-I)]
         idx_12 = [
-            ([0],[0],1), ([1,2],[3,4],I), ([4,5],[1,2],I), ([29,30],[5,6],I), ([7,8],[4],-v_ref_dq),
-            ([9,10],[4],-v_sh_dq), ([11,12],[4],-i_bus_dq), ([13],[4],-1), ([14,15],[4],i_ref_dq)]
+            ([0],[0],1), ([1,2],[3,4],I), ([4,5],[1,2],I), ([30,31],[5,6],I), ([7,8],[4],-v_ref_dq),
+            ([9,10],[4],-v_sh_dq), ([11,12],[4],-i_bus_dq), ([13],[4],-1), ([14,15],[4],i_ref_dq),
+            ([27],[3],1), ([32],[3],1)]
 
-        idx_x1 = [([9,10],[12,13],J), ([11,12],[10,11],J), ([18,19],[12,13],J), ([24,25],[12,13],J), ([31,32],[8,9],J.T)]
-        idx_x2 = [([9,10],[12,13],I), ([11,12],[10,11],I), ([18,19],[12,13],I), ([24,25],[12,13],I), ([31,32],[8,9],I)]
+        idx_x1 = [([9,10],[12,13],J), ([11,12],[10,11],J), ([18,19],[12,13],J), ([25,26],[12,13],J), ([33,34],[8,9],J.T)]
+        idx_x2 = [([9,10],[12,13],I), ([11,12],[10,11],I), ([18,19],[12,13],I), ([25,26],[12,13],I), ([33,34],[8,9],I)]
 
         # Linear interconnection matrices
         L11 = coordinates_to_matrix(shape=(u_stack, y_stack), data=idx_11)

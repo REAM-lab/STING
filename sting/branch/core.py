@@ -29,10 +29,10 @@ class VariablesEMT(NamedTuple):
 
 @dataclass(slots=True, kw_only=True)
 class Branch(Component):
-    from_bus: str
-    to_bus: str
-    base_power_MVA: float
-    base_voltage_kV: float
+    from_bus: str = None
+    to_bus: str = None
+    base_power_MVA: float = None
+    base_voltage_kV: float = None
     base_frequency_Hz: float
     tags: ClassVar[list[str]] = ["ccm_branch"]
     power_flow_variables: PowerFlowVariables = None

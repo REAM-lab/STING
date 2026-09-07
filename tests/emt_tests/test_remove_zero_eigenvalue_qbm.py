@@ -54,7 +54,7 @@ gfmi1 = GFMI18A(
 )
 system = datasets.toy_2(case_directory=case_directory)
 system.add(gfmi1)
-system.add(gfmi2)
+#system.add(gfmi2)
 system.voltage_source_4a.clear()
 system.apply("post_system_init", system)
 
@@ -101,7 +101,7 @@ def remove_zero_eigenvalue(qbm:QuadraticBilinearModel, slack_generator:str, drop
     L22 = np.zeros((p,len(u_sys)))
     qbm_closed = QuadraticBilinearModel.from_interconnected([qbm_extended], [L11,L12,L21,L22,None,None], u=u_sys, y=y)
 
-    # Compute new angle initial conditions
+    """# Compute new angle initial conditions
     J = np.array([[0,1],[-1,0]])
     I = np.eye(2)
     # Assuming every generator component has sin and cos pair. By trigonometry
@@ -116,7 +116,7 @@ def remove_zero_eigenvalue(qbm:QuadraticBilinearModel, slack_generator:str, drop
     W1 = np.diag((~is_phase_state).astype(int))
     # Save the new initial conditions
     x0 = (W1 + W2_sin*sin0_slack + W2_cos*cos0_slack)@x.init
-    #qbm_closed.x.init = x0
+    #qbm_closed.x.init = x0"""
 
     if drop:
 
@@ -138,7 +138,9 @@ def remove_zero_eigenvalue(qbm:QuadraticBilinearModel, slack_generator:str, drop
 
 print("New EVs")
 qbm_r = remove_zero_eigenvalue(qbm, "gfmi_18a_0", drop=False)
-#print(np.sort(np.linalg.eigvals(qbm_r.A)))
+
+
+print(np.sort(np.linalg.eigvals(qbm_r.shift_to_equilibrium().A)))
 
 # -------------------------------------------------------
 # Plot and compare eigenvalues

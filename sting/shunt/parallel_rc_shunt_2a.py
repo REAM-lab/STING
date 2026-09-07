@@ -96,15 +96,11 @@ class ParallelRCShunt2A(Shunt):
         return self.ssm
 
 
-    def _build_quadratic_bilinear_model(self):
-
+    def get_quadratic_bilinear_model(self, v_d, v_q, i_d, i_q):
         g, b, wb = self.g_pu, self.b_pu, self.wbase
-        i_d, i_q = self.emt_init.i_bus_D, self.emt_init.i_bus_Q
-        v_d, v_q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
-
         A = wb * np.array([
-            [ -g/b,    1], # Δv_d
-            [   -1, -g/b]  # Δv_q
+            [-g/b,    0], # Δv_d
+            [   0, -g/b]  # Δv_q
         ])
         B = np.array([
             [0, wb/b,     0], 
@@ -114,7 +110,7 @@ class ParallelRCShunt2A(Shunt):
             [ 0, 1], # w * v_q
             [-1, 0]  # -w * v_d
         ])
-        N = np.hstack(N_w, np.zeros((2,8)))
+        N = np.hstack([N_w, np.zeros((2,4))])
 
         u = DynamicalVariables(
             name=["w_slack", "i_sh_d", "i_sh_q"], 
@@ -123,10 +119,14 @@ class ParallelRCShunt2A(Shunt):
             type=["device", "grid", "grid"],
             )
         x = DynamicalVariables(name=["v_sh_d", "v_sh_q"], init=[v_d, v_q], component=f"{self.type_}_{self.id}")
-        y = copy.deepcopy(x)          
+        y = copy.deepcopy(x)
+        qbm = QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 3)), H=np.zeros((2,4)), N=N, u=u, x=x, y=y)
+        return qbm
 
-        self.qbm = QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 3)), H=np.zeros((2,4)), N=N, u=u, x=x, y=y)
-        return self.qbm
+    def _build_quadratic_bilinear_model(self):
+        i_d, i_q = self.emt_init.i_bus_D, self.emt_init.i_bus_Q
+        v_d, v_q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        self.qbm = self.get_quadratic_bilinear_model(v_d, v_q, i_d, i_q)
 
     def define_variables_emt(self):
 

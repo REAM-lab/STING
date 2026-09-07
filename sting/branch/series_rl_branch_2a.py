@@ -105,13 +105,9 @@ class SeriesRLBranch2A(Branch):
         self.ssm = StateSpaceModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), u=u, x=x, y=y)
         return self.ssm
 
-    def _build_quadratic_bilinear_model(self):
+    def get_quadratic_bilinear_model(self, i_d, i_q, v_from_d, v_from_q, v_to_d, v_to_q, name='br'):
         # Parameters
         r, x, wb = self.r_pu, self.x_pu, self.wbase
-        # Initial conditions
-        i_d, i_q = self.emt_init.i_br_D, self.emt_init.i_br_Q
-        v_from_d, v_from_q = self.emt_init.v_from_bus_D, self.emt_init.v_from_bus_Q
-        v_to_d, v_to_q = self.emt_init.v_to_bus_D, self.emt_init.v_to_bus_Q
 
         A = (wb/x) * np.array([
                 [-r, 0],  # i_d
@@ -133,21 +129,18 @@ class SeriesRLBranch2A(Branch):
             component=f"{self.type_}_{self.id}",
             type=["device", "grid", "grid", "grid", "grid"],
         )
-        x = DynamicalVariables(name=["i_br_d", "i_br_q"], init=[i_d, i_q], component=f"{self.type_}_{self.id}")
+        x = DynamicalVariables(name=[f"i_{name}_d", f"i_{name}_q"], init=[i_d, i_q], component=f"{self.type_}_{self.id}")
         y = copy.deepcopy(x)
 
-        self.qbm = QuadraticBilinearModel(
-            A=A,
-            B=B,
-            C=np.eye(2),
-            D=np.zeros((2, 5)),
-            H=np.zeros((2, 4)),
-            N=N,
-            u=u,
-            x=x,
-            y=y,
-        )
-        return self.qbm
+        qbm = QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), H=np.zeros((2, 4)), N=N, u=u, x=x, y=y)
+        return qbm
+
+    def _build_quadratic_bilinear_model(self):
+        # Initial conditions
+        i_d, i_q = self.emt_init.i_br_D, self.emt_init.i_br_Q
+        v_from_d, v_from_q = self.emt_init.v_from_bus_D, self.emt_init.v_from_bus_Q
+        v_to_d, v_to_q = self.emt_init.v_to_bus_D, self.emt_init.v_to_bus_Q
+        self.qbm = self.get_quadratic_bilinear_model(i_d, i_q, v_from_d, v_from_q, v_to_d, v_to_q)
 
     def define_variables_emt(self):
 

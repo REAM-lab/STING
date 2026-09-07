@@ -60,15 +60,15 @@ u_grid = vectorize(["p_ref", "q_ref","v_ref","ω_slack","one", "v_bus_D", "v_bus
 y_grid = vectorize(["i_bus_D", "i_bus_Q"])
 
 y_stack = vectorize(['w', 'sin', 'cos', 'v_d_ref', 'v_q_ref', 'i_out_d', 'i_out_q',
-       'v_out_d', 'v_out_q', 'i_br_d', 'i_br_q', 'i_br_D', 'i_br_Q',
-       'v_sh_D', 'v_sh_Q']) 
+       'v_out_d', 'v_out_q', 'i_vsc_d', 'i_vsc_q', 'i_bus_d', 'i_bus_q',
+       'v_sh_d', 'v_sh_q']) 
 x_stack = vectorize(['w', 'sin', 'cos', 'q_f', 'z_vc_d', 'z_vc_q', 'z_cc_d', 'z_cc_q',
-       'i_br_d', 'i_br_q', 'i_br_D', 'i_br_Q', 'v_sh_D', 'v_sh_Q'])
+       'i_vsc_d', 'i_vsc_q', 'i_bus_d', 'i_bus_q', 'v_sh_d', 'v_sh_q'])
 u_stack = vectorize(['p_ref', 'w_slack', 'one', 'p', 'q_ref', 'v_ref', 'q', 'v_ref_d',
        'v_ref_q', 'v_d', 'v_q', 'i_d', 'i_q', 'w', 'i_d_ref', 'i_q_ref',
-       'i_d', 'i_q', 'v_d', 'v_q', 'w*i_d', 'w*i_q', 'v_from_d',
-       'v_from_q', 'v_to_d', 'v_to_q', 'w', 'v_from_D', 'v_from_Q',
-       'v_to_D', 'v_to_Q', 'i_sh_D', 'i_sh_Q'])
+       'i_d', 'i_q', 'v_d', 'v_q', 'w*i_d', 'w*i_q', 'w_slack',
+       'v_from_d', 'v_from_q', 'v_to_d', 'v_to_q', 'w_slack', 'v_from_d',
+       'v_from_q', 'v_to_d', 'v_to_q', 'w_slack', 'i_sh_d', 'i_sh_q'])
 
 # ---------------------------
 # Component Connection Method
