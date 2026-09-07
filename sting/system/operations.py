@@ -1,23 +1,17 @@
-# -----------------------
-# Import python packages
-# -----------------------
+import copy
 import logging
 from dataclasses import dataclass
-import copy
-import polars as pl
-from pyparsing import line
 
-# -----------------------
-# Import sting code
-# -----------------------
-from sting.load.impedance_load import ConstantImpedanceLoad
-from sting.system.core import System
-import sting.generator.shared.capacity_expansion as gen_capex
+import polars as pl
+
 import sting.bus.shared.capacity_expansion as bus_capex
+import sting.generator.shared.capacity_expansion as gen_capex
 import sting.storage.shared.capacity_expansion as storage_capex
+from sting.branch.series_rl_branch_2a import SeriesRLBranch2A
 from sting.bus.core import Bus
-from sting.branch.series_rl import BranchSeriesRL
-from sting.shunt.parallel_rc import ShuntParallelRC
+from sting.load.impedance_load import ConstantImpedanceLoad
+from sting.shunt.parallel_rc_shunt_2a import ParallelRCShunt2A
+from sting.system.core import System
 from sting.utils.runtime_tools import timeit
 
 # Set up logger
@@ -88,7 +82,7 @@ class SystemModifier:
             if line.decomposed:
                 continue  # Skip already decomposed lines
 
-            branch = BranchSeriesRL(
+            branch = SeriesRLBranch2A(
                     name=f"from_line_{line.id}",
                     from_bus=line.from_bus,
                     from_bus_id=line.from_bus_id,
@@ -102,7 +96,7 @@ class SystemModifier:
                     zone=line.zone
                 )
 
-            from_shunt = ShuntParallelRC(
+            from_shunt = ParallelRCShunt2A(
                     name=f"from_line_{line.id}",
                     bus=line.from_bus,
                     bus_id=line.from_bus_id,
@@ -115,7 +109,7 @@ class SystemModifier:
                     zone=self.system.buses[line.from_bus_id].zone
                 )
 
-            to_shunt = ShuntParallelRC(
+            to_shunt = ParallelRCShunt2A(
                     name=f"to_line_{line.id}",
                     bus=line.to_bus,
                     bus_id=line.to_bus_id,
@@ -200,7 +194,7 @@ class SystemModifier:
 
         # Add each effective/combined parallel RC shunt to the pa_rc components
         for row in shunt_df.iter_rows(named=True):
-            shunt = ShuntParallelRC(**row)
+            shunt = ParallelRCShunt2A(**row)
             self.system.add(shunt)
 
         logger.info(f"  - Removed {original_n} shunts, created {reduced_n} effective shunts... ok\n")

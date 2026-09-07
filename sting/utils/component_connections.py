@@ -132,7 +132,7 @@ def get_ccm_matrices(system, attribute: str, dimI: int):
     
     # Construct matrix H and L
     H = np.eye(y)
-    L = np.zeros((y, d_gen))
+    L = np.zeros((y, u))
 
     return F, G, H, L
 

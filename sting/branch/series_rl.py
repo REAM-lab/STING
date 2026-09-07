@@ -35,12 +35,12 @@ class BranchSeriesRL(Branch):
     r_pu: float
     x_pu: float
     emt_init: InitialConditionsEMT = None
-    ssm: StateSpaceModel = None
+    """ssm: StateSpaceModel = None
     qbm: QuadraticBilinearModel = None
     variables_emt: VariablesEMT = None
     id_variables_emt: dict = None
     from_bus_id: int = None
-    to_bus_id: int = None
+    to_bus_id: int = None"""
       
     def _calculate_emt_initial_conditions(self):
         
