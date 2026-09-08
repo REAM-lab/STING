@@ -803,24 +803,20 @@ class QuadraticBilinearModel:
         t_max: float, 
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
         settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-        shift=False):
+        shifted=False):
 
-        if shift:
+        if shifted:
             x0 = np.zeros_like(self.x.init)
             u0 = np.zeros_like(self.u.init)
-            qbm = self.shift_to_equilibrium()
-            #x_offset = self.x.init
-            #u_offset = self.u.init
 
         else:
             x0 = self.x.init
             u0 = self.u.init
-            qbm = self
 
         inputs_to_sim = lambda t: self.vectorize_inputs(inputs)(t) + u0
                 
         sol = solve_ivp(
-            fun=qbm.get_derivatives_step,
+            fun=self.get_derivatives_step,
             t_span=[0, t_max],
             y0=x0,
             dense_output=settings['dense_output'],  
@@ -836,6 +832,11 @@ class QuadraticBilinearModel:
 
         sol.x = sol.y
         sol.u = np.array([inputs_to_sim(t) for t in sol.t]).T
+
+        if shifted:
+            sol.x += self.x.init.reshape(-1,1)
+            sol.u += self.u.init.reshape(-1,1)
+
         sol.y = self.C@sol.x + self.D@sol.u
 
         return sol
