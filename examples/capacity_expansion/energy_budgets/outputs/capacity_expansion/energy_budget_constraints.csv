@@ -1,0 +1,2 @@
+scenario,budget_region,budget_term,budget_constraint_energy_GWh,dispatched_energy_GWh
+sc1,hydro_zone,hydro_basic,1.7,1.7000000000000002

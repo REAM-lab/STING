@@ -1,0 +1,6 @@
+id,name,type_,zone,bus,timepoint,load_MW,scenario,load_MVAR,base_power_MVA,base_voltage_kV,base_frequency_Hz,bus_id,modeled_as_other_load_type
+0,,loads,,center,1,0.0,sc1,,,,,1,false
+1,,loads,,north,1,300.0,sc1,,,,,2,false
+2,,loads,,south,1,300.0,sc1,,,,,0,false
+3,,loads,,south,1,400.0,sc1,,,,,0,false
+4,,loads,,south,1,0.0,sc1,,,,,0,false
