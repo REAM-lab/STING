@@ -6,20 +6,32 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 
+from sting.branch.series_rl_branch_2a import SeriesRLBranch2A
 from sting.components import (
     ExcitationSystem4A,
-    #ParallelRCShunt2A,
     RotationalInertia2A,
-    #SeriesRLBranch2A,
     SpeedGovernor1A,
     SteamTurbine2A,
     SynchronousMachine7A,
-    VoltageTransducer1A
+    VoltageTransducer1A,
 )
 from sting.generator.core import Generator
-from sting.utils.dynamical_systems import DynamicalVariables, StateSpaceModel, QuadraticBilinearModel
-from sting.utils.transformations import dq02abc, abc2dq0, R_dq2DQ, R_DQ2dq, d_dq2DQ_dangle, d_DQ2dq_dangle
+from sting.shunt.parallel_rc_shunt_2a import ParallelRCShunt2A
+from sting.utils.dynamical_systems import (
+    DynamicalVariables,
+    QuadraticBilinearModel,
+    StateSpaceModel,
+)
 from sting.utils.matrix_tools import coordinates_to_matrix
+from sting.utils.transformations import (
+    R_DQ2dq,
+    R_dq2DQ,
+    abc2dq0,
+    d_DQ2dq_dangle,
+    d_dq2DQ_dangle,
+    dq02abc,
+)
+
 
 class VariablesEMT(NamedTuple):
     x: DynamicalVariables
@@ -86,8 +98,8 @@ class SynchronousGenerator23A(Generator):
     machine: SynchronousMachine7A = field(init=False)
     transducer: VoltageTransducer1A = field(init=False)
     exciter: ExcitationSystem4A = field(init=False)
-    #rc_shunt: ParallelRCShunt2A = field(init=False)
-    #rl_branch: SeriesRLBranch2A = field(init=False)
+    rc_shunt: ParallelRCShunt2A = field(init=False)
+    rl_branch: SeriesRLBranch2A = field(init=False)
 
 
     @property
@@ -116,8 +128,8 @@ class SynchronousGenerator23A(Generator):
         self.exciter = ExcitationSystem4A(
             tb_s=self.tb_s, tc_s=self.tc_s, ka_pu=self.ka_pu, ta_s=self.ta_s, 
             te_s=self.te_s, ke_pu=self.ke_pu, tf_s=self.tf_s, kf_pu=self.kf_pu)
-        #self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
-        #self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
+        self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, base_frequency_Hz=self.base_frequency_Hz)
+        self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, base_frequency_Hz=self.base_frequency_Hz)
 
         self.phase_angle_name = self.shaft.phase_angle_name
 
@@ -146,13 +158,14 @@ class SynchronousGenerator23A(Generator):
 
         # Compute all initial conditions
         self.rl_branch.get_steady_state(
-            v_from_D=v_bus_DQ.real, v_from_Q=v_bus_DQ.imag,
-            v_to_D=v_sh_DQ.real, v_to_Q=v_sh_DQ.imag,
-            i_D=i_bus_DQ.real, i_Q=i_bus_DQ.imag,
+            v_to_mag = np.abs(v_bus_DQ),
+            v_to_phase = np.angle(v_bus_DQ, deg=True),
+            v_from_mag = np.abs(v_sh_DQ),
+            v_from_phase = np.angle(v_sh_DQ, deg=True)
         )
         self.rc_shunt.get_steady_state(
-            i_D=i_sh_DQ.real, i_Q=i_sh_DQ.imag,
-            v_D=v_sh_DQ.real, v_Q=v_sh_DQ.imag,
+            v_sh_mag = np.abs(v_sh_DQ),
+            v_sh_phase = np.angle(v_sh_DQ, deg=True)
         )
         sm_init = self.machine.get_steady_state(
             v_angle_deg = np.angle(v_sh_DQ, deg=True), 
@@ -208,8 +221,8 @@ class SynchronousGenerator23A(Generator):
             v_fd=self.machine.emt_init.v_fd, w=1
         )
         transducer_ssm = self.transducer.get_small_signal_model(
-            v_d = self.rc_shunt.emt_init.v_D,
-            v_q = self.rc_shunt.emt_init.v_Q,
+            v_d = self.rc_shunt.emt_init.v_bus_D,
+            v_q = self.rc_shunt.emt_init.v_bus_Q,
         )
         exciter_ssm = self.exciter.get_small_signal_model(
             x_l = self.exciter.emt_init.x_l,
@@ -221,35 +234,37 @@ class SynchronousGenerator23A(Generator):
             v_stab = 0,
         )
         shunt_ssm = self.rc_shunt.get_small_signal_model(
-            v_D=self.rc_shunt.emt_init.v_D,
-            v_Q=self.rc_shunt.emt_init.v_Q, 
-            i_D=self.rc_shunt.emt_init.i_D,
-            i_Q=self.rc_shunt.emt_init.i_Q,  
+            v_d=self.rc_shunt.emt_init.v_bus_D,
+            v_q=self.rc_shunt.emt_init.v_bus_Q, 
+            i_d=self.rc_shunt.emt_init.i_bus_D,
+            i_q=self.rc_shunt.emt_init.i_bus_Q,  
         )
         branch_ssm = self.rl_branch.get_small_signal_model(
-            v_from_D=self.rl_branch.emt_init.v_from_D,
-            v_from_Q=self.rl_branch.emt_init.v_from_Q,
-            v_to_D=self.rl_branch.emt_init.v_to_D,
-            v_to_Q=self.rl_branch.emt_init.v_to_Q,
-            i_D=self.rl_branch.emt_init.i_D,
-            i_Q=self.rl_branch.emt_init.i_Q,
+            v_from_d = self.rl_branch.emt_init.v_from_bus_D,
+            v_from_q = self.rl_branch.emt_init.v_from_bus_Q,
+            v_to_d = self.rl_branch.emt_init.v_to_bus_D,
+            v_to_q = self.rl_branch.emt_init.v_to_bus_Q,
+            i_d = self.rl_branch.emt_init.i_br_D,
+            i_q = self.rl_branch.emt_init.i_br_Q,
+            name = "bus",
         )
 
         u = DynamicalVariables(
-        name=["p_ref", "v_ref", "v_bus_D", "v_bus_Q"],
+        name=["p_ref", "v_ref", "w_slack", "v_bus_D", "v_bus_Q"],
         component=f"{self.type_}_{self.id}",
-        type=["device", "device", "grid", "grid"],
+        type=["device", "device", "device", "grid", "grid"],
         init=[
             self.shaft.emt_init.p_ref, 
             self.machine.emt_init.v_fd, 
-            self.rl_branch.emt_init.v_to_D,
-            self.rl_branch.emt_init.v_to_Q]
+            1,
+            self.rl_branch.emt_init.v_to_bus_D,
+            self.rl_branch.emt_init.v_to_bus_Q]
         )
 
         y = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
             component=f"{self.type_}_{self.id}",
-            init=[self.rl_branch.emt_init.i_D, self.rl_branch.emt_init.i_Q]
+            init=[self.rl_branch.emt_init.i_br_D, self.rl_branch.emt_init.i_br_Q]
         )
 
         # Generate small-signal model
@@ -257,8 +272,8 @@ class SynchronousGenerator23A(Generator):
         connections = self.get_interconnections_ssm(
             i_stator_d=i_d, 
             i_stator_q=i_q, 
-            v_shunt_D=self.rc_shunt.emt_init.v_D, 
-            v_shunt_Q=self.rc_shunt.emt_init.v_Q, 
+            v_shunt_D=self.rc_shunt.emt_init.v_bus_D, 
+            v_shunt_Q=self.rc_shunt.emt_init.v_bus_Q, 
             angle_rad=angle)
         self.ssm = StateSpaceModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
 
@@ -288,28 +303,30 @@ class SynchronousGenerator23A(Generator):
             i_sh = i_sm - i_bus
 
         ┌ component ──▶            | Shaft  ┆ Gov.   ┆ Turb.┆ Machine                                ┆ Trans. ┆ Exci. ┆ Shunt     ┆ Branch    │ Grid inputs
-        │       ┌ index ──▶        │ 0   1  ┆ 2      ┆ 3    ┆ 4     5     6     7      8      9,10   ┆ 11     ┆ 12    ┆ 13,14     ┆ 15,16     │ 0      1      2,3 
-        ▼       ▼                  │ Δϕ  Δω ┆ Δu_vlv ┆ Δt_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_mag ┆ Δv_fd ┆ Δv_sh_DQ  ┆ Δi_bus_DQ │ Δp_ref Δv_ref Δv_bus_DQ
+        │       ┌ index ──▶        │ 0   1  ┆ 2      ┆ 3    ┆ 4     5     6     7      8      9,10   ┆ 11     ┆ 12    ┆ 13,14     ┆ 15,16     │ 0      1      2         3,4 
+        ▼       ▼                  │ Δϕ  Δω ┆ Δu_vlv ┆ Δt_m ┆ Δi_d  Δi_q  Δi_0  Δi_fd  Δi_1d  Δi_12q ┆ Δv_mag ┆ Δv_fd ┆ Δv_sh_DQ  ┆ Δi_bus_DQ │ Δp_ref Δv_ref Δω_slack Δv_bus_DQ
         ───────────────────────────┼────────┴────────┴───────────────────────────────────────────────┴────────┴───────┴───────────┴───────────┼───────────────────────
-        Shaft   0        Δt_m      │ 0   0    0       1       0     0     0     0      0      0        0        0       0           0         │ 0      0      0     
-                1        Δi_d      │ 0   0    0       0       1     0     0     0      0      0        0        0       0           0         │ 0      0      0 
-                2        Δi_q      │ 0   0    0       0       0     1     0     0      0      0        0        0       0           0         │ 0      0      0 
-                3       -Δλ_q      │ 0   0    0       0       0     x_q   0     0      0     -x_aq     0        0       0           0         │ 0      0      0 
-                4        Δλ_d      │ 0   0    0       0      -x_d   0     0     x_ad   x_ad   0        0        0       0           0         │ 0      0      0 
-        Gov.    5        Δp_ref    │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 1      0      0 
-                6        Δω        │ 0   1    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0
-        Turbine 7        Δu_vlv    │ 0   0    1       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0 
-        Mach.   8,9      Δv_sh_dq  │ a   0    0       0       0     0     0     0      0      0        0        0       Rᵀ          0         │ 0      0      0 
-                10       Δv_0      │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0 
-                11       Δv_fd     │ 0   0    0       0       0     0     0     0      0      0        0        1       0           0         │ 0      0      0 
-                12       Δω        │ 0   1    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0 
-        Trans.  13,14    Δv_dq     │ 0   0    0       0       0     0     0     0      0      0        0        0       I₂          0         │ 0      0      0
-        Exciter 15       Δv_ref    │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      1      0
-                16       Δv_mag    │ 0   0    0       0       0     0     0     0      0      0        1        0       0           0         │ 0      0      0
-                17       Δv_stab   │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0       
-        Shunt   18,19    Δi_sh_DQ  │ b   0    0       0          R        0     0      0      0        0        0       0          -I₂        │ 0      0      0 
-        Branch  20,21    Δv_sh_DQ  │ 0   0    0       0       0     0     0     0      0      0        0        0       I₂          0         │ 0      0      0 
-                22,23    Δv_bus_DQ │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      I₂
+        Shaft   0        Δt_m      │ 0   0    0       1       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0     
+                1        Δi_d      │ 0   0    0       0       1     0     0     0      0      0        0        0       0           0         │ 0      0      0         0 
+                2        Δi_q      │ 0   0    0       0       0     1     0     0      0      0        0        0       0           0         │ 0      0      0         0 
+                3       -Δλ_q      │ 0   0    0       0       0     x_q   0     0      0     -x_aq     0        0       0           0         │ 0      0      0         0 
+                4        Δλ_d      │ 0   0    0       0      -x_d   0     0     x_ad   x_ad   0        0        0       0           0         │ 0      0      0         0 
+        Gov.    5        Δp_ref    │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 1      0      0         0
+                6        Δω        │ 0   1    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0
+        Turbine 7        Δu_vlv    │ 0   0    1       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0
+        Mach.   8,9      Δv_sh_dq  │ a   0    0       0       0     0     0     0      0      0        0        0       Rᵀ          0         │ 0      0      0         0
+                10       Δv_0      │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0
+                11       Δv_fd     │ 0   0    0       0       0     0     0     0      0      0        0        1       0           0         │ 0      0      0         0
+                12       Δω        │ 0   1    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0
+        Trans.  13,14    Δv_dq     │ 0   0    0       0       0     0     0     0      0      0        0        0       I₂          0         │ 0      0      0         0
+        Exciter 15       Δv_ref    │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      1      0         0
+                16       Δv_mag    │ 0   0    0       0       0     0     0     0      0      0        1        0       0           0         │ 0      0      0         0
+                17       Δv_stab   │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         0
+        Shunt   18       Δω_slack  │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      1         0
+                19,20    Δi_sh_DQ  │ b   0    0       0          R        0     0      0      0        0        0       0          -I₂        │ 0      0      0         0
+        Branch  21       Δω_slack  │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      1         0
+                22,23    Δv_sh_DQ  │ 0   0    0       0       0     0     0     0      0      0        0        0       I₂          0         │ 0      0      0         0
+                24,25    Δv_bus_DQ │ 0   0    0       0       0     0     0     0      0      0        0        0       0           0         │ 0      0      0         I₂
         ───────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────
         Grid    0,1      i_bus_DQ  │ 0   0    0       0       0     0     0     0      0      0        0        0       0           I₂        │ 0      0      0 
         outputs 
@@ -318,9 +335,9 @@ class SynchronousGenerator23A(Generator):
 
         # 
         # Number of stacked/grid side inputs and outputs
-        u_stack = 24
+        u_stack = 26
         y_stack = 17
-        u_grid = 4
+        u_grid = 5
         y_grid = 2
 
         # Variables in the interconnections
@@ -334,24 +351,17 @@ class SynchronousGenerator23A(Generator):
         x_aq= self.machine.x_aq_pu
 
         # Interconnection matrices
-        L11 = np.zeros((u_stack, y_stack))
-        L12 = np.zeros((u_stack, u_grid))
-        L21 = np.zeros((y_grid, y_stack))
-        L22 = np.zeros((y_grid, u_grid))
-
         idx_11 = [
             ([0],[3],1), ([1,2],[4,5],I), ([3],[5],x_q), ([3],[9],-x_aq), ([3],[10],-x_aq), ([4],[4],-x_d), ([4],[7],x_ad), ([4],[8],x_ad),
             ([6,7],[1,2],I), ([8,9],[13,14],R.T), ([8,9],[0],a), ([11],[12],1), ([12],[1],1), ([13,14],[13,14],I), ([16],[11],1),
-            ([18,19],[0], b), ([18,19],[4,5], R), ([18,19],[15,16],-I), ([20,21],[13,14],I)
+            ([19,20],[0], b), ([19,20],[4,5], R), ([19,20],[15,16],-I), ([22,23],[13,14],I)
             ]
-        idx_12 = [([5],[0],1), ([15],[1],1), ([22,23],[2,3],I)]
-        idx_21 = [([0,1],[15,16],I)]
+        idx_12 = [([5],[0],1), ([15],[1],1), ([18],[2],1), ([21],[2],1), ([24,25],[3,4],I)]
 
-        # Fill out each matrix
-        matrix_index_pairs =  [(L11, idx_11), (L12, idx_12), (L21, idx_21)]
-        for matrix, idx in matrix_index_pairs:
-            for rows, cols, value in idx:
-                matrix[np.ix_(rows, cols)] = value
+        L11 = coordinates_to_matrix(shape=(u_stack, y_stack), data=idx_11)
+        L12 = coordinates_to_matrix(shape=(u_stack, u_grid), data=idx_12)
+        L21 = coordinates_to_matrix(shape=(y_grid, y_stack), data=[([0,1],[15,16],I)])
+        L22 = np.zeros((y_grid, u_grid))
 
         return (L11,L12,L21,L22)
 
@@ -392,8 +402,8 @@ class SynchronousGenerator23A(Generator):
             w     = 1
         )
         transducer_qbm = self.transducer.get_quadratic_bilinear_model(
-            v_d = self.rc_shunt.emt_init.v_D,
-            v_q = self.rc_shunt.emt_init.v_Q,
+            v_d = self.rc_shunt.emt_init.v_bus_D,
+            v_q = self.rc_shunt.emt_init.v_bus_Q,
         )
         exciter_qbm = self.exciter.get_quadratic_bilinear_model(
             x_l = self.exciter.emt_init.x_l,
@@ -405,35 +415,37 @@ class SynchronousGenerator23A(Generator):
             v_stab = 0,
         )
         shunt_qbm = self.rc_shunt.get_quadratic_bilinear_model(
-            v_D = self.rc_shunt.emt_init.v_D,
-            v_Q = self.rc_shunt.emt_init.v_Q, 
-            i_D = self.rc_shunt.emt_init.i_D,
-            i_Q = self.rc_shunt.emt_init.i_Q,  
+            v_d=self.rc_shunt.emt_init.v_bus_D,
+            v_q=self.rc_shunt.emt_init.v_bus_Q, 
+            i_d=self.rc_shunt.emt_init.i_bus_D,
+            i_q=self.rc_shunt.emt_init.i_bus_Q,  
         )
         branch_qbm = self.rl_branch.get_quadratic_bilinear_model(
-            v_from_D = self.rl_branch.emt_init.v_from_D,
-            v_from_Q = self.rl_branch.emt_init.v_from_Q,
-            v_to_D   = self.rl_branch.emt_init.v_to_D,
-            v_to_Q   = self.rl_branch.emt_init.v_to_Q,
-            i_D      = self.rl_branch.emt_init.i_D,
-            i_Q      = self.rl_branch.emt_init.i_Q,
+            v_from_d = self.rl_branch.emt_init.v_from_bus_D,
+            v_from_q = self.rl_branch.emt_init.v_from_bus_Q,
+            v_to_d = self.rl_branch.emt_init.v_to_bus_D,
+            v_to_q = self.rl_branch.emt_init.v_to_bus_Q,
+            i_d = self.rl_branch.emt_init.i_br_D,
+            i_q = self.rl_branch.emt_init.i_br_Q,
+            name = "bus",
         )
         u = DynamicalVariables(
-            name=["p_ref", "v_ref", "one", "v_bus_D", "v_bus_Q"],
+            name=["p_ref", "v_ref", "w_slack", "one", "v_bus_D", "v_bus_Q"],
             component=f"{self.type_}_{self.id}",
-            type=["device", "device", "device", "grid", "grid"],
+            type=["device", "device", "device", "device", "grid", "grid"],
             init=[
                 self.shaft.emt_init.p_ref,
                 self.exciter.emt_init.v_ref, 
                 1,
-                self.rl_branch.emt_init.v_to_D,
-                self.rl_branch.emt_init.v_to_Q]
+                1,
+                self.rl_branch.emt_init.v_to_bus_D,
+                self.rl_branch.emt_init.v_to_bus_Q]
         )
 
         y = DynamicalVariables(
             name=["i_bus_D", "i_bus_Q"],
             component=f"{self.type_}_{self.id}",
-            init=[self.rl_branch.emt_init.i_D, self.rl_branch.emt_init.i_Q]
+            init=[self.rl_branch.emt_init.i_br_D, self.rl_branch.emt_init.i_br_Q]
         )
 
         # Generate small-signal model
@@ -451,31 +463,34 @@ class SynchronousGenerator23A(Generator):
     def get_interconnections_qbm(self, t_m, p_ref, v_fd, c0, c1, c2):
         """
         ┌ component ──▶            | Shaft      ┆ Gov.   ┆ Turb. ┆ Machine                 ┆ Trans.  ┆ Exci.  ┆ Shunt   ┆ Branch   │ Grid inputs
-        │       ┌ index ──▶        │ 0  1   2   ┆ 3      ┆ 4     ┆ 5,6,7  8,9      10,11   ┆ 12      ┆ 13     ┆ 14,15   ┆ 16,17    │ 0      1      2    3,4 
-        ▼       ▼                  │ ω  sin cos ┆ Δu_vlv ┆ Δt_m  ┆ i_dq0  i_fd/1d  i_1q/2q ┆ v_mag^2 ┆ Δv_fd  ┆ v_sh_DQ ┆ i_bus_DQ │ p_ref  v_ref  one  v_bus_DQ
-        ───────────────────────────┼────────────┴────────┴───────┴─────────────────────────┴─────────┴────────┴─────────┴──────────┼───────────────────────
-        Shaft   0        t_m       │ 0   0    0   0        1       0      0        0         0         0        0         0        │ 0      0    t_m(0) 0   
-                1        one       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      1    0   
-                2       *t_e       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-        Gov.    3        Δp_ref    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 1      0    -p(0)  0  
-                4        Δω        │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0     -1    0   
-        Turbine 5        Δu_vlv    │ 0   0    0   1        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-        Mach.   6,7     *v_sh_dq   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-                8        v_0       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-                9        v_fd      │ 0   0    0   0        0       0      0        0         0         1        0         0        │ 0      0    v_fd0  0   
-                10       ω         │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-        Trans.  11,12   *v_dq      │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-        Exciter 13       v_ref     │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      1      0    0   
-                14      *v_mag     │ 0   0    0   0        0       0      0        0         c1        0        0         0        │ 0      0      c0   0   
-                15       v_stab    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   
-        Shunt   16,17   *i_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        0        -I₂       │ 0      0      0    0   
-        Branch  18,19    v_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        I₂        0        │ 0      0      0    0   
-                20,21    v_bus_DQ  │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    I₂   
-        ───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────
+        │       ┌ index ──▶        │ 0  1   2   ┆ 3      ┆ 4     ┆ 5,6,7  8,9      10,11   ┆ 12      ┆ 13     ┆ 14,15   ┆ 16,17    │ 0      1      2         3    4,5 
+        ▼       ▼                  │ ω  sin cos ┆ Δu_vlv ┆ Δt_m  ┆ i_dq0  i_fd/1d  i_1q/2q ┆ v_mag^2 ┆ Δv_fd  ┆ v_sh_DQ ┆ i_bus_DQ │ p_ref  v_ref  ω_slack   one  v_bus_DQ
+        ───────────────────────────┼────────────┴────────┴───────┴─────────────────────────┴─────────┴────────┴─────────┴──────────┼───────────────────────────────────────
+        Shaft   0        t_m       │ 0   0    0   0        1       0      0        0         0         0        0         0        │ 0      0      0    0  t_m(0) 0   
+                1        ω_slack   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      1    0    0    0 
+                2        one       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    1    0   
+                3       *t_e       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+        Gov.    4        Δp_ref    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 1      0      0    0  -p(0)  0  
+                5        Δω        │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0   -1    0   
+        Turbine 6        Δu_vlv    │ 0   0    0   1        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+        Mach.   7,8     *v_sh_dq   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+                9        v_0       │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+                10       v_fd      │ 0   0    0   0        0       0      0        0         0         1        0         0        │ 0      0      0    0  v_fd0  0   
+                11       ω         │ 1   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+        Trans.  12,13   *v_dq      │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+        Exciter 14       v_ref     │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      1      0    0    0    0   
+                15      *v_mag     │ 0   0    0   0        0       0      0        0         c1        0        0         0        │ 0      0      0    0    c0   0   
+                16       v_stab    │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    0   
+        Shunt   17       ω_slack   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      1    0    0    0 
+                18,19   *i_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        0        -I₂       │ 0      0      0    0    0    0   
+        Branch  20       ω_slack   │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      1    0    0    0 
+                21,22    v_sh_DQ   │ 0   0    0   0        0       0      0        0         0         0        I₂        0        │ 0      0      0    0    0    0   
+                23,24    v_bus_DQ  │ 0   0    0   0        0       0      0        0         0         0        0         0        │ 0      0      0    0    0    I₂   
+        ───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────
         Grid    0,1      i_bus_DQ  │ 0   0    0   0        0       0      0        0         0         0        0         I₂       │ 0      0      0    0 
 
-        idx_11 = [([0],[4],1), ([4],[0],1), ([5],[3],1), ([9],[13],1), ([10],[0],1), ([14],[12],c1), ([16,17],[16,17],-I), ([18,19],[14,15],I)]
-        idx_12 = [([0],[2],t_m), ([1],[2],1), ([3],[0],1), ([3],[2],-p_ref), ([4],[2],-1), ([9],[2], v_fd), ([13],[1],1), ([14],[2],c0), ([20,21],[3,4],I)]
+        idx_11 = [([0],[4],1), ([5],[0],1), ([6],[3],1), ([10],[13],1), ([11],[0],1), ([15],[12],c1), ([18,19],[16,17],-I), ([21,22],[14,15],I)]
+        idx_12 = [([0],[3],t_m), ([1],[2],1), ([2],[3],1), ([4],[0],1), ([4],[3],-p_ref), ([5],[3],-1), ([10],[3], v_fd),([14],[1],1),  ([15],[3],c0), ([17],[2],1), ([20],[2],1), ([23,24],[4,5], I)]
         idx_21 = [([0,1],[16,17],I)]
 
         ## Rotational Transformations ##
@@ -483,51 +498,51 @@ class SynchronousGenerator23A(Generator):
                              1     │ 0   1   2   ┆3,4,5┆ 6,7  8   9,10,11,12┆ 13,14,15,16,17 ┆ 18,19    
         (x_1 * x)            sin * │ ω   sin cos ┆ ... ┆ i_dq i_0 i_dampers ┆ ...            ┆ v_sh_DQ  ....
         ───────────────────────────┼─────────────┴─────┴────────────────────┴────────────────┴─────────────────
-        Mach.   6,7     *v_sh_dq   │ 0   0   0     0     0    0   0           0                J₂             
-        Shunt   16,17   *i_sh_DQ   │ 0   0   0     0    -J₂   0   0           0                0 
+        Mach.   7,8     *v_sh_dq   │ 0   0   0     0     0    0   0           0                J₂             
+        Shunt   18,19   *i_sh_DQ   │ 0   0   0     0    -J₂   0   0           0                0 
 
                              2     │ 0   1   2   ┆3,4,5┆ 6,7  8   9,10,11,12┆ 13,14,15,16,17 ┆ 18,19
         (x_2 * x)            cos * │ ω   sin cos ┆ ... ┆ i_dq i_0 i_dampers ┆ ...            ┆ v_sh_DQ  ....
         ───────────────────────────┼─────────────┴─────┴────────────────────┴────────────────┴─────────────────
-        Mach.   6,7     *v_sh_dq   │ 0   0   0     0     0    0   0           0                I₂             
-        Shunt   16,17   *i_sh_DQ   │ 0   0   0     0     I₂   0   0           0                0 
+        Mach.   7,8     *v_sh_dq   │ 0   0   0     0     0    0   0           0                I₂             
+        Shunt   18,19   *i_sh_DQ   │ 0   0   0     0     I₂   0   0           0                0 
         
-        idx_x1 = [([6,7],[18,19],J),([16,17],[6,7],-J)]
-        idx_x2 = [([6,7],[18,19],I),([16,17],[6,7],I)
+        idx_x1 = [([7,8],[18,19],J),([18,19],[6,7],-J)]
+        idx_x2 = [([7,8],[18,19],I),([18,19],[6,7],I)]
 
         ## Torque ##
                                    | ShftGovTb ┆ Machine         
                              2     │0,1,2,3,4,5┆ 6    7    8    9     10    11    12
         (x_6 * x)            i_d * │ ...       ┆ i_d  i_q  i_0  i_fd  i_1d  i_1q  i_2q 
         ───────────────────────────┼───────────┴─────────────────────────────────────
-        Shaft   2           *t_e   │ 0           0    x_q  0    0     0    -x_aq  -x_aq
+        Shaft   3           *t_e   │ 0           0    x_q  0    0     0    -x_aq  -x_aq
         
                              2     │0,1,2,3,4,5┆ 6    7    8    9     10    11    12
         (x_7 * x)            i_q * │ ...       ┆ i_d  i_q  i_0  i_fd  i_1d  i_1q  i_2q 
         ───────────────────────────┼───────────┴─────────────────────────────────────
-        Shaft   2           *t_e   │ 0          -x_d  0    0    x_ad  x_ad  0     0 
+        Shaft   3           *t_e   │ 0          -x_d  0    0    x_ad  x_ad  0     0 
 
-        idx_x6 = [([2],[7],x_q), ([2],[11],-x_aq), ([2],[12],-x_aq)]
-        idx_x7 = [([2],[6],-x_d), ([2],[9],x_ad), ([2],[10],x_ad)]
+        idx_x6 = [([3],[7],x_q), ([3],[11],-x_aq), ([3],[12],-x_aq)]
+        idx_x7 = [([3],[6],-x_d), ([3],[9],x_ad), ([3],[10],x_ad)]
 
         ## Transducer ##
                       18        19
-        11      v_d = V_sh_D**2
-        12      v_q =           v_sh_Q**2
+        12      v_d = V_sh_D**2
+        13      v_q =           v_sh_Q**2
 
                              13
-        14      v_mag = c2 * v_mag^2**2
+        15      v_mag = c2 * v_mag^2**2
 
-        idx_x18 = [([11],[18],1)]
-        idx_x19 = [([12],[19],1)]
-        idx_x14 = [([14],[13],c2)]
+        idx_x18 = [([12],[18],1)]
+        idx_x19 = [([13],[19],1)]
+        idx_x14 = [([15],[13],c2)]
 
         """
         # Number of stacked/grid side inputs and outputs
-        u_stack = 22
+        u_stack = 25
         y_stack = 18
         x_stack = 22
-        u_grid = 5
+        u_grid = 6
         y_grid = 2
 
         # Variables in the interconnections
@@ -539,13 +554,14 @@ class SynchronousGenerator23A(Generator):
         x_aq= self.machine.x_aq_pu
 
         # Matrix data in (row, column, value) format
-        idx_11 = [([0],[4],1), ([4],[0],1), ([5],[3],1), ([9],[13],1), ([10],[0],1), ([14],[12],c1), ([16,17],[16,17],-I), ([18,19],[14,15],I)]
-        idx_12 = [([0],[2],t_m), ([1],[2],1), ([3],[0],1), ([3],[2],-p_ref), ([4],[2],-1), ([9],[2], v_fd), ([13],[1],1), ([14],[2],c0), ([20,21],[3,4],I)]
+        idx_11 = [([0],[4],1), ([5],[0],1), ([6],[3],1), ([10],[13],1), ([11],[0],1), ([15],[12],c1), ([18,19],[16,17],-I), ([21,22],[14,15],I)]
+        idx_12 = [([0],[3],t_m), ([1],[2],1), ([2],[3],1), ([4],[0],1), ([4],[3],-p_ref), ([5],[3],-1), 
+                  ([10],[3], v_fd),([14],[1],1),  ([15],[3],c0), ([17],[2],1), ([20],[2],1), ([23,24],[4,5], I)]
 
-        idx_x1 = [([6,7],[18,19],J),([16,17],[6,7],-J)]
-        idx_x2 = [([6,7],[18,19],I),([16,17],[6,7],I)]
-        idx_x6 = [([2],[7],x_q), ([2],[11],-x_aq), ([2],[12],-x_aq)]
-        idx_x7 = [([2],[6],-x_d), ([2],[9],x_ad), ([2],[10],x_ad)]
+        idx_x1 = [([7,8],[18,19],J),([18,19],[6,7],-J)]
+        idx_x2 = [([7,8],[18,19],I),([18,19],[6,7],I)]
+        idx_x6 = [([3],[7],x_q), ([3],[11],-x_aq), ([3],[12],-x_aq)]
+        idx_x7 = [([3],[6],-x_d), ([3],[9],x_ad), ([3],[10],x_ad)]
 
         # Linear interconnection matrices
         L11 = coordinates_to_matrix(shape=(u_stack, y_stack), data=idx_11)
@@ -555,15 +571,15 @@ class SynchronousGenerator23A(Generator):
 
         # Nonlinear interconnection matrices        
         M1_x1 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x1)
-        M2_x2 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x2)
+        M1_x2 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x2)
         M1_x6 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x6)
         M1_x7 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x7)
-        M1_x13 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([14],[13],c2)])
-        M1_x18 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([11],[18],1)])
-        M1_x19 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([12],[19],1)])
+        M1_x13 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([15],[13],c2)])
+        M1_x18 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([12],[18],1)])
+        M1_x19 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([13],[19],1)])
         
         Z = np.zeros((u_stack, x_stack))
-        M1 = np.hstack([Z, M1_x1, M2_x2, Z, Z, Z, M1_x6, M1_x7] + 5*[Z] + [M1_x13] + 4*[Z] + [M1_x18, M1_x19, Z, Z])
+        M1 = np.hstack([Z, M1_x1, M1_x2, Z, Z, Z, M1_x6, M1_x7] + 5*[Z] + [M1_x13] + 4*[Z] + [M1_x18, M1_x19, Z, Z])
         M2 = np.zeros((u_stack, x_stack*u_grid))
         
         return (L11, L12, L21, L22, M1, M2)
@@ -593,13 +609,13 @@ class SynchronousGenerator23A(Generator):
             ("exciter_exciter", self.exciter.emt_init.x_e),
             ("exciter_damper", self.exciter.emt_init.x_f),
             # RC shunt
-            ("v_shunt_a", self.rc_shunt.emt_init.v_a),
-            ("v_shunt_b", self.rc_shunt.emt_init.v_b),
-            ("v_shunt_c", self.rc_shunt.emt_init.v_c),
+            ("v_shunt_a", self.rc_shunt.emt_init.v_bus_a),
+            ("v_shunt_b", self.rc_shunt.emt_init.v_bus_b),
+            ("v_shunt_c", self.rc_shunt.emt_init.v_bus_c),
             # RL branch
-            ("i_bus_a", self.rl_branch.emt_init.i_a),
-            ("i_bus_b", self.rl_branch.emt_init.i_b),
-            ("i_bus_c", self.rl_branch.emt_init.i_c),
+            ("i_bus_a", self.rl_branch.emt_init.i_br_a),
+            ("i_bus_b", self.rl_branch.emt_init.i_br_b),
+            ("i_bus_c", self.rl_branch.emt_init.i_br_c),
         ]
         # States 
         name, init = map(list, zip(*states))
@@ -609,6 +625,7 @@ class SynchronousGenerator23A(Generator):
         init = self.rl_branch.emt_init
 
         # Inputs 
+        v_to_a, v_to_b, v_to_c = dq02abc(init.v_to_bus_D, init.v_to_bus_Q, 0, 0)
         u = DynamicalVariables(
             name=["p_ref", "v_ref", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
@@ -616,14 +633,14 @@ class SynchronousGenerator23A(Generator):
             init=[
                 self.shaft.emt_init.p_ref, 
                 self.exciter.emt_init.v_ref, 
-                init.v_to_a, init.v_to_b, init.v_to_c]
+                v_to_a, v_to_b, v_to_c]
         )
 
         # Outputs
         y = DynamicalVariables(
             name=["i_bus_a", "i_bus_b", "i_bus_c"],
             component=f"{self.type_}_{self.id}",
-            init=[init.i_a, init.i_b, init.i_c]
+            init=[init.i_br_a, init.i_br_b, init.i_br_c]
         )
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)

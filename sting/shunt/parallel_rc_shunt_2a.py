@@ -18,6 +18,9 @@ class InitialConditionsEMT(NamedTuple):
     vphase_bus: float
     v_bus_D: float
     v_bus_Q: float
+    v_bus_a: float
+    v_bus_b: float
+    v_bus_c: float
     i_bus_D: float
     i_bus_Q: float
 
@@ -46,33 +49,40 @@ class ParallelRCShunt2A(Shunt):
     def wbase(self):
         return 2 * np.pi * self.base_frequency_Hz
 
-    def _calculate_emt_initial_conditions(self):
+    def get_steady_state(self, v_sh_mag, v_sh_phase):
         g = self.g_pu
         b = self.b_pu
 
-        vmag_bus = self.power_flow_variables.vmag_bus
-        vphase_bus = self.power_flow_variables.vphase_bus
-
-        v_bus_DQ = vmag_bus * np.exp(vphase_bus * 1j * np.pi / 180)
+        v_bus_DQ = v_sh_mag * np.exp(v_sh_phase * 1j * np.pi / 180)
         i_bus_DQ = v_bus_DQ * g + v_bus_DQ * (1j * b)
+        v_bus_a, v_bus_b, v_bus_c = dq02abc(v_bus_DQ.real, v_bus_DQ.imag, 0, 0)
 
         self.emt_init = InitialConditionsEMT(
-            vmag_bus=vmag_bus,
-            vphase_bus=vphase_bus,
+            vmag_bus=v_sh_mag,
+            vphase_bus=v_sh_phase,
+
             v_bus_D=v_bus_DQ.real,
             v_bus_Q=v_bus_DQ.imag,
+            v_bus_a=v_bus_a, 
+            v_bus_b=v_bus_b, 
+            v_bus_c=v_bus_c,
+
             i_bus_D=i_bus_DQ.real,
             i_bus_Q=i_bus_DQ.imag,
         )
 
-    def _build_small_signal_model(self):
+
+    def _calculate_emt_initial_conditions(self):
+        vmag_bus = self.power_flow_variables.vmag_bus
+        vphase_bus = self.power_flow_variables.vphase_bus
+        self.get_steady_state(vmag_bus, vphase_bus)
+
+
+    def get_small_signal_model(self, v_d, v_q, i_d, i_q):
         """
         d/dt v_dq = -(g * w_b / b) * v_dq - j * w * v_dq + (w_b / b) * i_dq
         """
-
         g, b, wb = self.g_pu, self.b_pu, self.wbase
-        i_d, i_q = self.emt_init.i_bus_D, self.emt_init.i_bus_Q
-        v_d, v_q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
 
         A = wb * np.array([
             [ -g/b,    1], # Δv_d
@@ -92,9 +102,12 @@ class ParallelRCShunt2A(Shunt):
         x = DynamicalVariables(name=["v_sh_d", "v_sh_q"], init=[v_d, v_q], component=f"{self.type_}_{self.id}")
         y = copy.deepcopy(x)      
 
-        self.ssm = StateSpaceModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 3)), u=u, x=x, y=y)
-        return self.ssm
+        return StateSpaceModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 3)), u=u, x=x, y=y)
 
+    def _build_small_signal_model(self):
+        i_d, i_q = self.emt_init.i_bus_D, self.emt_init.i_bus_Q
+        v_d, v_q = self.emt_init.v_bus_D, self.emt_init.v_bus_Q
+        self.ssm =self.get_small_signal_model(v_d, v_q, i_d, i_q)
 
     def get_quadratic_bilinear_model(self, v_d, v_q, i_d, i_q):
         g, b, wb = self.g_pu, self.b_pu, self.wbase
@@ -155,6 +168,9 @@ class ParallelRCShunt2A(Shunt):
         )
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
+
+    def get_derivatives_step_emt_abc(self, v_sh_a, v_sh_b, v_sh_c, i_sh_a, i_sh_b, i_sh_c):
+        return self.get_derivative_state_emt([v_sh_a, v_sh_b, v_sh_c], [i_sh_a, i_sh_b, i_sh_c])
 
     def get_derivative_state_emt(self, x, u):
 

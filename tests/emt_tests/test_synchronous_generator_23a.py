@@ -43,8 +43,8 @@ system.apply("post_system_init", system)
 
 inputs = {
     "synchronous_generator_23a_0": {
-        "p_ref": lambda t: -0.5 if t > 0.1 else 0,
-        "v_ref": lambda t: 0.2 if t > 1.1 else 0
+        "p_ref": lambda t: 0.25 if t > 0.5 else 0,
+        #"v_ref": lambda t: 0.2 if t > 1.1 else 0
     }
 }
 t_max=2.5
@@ -60,8 +60,7 @@ sol = qbm.simulate(t_max=t_max, inputs=inputs)
 os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
 print(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
-
-
+qbm.write_simulation_plots(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 
 
 # Compare the results of the EMT and small-signal model simulations
@@ -75,7 +74,7 @@ cols_ssm = [
     "w", "x_gov", "x_t1", "x_t2", 
     "i_d", "i_q", "i_fd", "i_1d", "i_1q", "i_2q", 
     "x_l", "x_a", "x_e", "x_f",
-    "v_sh_D", "v_sh_Q", "i_br_D", "i_br_Q"]
+    "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
 
 compare_timeseries(
     df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),

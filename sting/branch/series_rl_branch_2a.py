@@ -22,9 +22,12 @@ class InitialConditionsEMT(NamedTuple):
     v_from_bus_Q: float
     v_to_bus_D: float
     v_to_bus_Q: float
+
     i_br_D: float
     i_br_Q: float
-
+    i_br_a: float
+    i_br_b: float 
+    i_br_c: float
 
 @dataclass(slots=True)
 class SeriesRLBranch2A(Branch):
@@ -45,44 +48,45 @@ class SeriesRLBranch2A(Branch):
     def wbase(self):
         return 2 * np.pi * self.base_frequency_Hz
 
-    def _calculate_emt_initial_conditions(self):
+    def get_steady_state(self, v_from_mag, v_from_phase, v_to_mag, v_to_phase):
         r = self.r_pu
         x = self.x_pu
 
-        vmag_from_bus = self.power_flow_variables.vmag_from_bus
-        vphase_from_bus = self.power_flow_variables.vphase_from_bus
-
-        vmag_to_bus = self.power_flow_variables.vmag_to_bus
-        vphase_to_bus = self.power_flow_variables.vphase_to_bus
-
-        v_from_bus_DQ = vmag_from_bus * np.exp(vphase_from_bus * np.pi / 180 * 1j)
-        v_to_bus_DQ = vmag_to_bus * np.exp(vphase_to_bus * np.pi / 180 * 1j)
+        v_from_bus_DQ = v_from_mag * np.exp(v_from_phase * np.pi / 180 * 1j)
+        v_to_bus_DQ = v_to_mag * np.exp(v_to_phase * np.pi / 180 * 1j)
 
         i_br_DQ = (v_from_bus_DQ - v_to_bus_DQ) / (r + 1j * x)
+        i_br_a, i_br_b, i_br_c = dq02abc(i_br_DQ.real, i_br_DQ.imag, 0, 0)
 
         self.emt_init = InitialConditionsEMT(
-            vmag_from_bus=vmag_from_bus,
-            vphase_from_bus=vphase_from_bus,
-            vmag_to_bus=vmag_to_bus,
-            vphase_to_bus=vphase_to_bus,
+            vmag_from_bus=v_from_mag,
+            vphase_from_bus=v_from_phase,
+            vmag_to_bus=v_to_mag,
+            vphase_to_bus=v_to_phase,
             v_from_bus_D=v_from_bus_DQ.real,
             v_from_bus_Q=v_from_bus_DQ.imag,
             v_to_bus_D=v_to_bus_DQ.real,
             v_to_bus_Q=v_to_bus_DQ.imag,
             i_br_D=i_br_DQ.real,
             i_br_Q=i_br_DQ.imag,
+            i_br_a=i_br_a, i_br_b=i_br_b, i_br_c=i_br_c
         )
+        return self.emt_init
 
-    def _build_small_signal_model(self):
+    def _calculate_emt_initial_conditions(self):
+        v_from_mag = self.power_flow_variables.vmag_from_bus
+        v_from_phase = self.power_flow_variables.vphase_from_bus
+        v_to_mag = self.power_flow_variables.vmag_to_bus
+        v_to_phase = self.power_flow_variables.vphase_to_bus
+
+        self.get_steady_state(v_from_mag, v_from_phase, v_to_mag, v_to_phase)
+
+    def get_small_signal_model(self, i_d, i_q, v_from_d, v_from_q, v_to_d, v_to_q, name='br'):
         """
         d/dt i_dq = -(r * w_b / x) * i_dq - j * w * i_dq + (w_b / x) * v_from_dq - (w_b / x) * v_to_dq
         """
         # Parameters
         r, x, wb = self.r_pu, self.x_pu, self.wbase
-        # Initial conditions
-        i_d, i_q = self.emt_init.i_br_D, self.emt_init.i_br_Q
-        v_from_d, v_from_q = self.emt_init.v_from_bus_D, self.emt_init.v_from_bus_Q
-        v_to_d, v_to_q = self.emt_init.v_to_bus_D, self.emt_init.v_to_bus_Q
 
         A = wb * np.array([
                 [-r/x, 1   ],  # Δi_d
@@ -99,11 +103,18 @@ class SeriesRLBranch2A(Branch):
             component=f"{self.type_}_{self.id}",
             type=["device", "grid", "grid", "grid", "grid"],
         )
-        x = DynamicalVariables(name=["i_br_d", "i_br_q"], init=[i_d, i_q], component=f"{self.type_}_{self.id}")
+        x = DynamicalVariables(name=[f"i_{name}_d", f"i_{name}_q"], init=[i_d, i_q], component=f"{self.type_}_{self.id}")
         y = copy.deepcopy(x)
 
-        self.ssm = StateSpaceModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), u=u, x=x, y=y)
-        return self.ssm
+        ssm = StateSpaceModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), u=u, x=x, y=y)
+        return ssm
+
+    def _build_small_signal_model(self):
+        # Initial conditions
+        i_d, i_q = self.emt_init.i_br_D, self.emt_init.i_br_Q
+        v_from_d, v_from_q = self.emt_init.v_from_bus_D, self.emt_init.v_from_bus_Q
+        v_to_d, v_to_q = self.emt_init.v_to_bus_D, self.emt_init.v_to_bus_Q
+        self.ssm = self.get_small_signal_model(i_d, i_q, v_from_d, v_from_q, v_to_d, v_to_q)
 
     def get_quadratic_bilinear_model(self, i_d, i_q, v_from_d, v_from_q, v_to_d, v_to_q, name='br'):
         # Parameters
@@ -176,6 +187,9 @@ class SeriesRLBranch2A(Branch):
         )
 
         self.variables_emt = VariablesEMT(x=x, u=u, y=y)
+
+    def get_derivatives_step_emt_abc(self, i_a, i_b, i_c, v_from_a, v_from_b, v_from_c, v_to_a, v_to_b, v_to_c):
+        return self.get_derivative_state_emt([i_a, i_b, i_c], [v_from_a, v_from_b, v_from_c, v_to_a, v_to_b, v_to_c])
 
     def get_derivative_state_emt(self, x, u):
 
