@@ -75,7 +75,7 @@ def inspect_coefficients(model: pyo.ConcreteModel):
     repn = generate_standard_repn(obj.expr, compute_values=False)
 
     min_obj_coef = math.inf
-    max_obj_coef = 0
+    max_obj_coef = -math.inf
     min_obj_info = None
     max_obj_info = None
 
@@ -89,7 +89,7 @@ def inspect_coefficients(model: pyo.ConcreteModel):
 
         if val > max_obj_coef:
             max_obj_coef = coef               
-        max_obj_info = (coef, var.name)
+            max_obj_info = (coef, var.name)
 
     logger.info(f"  - Matrix coefficient extremes:")
     logger.info(f"     - Minimum coefficient: {min_coef_info[0]}")
