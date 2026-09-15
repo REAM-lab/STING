@@ -1,0 +1,16 @@
+﻿bus,scenario,timepoint,load_MW
+1,sc1,tp_1,10
+2,sc1,tp_1,300
+3,sc1,tp_1,300
+4,sc1,tp_1,100
+5,sc1,tp_1,0
+1,sc1,tp_2,20
+2,sc1,tp_2,100
+3,sc1,tp_2,200
+4,sc1,tp_2,500
+5,sc1,tp_2,10
+1,sc1,tp_3,5
+2,sc1,tp_3,300
+3,sc1,tp_3,100
+4,sc1,tp_3,600
+5,sc1,tp_3,5

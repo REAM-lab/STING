@@ -1,0 +1,6 @@
+﻿name,technology,bus,site,cost_fixed_power_USDperkW,cap_existing_power_MW,cap_max_power_MW,cost_variable_USDperMWh
+gas_1,gas,1,no_capacity_factor,0,200,200,60
+gas_2,gas,1,no_capacity_factor,0,200,200,50
+hydro_1,hydro,3,no_capacity_factor,0,520,520,5
+hydro_2,hydro,4,no_capacity_factor,0,400,400,5
+hydro_3,hydro,5,no_capacity_factor,0,600,600,1
