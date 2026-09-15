@@ -1,10 +1,7 @@
 """
 This script runs the capacity expansion model using transport model for a 2-bus system.
 Objective function value: 2000.
-
-Author: Paul Serna-Torre
 Date: 2026-02-15
-
 """
 
 # Import Python standard and third-party packages

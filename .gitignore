@@ -20,3 +20,8 @@ sting_log.txt
 tests/tmpdir
 tests/emt_tests/tmpdir
 .vscode/
+# Include input files of certain examples
+!examples/capacity_expansion/2bus/**/*.csv
+!examples/capacity_expansion/5bus/**/*.csv
+!examples/capacity_expansion/energy_budgets/**/*.csv
+!examples/capacity_expansion/transmission_capacity_policy/**/*.csv

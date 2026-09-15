@@ -1,16 +1,10 @@
 """
-This script runs an operations model for a 5-bus system enforcing energy
-and power budget constraints on a set of hydro generators. Both power
-and energy budgets are defined using terms--a set of timepoints in which
-the constraints are active. Here we enforce a 600MW power constraint (i.e.,
-all hydro generators cannot dispatch more than 600MW in total at any hour) 
-and a 1.7GWh energy constraint (i.e., over the 3 timepoints hydro energy cannot 
-dispatch more than 1.7GW). Both constraints are binding in this example.
+This script runs a capacity expansion model for the 5-bus case study with 1-hour time resolution.
+It enforces a policy that limits the total built transmission capacity to 15 MW and 10 MW, respectively.
 
-Objective function value: 97567.5626
-
-Author: Adam Sedlak
-Date: 2026-02-13
+total_cost_USD:
+tx_cap_10: 4177803.4478469538 USD
+tx_cap_15: 4177498.5217958856 USD
 """
 
 # Import Python standard and third-party packages
@@ -48,11 +42,13 @@ sys = main.run_capex(
     components_to_add=[TransmissionExpansionConstraint(built_transmission_capacity_cap_MW=15)],
     output_directory=os.path.join(case_dir, "outputs", "tx_cap_15"))
 
+# If you want to keep running the model with a different transmission capacity, just add like this:
+'''
 sys = main.run_capex(
     case_directory=case_dir, 
     solver_settings=mosek_solver_settings, 
     model_settings=model_settings,
     components_to_add=[TransmissionExpansionConstraint(built_transmission_capacity_cap_MW=10)],
     output_directory=os.path.join(case_dir, "outputs", "tx_cap_10"))
-
+'''
 print('ok')

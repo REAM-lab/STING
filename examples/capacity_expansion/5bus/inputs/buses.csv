@@ -1,0 +1,6 @@
+﻿name,bus_type,zone
+1,slack,center
+2,PQ,north
+3,PQ,south
+4,PQ,south
+5,PQ,south
