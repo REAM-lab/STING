@@ -19,17 +19,18 @@ class InitialConditionsEMT(NamedTuple):
 class PhaseLockedLoop3A:
     """
     A third-order model of a phase-locked loop with a filter.  
-                                                              w_base                           
-                                                                 │
-               ┌─────────┐     ┌─────────────┐     ┌────┐    [+] ▼[+]  ┌──────┐
-    v_abc ────▶│ abc→dq0 │────▶│ 1/(tau*s+1) │────▶│ PI │─────▶──┴────▶│ wb/s │───┬──▶ θ_pll
-               └───┬─────┘     └─────────────┘ v_q └────┘    Δw        └──────┘   │
-                   ▲                                                              │
-                   └──────────────────────────────────────────────────────────────┘
+                    ┌────┐
+    w_set [pu] ─────│ wb │───────────────────────────────────────┐       
+                    └────┘                                       │
+               ┌─────────┐     ┌─────────────┐     ┌────┐    [+] ▼[+]  ┌─────┐
+    v_abc ────▶│ abc→dq0 │────▶│ 1/(tau*s+1) │────▶│ PI │─────▶──┴────▶│ 1/s │───┬──▶ θ_pll [rad]
+               └───┬─────┘     └─────────────┘ v_q └────┘    Δw        └─────┘   │
+                   ▲                                                             │
+                   └─────────────────────────────────────────────────────────────┘
 
     Parameters
-    - kp_pu: Proportional gain [pu]
-    - ki_puHz: Integral gain [pu]
+    - kp_pu_s: Proportional gain [rad/s]
+    - ki_rad_s2: Integral gain [rad/s^2]
     - tau: Filter constant [pu]
     - wbase: Nominal frequency [rad/s] of the system
     - alpha: Quadratic bilinear artificial stabilization
@@ -106,12 +107,14 @@ class PhaseLockedLoop3A:
         The quadratic bilinear dynamics of the PLL are given by:
             d/dt z_pi = ki * v_q
             d/dt v_q  = (1/tau) * (-v_D*z_s + v_Q*z_c - v_q)
-            d/dt z_s  = z_c * (w - wb)
-                      =  z_c * (kp*v_q + z_pi) - z_c * wb - alpha * (z_c^2 + z_s^2 - 1)
-            d/dt z_c  = -z_s * (kp*v_q + z_pi) + z_s * wb - alpha * (z_c^2 + z_s^2 - 1)
+            d/dt z_s  = z_c * (w - wb*w_slack)
+                      =  z_c * (kp*v_q + z_pi + wb*w_set) - z_c * wb * w_slack - alpha * (z_c^2 + z_s^2 - 1)
+            d/dt z_c  = -z_s * (kp*v_q + z_pi + wb*w_set) + z_s * wb * w_slack - alpha * (z_c^2 + z_s^2 - 1)
 
         Note: The output angular velocity is in per unit, that is w = wb * w_pu. 
             w_pu = 1/wb * (kp * v_q + z_pi)
+
+            Moreover the the PI gains carry the unit second(s), thus w is modeled directly in the PLL not w_pu.
         """
 
         phase_rad = relative_phase_deg*np.pi/180
@@ -121,17 +124,17 @@ class PhaseLockedLoop3A:
         a = self.alpha
 
         A = np.array([
-            [-1/tau, 0, 0,  0], # v_filter_q
-            [    ki, 0, 0,  0], # z_pll
-            [     0, 0, 0,-wb], # z_sin
-            [     0, 0,wb,  0], # z_cos
+            [-1/tau, 0, 0, 0], # v_filter_q
+            [    ki, 0, 0, 0], # z_pll
+            [     0, 0, 0, 0], # z_sin
+            [     0, 0, 0, 0], # z_cos
         ])
 
         B = np.array([
-            [0,0,0],
-            [0,0,0],
-            [a,0,0],
-            [a,0,0]
+            [0,0,0,0,0],
+            [0,0,0,0,0],
+            [0,0,a,0,0],
+            [0,0,a,0,0]
         ])
 
         # Nonlinear dynamics of sin and cos "lifted" states
@@ -150,6 +153,13 @@ class PhaseLockedLoop3A:
         ])
         H = np.hstack([H0, H0, H_sin, H_cos])
 
+        # Frequency input-state interactions
+        N_w = np.array([
+            [ 0, 0, 0, 0],
+            [ 0, 0, 0, 0],
+            [ 0, 0, 0,wb],
+            [ 0, 0,-wb, 0],
+        ])
         # Inputs-state interactions of xy -> dq voltage
         # v_q = -v_D * sin + v_Q * cos 
         N_D = np.array([
@@ -164,7 +174,7 @@ class PhaseLockedLoop3A:
             [0, 0, 0,    0],
             [0, 0, 0,    0],
         ])
-        N = np.hstack([np.zeros((4,4)), N_D, N_Q])
+        N = np.hstack([N_w, -N_w, np.zeros((4,4)), N_D, N_Q])
 
         C = np.array([
             [kp/wb, 1/wb, 0, 0], # w
@@ -172,15 +182,19 @@ class PhaseLockedLoop3A:
             [    0,    0, 0, 1], # z_cos
         ])
 
-        D = np.zeros((3, 3))
+        D = np.array([
+            [1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ])
 
         u = DynamicalVariables(
-            name=['one', 'v_bus_D', 'v_bus_Q'],
-            init=[1, v_bus_DQ.real, v_bus_DQ.imag])
+            name=['w_set', 'w_slack', 'one', 'v_bus_D', 'v_bus_Q'],
+            init=[1, 1, 1, v_bus_DQ.real, v_bus_DQ.imag])
         y = DynamicalVariables(name=['w', 'sin', 'cos'])
         x = DynamicalVariables(
             name=["v_pll_q", "z_pll", "sin", "cos"], 
-            init=[0, wb, np.sin(phase_rad), np.cos(phase_rad)] 
+            init=[0, 0, np.sin(phase_rad), np.cos(phase_rad)] 
         )
 
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)

@@ -54,7 +54,7 @@ inputs = {
 t_max = 1.5 # Simulation length in seconds
 
 # EMT
-#main.run_emt(t_max, inputs, case_directory, system=system)
+main.run_emt(t_max, inputs, case_directory, system=system)
 # SSM
 _, ssm = main.run_ssm(case_directory, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)

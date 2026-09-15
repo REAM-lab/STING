@@ -120,7 +120,7 @@ def remove_zero_eigenvalue(qbm:QuadraticBilinearModel, slack_generator:str, drop
     return qbm_reduced
 
 
-slack_generator="gfmi_18a_0"
+slack_generator="gfmi_18a_1"
 qbm = remove_zero_eigenvalue(qbm, slack_generator, drop=True)
 
 
@@ -183,7 +183,10 @@ def convert_to_reference_frame(file:str, column_map:dict, delta):
 
 # Compute the angle difference between reference frames
 slack_angle = pl.read_csv(os.path.join(dir_emt_outputs, f"{slack_generator}.csv"))['angle'].to_numpy()
-slack_angle -= slack_angle[0] # subtract off the initial conditions
+# Subtract off the initial conditions so that delta(t=0) = 0, that is do not change the actual 
+# phase angles to be relative to the slack generator. We only need to set the speeds/derivatives to be relative.
+# By doing so we will ensure the two trajectories will have the same initial condition, and are thus comparable.
+slack_angle -= slack_angle[0] 
 grid_angle = 2*np.pi*60*pl.read_csv(os.path.join(dir_emt_outputs, f"{slack_generator}.csv"))['time'].to_numpy()
 delta =  grid_angle - slack_angle
 

@@ -225,11 +225,11 @@ class LCLFilter9A:
             C = np.eye(6),
             D = np.zeros((6,5)),
             x = DynamicalVariables(
-                name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
+                name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_d", "v_sh_q"],
                 init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q]
             ),
             u = DynamicalVariables(name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w']),
-            y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"]))
+            y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_d", "v_sh_q"]))
         
         return ssm
     
@@ -276,14 +276,14 @@ class LCLFilter9A:
         N = np.hstack([np.zeros((6,24)), N_w])
 
         x = DynamicalVariables(
-            name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q"],
+            name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_d", "v_sh_q"],
             init=[i_vsc_d, i_vsc_q, i_bus_d, i_bus_q, v_sh_d, v_sh_q,]
         )
         u = DynamicalVariables(
             name=['v_vsc_d', 'v_vsc_q', 'v_bus_d', 'v_bus_q', 'w'],
             init=[i_vsc_d, i_vsc_q, self.emt_init.v_bus_d, self.emt_init.v_bus_q, self.wbase]
         )
-        y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_lcl_sh_d", "v_lcl_sh_q",])
+        y = DynamicalVariables(name=["i_vsc_d", "i_vsc_q", "i_bus_d", "i_bus_q", "v_sh_d", "v_sh_q",])
 
         return QuadraticBilinearModel(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 

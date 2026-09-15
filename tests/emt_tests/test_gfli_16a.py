@@ -1,14 +1,10 @@
 import os
 
-from sting import main, datasets
-from sting.system import System
+import polars as pl
 
-# Core components
-from sting.generator import VoltageSource4A, GFLI16A
-from sting.line import LinePiModel
-from sting.bus import Bus
-from sting.load import Load
-from sting.timescales import Timepoint
+from sting import datasets, main
+from sting.generator import GFLI16A
+from sting.utils.plotting_tools import compare_timeseries
 
 # Set up a temporary directory used by all tests
 case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
@@ -43,10 +39,10 @@ system.apply("post_system_init", system)
 
 # Step function inputs to simulate
 def step1(t):
-    return 0.1 if t >= 0.5 else 0.0
+    return 0.5 if t >= 0.5 else 0.0
 
 def step2(t):
-    return -0.1 if t >= 0.5 else 0.0
+    return -0.5 if t >= 0.5 else 0.0
 
 inputs = {
     'gfli_16a_0': {
@@ -57,9 +53,47 @@ inputs = {
 
 t_max = 1.5 # Simulation length in seconds
 
-
-# Construct system and small-signal model
-_, ssm = main.run_ssm(system=system, case_directory=case_directory)
+# EMT
+main.run_emt(t_max, inputs, case_directory, system=system)
+# SSM
+_, ssm = main.run_ssm(case_directory, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
-# Run EMT simulation
-main.run_emt(inputs=inputs, t_max=t_max, system=system, case_directory=case_directory)
+# QBM 
+_, qbm = main.run_qbm(case_directory, system=system)
+sol = qbm.simulate(t_max=t_max, inputs=inputs)
+os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
+qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+qbm.write_simulation_plots(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+
+
+# -------------------------------------------------------
+# Compare the results of the EMT and small-signal model simulations
+# -------------------------------------------------------
+file = "gfli_16a_0.csv"
+cols_emt =["v_pll_q", "z_pll", "z_apc", "z_rpc", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
+cols_ssm = ["v_pll_q", "z_pll", "z_apc", "z_rpc", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
+cols_qbm = ["v_pll_q", "z_pll", "z_apc", "z_rpc", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q"]
+
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/small_signal_model/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_ssm)),
+    df1_name="EMT",
+    df2_name="SSM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot.html",
+    df1_color="blue",
+    df2_color="red"
+)
+
+compare_timeseries(
+    df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
+    df2=pl.read_csv(f"{case_directory}/outputs/quadratic_bilinear/{file}"),
+    left_to_right=dict(zip(cols_emt, cols_qbm)),
+    df1_name="EMT",
+    df2_name="QBM",
+    figure_filepath=f"{case_directory}/outputs/comparison_plot_qbm.html",
+    df1_color="blue",
+    df2_color="red"
+)
+
+print("ok")

@@ -516,7 +516,7 @@ class GFMI18A(Generator):
             v_from_d = init.v_vsc_d, 
             v_from_q = init.v_vsc_q, 
             v_to_d = init.v_sh_d, 
-            v_to_q = init.v_vsc_q,
+            v_to_q = init.v_sh_q,
             i_d = init.i_vsc_d, 
             i_q = init.i_vsc_q,
             name="vsc"
@@ -699,12 +699,12 @@ class GFMI18A(Generator):
         # Nonlinear interconnection matrices
         M1_x0 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([20,21],[8,9],I)])
         M1_x1 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x1)
-        M2_x2 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x2)
+        M1_x2 = coordinates_to_matrix(shape=(u_stack, x_stack), data=idx_x2)
         M1_x12 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([3],[10],1), ([6],[11],-1)])
         M1_x13 = coordinates_to_matrix(shape=(u_stack, x_stack), data=[([3],[11],1), ([6],[10],1)])
 
         Z = np.zeros((u_stack, x_stack))
-        M1 = np.hstack([M1_x0, M1_x1, M2_x2] + 9*[Z] + [M1_x12, M1_x13])
+        M1 = np.hstack([M1_x0, M1_x1, M1_x2] + 9*[Z] + [M1_x12, M1_x13])
         M2 = np.zeros((u_stack, x_stack*u_grid))
         
         return (L11, L12, L21, L22, M1, M2)
