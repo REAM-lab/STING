@@ -127,7 +127,6 @@ class MatpowerCase:
 
         return case
 
-    @property
     def bus_data(self):
         """
         MATPOWER Schema
@@ -165,7 +164,6 @@ class MatpowerCase:
         )
         return df
 
-    @property
     def shunt_data(self):
         df = (
             self.tables["bus"]
@@ -183,7 +181,6 @@ class MatpowerCase:
         )
         return df
 
-    @property
     def load_data(self):
         df = (
             self.tables["bus"]
@@ -191,6 +188,7 @@ class MatpowerCase:
             .with_columns(
                 bus = pl.col("bus_i").cast(pl.Int64).cast(pl.String),
                 timepoint = pl.lit("t0"),
+                load_MVAR = pl.col("load_MVAR").abs()
             )
             .select("bus", "load_MW", "load_MVAR", "timepoint")
             # Drop buses without loads
@@ -200,7 +198,6 @@ class MatpowerCase:
         )
         return df
 
-    @property
     def line_data(self):
         """
         MATPOWER Schema
@@ -278,9 +275,14 @@ class MatpowerCase:
 
         return df
 
-    @property
-    def generator_data(self):
+    def generator_data(self, force_dispatch_tol=None):
         """
+        Parameters
+        ----------
+        force_dispatch_tol: float 
+        - Force dispatch at MATPOWER level to within a tolerance, by default 
+            do not force dispatch.
+
         MATPOWER Schema
         ---------------
         Generator Data Format
@@ -333,12 +335,24 @@ class MatpowerCase:
                 bus = pl.col("bus").cast(pl.Int64).cast(pl.String),
                 base_frequency_Hz = pl.lit(self.base_frequency_Hz),
             )
-            .select("bus", "base_power_MVA", "minimum_active_power_MW", "maximum_active_power_MW", "minimum_reactive_power_MVAR", "maximum_reactive_power_MVAR", "base_frequency_Hz")
         )
+
+        if force_dispatch_tol:
+            df = (
+                df
+                .with_columns(
+                    maximum_reactive_power_MVAR = pl.col("Qg") + force_dispatch_tol,
+                    minimum_reactive_power_MVAR= pl.col("Qg") - force_dispatch_tol,
+                    maximum_active_power_MW= pl.col("Pg") + force_dispatch_tol,
+                    minimum_active_power_MW= pl.col("Pg") - force_dispatch_tol,
+                )
+            )
+
+        df = df.select("bus", "base_power_MVA", "minimum_active_power_MW", "maximum_active_power_MW", "minimum_reactive_power_MVAR", "maximum_reactive_power_MVAR", "base_frequency_Hz")
 
         return df
 
-    def to_system(self, generators=None):
+    def to_system(self, generators=None, force_dispatch_tol=None):
         from sting import main
         from sting.bus.core import Bus
         from sting.line.pi_model import LinePiModel
@@ -350,25 +364,25 @@ class MatpowerCase:
         system = System()
         system.add(Timepoint(name="t0", weight=1))
 
-        for row in self.bus_data.iter_rows(named=True):
+        for row in self.bus_data().iter_rows(named=True):
             system.add(Bus(**row))
 
-        for row in self.line_data.iter_rows(named=True):
+        for row in self.line_data().iter_rows(named=True):
             system.add(LinePiModel(**row))
 
-        for row in self.load_data.iter_rows(named=True):
+        for row in self.load_data().iter_rows(named=True):
             system.add(Load(**row))
+            
 
-        for row in self.shunt_data.iter_rows(named=True):
+        for row in self.shunt_data().iter_rows(named=True):
             system.add(ParallelRCShunt2A(**row))
 
         if generators is not None:
-            for gen, row in zip(generators, self.generator_data.iter_rows(named=True)):
+            for gen, row in zip(generators, self.generator_data(force_dispatch_tol).iter_rows(named=True)):
                 for attribute in row.keys():
                     # Transfer generator data from MATPOWER to each instance
                     setattr(gen, attribute, row[attribute])
                 system.add(gen)
-
 
         system.apply("post_system_init", system)
 

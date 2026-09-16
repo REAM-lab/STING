@@ -16,6 +16,7 @@ from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov, cholesky
 import scipy.sparse as sp
 from scipy.linalg.lapack import dpstrf
+from sting.utils.matrix_tools import make_sparse_kron_product
 
 matplotlib.use("Agg")
 
@@ -827,9 +828,20 @@ class QuadraticBilinearModel:
             u0 = self.u.init
 
         inputs_to_sim = lambda t: self.vectorize_inputs(inputs)(t) + u0
+
+        
+        # Evaluate kronecker products in sparse format
+        n, m = self.B.shape
+        kron_H = make_sparse_kron_product(self.H, n, n)
+        kron_N = make_sparse_kron_product(self.N, m, n)
+
+        def step(t, x, inputs):
+            u = inputs(t)
+            dx = self.A@x + kron_H(x,x) + kron_N(u, x) + self.B@u
+            return dx
                 
         sol = solve_ivp(
-            fun=self.get_derivatives_step,
+            fun=step,
             t_span=[0, t_max],
             y0=x0,
             dense_output=settings['dense_output'],  
