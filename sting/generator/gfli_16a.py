@@ -55,6 +55,7 @@ class GFLI16A(Generator):
     kp_pll_rad_s: float
     ki_pll_rad2_s2: float
     tau_pll_s: float
+    alpha: float = 0
     # Current controller parameters
     kp_cc_pu: float
     ki_cc_puHz: float
@@ -79,7 +80,7 @@ class GFLI16A(Generator):
         self.lcl_br1 = SeriesRLBranch2A(r_pu=self.rf1_pu, x_pu=self.xf1_pu, base_frequency_Hz=self.base_frequency_Hz)
         self.lcl_br2 = SeriesRLBranch2A(r_pu=self.rf2_pu, x_pu=self.xf2_pu, base_frequency_Hz=self.base_frequency_Hz)
         self.lcl_sh = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, base_frequency_Hz=self.base_frequency_Hz)
-        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase)
+        self.phase_locked_loop = PhaseLockedLoop3A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.tau_pll_s, self.wbase, alpha=self.alpha)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.active_power_controller = ActivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)
         self.reactive_power_controller = ReactivePowerPI1A(kp_pu=self.kp_pc_pu, ki_puHz=self.ki_pc_puHz)

@@ -141,3 +141,53 @@ def d_DQ2dq_dangle(x_D: float, x_Q: float, theta: float) -> np.ndarray:
     d_DQ2dq_dangle = np.matmul(U, np.array([ x_D, x_Q ]))
 
     return d_DQ2dq_dangle    
+
+
+def remove_zero_eigenvalue_qbm(qbm, slack_generator:str, drop=True):
+    from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearModel
+    qbm: QuadraticBilinearModel = qbm
+    
+    # State, inputs, and outputs
+    x, u, y = qbm.x, qbm.u, qbm.y
+    n, m, p = len(x), len(u), len(y)
+
+    # Mask arrays
+    is_slack_input = (u.name == 'w_slack')
+    is_slack_component = (x.component == slack_generator)
+    is_w_state = (x.name == 'w')
+    is_sin_state = (x.name == 'sin')
+    is_cos_state = (x.name == 'cos')
+    is_phase_state = is_sin_state | is_cos_state
+
+    # Modify outputs to include the slack angular velocity
+    C_slack_w = (is_w_state & is_slack_component).astype(int).reshape(-1,1)
+    C = np.vstack([qbm.C, C_slack_w.T])
+    D = np.vstack([qbm.D, np.zeros((1,m))])
+    qbm_extended = QuadraticBilinearModel(
+        A=qbm.A, B=qbm.B, C=C, D=D, N=qbm.N, H=qbm.H, u=qbm.u, x=qbm.x,
+        y=DynamicalVariables(name=list(y.name)+['w_slack']))
+
+    # Interconnection matrices #
+    u_sys = u[~is_slack_input]
+    # Close the loop from outputs to inputs
+    L11 = np.hstack([np.zeros((m, p)), is_slack_input.astype(int).reshape(-1,1)])
+    # Delete all w_slack inputs
+    L12 = np.eye(m)[:,~is_slack_input]
+    L21 = np.eye(N=p, M=p+1)
+    L22 = np.zeros((p,len(u_sys)))
+    qbm_closed = QuadraticBilinearModel.from_interconnected([qbm_extended], [L11,L12,L21,L22,None,None], u=u_sys, y=y)
+
+    
+    qbm_closed = qbm_closed.shift_to_equilibrium()
+
+    # Transformation matrix to drop the slack phase angle states
+    is_slack_phase_state = (is_phase_state & is_slack_component)
+    T = np.eye(n)[~is_slack_phase_state, :]
+    # Remove the states corresponding to the slack generator
+    qbm_reduced = qbm_closed.project(
+        W=T, V=T.transpose(), 
+        name=x.name[~is_slack_phase_state], 
+        component=x.component[~is_slack_phase_state])
+
+
+    return qbm_reduced

@@ -122,6 +122,7 @@ def plot_eigenvalues(
     marker_symbol="circle",
     marker_size=8,
     title="Eigenvalues",
+    opacity=1
 ):
 
     eigenvalues = np.linalg.eigvals(A)
@@ -135,6 +136,7 @@ def plot_eigenvalues(
                 color=marker_color,
                 symbol=marker_symbol,
                 size=marker_size,
+                opacity=opacity
             ),
         )
     )

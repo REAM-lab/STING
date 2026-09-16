@@ -14,7 +14,9 @@ import pylab as plt
 from plotly.subplots import make_subplots
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov, cholesky
+import scipy.sparse as sp
 from scipy.linalg.lapack import dpstrf
+
 matplotlib.use("Agg")
 
 import copy
@@ -732,11 +734,22 @@ class QuadraticBilinearModel:
 
             X = sys.B@inv@M_1
             Y = sys.B@inv@M_2 
-            
-        A = sys.A + sys.B@inv@L_11@sys.C 
-        H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
+
+        # For large systems we want to avoid computing these kronecker products directly
+        if n > 100:
+            I_n = sp.csr_array(np.eye(n))
+            N_sparse = sp.csr_array(sys.N)
+
+            H = sys.H + X + (N_sparse@sp.kron(sp.csr_array(inv@L_11@sys.C), I_n)).todense()
+            N = Y + (N_sparse@sp.kron(sp.csr_array(inv@L_12), I_n)).todense()
+
+        else:
+            H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
+            N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
+
+        # Evaluating the linear parts            
+        A = sys.A + sys.B@inv@L_11@sys.C
         B = sys.B@inv@L_12
-        N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
         C = L_21@sys.C + L_21@sys.D@inv@L_11@sys.C
         D = L_21@sys.D@inv@L_12 + L_22
 
@@ -936,8 +949,8 @@ class QuadraticBilinearModel:
 
         A = (
             self.A 
-            + self.H @ (K1 + np.eye(n**2)) @ np.kron(x0, np.eye(n)) 
-            + self.N @ np.kron(u0, np.eye(n))
+            + self.H @ (K1 + sp.eye(n**2)) @ sp.kron(x0, sp.eye(n)) 
+            + self.N @ sp.kron(u0, sp.eye(n))
         )
         B = (
             self.B 
@@ -978,8 +991,9 @@ class QuadraticBilinearModel:
         B = W@self.B
         C = self.C@V
 
-        H = W@self.H@np.kron(V,V)
-        N = W@self.N@np.kron(np.eye(self.B.shape[1]),V)
+        V = sp.csr_array(V)
+        H = W@self.H@sp.kron(V,V)
+        N = W@self.N@sp.kron(sp.eye(self.B.shape[1]),V)
 
         if (name is None):
             name = [f"x{i}" for i in range(V.shape[1])]
@@ -1005,9 +1019,26 @@ def kronecker_commute(m, n):
     such that $K_{(m,n)} (x_1 otimes x_2) = (x_2 otimes x_1)$ where
     $x_1 in R^m, x_2 in R^n$.
     """
+    if n > 100:
+        return reshape_transpose(m, n)
     # Swap the first two axes of the identity matrix and flatten back
-    K = np.eye(m * n).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
-    return K
+    return np.eye(n * m).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
+
+def reshape_transpose(m, n):
+    I = sp.eye(m*n, format="coo")
+
+    row, col = I.coords
+    data = I.data
+
+    i, j = np.divmod(row, n)
+
+    new_row = j * m + i
+
+    return sp.coo_array(
+        (data, (new_row, col)),
+        shape=(m * n, m * n),
+    )
+
 
 def cube_diag(*arrays):
     """
