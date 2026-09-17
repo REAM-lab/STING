@@ -10,7 +10,7 @@ from sting.modules.model_order_reduction.utils import (
     controllability_cholesky,
     observability_cholesky,
 )
-from sting.reduced_order_model.linear_subsystem import LinearSubsystem
+from sting.utils.dynamical_systems import StateSpaceModel
 
 
 @dataclass(slots=True)
@@ -34,9 +34,9 @@ class BalancedTruncation:
     library: Literal["slycot", "slycot-sqrt", "scipy"] = "slycot"
     tol: float = 0
 
-    def reduce(self, sys:LinearSubsystem):
+    def reduce(self, sys:StateSpaceModel):
         # Unpack state-space matrices
-        A,B,C,D = sys.full_order_model.data
+        A,B,C,D = sys.data
 
         if self.library == "slycot":
             # Use SLICOT to compute balance truncation directly
@@ -60,31 +60,28 @@ class BalancedTruncation:
         # Reduction method
         if "truncate" == self.method:
             T, invT = get_balancing_transform(P, Q, r=self.r, R=R, L=L)
-            sys_r = sys.full_order_model.coordinate_transform(T=T, invT=invT)
+            sys_r = sys.coordinate_transform(T=T, invT=invT)
 
         elif "singular perturbation" == self.method:
             T, invT = get_balancing_transform(P, Q, r=None, R=R, L=L)
             # Transform to balanced 
-            ss_t = sys.full_order_model.coordinate_transform(T=T, invT=invT)
+            ss_t = sys.coordinate_transform(T=T, invT=invT)
             sys_r = singular_perturbation(ss=ss_t, r=self.r)
 
-        # Save the transform matrices
-        sys.T_l = invT
-        sys.T_r = T
         # Name the new system component ROM
-        sys_r.x.component = 'rom'
-        # Save the ROM
-        sys.reduced_order_model = sys_r
+        sys_r.x.component = 'reduced_order_model'
+
+        return sys_r
 
 
-    def _slycot_reduce(self, sys:LinearSubsystem):
+    def _slycot_reduce(self, sys:StateSpaceModel):
         from slycot import ab09ad, ab09nd
         
         from sting.utils.dynamical_systems import (
             DynamicalVariables,
             StateSpaceModel,
         )
-        A,B,C,D = sys.full_order_model.data
+        A,B,C,D = sys.data
         n, m = B.shape
         p = C.shape[0]
 
@@ -100,5 +97,5 @@ class BalancedTruncation:
                 A=A, B=B, C=C, D=D,
                 alpha=0, nr=self.r, tol1=0, tol2=0.0)
 
-        x = DynamicalVariables(name=[f"x{i}" for i in range(self.r)], component='rom', init=np.zeros(self.r))
-        sys.reduced_order_model = StateSpaceModel(A=Ar, B=Br,C=Cr,D=Dr, x=x, u=sys.full_order_model.u, y=sys.full_order_model.y)
+        x = DynamicalVariables(name=[f"x{i}" for i in range(self.r)], component='reduced_order_model', init=np.zeros(self.r))
+        return StateSpaceModel(A=Ar, B=Br,C=Cr,D=Dr, x=x, u=sys.u, y=sys.y)

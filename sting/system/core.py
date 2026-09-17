@@ -45,7 +45,6 @@ from sting.policies.energy_budgets.core import EnergyBudget
 from sting.policies.transmission_expansion_constraint.core import (
     TransmissionExpansionConstraint,
 )
-from sting.reduced_order_model.linear_subsystem import LinearSubsystem
 from sting.shunt.parallel_rc_shunt_2a import ParallelRCShunt2A
 from sting.storage.core import Storage
 from sting.system.component import Component, SystemComponent
@@ -104,8 +103,6 @@ class System:
     # Circuits
     series_rl_branch_2a: list[SeriesRLBranch2A] = None
     parallel_rc_shunt_2a: list[ParallelRCShunt2A] = None
-    # Abstract models
-    linear_subsystems: list[LinearSubsystem] = None
     
 
     def __post_init__(self):

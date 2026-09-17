@@ -9,6 +9,7 @@ from sting.modules.model_order_reduction.balanced_truncation import BalancedTrun
 from sting.modules.model_order_reduction.interconnected_balanced_truncation import (
     InterconnectedBalancedTruncation,
 )
+from sting.modules.model_order_reduction.core import ModelReducer
 from sting.modules.model_order_reduction.singular_perturbation import (
     SingularPerturbation,
 )
@@ -47,9 +48,11 @@ singular_perturbation = {zone_name: SingularPerturbation(r=r, basis="eigen")}
 interconnected_reduction = InterconnectedBalancedTruncation(r={zone_name:r}, method="singular perturbation")
 
 # Construct a reduced-order model (ROM).
-rom1 = main.run_model_reduction(ssm=ssm, reductions=balanced_truncation)
-rom2 = main.run_model_reduction(ssm=ssm, reductions=singular_perturbation)
-rom3 = interconnected_reduction.reduce(ssm)
+rom1 = main.run_model_reduction(system, balanced_truncation)
+rom2 = main.run_model_reduction(system, singular_perturbation)
+
+model_reducer = ModelReducer.from_system(system, "ssm").create_zonal_models()
+rom3 = interconnected_reduction.reduce(model_reducer).interconnect()
 
 # COMPARE the dynamics of a step change to the power reference set points of the 
 # grid forming inverter (GFLI 18A) at bus 2
@@ -67,14 +70,14 @@ os.makedirs(ssm.output_directory , exist_ok=True)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 # Simulate the reduced-order models
-rom1.output_directory = os.path.join(case_directory, "outputs", "balanced_truncation_simulation")
-os.makedirs(rom1.output_directory , exist_ok=True)
-rom1.simulate_ssm(t_max=t_max, inputs=inputs)
+output_directory = os.path.join(case_directory, "outputs", "balanced_truncation_simulation")
+os.makedirs(output_directory , exist_ok=True)
+rom1.simulate(t_max=t_max, inputs=inputs,output_directory=output_directory, x0 = rom1.x.init*0)
 
-rom2.output_directory = os.path.join(case_directory, "outputs", "singular_perturbation_simulation")
-os.makedirs(rom2.output_directory , exist_ok=True)
-rom2.simulate_ssm(t_max=t_max, inputs=inputs)
+output_directory = os.path.join(case_directory, "outputs", "singular_perturbation_simulation")
+os.makedirs(output_directory , exist_ok=True)
+rom2.simulate(t_max=t_max, inputs=inputs,output_directory=output_directory, x0 = rom2.x.init*0)
 
-rom3.output_directory = os.path.join(case_directory, "outputs", "interconnection_reduction_simulation")
-os.makedirs(rom3.output_directory , exist_ok=True)
-rom3.simulate_ssm(t_max=t_max, inputs=inputs)
+output_directory = os.path.join(case_directory, "outputs", "interconnection_reduction_simulation")
+os.makedirs(output_directory , exist_ok=True)
+rom3.simulate(t_max=t_max, inputs=inputs, output_directory=output_directory, x0 = rom3.x.init*0)

@@ -226,44 +226,6 @@ class SmallSignalModel:
             fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
             fig.write_html(os.path.join(output_directory, f"{component}.html"))
             
-    
-    def sort_components(self, by):
-        """
-        Sort the components in the small-signal model according
-        to one of their attributes. Implicitly this will re-order
-        the inputs, outputs, and states of the resulting SSM.
-        """
-        # Sort components using the attribute "by" as a sorting key
-        zones = self.get_component_attribute(by)
-        # Sorted ids for every component
-        ids, _ = zip(*sorted(zip(range(len(zones)), zones), key=lambda x: (1, x[1]) if (x[1] is not None) else (0, "")))
-
-        # SSMs for each component
-        models:list[StateSpaceModel] = self.get_component_attribute("ssm")
-
-        # Total number of inputs/outputs for each component 
-        y_stack = [len(ssm.y) for ssm in models]
-        u_stack = [len(ssm.u) for ssm in models]
-
-        # Number input/outputs for each component at the system-level.
-        # We assume component and system-level outputs are the same.
-        y_system = y_stack 
-        u_system = [ssm.u.n_device for ssm in models]
-
-        # Permute each component connection matrix to correspond to
-        # the sorted components
-        self.F = block_permute(self.F, u_stack,  y_stack,  ids)
-        self.G = block_permute(self.G, u_stack,  u_system, ids)
-        self.H = block_permute(self.H, y_system, y_stack,  ids)
-        self.L = block_permute(self.L, y_system, u_system, ids)
-
-        # And sort all the components
-        self.components = [self.components[i] for i in ids]
-
-    def group_by(self, by):
-        # importing at runtime to avoid circular imports
-        from sting.modules.small_signal_modeling.operations import SmallSignalModelGroupBy
-        return SmallSignalModelGroupBy(model=self, by=by)
 
     def write_csv_ccm_matrices(self, output_directory=None):
         """Write CCM matrices to CSVs"""
@@ -314,50 +276,3 @@ class SmallSignalModel:
         from sting.system.stream import Stream
         components = [getattr(self.system, c.type)[c.id] for c in self.components]
         return Stream(components, index_map=self.system.class_to_type)
-
-
-    def set_reference_phase_angle(self):
-
-        # Create a set of strings for all state variables that are phase angles
-        c_type, c_id, x = self.query().select("type_", "id", "phase_angle_name")
-        phase_angle_states = {f"{c_type}_{c_id}_{x}" for c_type, c_id, x in zip(c_type, c_id, x) if x}
-
-        # Slack component is defined as the first generator where the slack attribute is true
-        slack = next(self.query().filter(lambda x: hasattr(x, "slack") and x.slack))
-        slack_name = f"{slack.type_}_{slack.id}"
-
-        # Transformation matrix
-        n, _ = self.model.A.shape
-        T = np.eye(n)
-        col_j = np.zeros(n)
-
-        for i, (component, state) in enumerate(zip(self.model.x.component, self.model.x.name)):
-            # All non phase angle states remain unchanged
-            if (f"{component}_{state}" not in phase_angle_states):
-                continue
-            # Save the index of the slack generators phase state
-            if (component == slack_name):
-                j = i
-            # The phase of all other generators is *relative* to the slack
-            # generator. That is: phase_i ← phase_i - phase_j
-            else:
-                col_j[i] = -1
-
-        T[:,j] += col_j
-        invT = np.linalg.inv(T)
-
-        # Drop the reference phase angle from the new system
-        T_r = np.delete(T, j, axis=0)
-        invT_r = np.delete(invT, j, axis=1)
-
-        # Keep all states except the reference phase
-        mask = np.ones(n, dtype=bool)
-        mask[j] = False
-
-        ssm = self.model.coordinate_transform(
-            invT=T_r, 
-            T=invT_r, 
-            name=self.model.x.name[mask], 
-            component=self.model.x.component[mask])
-
-        return ssm
