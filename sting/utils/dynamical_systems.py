@@ -457,25 +457,7 @@ class StateSpaceModel:
         sol.y = self.C@sol.x + self.D@sol.u
 
         return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
-        
-        #return tps, solution
-    
-    """def plot_simulation(self, output_directory: str, tps: np.ndarray, solution):
 
-        number_of_states = self.shape[2]
-        nrows = int(np.ceil(number_of_states / 2))
-        ncols = 2 if number_of_states > 1 else 1
-
-        fig = make_subplots(rows=nrows, cols=ncols)
-
-        for i in range(number_of_states):
-            row = i // ncols + 1
-            col = i % ncols + 1
-            fig.add_trace(go.Scatter(x=tps, y=solution[i]), row=row, col=col)
-            fig.update_xaxes(title_text='Time [s]', row=row, col=col)
-            fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
-        
-        fig.write_html(os.path.join(output_directory, "simulation.html"))"""
     
     def modal_analysis(self):
         """
@@ -548,27 +530,6 @@ class StateSpaceModel:
 
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
 
-
-    def gramian(self, kind: Literal["controllability", "observability"]):
-        """
-        Returns the Gramian of the state-space model.
-
-        Parameters
-        ----------
-        kind: Whether to compute the "controllability" or "observability" Gramian
-
-        cholesky: If True returns the Cholesky factorization of the Gramians
-
-        lower: Only applicable if `cholesky=True`, if True will return the 
-            lower Cholesky factorization of the Gramian.
-        """
-        match kind: 
-            case "controllability":
-                W = solve_continuous_lyapunov(self.A, -self.B@self.B.T)
-            case "observability":
-                W = solve_continuous_lyapunov(self.A.T, -self.C.T@self.C)
-
-        return W
 
 
 # -------------
@@ -644,52 +605,10 @@ class QuadraticBilinearModel:
         assert len(self.y) == C_y
         assert len(self.x) == A_x
 
-    def __getitem__(self, key):
-        """TODO: This function is untested...."""
-        if not isinstance(key, tuple) or len(key) != 2:
-            raise IndexError(
-                "Indexing must be of the form sys[outputs, inputs]"
-            )
-        n, m = self.B.shape
-        p, n = self.C.shape
 
-        output_idx, input_idx = key
-        output_idx = self._normalize_index(output_idx, p)
-        input_idx = self._normalize_index(input_idx, m)
-
-        A = self.A.copy()
-        B = self.B[:, input_idx]
-        C = self.C[output_idx, :]
-        D = self.D[np.ix_(output_idx, input_idx)]
-        H = self.H.copy()
-        N = np.hstack(np.hsplit(self.N, m)[input_idx])
-        u = self.u[input_idx]
-        y = self.y[output_idx]
-        x = copy.deepcopy(self.x)
-
-        return QuadraticBilinearModel(A=A,B=B,C=C,D=D,N=N,H=H,x=x,u=u,y=y)
-
-
-    @staticmethod
-    def _normalize_index(idx, n):
-        if isinstance(idx, slice):
-            return np.arange(n)[idx]
-
-        if np.isscalar(idx):
-            idx = int(idx)
-            if idx < 0:
-                idx += n
-            if not 0 <= idx < n:
-                raise IndexError("index out of range")
-            return np.array([idx])
-
-        idx = np.asarray(idx, dtype=int)
-        idx = np.where(idx < 0, idx + n, idx)
-
-        if np.any((idx < 0) | (idx >= n)):
-            raise IndexError("index out of range")
-
-        return idx
+    @property
+    def data(self):
+        return (self.A, self.B, self.C, self.D, self.H, self.N)
 
 
     @classmethod
@@ -933,7 +852,7 @@ class QuadraticBilinearModel:
             self.A 
             + self.H @ (K1 + sp.eye(n**2)) @ sp.kron(x0, sp.eye(n)) 
             + self.N @ sp.kron(u0, sp.eye(n))
-        )
+        ).A
         B = (
             self.B 
             + self.N @ K2 @ np.kron(x0, np.eye(m)) 
@@ -968,14 +887,19 @@ class QuadraticBilinearModel:
                 return np.hstack([H_i.flatten(order="F").reshape(-1, 1) for H_i in np.hsplit(self.H, n)]).T
 
 
-    def project(self, W, V, name=None, component=None):
+    def project(self, W, V, name=None, component=None, sparse=True):
         A = W@self.A@V
         B = W@self.B
         C = self.C@V
 
-        V = sp.csr_array(V)
-        H = W@self.H@sp.kron(V,V)
-        N = W@self.N@sp.kron(sp.eye(self.B.shape[1]),V)
+        if sparse:
+            V = sp.csr_array(V)
+            lib = sp
+        else:
+            lib = np
+            
+        H = W@self.H@lib.kron(V,V)
+        N = W@self.N@lib.kron(lib.eye(self.B.shape[1]),V)
 
         if (name is None):
             name = [f"x{i}" for i in range(V.shape[1])]
@@ -1059,24 +983,21 @@ def kronecker_commute(m, n):
     $x_1 in R^m, x_2 in R^n$.
     """
     if n > 100:
-        return reshape_transpose(m, n)
+        I = sp.eye(m*n, format="coo")
+        
+        row, col = I.coords
+        data = I.data
+    
+        i, j = np.divmod(row, n)
+    
+        new_row = j * m + i
+    
+        K = sp.coo_array( (data, (new_row, col)), shape=(m * n, m * n))
+        return K
+    
     # Swap the first two axes of the identity matrix and flatten back
-    return np.eye(n * m).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
-
-def reshape_transpose(m, n):
-    I = sp.eye(m*n, format="coo")
-
-    row, col = I.coords
-    data = I.data
-
-    i, j = np.divmod(row, n)
-
-    new_row = j * m + i
-
-    return sp.coo_array(
-        (data, (new_row, col)),
-        shape=(m * n, m * n),
-    )
+    K = np.eye(n * m).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
+    return K
 
 
 def cube_diag(*arrays):

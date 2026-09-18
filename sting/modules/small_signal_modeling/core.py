@@ -187,50 +187,6 @@ class SmallSignalModel:
 
         logger.info(f" - Plotting SSM simulation results in {output_directory}")
         sol.write_plots(output_directory)
-
-        """# Add the initial conditions back to the solution (for plotting purposes)
-        for i in range(len(self.model.x.init)):
-            solution[i] = solution[i] + self.model.x.init[i]
-        
-        # Get the components in the same order as solution vector
-        _, comp_idx = np.unique(self.model.x.component, return_index=True)
-        components_to_plot = self.model.x.component[np.sort(comp_idx)] 
-        i = 0 # Initialize counter 
-
-        
-
-        # Write the simulation results to CSV files.
-        for component in components_to_plot:
-            number_of_states = sum(self.model.x.component == component)
-            state_names = self.model.x.name[self.model.x.component == component]
-            columns_for_df = ['time'] + state_names.tolist()
-            (pl.DataFrame(
-                data=np.column_stack((tps, solution[i:i+number_of_states].T)),
-                schema=columns_for_df
-            )
-            .write_csv(os.path.join(output_directory, f"{component}.csv")))
-            i += number_of_states
-
-        logger.info(f" - Plotting SSM simulation results in {output_directory}")
-
-        i = 0 # Re-initialize counter to plot the results in the same order as the solution vector    
-
-        # Make a html file for each component. Each file plots the states corresponding to each component.
-        for component in components_to_plot:
-            number_of_states = sum(self.model.x.component == component)
-            nrows = int(np.ceil(number_of_states / 2))
-            ncols = 2 if number_of_states > 1 else 1
-            fig = make_subplots(rows=nrows, cols=ncols)
-            for j in range(number_of_states):
-                row = j // ncols + 1
-                col = j % ncols + 1
-                fig.add_trace(go.Scatter(x=tps, y=solution[i]), row=row, col=col)
-                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
-                fig.update_yaxes(title_text=self.model.x.name[i], row=row, col=col)
-                i += 1
-
-            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
-            fig.write_html(os.path.join(output_directory, f"{component}.html"))"""
             
 
     def write_csv_ccm_matrices(self, output_directory=None):

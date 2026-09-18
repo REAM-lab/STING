@@ -20,7 +20,7 @@ class ModelReducer:
     G: np.ndarray = None
     H: np.ndarray = None
     L: np.ndarray = None
-    model_class: None = None
+    model_type: str = None
 
     @classmethod
     def from_system(cls, system, model_type) -> 'ModelReducer':
@@ -45,7 +45,7 @@ class ModelReducer:
         F = T @ F
         G = T @ G       
 
-        return ModelReducer(models, zones, F, G, H, L, model_class=type_to_class.get(model_type, None))
+        return ModelReducer(models, zones, F, G, H, L, model_type=model_type)
 
     @property
     def inputs(self):
@@ -57,7 +57,10 @@ class ModelReducer:
 
     @property
     def connections(self):
-        return (self.F, self.G, self.H, self.L)
+        if self.model_type == "ssm":
+            return (self.F, self.G, self.H, self.L)
+        if self.model_type == "qbm":
+            return (self.F, self.G, self.H, self.L, None, None)
 
     def sort(self):
         """
@@ -86,7 +89,7 @@ class ModelReducer:
         # And sort all the components
         models = [self.models[i] for i in ids]
 
-        return ModelReducer(models, zones, F, G, H, L, self.model_class)
+        return ModelReducer(models, zones, F, G, H, L, self.model_type)
 
 
     def create_zonal_models(self):
@@ -143,7 +146,7 @@ class ModelReducer:
             zone_data.H = Y_i.T
             zone_data.L = np.zeros((Y_i.shape[1], X_i.shape[0]))
             # In
-            zone_data.model_class = sys.model_class
+            zone_data.model_type = sys.model_type
 
             # Only select inputs that are device-level OR from other subsystems
             inputs = zone_data.inputs[[j for j, k in enumerate(u_i) if k in w]] 
@@ -153,7 +156,7 @@ class ModelReducer:
             zonal_models.append(zone_model)    
 
         # Update the system-level interconnection matrices (to remove intrazonal connections)
-        diagF, diagG, diagH, _ = zip(*[s.connections for s in zone_model_map.values()])
+        diagF, diagG, diagH, _ = zip(*[s.connections[:4] for s in zone_model_map.values()])
         W = block_diag(*diagF)
         X = block_diag(*diagG).T
         Y = block_diag(*diagH).T
@@ -162,10 +165,10 @@ class ModelReducer:
         G = X @ sys.G
         H = sys.H @ Y
 
-        return ModelReducer(zonal_models, list(zone_model_map.keys()), F, G, H, sys.L, sys.model_class)
+        return ModelReducer(zonal_models, list(zone_model_map.keys()), F, G, H, sys.L, sys.model_type)
+    
 
-
-    def reduce_zonal_models(self, reducers:dict):
+    def reduce_zonal_models(self, reducers:dict, shift_to_equilibrium=False):
         """
         Returns a ModelReducer object where each zone, with a 
         value in the supplied reducers dict, has been reduced to a specified order.
@@ -173,10 +176,14 @@ class ModelReducer:
         if len(self.zones) > len(set(self.zones)):
             raise TypeError("Zonal models have not been constructed, please call " \
             "`create_zonal_models` prior to reduction.")
-        
-        reduced_models = []
 
-        for zone, model in zip(self.zones, self.models):
+        if shift_to_equilibrium:
+            models = [m.shift_to_equilibrium() for m in self.models]
+        else:
+            models = self.models
+
+        reduced_models = []
+        for zone, model in zip(self.zones, models):
             if zone in reducers:
                 # Apply reducer to the model
                 reduced_models.append(reducers[zone].reduce(model))
@@ -184,7 +191,7 @@ class ModelReducer:
                 # If no reducer is specified directly transfer the model
                 reduced_models.append(model)
 
-        return ModelReducer(reduced_models, self.zones, self.F, self.G, self.H, self.L, self.model_class)            
+        return ModelReducer(reduced_models, self.zones, self.F, self.G, self.H, self.L, self.model_type)            
 
 
     def interconnect(self, u=None, y=None, component_label:str=None):
@@ -193,4 +200,5 @@ class ModelReducer:
             u = lambda u: u[u.type == "device"]
         if y is None:
             y = lambda y:y
-        return self.model_class.from_interconnected(self.models, self.connections, u, y, component_label)
+
+        return type_to_class[self.model_type].from_interconnected(self.models, self.connections, u, y, component_label)
