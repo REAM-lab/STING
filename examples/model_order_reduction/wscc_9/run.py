@@ -70,14 +70,11 @@ os.makedirs(ssm.output_directory , exist_ok=True)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 
 # Simulate the reduced-order models
-output_directory = os.path.join(case_directory, "outputs", "balanced_truncation_simulation")
-os.makedirs(output_directory , exist_ok=True)
-rom1.simulate(t_max=t_max, inputs=inputs,output_directory=output_directory, x0 = rom1.x.init*0)
+sol = rom1.simulate(t_max=t_max, inputs=inputs, x0 = rom1.x.init*0)
+sol.write_plots(os.path.join(case_directory, "outputs", "balanced_truncation_simulation"))
 
-output_directory = os.path.join(case_directory, "outputs", "singular_perturbation_simulation")
-os.makedirs(output_directory , exist_ok=True)
-rom2.simulate(t_max=t_max, inputs=inputs,output_directory=output_directory, x0 = rom2.x.init*0)
+sol = rom2.simulate(t_max=t_max, inputs=inputs, x0 = rom2.x.init*0)
+sol.write_plots(os.path.join(case_directory, "outputs", "singular_perturbation_simulation"))
 
-output_directory = os.path.join(case_directory, "outputs", "interconnection_reduction_simulation")
-os.makedirs(output_directory , exist_ok=True)
-rom3.simulate(t_max=t_max, inputs=inputs, output_directory=output_directory, x0 = rom3.x.init*0)
+sol = rom3.simulate(t_max=t_max, inputs=inputs, x0 = rom3.x.init*0)
+sol.write_plots(os.path.join(case_directory, "outputs", "interconnection_reduction_simulation"))

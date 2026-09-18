@@ -401,14 +401,17 @@ class StateSpaceModel:
             inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
             x0: list[float] = None, 
             settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-            output_directory: str = os.getcwd(), 
-            plot: bool = True):
+            add_initial_conditions=True,
+            ):
 
         if x0 is None:
             x0 = self.x.init
 
         if inputs is None:
             inputs = {}
+
+        # Function to get inputs at time t
+        func_u = lambda t: [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
 
         def state_space_ode(t: float, x: np.ndarray,  inputs: dict[str, dict[str, Callable[[float], float]]]):
             """
@@ -425,10 +428,10 @@ class StateSpaceModel:
             np.ndarray: Time derivative of the state vector (dx/dt).
             """
 
-            u = [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
+            u = func_u(t)
             return self.A @ x + self.B @ u
                
-        solution = solve_ivp(
+        sol = solve_ivp(
                         fun=state_space_ode,
                         t_span=[0, t_max],
                         y0=x0,
@@ -438,16 +441,26 @@ class StateSpaceModel:
                         max_step=settings['max_step'])
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
+        # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
             tps = np.linspace(0, t_max, 500)
-            solution = solution.sol(tps)
+            sol.y = sol.sol(tps)
+            sol.t = tps
 
-        if plot:
-            self.plot_simulation(output_directory=output_directory, tps=tps, solution=solution)
+        sol.x = sol.y
+        sol.u = np.array([func_u(t) for t in sol.t]).T
+
+        if add_initial_conditions:
+            sol.x += self.x.init.reshape(-1,1)
+            sol.u += self.u.init.reshape(-1,1)
+
+        sol.y = self.C@sol.x + self.D@sol.u
+
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
         
-        return tps, solution
+        #return tps, solution
     
-    def plot_simulation(self, output_directory: str, tps: np.ndarray, solution):
+    """def plot_simulation(self, output_directory: str, tps: np.ndarray, solution):
 
         number_of_states = self.shape[2]
         nrows = int(np.ceil(number_of_states / 2))
@@ -462,7 +475,7 @@ class StateSpaceModel:
             fig.update_xaxes(title_text='Time [s]', row=row, col=col)
             fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
         
-        fig.write_html(os.path.join(output_directory, "simulation.html"))
+        fig.write_html(os.path.join(output_directory, "simulation.html"))"""
     
     def modal_analysis(self):
         """
@@ -864,50 +877,7 @@ class QuadraticBilinearModel:
 
         sol.y = self.C@sol.x + self.D@sol.u
 
-        return sol
-
-    def write_simulation_csv(self, solution, output_directory):       
-        # Get the components in the same order as solution vector
-        _, comp_idx = np.unique(self.x.component, return_index=True)
-        components = self.x.component[np.sort(comp_idx)]  
-
-        # Write the simulation results to CSV files.
-        i = 0
-        for component in components:
-            number_of_states = sum(self.x.component == component)
-            state_names = self.x.name[self.x.component == component]
-            columns_for_df = ['time'] + state_names.tolist()
-            (pl.DataFrame(
-                data=np.column_stack((solution.t, solution.x[i:i+number_of_states].T)),
-                schema=columns_for_df
-            )
-            .write_csv(os.path.join(output_directory, f"{component}.csv"))
-            )
-            i += number_of_states
-
-    def write_simulation_plots(self, solution, output_directory):
-
-         # Get the components in the same order as solution vector
-        _, comp_idx = np.unique(self.x.component, return_index=True)
-        components = self.x.component[np.sort(comp_idx)] 
-        
-        # Make a html file for each component. Each file plots the states corresponding to each component.
-        i = 0
-        for component in components:
-            number_of_states = sum(self.x.component == component)
-            nrows = int(np.ceil(number_of_states / 2))
-            ncols = 2 if number_of_states > 1 else 1
-            fig = make_subplots(rows=nrows, cols=ncols)
-            for j in range(number_of_states):
-                row = j // ncols + 1
-                col = j % ncols + 1
-                fig.add_trace(go.Scatter(x=solution.t, y=solution.x[i]), row=row, col=col)
-                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
-                fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
-                i += 1
-
-            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
-            fig.write_html(os.path.join(output_directory, f"{component}.html"))
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
 
     def write_csv(self, filepath):
         # Create output directory if it doesn't exist
@@ -1018,7 +988,64 @@ class QuadraticBilinearModel:
     def vectorize_inputs(self, inputs):
         return lambda t: [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
 
+
+
+@dataclass
+class TimeDomainSolution:
+    t: np.ndarray
+    u: np.ndarray
+    x: np.ndarray
+    y: np.ndarray
+
+    inputs: DynamicalVariables
+    states: DynamicalVariables
+    outputs: DynamicalVariables
+
+    def write_csv(self, output_directory):
+        os.makedirs(output_directory , exist_ok=True)
+
+        # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.states.component, return_index=True)
+        components = self.states.component[np.sort(comp_idx)]  
+
+        # Write the simulation results to CSV files.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.states.component == component)
+            state_names = self.states.name[self.states.component == component]
+            columns_for_df = ['time'] + state_names.tolist()
+            (pl.DataFrame(
+                data=np.column_stack((self.t, self.x[i:i+number_of_states].T)),
+                schema=columns_for_df
+            )
+            .write_csv(os.path.join(output_directory, f"{component}.csv"))
+            )
+            i += number_of_states
+
+    def write_plots(self, output_directory):
+        os.makedirs(output_directory , exist_ok=True)
+
+            # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.states.component, return_index=True)
+        components = self.states.component[np.sort(comp_idx)] 
         
+        # Make a html file for each component. Each file plots the states corresponding to each component.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.states.component == component)
+            nrows = int(np.ceil(number_of_states / 2))
+            ncols = 2 if number_of_states > 1 else 1
+            fig = make_subplots(rows=nrows, cols=ncols)
+            for j in range(number_of_states):
+                row = j // ncols + 1
+                col = j % ncols + 1
+                fig.add_trace(go.Scatter(x=self.t, y=self.x[i]), row=row, col=col)
+                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
+                fig.update_yaxes(title_text=self.states.name[i], row=row, col=col)
+                i += 1
+
+            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
+            fig.write_html(os.path.join(output_directory, f"{component}.html"))
 
 # -------------------------------------------
 # Helper functions

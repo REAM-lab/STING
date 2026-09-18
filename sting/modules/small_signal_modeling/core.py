@@ -180,9 +180,15 @@ class SmallSignalModel:
         os.makedirs(output_directory, exist_ok=True)
 
         x0 = np.zeros_like(self.model.x.init)
-        tps, solution = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, output_directory=output_directory, plot=False)
+        sol = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings)
 
-        # Add the initial conditions back to the solution (for plotting purposes)
+        logger.info(f" - Writing SSM simulation results in {output_directory}")
+        sol.write_csv(output_directory)
+
+        logger.info(f" - Plotting SSM simulation results in {output_directory}")
+        sol.write_plots(output_directory)
+
+        """# Add the initial conditions back to the solution (for plotting purposes)
         for i in range(len(self.model.x.init)):
             solution[i] = solution[i] + self.model.x.init[i]
         
@@ -191,7 +197,7 @@ class SmallSignalModel:
         components_to_plot = self.model.x.component[np.sort(comp_idx)] 
         i = 0 # Initialize counter 
 
-        logger.info(f" - Writing SSM simulation results in {output_directory}")
+        
 
         # Write the simulation results to CSV files.
         for component in components_to_plot:
@@ -224,7 +230,7 @@ class SmallSignalModel:
                 i += 1
 
             fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
-            fig.write_html(os.path.join(output_directory, f"{component}.html"))
+            fig.write_html(os.path.join(output_directory, f"{component}.html"))"""
             
 
     def write_csv_ccm_matrices(self, output_directory=None):
