@@ -217,6 +217,27 @@ class SeriesRLBranch2A(Branch):
 
         return [i_br_a, i_br_b, i_br_c]
 
+    def make_derivative_state_emt(self, jit):
+
+        def step(x, u, r=self.r_pu, xf=self.x_pu, wb=self.wbase):
+            # Get state values
+            i_br_a, i_br_b, i_br_c = x
+    
+            # Get input values
+            v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = u
+    
+            # Differential equations
+            d_i_br_a = wb / xf * (v_from_bus_a - v_to_bus_a - r * i_br_a)
+            d_i_br_b = wb / xf * (v_from_bus_b - v_to_bus_b - r * i_br_b)
+            d_i_br_c = wb / xf * (v_from_bus_c - v_to_bus_c - r * i_br_c)
+            
+            return [d_i_br_a, d_i_br_b, d_i_br_c]
+
+        return step
+
+    def make_output_emt(self, jit):
+        return lambda x: x
+
     def plot_results_emt(self):
 
         # Retrieve simulation results

@@ -29,12 +29,19 @@ def dq02abc(x_d, x_q, x_0, theta):
     K = np.array([ [np.cos(theta),              -np.sin(theta),                 1],
                    [np.cos(theta - 2*np.pi/3),  -np.sin(theta - 2*np.pi/3),     1],
                    [np.cos(theta + 2*np.pi/3),  -np.sin(theta + 2*np.pi/3),     1]])
-    
-    x_abc = np.matmul(K, np.array([ x_d, x_q, x_0 ]))
+
+    x_dq0 = np.array([ x_d, x_q, x_0 ])
+    x_abc = K @ x_dq0 #np.matmul(K,)
     x_abc = np.sqrt(2)*x_abc
     x_a, x_b, x_c = x_abc[0], x_abc[1], x_abc[2]
 
     return x_a, x_b, x_c
+
+def make_dq02abc(jit):
+    if jit:
+        import numba
+        return numba.njit(dq02abc)
+    return dq02abc
 
 def R_dq2DQ(theta):
     R = np.array([

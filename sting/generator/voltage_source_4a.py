@@ -13,7 +13,7 @@ import polars as pl
 # Import sting code
 # -------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.transformations import dq02abc, abc2dq0
+from sting.utils.transformations import dq02abc, abc2dq0, make_dq02abc
 from sting.generator.core import Generator
 
 # -------------
@@ -56,6 +56,10 @@ class VoltageSource4A(Generator):
     r_pu: float
     x_pu: float
     emt_init: InitialConditionsEMT = None
+
+    @property
+    def wbase(self):
+        return 2 * np.pi * self.base_frequency_Hz
 
     def _build_small_signal_model(self):
         """
@@ -238,6 +242,29 @@ class VoltageSource4A(Generator):
         i_bus_a, i_bus_b, i_bus_c, angle_ref = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
+
+    def make_derivative_state_emt(self, jit):
+
+        dq02abc = make_dq02abc(jit)
+
+        def step(x, u, r=self.r_pu, xf=self.x_pu, wb=self.wbase, dq02abc=dq02abc):
+            # Get state values
+            i_bus_a, i_bus_b, i_bus_c, angle_ref = x
+    
+            # Get input values
+            v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = u
+    
+            v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_ref)
+    
+            # Differential equations
+            d_i_bus_a = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
+            d_i_bus_b = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
+            d_i_bus_c = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
+            d_angle_ref = wb 
+    
+            return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
+
+        return step
     
     def plot_results_emt(self):
         """
