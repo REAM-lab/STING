@@ -2,6 +2,7 @@ from sting.datasets.toy_2 import toy_2
 from sting.system.operations import SystemModifier
 from sting.modules.power_flow.core import ACPowerFlow
 #numba.njit(f)
+from sting.utils.dynamical_systems import TimeDomainSolution
 
 """sys = toy_2()
 sys.apply("post_system_init", sys)
@@ -48,25 +49,26 @@ logger = logging.getLogger(__name__)
 # ----------------
 @dataclass(slots=True)
 class SimulationEMT:
-    # Run with numba jit?
-    jit: bool = False
-
     # Dynamic variables
     inputs: DynamicalVariables
     states: DynamicalVariables
     outputs: DynamicalVariables
 
+    # Run with numba jit?
+    jit: bool = False
+
+    components: list = None
+
     # Simulation functions
-    derivative_steps = None
-    output_steps = None
+    derivative_steps:list = None
+    output_steps:list = None
 
     # Interconnections
-    ccm_matricies: list[np.ndarray] = None
+    ccm_matrices: list[np.ndarray] = None
 
     # Dictonaries
     x_idx: dict[str, np.ndarray] = None
     u_idx: dict[str, np.ndarray] = None
-
     xs_idx: dict[str, dict[str, int]] = None
     us_idx: dict[str, dict[str, int]] = None
     
@@ -82,7 +84,8 @@ class SimulationEMT:
             self.derivative_steps = [numba.njit(f) for f in self.derivative_steps]
             self.output_steps = [numba.njit(g) for g in self.output_steps]
 
-    def from_system(cls, system, jit=False):
+    @classmethod
+    def from_system(cls, system, jit=False) -> 'SimulationEMT':
 
         # 0. Make sure EMT attributes have been defined for system components
         system.apply("_calculate_emt_initial_conditions")
@@ -92,8 +95,8 @@ class SimulationEMT:
         components = system.query(["ccm_generators", "ccm_shunts", "ccm_branches"]).to_list()
 
         # 2. For each component build it's step function and output function
-        derivative_steps = None
-        output_steps = None
+        derivative_steps = [c.make_derivative_state_emt(jit) for c in components]
+        output_steps = [c.make_output_emt(jit) for c in components]
 
         # 3. Set up inputs, outputs, and states
         states = sum([c.variables_emt.x for c in components], DynamicalVariables(name=[]))
@@ -103,20 +106,37 @@ class SimulationEMT:
         inputs_grid = inputs[inputs.type == "grid"]
         inputs = inputs_device + inputs_grid
 
-        # 4. Build CCM matricies
+        # 4. Build CCM matrices
         ccm_matrices = get_ccm_matrices(system, attribute="variables_emt", dimI=3)
 
-        return
+        return SimulationEMT(
+            jit=jit, 
+            inputs=inputs, 
+            states=states, 
+            outputs=outputs, 
+            ccm_matrices=ccm_matrices, 
+            derivative_steps=derivative_steps, 
+            output_steps=output_steps,
+            components=components)
 
     def make_device_inputs(self, signals):
+        # Device initial conditions
+        u0 = self.inputs[self.inputs.type == "device"].init
+        # Input signal functions and index
+        u_func = []
+        u_idx =[]
 
-        def get_device_inputs(x, t, signals=signals, u0=self.inputs.init, us_idx=self.us_idx, xs_idx=self.xs_idx):
+        for component in signals: # e.g., component = 'gfmi_18a_0'
+            for input, func in signals[component].items(): # e.g., input = 'v_ref_d'
+                u_id = self.us_idx[component][input] # index associated to component and input signal
+                u_func.append(func)
+                u_idx.append(u_id)
+
+        def get_device_inputs(x, t, u0=u0, u_idx=tuple(u_idx), u_func=tuple(u_func)):
             u_device = u0.copy()
 
-            for component in signals: # e.g., component = 'gfmi_18a_0'
-                for input, func in signals[component].items(): # e.g., input = 'v_ref_d'
-                    ud_idx = us_idx[component][input] # index associated to component and input signal
-                    u_device[ud_idx] += func(t, x = x, id = xs_idx) # evaluate function at "t"
+            for u_id, func in zip(u_idx, u_func):
+                u_device[u_id] += func(t, x = x)
             
             return u_device
 
@@ -143,10 +163,10 @@ class SimulationEMT:
         def system_step(
             t, x, 
             get_device_inputs=get_device_inputs,
-            derivative_steps=self.derivative_steps, 
-            output_steps=self.output_steps, 
-            x_idx=self.x_idx,
-            u_idx=self.u_idx,
+            derivative_steps=tuple(self.derivative_steps), 
+            output_steps=tuple(self.output_steps), 
+            x_idx=tuple([np.array(l) for l in self.x_idx.values()]),
+            u_idx=tuple([np.array(l) for l in self.u_idx.values()]),
             F=self.ccm_matrices[0], 
             G=self.ccm_matrices[1]):
             """
@@ -157,31 +177,99 @@ class SimulationEMT:
             u_device = get_device_inputs(x, t)
 
             # Build output
-            y_stack = sum([g(x[i]) for g, i in zip(output_steps, x_idx)], [])
+            y_stack = np.empty(F.shape[1], dtype=x.dtype)
+
+            offset = 0
+            for k in range(len(output_steps)):
+                i = x_idx[k]
+                g = output_steps[k]
+                y = g(x[i])
+                n = y.shape[0]
+                y_stack[offset:offset+n] = y
+                offset += n
 
             u = F @ y_stack + G @ u_device
 
             # Build state derivative
-            dx_dt = sum([f(x[i], u[j]) for f, i, j in zip(derivative_steps, x_idx, u_idx)], [])
-                        
+            dx_dt = np.empty_like(x)
 
+            for f, i, j in zip(derivative_steps, x_idx, u_idx):
+                dx_dt[i] = np.array(f(x[i], u[j]))
+            
             return dx_dt
 
         if self.jit:
             import numba
-            system_step = numba.njit(system_step)
+            # system_step = numba.njit(system_step)
             # Call once to precompile
-            system_step(0, self.states.x.init,)
+            system_step(0, self.states.init)
 
-        solution = solve_ivp(
-            system_step, 
-            [0, t_max], 
-            self.states.x.init, 
-            dense_output=settings['dense_output'], 
-            method=settings['method'], 
-            max_step=settings['max_step'])
+        @timeit
+        def solve_emt():
+            """Solve the ODEs"""
 
-        return solution
+            solution = solve_ivp(
+                system_step, 
+                [0, t_max], 
+                self.states.init, 
+                dense_output=settings['dense_output'], 
+                method=settings['method'], 
+                max_step=settings['max_step'])
+            
+            return solution
+
+        solution = solve_emt()
+
+        # Define timepoints that will be used to evaluate the solution of the ODEs
+        if settings['dense_output']:
+            tps = np.linspace(0, t_max, 500)
+            solution = solution.sol(tps)
+
+        # Set the value of the EMT variables based on the solution of the ODEs
+        self.set_value(tps, solution, "x")
+
+
+    def plot_results(self, components = None, output_directory =None):
+        """
+        Plot EMT simulation results
+        """
+
+        if components is None:
+            components = self.components
+
+        logger.info(f" - Plotting EMT simulation results in {output_directory}")
+
+        for c in components:
+            results = c.plot_results_emt()
+            results.to_plotly(figure_filepath=os.path.join(output_directory, f"{c.type_}_{c.id}.html"))
+    
+    def write_results_csv(self, components = None, output_directory=None):
+        """
+        Write EMT simulation results to output directory.
+        """
+
+        if components is None:
+            components = self.components
+
+        logger.info(f" - Writing EMT simulation results in {output_directory}")
+
+        for c in components:
+            results = c.plot_results_emt()
+            results.to_timeseries(csv_filepath=os.path.join(output_directory, f"{c.type_}_{c.id}.csv"))
+
+    def set_value(self, time, numerical_vector, var_type: str):
+        """
+        Update the value of the EMT variables based on a numerical vector
+        """
+
+        for c in self.components:
+            variables = c.variables_emt
+            x_idx = self.x_idx[c.type_ + "_" + str(c.id)]
+            value = numerical_vector[x_idx]
+
+            var_component = getattr(variables, var_type)
+            setattr(var_component, "value", value)
+            setattr(var_component, "time", time)
 
 
 
@@ -195,7 +283,7 @@ class SimulationEMT:
         self.x_idx = {}
         self.u_idx = {}
         #self.ud_idx = {}
-        self.y_idx = {}
+        #self.y_idx = {}
 
         for i, component_name in enumerate(self.states.component):
             self.x_idx.setdefault(component_name, []).append(i)
@@ -206,12 +294,12 @@ class SimulationEMT:
         # for i, component_name in enumerate(ud.component):
         #    self.ud_idx.setdefault(component_name, []).append(i)
 
-        for i, component_name in enumerate(self.outputs.component):
-            self.y_idx.setdefault(component_name, []).append(i)
+        #for i, component_name in enumerate(self.outputs.component):
+        #    self.y_idx.setdefault(component_name, []).append(i)
 
         # Create a dictionary: {'voltage_source_4a_0': {i_bus_a : [1]}, 'gfmi_18a_0': {i_bus_c : [2]}}
         # so we can use xs_idx['voltage_source_4a_0']['i_bus_a']
-        self.xs_idx ={}
+        self.xs_idx = {}
         for i, xs in enumerate(self.states):
             component_name = xs.component[0]
             state_name = xs.name[0]

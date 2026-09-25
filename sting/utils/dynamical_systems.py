@@ -554,8 +554,15 @@ def smooth_step(t: float, step_time: float, initial_value: float, final_value: f
 
 
 
-def make_smooth_step(step_time: float, initial_value: float, final_value: float, transient_width: float):
-    return lambda t: smooth_step(t, step_time, initial_value, final_value, transient_width)
+def make_smooth_step(step_time: float, initial_value: float, final_value: float, transient_width: float, jit=False):
+    from sting.utils.dynamical_systems import smooth_step as sm
+    if jit:
+        import numba
+        sm = numba.njit(sm)
+        f = lambda t, x: sm(t, step_time, initial_value, final_value, transient_width)
+        return numba.njit(f)
+    
+    return lambda t, x: sm(t, step_time, initial_value, final_value, transient_width)
 
 
 @dataclass

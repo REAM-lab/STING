@@ -48,7 +48,11 @@ class ConstantImpedanceLoad(Load):
     power_flow_variables: PowerFlowVariables = None
     emt_init: InitialConditionsEMT = None
     tags: ClassVar[list[str]] = ["ccm_generator"] # When building the CCM interconnection matrices, we need to consider the load as a generator.
-    
+
+
+    @property
+    def wbase(self):
+        return 2 * np.pi * self.base_frequency_Hz
 
     def load_ac_power_flow_solution(self, timepoint: str, pf_solution: ACPowerFlowSolution):
 
@@ -234,6 +238,28 @@ class ConstantImpedanceLoad(Load):
         i_bus_a, i_bus_b, i_bus_c = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
+
+    def make_derivative_state_emt(self, jit):
+
+        def step(x, u, xf=self.x_pu, r=self.r_pu, wb=self.wbase):
+            # Get state values
+            i_bus_a, i_bus_b, i_bus_c = x
+    
+            # Get input values
+            v_ground_a, v_ground_b, v_ground_c, v_bus_a, v_bus_b, v_bus_c = u
+    
+            # Differential equations
+            d_i_bus_a = wb / xf * (v_ground_a - v_bus_a - r * i_bus_a)
+            d_i_bus_b = wb / xf * (v_ground_b - v_bus_b - r * i_bus_b)
+            d_i_bus_c = wb / xf * (v_ground_c - v_bus_c - r * i_bus_c)
+    
+            return [d_i_bus_a, d_i_bus_b, d_i_bus_c]
+
+        return step
+            
+
+    def make_output_emt(self, jit):
+        return lambda x: x 
     
     def plot_results_emt(self):
         """

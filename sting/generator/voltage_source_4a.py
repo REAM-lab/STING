@@ -265,6 +265,9 @@ class VoltageSource4A(Generator):
             return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
 
         return step
+
+    def make_output_emt(self, jit):
+        return lambda x: x[:3]
     
     def plot_results_emt(self):
         """

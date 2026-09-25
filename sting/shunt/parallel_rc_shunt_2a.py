@@ -216,7 +216,7 @@ class ParallelRCShunt2A(Shunt):
 
         return step
 
-    def make_outputs_emt(self, jit):
+    def make_output_emt(self, jit):
         return lambda x: x
     
     def plot_results_emt(self):
