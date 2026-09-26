@@ -26,3 +26,4 @@ from .synchronous_machine_6a import SynchronousMachine6A
 from .excitation_system_4a import ExcitationSystem4A
 from .voltage_droop_controller_1a import VoltageDroopController1A
 from .voltage_transducer_1a import VoltageTransducer1A
+from .dc_circuit_2b import DCCircuit2B

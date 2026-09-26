@@ -29,17 +29,20 @@ from sting.generator import (
     GFMI25A,
     GFLI23A,
     GFLI16C,
+    GFLI13ALIM,
+    GFLI16CLIM,
+    GFLI23ALIM,
+    GFMI25ALIM,
+    GFMI18ALIM,
+    GFMI25B,
     SynchronousGenerator14A,
     SynchronousGenerator17A,
     SynchronousGenerator23A,
+    UPSA,
     VoltageSource4A,
     VoltageSource5A,
 )
 from sting.generator.core import CapacityFactor, Generator
-from sting.generator.gfli_a import GFLIa
-from sting.generator.gfmi_c import GFMIc
-from sting.generator.gfmi_d import GFMId
-from sting.generator.gfmi_e import GFMIe
 from sting.line.pi_model import LinePiModel
 from sting.load import ConstantImpedanceLoad, Load, SwitchingLoad
 from sting.policies.carbon_policies.core import CarbonPolicy
@@ -76,10 +79,6 @@ class System:
     storage: list[Storage] = None
     voltage_source_4a: list[VoltageSource4A] = None
     voltage_source_5a: list[VoltageSource5A] = None
-    gfmi_c: list[GFMIc] = None
-    gfmi_d: list[GFMId] = None
-    gfmi_e: list[GFMIe] = None
-    gfli_a: list[GFLIa] = None
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
     gfli_16b: list[GFLI16B] = None
@@ -89,9 +88,16 @@ class System:
     gfmi_25a: list[GFMI25A] = None
     gfli_23a: list[GFLI23A] = None 
     gfli_16c: list[GFLI16C] = None 
+    gfli_16c_lim: list[GFLI16CLIM] = None 
+    gfli_13a_lim: list[GFLI13ALIM] = None 
+    gfli_23a_lim: list[GFLI23ALIM] = None
+    gfmi_25a_lim: list[GFMI25ALIM] = None
+    gfmi_18a_lim: list[GFMI18ALIM] = None
+    gfmi_25b: list[GFMI25B] = None  
     synchronous_generator_14a: list[SynchronousGenerator14A] = None
     synchronous_generator_17a: list[SynchronousGenerator17A] = None
     synchronous_generator_23a: list[SynchronousGenerator23A] = None
+    ups_a: list[UPSA] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None

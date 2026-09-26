@@ -8,6 +8,7 @@ This module implements a 25th order Grid-forming inverter model, comprised of:
 - 6th order LCL filter
 - 2th virtual inertia
 - 1th order voltage control loop
+- resistive losses on DC side 
 """
 # ----------------------
 # Import python packages
@@ -23,7 +24,7 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import (
-    DCCircuit2A,
+    DCCircuit2B,
     DCController6A,
     DCLoad1A,
     InnerCurrentController2A,
@@ -35,7 +36,7 @@ from sting.components import (
 from sting.utils.transformations import R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class GFMI25A(Generator):
+class GFMI25B(Generator):
     # LCL filter parameters
     rf1_pu: float
     xf1_pu: float
@@ -69,6 +70,7 @@ class GFMI25A(Generator):
     ki_iL_puHz: float # DC current regulator I gain [1/s]
     l_dc_pu: float # DC/DC converter inductance, [pu]
     c_dc_pu: float # DC link capacitance, [pu]
+    r_eq_pu: float # equivalent resistance battery 
     v_dc_ref: float # DC bus reference voltage, [pu]
     v_s_pu: float # DC voltage source voltage, [pu]
     Ti_L_s: float # measurement filter time constants [s]
@@ -79,9 +81,6 @@ class GFMI25A(Generator):
     Ti_load_s: float # for DC/DC controller - measurement filter 
     Tload_s: float # time constant for actuation of load current change 
     i_load_ref: float 
-    #Pbat_max_pu: float # maximum power capacity of battery (pu by S)
-    #SOC_max_pu: float # maximum energy capacity of battery (pu by S)
-    #SOC_init_pu: float # initial battery state of charge (pu)
 
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
@@ -90,7 +89,7 @@ class GFMI25A(Generator):
     virtual_inertia: RotationalInertia2A = field(init=False)
     voltage_droop: VoltageDroopController1A = field(init=False)
     dc_controller: DCController6A = field(init=False)
-    dc_circuit: DCCircuit2A = field(init=False)
+    dc_circuit: DCCircuit2B = field(init=False)
     dc_load: DCLoad1A = field(init=False)
 
     def __post_init__(self):
@@ -100,7 +99,7 @@ class GFMI25A(Generator):
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
         self.dc_controller = DCController6A(self.Ti_L_s, self.Tv_dc_s, self.Ti_dc_s, self.Ti_load_s, self.kp_vdc_pu, self.ki_vdc_puHz, self.kp_iL_pu, self.ki_iL_puHz, self.kff_idc, self.kff_iload)
-        self.dc_circuit = DCCircuit2A(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.wbase)
+        self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase)
         self.dc_load = DCLoad1A(self.Tload_s)
 
         self.phase_angle_name = self.virtual_inertia.phase_angle_name
@@ -345,15 +344,17 @@ class GFMI25A(Generator):
         
         p_load = i_load*v_dc 
         
+        battery_loss = np.square(i_L)*self.r_eq_pu
+        
         # Get duty cycle 
         duty_cycle = self.dc_controller.kp_iL*(self.dc_controller.kp_vdc*(self.v_dc_ref - v_dc_f) + x_1 - i_L_f + self.dc_controller.kff_idc*i_dc_f + self.dc_controller.kff_iload*i_load_f) + x_2
         
         results_emt = DynamicalVariables(
             name = ["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", 
-                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "i_load", 'p_vsc', 'p_sh', 'p_load', 'duty cycle'],
+                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "i_load", 'p_vsc', 'p_sh', 'p_load', 'p_loss_bat','duty_cycle'],
             component = f"{self.type_}_{self.id}",
             value=[angle*np.pi/180, w, q_f, z_vc_d, z_vc_q, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, 
-                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load, p_vsc, p_sh, p_load, duty_cycle],
+                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load, p_vsc, p_sh, p_load, battery_loss, duty_cycle],
             time=tps
         )
         

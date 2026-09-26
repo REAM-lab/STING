@@ -35,7 +35,7 @@ from sting.components import (
 from sting.utils.transformations import R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle
 
 @dataclass(slots=True, kw_only=True, eq=False)
-class GFMI25A(Generator):
+class GFMI25ALIM(Generator):
     # LCL filter parameters
     rf1_pu: float
     xf1_pu: float
@@ -79,9 +79,10 @@ class GFMI25A(Generator):
     Ti_load_s: float # for DC/DC controller - measurement filter 
     Tload_s: float # time constant for actuation of load current change 
     i_load_ref: float 
-    #Pbat_max_pu: float # maximum power capacity of battery (pu by S)
-    #SOC_max_pu: float # maximum energy capacity of battery (pu by S)
-    #SOC_init_pu: float # initial battery state of charge (pu)
+    Imax: float # Current limit, AC-DC converter
+    Imax_bat: float # Current limit, battery (proxy for power limit)
+    SOC_init: float # initial battery state of charge 
+    Emax: float # battery capacity 
 
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
@@ -268,24 +269,51 @@ class GFMI25A(Generator):
 
         # Compute current reference for inner current control loop
         i_ref_d, i_ref_q = self.voltage_controller.get_algebraics_step_emt_dq0(z_vc_d, z_vc_q, u_ref_d, u_ref_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, w)
+        
+        # Enforce current limit by uniform scaling
+        Imagnitude = np.sqrt(i_ref_d**2 + i_ref_q**2)
+        if Imagnitude > self.Imax:
+            i_ref_d = i_ref_d*self.Imax/Imagnitude
+            i_ref_q = i_ref_q*self.Imax/Imagnitude 
 
         # Compute voltage reference for the LCL filter
         v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, w)
+        
+        # Enforce PWM limits by uniform scaling
+        v_vsc_mag = np.sqrt(v_vsc_d**2 + v_vsc_q**2)
+        if v_vsc_mag > v_dc:
+            v_vsc_d = v_vsc_d*(v_dc/v_vsc_mag)
+            v_vsc_q = v_vsc_q*(v_dc/v_vsc_mag)
 
         # Transform voltage reference to abc reference frame
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, angle)
 
         # DC/AC power balance 
         i_dc = (v_vsc_d*i_vsc_d + v_vsc_q*i_vsc_q)/v_dc
+        
 
         # Compute duty cycle for DC/DC converter
         d = self.dc_controller.get_algebraics_step_emt_dc(i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, v_dc_ref)
+        
+        # Limit battery current 
+        if np.abs(i_L) > self.Imax_bat:
+            i_L = np.sign(i_L)*self.Imax_bat
+            
+        # Limit duty cycle
+        if d > 1.0:
+            d = 1
+        elif d < 0:
+            d = 0
 
         # Compute derivatives of the state variables
         d_vi = self.virtual_inertia.get_derivatives_step_emt_abc(w, p_ref, p_sh)
         d_vd = self.voltage_droop.get_derivatives_step_emt_dq0(q_sh, q_f)
         d_vc = self.voltage_controller.get_derivatives_step_emt_dq0(u_ref_d, u_ref_q, v_sh_d, v_sh_q)
         d_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_vsc_d, i_vsc_q)
+        
+        if Imagnitude > self.Imax:
+            d_cc = [0.0, 0.0] # clamp this block to prevent windup 
+              
         d_lcl= self.lcl_filter.get_derivatives_step_emt_abc(    i_vsc_a, i_vsc_b, i_vsc_c, 
                                                                 v_sh_a, v_sh_b, v_sh_c, 
                                                                 i_bus_a, i_bus_b, i_bus_c, 
@@ -345,15 +373,27 @@ class GFMI25A(Generator):
         
         p_load = i_load*v_dc 
         
+        
+        i_bus_mag = (np.square(i_bus_d) + np.square(i_bus_q))**0.5
+        
         # Get duty cycle 
         duty_cycle = self.dc_controller.kp_iL*(self.dc_controller.kp_vdc*(self.v_dc_ref - v_dc_f) + x_1 - i_L_f + self.dc_controller.kff_idc*i_dc_f + self.dc_controller.kff_iload*i_load_f) + x_2
         
+        # Calculate SOC in post 
+        # SOC(t) = SOC(t-1) + I(t)*(1/Q) where Q is rated capacity of battery 
+        soc = np.zeros_like(i_bus_mag)
+        for i, t in enumerate(tps):
+            if i == 0:
+                soc[i] = self.SOC_init + i_L[i]
+            else:
+                soc[i] = soc[i-1] + i_L[i]
+        
         results_emt = DynamicalVariables(
             name = ["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", 
-                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "i_load", 'p_vsc', 'p_sh', 'p_load', 'duty cycle'],
+                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "i_load", 'p_vsc', 'p_sh', 'p_load', 'i_bus_mag', 'soc', 'duty_cycle'],
             component = f"{self.type_}_{self.id}",
             value=[angle*np.pi/180, w, q_f, z_vc_d, z_vc_q, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, 
-                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load, p_vsc, p_sh, p_load, duty_cycle],
+                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load, p_vsc, p_sh, p_load, i_bus_mag, soc, duty_cycle],
             time=tps
         )
         
