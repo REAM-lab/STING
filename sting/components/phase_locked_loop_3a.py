@@ -4,7 +4,7 @@ from typing import NamedTuple
 import numpy as np
 
 from sting.utils.dynamical_systems import DynamicalVariables, QuadraticBilinearModel, StateSpaceModel
-from sting.utils.transformations import abc2dq0, dq02abc
+from sting.utils.transformations import abc2dq0, dq02abc, abc2dq0_jit, dq02abc_jit
 
 
 class InitialConditionsEMT(NamedTuple):
@@ -222,3 +222,19 @@ class PhaseLockedLoop3A:
         d_v_pll_q = (1/self.tau) * (v_bus_q - v_pll_q)
 
         return [d_v_pll_q, d_z_pll, d_phase_pll]
+
+
+from numba import njit
+
+@njit
+def phase_locked_loop_3a_dxdt(v_pll_q, z_pll, theta_pll, v_a, v_b, v_c, tau, kp_rad_s, ki_rad2_s2, wbase):
+    # Get voltage voltage of axis q
+    _, v_q, _ = abc2dq0_jit(v_a, v_b, v_c, theta_pll)
+    # Voltage filter dynamics
+    d_v_pll_q = (1/tau) * (v_q - v_pll_q)
+
+    # Compute the derivatives of the state variables for the EMT simulation step
+    d_theta_pll = (kp_rad_s * v_pll_q) + z_pll + wbase
+    d_z_pll = ki_rad2_s2 * v_pll_q
+
+    return np.array([d_v_pll_q, d_z_pll, d_theta_pll])

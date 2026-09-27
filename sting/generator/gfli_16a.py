@@ -34,6 +34,8 @@ from sting.utils.transformations import (
     d_DQ2dq_dangle,
     d_dq2DQ_dangle,
     dq02abc,
+    abc2dq0_jit,
+    dq02abc_jit
 )
 
 
@@ -586,3 +588,68 @@ class GFLI16A(Generator):
         )
 
         return results
+
+
+from numba import njit
+from sting.components.phase_locked_loop_3a import phase_locked_loop_3a_dxdt
+from sting.components.active_power_pi_1a import active_power_pi_1a_dxdt, active_power_pi_1a_y
+from sting.components.reactive_power_pi_1a import reactive_power_pi_1a_dxdt, reactive_power_pi_1a_y
+from sting.components.inner_current_controller_2a import inner_current_controller_2a_dxdt, inner_current_controller_2a_y
+from sting.components.lcl_filter_9a import lcl_filter_9a_dxdt
+
+@njit
+def gfli_16a_dxdt(x, u, data):
+
+
+    # Unpack states
+    (v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
+    i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = x
+    # Unpack *external* inputs
+    p_ref, q_ref, v_bus_a, v_bus_b, v_bus_c = u
+
+    # Unpack component parameters/data
+    (rf1, xf1, rf2, xf2, rsh, csh, kp_pll, ki_pll, tau_pll, kp_cc, ki_cc, kff_cc, kp_pc, ki_pc, wbase) = data
+    xf = xf1 + xf2
+    
+    # Compute relevant quantities in the converter reference frame
+    v_bus_d, v_bus_q, _ = abc2dq0_jit(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
+    i_bus_d, i_bus_q, _ = abc2dq0_jit(i_bus_a, i_bus_b, i_bus_c, theta_pll) 
+    p_bus = v_bus_d * i_bus_d + v_bus_q * i_bus_q
+    q_bus = v_bus_q * i_bus_d - v_bus_d * i_bus_q
+
+    dxdt = np.zeros(16)
+
+    #### Phase-locked loop ####
+    dxdt[0:3] = phase_locked_loop_3a_dxdt(
+        v_pll_q, z_pll, theta_pll, 
+        v_a=v_bus_a, v_b=v_bus_b, v_c=v_bus_c, 
+        tau=tau_pll, ki_rad2_s2=ki_pll, kp_rad_s=kp_pll, wbase=wbase)
+    
+    # Frequency estimated by PLL
+    w_pll  = dxdt[2]/wbase
+
+    #### Power controller ####
+    dxdt[3] = active_power_pi_1a_dxdt(p_ref=p_ref, p=p_bus, ki_puHz=ki_pc)
+    dxdt[4] = reactive_power_pi_1a_dxdt(q_ref=q_ref, q=q_bus, ki_puHz=ki_pc)
+    # Reference currents from power controller
+    i_ref_d = active_power_pi_1a_y(p_ref=p_ref, p=p_bus, z_apc=z_apc, kp_pu=kp_pc)
+    i_ref_q = reactive_power_pi_1a_y(q_ref=q_ref, q=q_bus, z_rpc=z_rpc, kp_pu=kp_pc)
+
+    #### Current controller ####
+    dxdt[5:7] = inner_current_controller_2a_dxdt(i_ref_d, i_ref_q, i_bus_d, i_bus_q, ki_puHz=ki_cc)
+    # Compute the voltage references from the inner current controller
+    v_vsc_d, v_vsc_q =inner_current_controller_2a_y(
+        z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, w_pll,
+        kp_pu=kp_cc, kffv=kff_cc, xf_pu=xf)
+    
+    # Convert to abc to feed into filter dynamics 
+    v_vsc_a, v_vsc_b, v_vsc_c = dq02abc_jit(v_vsc_d, v_vsc_q, 0, theta_pll) 
+    
+    #### LCL filter ####
+    dxdt[7:16] = lcl_filter_9a_dxdt(
+        i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c,
+        v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c,
+        rf1, xf1, rf2, xf2, rsh, csh, wbase
+        )
+    
+    return dxdt

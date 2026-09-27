@@ -283,3 +283,29 @@ class InnerCurrentController2A:
         v_out_q = out_pi_q + self.kffv * v_q + self.xf_pu * i_d * w
         
         return [v_out_d, v_out_q]
+
+
+from numba import njit
+
+@njit
+def inner_current_controller_2a_dxdt(i_ref_d: float, i_ref_q: float, i_d: float, i_q: float, ki_puHz:float):
+
+    d_z_cc_d = ki_puHz * (i_ref_d - i_d)
+    d_z_cc_q = ki_puHz * (i_ref_q - i_q)
+
+    return np.array([d_z_cc_d, d_z_cc_q])
+
+@njit
+def inner_current_controller_2a_y(
+    z_cc_d: float, z_cc_q: float, 
+    i_ref_d: float, i_ref_q: float, i_d: float, i_q: float, v_d: float, v_q: float, w: float,
+    kp_pu:float, kffv:float, xf_pu:float):
+    # Compute output of PI controller in d-axis and q-axis
+    out_pi_d = z_cc_d + kp_pu * (i_ref_d - i_d)
+    out_pi_q = z_cc_q + kp_pu * (i_ref_q - i_q)
+
+    # Compute output voltage in d-axis and q-axis
+    v_out_d = out_pi_d + kffv * v_d - xf_pu * i_q * w
+    v_out_q = out_pi_q + kffv * v_q + xf_pu * i_d * w
+    
+    return np.array([v_out_d, v_out_q])

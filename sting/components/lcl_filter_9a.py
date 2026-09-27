@@ -361,3 +361,32 @@ class LCLFilter9A:
         di_bus_q = (self.wbase / self.xf2_pu)*(-self.rf2_pu * i_bus_q + v_sh_q - v_bus_q) - (w * i_bus_d)
 
         return np.array([di_vsc_d, di_vsc_q, di_bus_d, di_bus_q, dv_sh_d, dv_sh_q])
+
+
+from numba import njit
+
+@njit
+def lcl_filter_9a_dxdt( 
+    i_vsc_a , i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states
+    v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c, # inputs
+    rf1, xf1, rf2, xf2, rsh, csh, wb
+    ):
+    """
+    Returns a step of differential equations that describe the EMT dynamics
+    of the LCL filter with abc inputs.
+    """
+
+    # Define ODEs that describe the dynamics of the LCL filter
+    di_vsc_a = wb/xf1 *(v_vsc_a - v_sh_a - rf1 * i_vsc_a)
+    di_vsc_b = wb/xf1 *(v_vsc_b - v_sh_b - rf1 * i_vsc_b)
+    di_vsc_c = wb/xf1 *(v_vsc_c - v_sh_c - rf1 * i_vsc_c)
+
+    dv_sh_a = wb/csh * (-v_sh_a/rsh + i_vsc_a - i_bus_a)
+    dv_sh_b = wb/csh * (-v_sh_b/rsh + i_vsc_b - i_bus_b)
+    dv_sh_c = wb/csh * (-v_sh_c/rsh + i_vsc_c - i_bus_c)
+
+    di_bus_a = wb/xf2 *(v_sh_a - v_bus_a - rf2 * i_bus_a)
+    di_bus_b = wb/xf2 *(v_sh_b - v_bus_b - rf2 * i_bus_b)
+    di_bus_c = wb/xf2 *(v_sh_c - v_bus_c - rf2 * i_bus_c)
+
+    return np.array([di_vsc_a, di_vsc_b, di_vsc_c, dv_sh_a, dv_sh_b, dv_sh_c, di_bus_a, di_bus_b, di_bus_c])

@@ -38,6 +38,7 @@ class SimulationEMT:
     parallel_rc_shunt_2a: np.ndarray = None
     series_rl_branch_2a: np.ndarray = None
     voltage_source_4a: np.ndarray = None
+    gfli_16a: np.ndarray = None
 
     # EMT simulation step
     step: None = None
@@ -47,8 +48,9 @@ class SimulationEMT:
     u_idx: dict = None
     
     
-
+    @timeit
     def __post_init__(self):
+        """Precompiling EMT simulation"""
         self.build_dictionaries()
 
         x_index = np.array([[min(a), max(a)+1] for a in self.x_idx.values()])
@@ -74,7 +76,8 @@ class SimulationEMT:
             # Component data
             parallel_rc_shunt_2a=self.parallel_rc_shunt_2a,
             series_rl_branch_2a=self.series_rl_branch_2a,
-            voltage_source_4a=self.voltage_source_4a   
+            voltage_source_4a=self.voltage_source_4a,
+            gfli_16a=self.gfli_16a
             )
 
         # Step once to precompile 
@@ -106,6 +109,13 @@ class SimulationEMT:
         parallel_rc_shunt_2a = system.query(["parallel_rc_shunt_2a"]).to_table("g_pu", "b_pu", "wbase").to_numpy()
         series_rl_branch_2a = system.query(["series_rl_branch_2a"]).to_table("r_pu", "x_pu", "wbase").to_numpy()
         voltage_source_4a = system.query(["voltage_source_4a"]).to_table("r_pu", "x_pu", "wbase").to_numpy()
+        gfli_16a = system.query(["gfli_16a"]).to_table(
+            "rf1_pu", "xf1_pu", "rf2_pu", "xf2_pu", "rsh_pu", "csh_pu", 
+            "kp_pll_rad_s", "ki_pll_rad2_s2", "tau_pll_s",
+            "kp_cc_pu", "ki_cc_puHz", "kff_cc",
+            "kp_pc_pu", "ki_pc_puHz",
+            "wbase"
+        ).to_numpy()
 
         return SimulationEMT(
             inputs=inputs, 
@@ -115,7 +125,8 @@ class SimulationEMT:
             components=components,
             parallel_rc_shunt_2a=parallel_rc_shunt_2a,
             series_rl_branch_2a=series_rl_branch_2a,
-            voltage_source_4a=voltage_source_4a
+            voltage_source_4a=voltage_source_4a,
+            gfli_16a=gfli_16a
             )
         
 
@@ -126,7 +137,6 @@ class SimulationEMT:
         """
         if settings is None:
             settings = {'dense_output': True, 'method': 'Radau', 'max_step': 0.001}
-
 
         solution = solve_ivp(
             self.step, 
@@ -235,12 +245,13 @@ class SimulationEMT:
 from sting.branch.series_rl_branch_2a import series_rl_branch_2a_dxdt
 from sting.shunt.parallel_rc_shunt_2a import parallel_rc_shunt_2a_dxdt
 from sting.generator.voltage_source_4a import voltage_source_4a_dxdt
+from sting.generator.gfli_16a import gfli_16a_dxdt
 
 @njit
-def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a):
+def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
     dx_dt = np.empty_like(x)
     i = 0
-    # Sources
+
     for j in range(voltage_source_4a.shape[0]):
         start, stop = x_index[i]
 
@@ -248,6 +259,16 @@ def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a
         u_i = get_component_u(i, u, u_index, u_values)
 
         dx_dt[start:stop] = voltage_source_4a_dxdt(x_i, u_i, voltage_source_4a[j])
+        i += 1
+
+    # Generators
+    for j in range(gfli_16a.shape[0]):
+        start, stop = x_index[i]
+
+        x_i = get_component_x(i, x, x_index)
+        u_i = get_component_u(i, u, u_index, u_values)
+
+        dx_dt[start:stop] = gfli_16a_dxdt(x_i, u_i, gfli_16a[j])
         i += 1
 
     # Shunts
@@ -270,8 +291,6 @@ def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a
         dx_dt[start:stop] = series_rl_branch_2a_dxdt(x_i, u_i, series_rl_branch_2a[j])
         i += 1
 
-    
-
     return dx_dt
 
 
@@ -290,16 +309,22 @@ def get_component_u(i, u, u_index, u_values):
     return u_i
 
 @njit
-def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a):
+def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
     
     y_stack = np.empty(n_outputs, dtype=x.dtype)
     i = 0
     offset = 0
 
-    # Voltage source outputs
     for _ in range(voltage_source_4a.shape[0]):
         start, stop = x_index[i]
         y_stack[offset:offset+3] = x[start:stop][:3]
+        i += 1
+        offset += 3
+
+    # Generator outputs
+    for _ in range(gfli_16a.shape[0]):
+        start, stop = x_index[i]
+        y_stack[offset:offset+3] = x[start:stop][-3:]
         i += 1
         offset += 3
 
@@ -335,7 +360,8 @@ def system_step(
     # Component data
     parallel_rc_shunt_2a,
     series_rl_branch_2a,
-    voltage_source_4a   
+    voltage_source_4a,
+    gfli_16a,
     ):
 
     # Build device input
@@ -343,11 +369,11 @@ def system_step(
 
     # Build output
     n_outputs = F.shape[1]
-    y_stack = output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a)
+    y_stack = output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a)
 
     u = F @ y_stack + G @ u_device
 
     # Build state derivative
-    dx_dt = derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a)
+    dx_dt = derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a)
        
     return dx_dt

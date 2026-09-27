@@ -169,3 +169,20 @@ class ReactivePowerPI1A:
         i_ref_q = self.kp_pu * (-1) * (q_ref - q) + z_rpc
 
         return i_ref_q
+
+
+from numba import njit
+
+@njit
+def reactive_power_pi_1a_dxdt(q_ref: float, q: float, ki_puHz: float) -> float:
+    # Compute derivative of the state variable associated to the PI controller
+    d_z_rpc = ki_puHz * (-1) * (q_ref - q)
+
+    return d_z_rpc
+
+@njit
+def reactive_power_pi_1a_y(q_ref: float, q: float, z_rpc: float, kp_pu:float):
+    # Compute q-axis current reference
+    i_ref_q = kp_pu * (-1) * (q_ref - q) + z_rpc
+
+    return i_ref_q

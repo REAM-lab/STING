@@ -14,21 +14,51 @@ case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
 os.makedirs(case_directory, exist_ok=True)
 
 
-sys = wscc_9(case_directory=case_directory)
-sys.gfli_16a.clear()
-sys.gfmi_18a.clear()
+
+import os
+
+import polars as pl
+
+from sting import datasets, main
+from sting.generator import GFLI16A
+from sting.utils.plotting_tools import compare_timeseries
+
+# Set up a temporary directory used by all tests
+case_directory = os.path.join(os.getcwd(), "tests", "emt_tests", "tmpdir")
+os.makedirs(case_directory, exist_ok=True)
+
+# -------------------------------------------------------
+# Construct a simple 2-bus system
+# -------------------------------------------------------
+gfli_1 = GFLI16A(
+    name="gfli_1", bus="bus_2",
+    # Power flow 
+    minimum_active_power_MW=-100, maximum_active_power_MW=-50, minimum_reactive_power_MVAR=-100, maximum_reactive_power_MVAR=100,
+    cost_variable_USDperMWh=10, base_power_MVA=100, base_voltage_kV=0.48, base_frequency_Hz=60,
+    # LCL filter
+    rf1_pu=0.002, xf1_pu=0.07, csh_pu=0.01, rsh_pu=1, 
+    txr_power_MVA=100, txr_voltage1_kV=0.48, txr_voltage2_kV=230, txr_r1_pu=0.003/2, txr_x1_pu=0.08/2, txr_r2_pu=0.003/2, txr_x2_pu=0.08/2, 
+    # Phase-locked loop (PLL)
+    kp_pll_rad_s=100, ki_pll_rad2_s2=2500, tau_pll_s=1/100,
+    # Inner current controller
+    kp_cc_pu=0.05, ki_cc_puHz=0.6, kff_cc=0.75,
+    # Power controllers
+    kp_pc_pu=0.1, ki_pc_puHz=100
+)
+
+sys = datasets.toy_2(case_directory=case_directory)
+sys.add(gfli_1)
+
+load_1 = Load(bus="bus_1", zone="external", timepoint="t1", load_MW=0, load_MVAR=0)
 sys.loads.clear()
-
-for b in ["bus_2", "bus_3", "bus_5"]:
-
-    g = copy.deepcopy(sys.voltage_source_4a[0])
-    g.bus = b
-    sys.add(g)
-
-load_1 = Load(bus="bus_5", zone="external", timepoint="t1", load_MW=0, load_MVAR=0)
 sys.add(load_1)
 
 sys.apply("post_system_init", sys)
+
+
+
+
+
 # Run power flow
 pf = ACPowerFlow(system=sys)
 pf.solve()
@@ -50,20 +80,13 @@ from sting.modules.simulation_emt.core_v3 import SimulationEMT
 
 emt_model = SimulationEMT.from_system(sys)
 
-
-"""input_signals = {
-    "voltage_source_4a_0": {
-        "v_ref_d": make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3, jit=True),
-    }
-}"""
-
 import numpy as np
 from numba import njit
 
 @njit
 def inputs(t, x):
-    u = np.zeros(8)
-    u[0] = smooth_step_jit(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3)
+    u = np.zeros(4)
+    u[2] = smooth_step_jit(t, step_time=0.10, initial_value=0.0, final_value=0.10, transient_width=5e-3)
     return u
 
 emt_model.simulate(t_max=1.5, inputs=inputs)

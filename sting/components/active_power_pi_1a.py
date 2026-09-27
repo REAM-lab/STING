@@ -170,3 +170,20 @@ class ActivePowerPI1A:
         i_ref_d = self.kp_pu * (p_ref - p) + z_apc
 
         return i_ref_d
+
+
+from numba import njit
+
+@njit
+def active_power_pi_1a_dxdt(p_ref: float, p: float, ki_puHz: float) -> float:
+    # Compute derivative of the state variable associated to the PI controller
+    d_z_apc = ki_puHz * (p_ref - p)
+
+    return d_z_apc
+
+@njit
+def active_power_pi_1a_y(p_ref: float, p: float, z_apc: float, kp_pu:float):
+    # Compute d-axis current reference
+    i_ref_d = kp_pu * (p_ref - p) + z_apc
+
+    return i_ref_d
