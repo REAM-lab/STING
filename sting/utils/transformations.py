@@ -1,4 +1,5 @@
 import numpy as np
+import numba
 
 def abc2dq0(x_a, x_b, x_c, theta):
     '''It returns value of axis d, q, and zero that results from applying the a standard
@@ -37,11 +38,7 @@ def dq02abc(x_d, x_q, x_0, theta):
 
     return x_a, x_b, x_c
 
-def make_dq02abc(jit):
-    if jit:
-        import numba
-        return numba.njit(dq02abc)
-    return dq02abc
+dq02abc_jit = numba.njit(dq02abc)
 
 def R_dq2DQ(theta):
     R = np.array([

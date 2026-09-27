@@ -1,17 +1,10 @@
-# ----------------------
-# Import python packages
-# ----------------------
 import numpy as np
 from dataclasses import dataclass
 from scipy.integrate import solve_ivp
-import itertools
 import os
 import logging
-import inspect
+import numba
 
-# ------------------
-# Import sting code
-# ------------------
 from sting.system.core import System
 from sting.system.component import Component
 from sting.utils.dynamical_systems import DynamicalVariables
@@ -23,24 +16,6 @@ from sting.modules.simulation_emt.utils import modify_user_functions
 
 import numpy as np
 from numba import njit
-# class_id: array of ints mapping class to int
-# component_id: array of ints mapping instance of class to int
-
-from enum import IntEnum
-from numba import njit
-
-class ClassID(IntEnum):
-    PARALLEL_RC_SHUNT_2A = 0
-    SERIES_RL_BRANCH_2A = 1
-    IMPEDANCE_LOAD = 2
-    VOLTAGE_SOURCE_4A = 3
-    # ...
-
-from sting.datasets.toy_2 import toy_2
-from sting.system.operations import SystemModifier
-from sting.modules.power_flow.core import ACPowerFlow
-#numba.njit(f)
-from sting.utils.dynamical_systems import TimeDomainSolution
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -55,18 +30,55 @@ class SimulationEMT:
     states: DynamicalVariables
     outputs: DynamicalVariables
 
-    components: list = None
-
     # Interconnections
+    components: list = None
     ccm_matrices: list[np.ndarray] = None
+    
+    # Component data
+    parallel_rc_shunt_2a: np.ndarray = None
+    series_rl_branch_2a: np.ndarray = None
+    voltage_source_4a: np.ndarray = None
 
-    # Dict
-    x_idx: dict[str, np.ndarray] = None
-    u_idx: dict[str, np.ndarray] = None
+    # EMT simulation step
+    step: None = None
+
+    # Dicts
+    x_idx: dict = None
+    u_idx: dict = None
+    
     
 
     def __post_init__(self):
         self.build_dictionaries()
+
+        x_index = np.array([[min(a), max(a)+1] for a in self.x_idx.values()])
+        u_len = np.array([len(a) for a in self.u_idx.values()])
+        u_stop = np.cumsum(u_len)
+        u_start = np.insert(u_stop[:-1], 0, 0)
+        u_index = np.array(list(zip(u_start, u_stop)))
+        u_values = np.array(sum([a for a in self.u_idx.values()], []))
+
+        u0 =  self.inputs[self.inputs.type == "device"].init
+
+        self.step = lambda t, x, inputs: system_step(
+            t, x, 
+            inputs,
+            # Vector indices
+            x_index=x_index,
+            u_index=u_index,
+            u_values=u_values,
+            u0=u0,
+            # Interconnections
+            F=self.ccm_matrices[0],
+            G=self.ccm_matrices[1],
+            # Component data
+            parallel_rc_shunt_2a=self.parallel_rc_shunt_2a,
+            series_rl_branch_2a=self.series_rl_branch_2a,
+            voltage_source_4a=self.voltage_source_4a   
+            )
+
+        # Step once to precompile 
+        self.step(t=0, x=self.states.init, inputs=numba.njit(lambda t, x: u0))
         
 
     @classmethod
@@ -79,10 +91,7 @@ class SimulationEMT:
         # 1. Select all EMT components
         components = system.query(["ccm_generators", "ccm_shunts", "ccm_branches"]).to_list()
 
-        # 2. Get all component data + class_ids + component_ids
-        # TODO:
-
-        # 3. Set up inputs, outputs, and states
+        # 2. Set up inputs, outputs, and states
         states = sum([c.variables_emt.x for c in components], DynamicalVariables(name=[]))
         outputs = sum([c.variables_emt.y for c in components], DynamicalVariables(name=[]))
         inputs = sum([c.variables_emt.u for c in components], DynamicalVariables(name=[]))
@@ -90,42 +99,40 @@ class SimulationEMT:
         inputs_grid = inputs[inputs.type == "grid"]
         inputs = inputs_device + inputs_grid
 
-        # 4. Build CCM matrices
+        # 3. Build CCM matrices
         ccm_matrices = get_ccm_matrices(system, attribute="variables_emt", dimI=3)
+
+        # 4. Get component data
+        parallel_rc_shunt_2a = system.query(["parallel_rc_shunt_2a"]).to_table("g_pu", "b_pu", "wbase").to_numpy()
+        series_rl_branch_2a = system.query(["series_rl_branch_2a"]).to_table("r_pu", "x_pu", "wbase").to_numpy()
+        voltage_source_4a = system.query(["voltage_source_4a"]).to_table("r_pu", "x_pu", "wbase").to_numpy()
 
         return SimulationEMT(
             inputs=inputs, 
             states=states, 
             outputs=outputs, 
             ccm_matrices=ccm_matrices,
-            components=components)
-
-    @timeit
-    def make_system_step(self, get_device_inputs):
-
-        def step(t, x):
-            system_step(t, x, get_device_inputs, self.class_ids, ...)
-
-        # Call step once to precompile
-        step(0, self.states.init)
-
-        return step
+            components=components,
+            parallel_rc_shunt_2a=parallel_rc_shunt_2a,
+            series_rl_branch_2a=series_rl_branch_2a,
+            voltage_source_4a=voltage_source_4a
+            )
         
 
     @timeit
-    def simulate(self, t_max, input_signals, settings=None):
+    def simulate(self, t_max, inputs, settings=None):
         """
         Run the EMT simulation for the system.
         """
         if settings is None:
             settings = {'dense_output': True, 'method': 'Radau', 'max_step': 0.001}
 
-        system_step = self.make_system_step(input_signals)
 
         solution = solve_ivp(
-            system_step, 
+            self.step, 
             [0, t_max], 
             self.states.init, 
+            args=(inputs,),
             dense_output=settings['dense_output'], 
             method=settings['method'], 
             max_step=settings['max_step'])
@@ -163,7 +170,7 @@ class SimulationEMT:
         #for i, component_name in enumerate(self.outputs.component):
         #    self.y_idx.setdefault(component_name, []).append(i)
 
-        # Create a dictionary: {'voltage_source_4a_0': {i_bus_a : [1]}, 'gfmi_18a_0': {i_bus_c : [2]}}
+        """# Create a dictionary: {'voltage_source_4a_0': {i_bus_a : [1]}, 'gfmi_18a_0': {i_bus_c : [2]}}
         # so we can use xs_idx['voltage_source_4a_0']['i_bus_a']
         self.xs_idx = {}
         for i, xs in enumerate(self.states):
@@ -176,7 +183,7 @@ class SimulationEMT:
         for i, us in enumerate(self.inputs):
             component_name = us.component[0]
             input_name = us.name[0]
-            self.us_idx.setdefault(component_name, {})[input_name] = i
+            self.us_idx.setdefault(component_name, {})[input_name] = i"""
 
     def plot_results(self, components = None, output_directory =None):
         """
@@ -225,61 +232,122 @@ class SimulationEMT:
 # Numba compiled functions
 # --------------------------------------
 
-@njit
-def derivative_dispatcher(x, u, data, class_id):
-    # Start with most common elements to increase hits
-    if class_id == ClassID.PARALLEL_RC_SHUNT_2A:
-        pass
-
-    elif class_id == ClassID.SERIES_RL_BRANCH_2A:
-        pass
-
-    elif class_id == ClassID.IMPEDANCE_LOAD:
-        pass
-
-    elif class_id == ClassID.VOLTAGE_SOURCE_4A:
-        return voltage_source_4a_dxdt(x, u, data)
+from sting.branch.series_rl_branch_2a import series_rl_branch_2a_dxdt
+from sting.shunt.parallel_rc_shunt_2a import parallel_rc_shunt_2a_dxdt
+from sting.generator.voltage_source_4a import voltage_source_4a_dxdt
 
 @njit
-def output_dispatcher(x, class_id):
-    pass
+def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a):
+    dx_dt = np.empty_like(x)
+    i = 0
+    # Sources
+    for j in range(voltage_source_4a.shape[0]):
+        start, stop = x_index[i]
+
+        x_i = get_component_x(i, x, x_index)
+        u_i = get_component_u(i, u, u_index, u_values)
+
+        dx_dt[start:stop] = voltage_source_4a_dxdt(x_i, u_i, voltage_source_4a[j])
+        i += 1
+
+    # Shunts
+    for j in range(parallel_rc_shunt_2a.shape[0]):
+        start, stop = x_index[i]
+
+        x_i = get_component_x(i, x, x_index)
+        u_i = get_component_u(i, u, u_index, u_values)
+
+        dx_dt[start:stop] = parallel_rc_shunt_2a_dxdt(x_i, u_i, parallel_rc_shunt_2a[j])
+        i += 1
+
+    # Branches
+    for j in range(series_rl_branch_2a.shape[0]):
+        start, stop = x_index[i]
+
+        x_i = get_component_x(i, x, x_index)
+        u_i = get_component_u(i, u, u_index, u_values)
+
+        dx_dt[start:stop] = series_rl_branch_2a_dxdt(x_i, u_i, series_rl_branch_2a[j])
+        i += 1
+
+    
+
+    return dx_dt
+
+
+@njit
+def get_component_x(i, x, x_index):
+    x_start, x_stop = x_index[i]
+    x_i =  x[x_start: x_stop]
+
+    return x_i
+
+@njit
+def get_component_u(i, u, u_index, u_values):
+    u_start, u_stop = u_index[i]
+    u_i = u[u_values[u_start:u_stop]]
+
+    return u_i
+
+@njit
+def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a):
+    
+    y_stack = np.empty(n_outputs, dtype=x.dtype)
+    i = 0
+    offset = 0
+
+    # Voltage source outputs
+    for _ in range(voltage_source_4a.shape[0]):
+        start, stop = x_index[i]
+        y_stack[offset:offset+3] = x[start:stop][:3]
+        i += 1
+        offset += 3
+
+    # Shunt outputs
+    for _ in range(parallel_rc_shunt_2a.shape[0]):
+        start, stop = x_index[i]
+        y_stack[offset:offset+3] = x[start:stop]
+        i += 1
+        offset += 3
+
+    # Branch outputs
+    for _ in range(series_rl_branch_2a.shape[0]):
+        start, stop = x_index[i]
+        y_stack[offset:offset+3] = x[start:stop]
+        i += 1
+        offset += 3
+
+    return y_stack
 
 
 @njit
 def system_step(
     t, x, 
-    get_device_inputs,
-    class_ids,
-    component_ids,
-    component_data, # Lumpy...
-    x_ids,
-    u_ids, # Lumpy...
+    inputs,
+    # Vector indices
+    x_index,
+    u_index,
+    u_values,
+    u0,
+    # Interconnections
     F,
-    G):
+    G,
+    # Component data
+    parallel_rc_shunt_2a,
+    series_rl_branch_2a,
+    voltage_source_4a   
+    ):
 
     # Build device input
-    u_device = get_device_inputs(x, t)
+    u_device = inputs(t, x) + u0
 
     # Build output
-    y_stack = np.empty(F.shape[1], dtype=np.float64)
-
-    for i in range(len(component_ids)):
-        start, stop = x_ids[i]
-        class_id = class_ids[i]
-        y_stack[start:stop] = output_dispatcher(x[start:stop], class_id)
+    n_outputs = F.shape[1]
+    y_stack = output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a)
 
     u = F @ y_stack + G @ u_device
 
     # Build state derivative
-    dx_dt = np.empty_like(x)
-
-    for i in range(len(component_ids)):
-        x_start, x_stop = x_ids[i]
-        x_i = x[x_start:x_stop]
-        u_i = u[u_ids[i]]
-        class_id = class_ids[i]
-        data_i = component_data[class_id][component_ids[i]]
-        
-        dx_dt[x_start:x_stop] = derivative_dispatcher(x_i, u_i, data_i, class_id)
-    
+    dx_dt = derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a)
+       
     return dx_dt

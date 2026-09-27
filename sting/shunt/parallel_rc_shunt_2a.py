@@ -197,27 +197,6 @@ class ParallelRCShunt2A(Shunt):
         v_bus_a, v_bus_b, v_bus_c = x
 
         return [v_bus_a, v_bus_b, v_bus_c]
-
-    def make_derivative_state_emt(self, jit):
-
-        def step(x, u, g=self.g_pu, b=self.b_pu, wb=self.wbase):
-            # Get state values
-            v_bus_a, v_bus_b, v_bus_c = x
-
-            # Get input values
-            i_bus_a, i_bus_b, i_bus_c = u
-
-            # Differential equations
-            d_v_bus_a = wb / b * (- g * v_bus_a + i_bus_a)
-            d_v_bus_b = wb / b * (- g * v_bus_b + i_bus_b)
-            d_v_bus_c = wb / b * (- g * v_bus_c + i_bus_c)
-
-            return [d_v_bus_a, d_v_bus_b, d_v_bus_c]
-
-        return step
-
-    def make_output_emt(self, jit):
-        return lambda x: x
     
     def plot_results_emt(self):
 
@@ -237,3 +216,21 @@ class ParallelRCShunt2A(Shunt):
             time=time
         )
         return results
+
+from numba import njit
+
+@njit
+def parallel_rc_shunt_2a_dxdt(x, u, data):
+    g, b, wb = data
+    # Get state values
+    v_bus_a, v_bus_b, v_bus_c = x
+
+    # Get input values
+    i_bus_a, i_bus_b, i_bus_c = u
+
+    # Differential equations
+    d_v_bus_a = wb / b * (- g * v_bus_a + i_bus_a)
+    d_v_bus_b = wb / b * (- g * v_bus_b + i_bus_b)
+    d_v_bus_c = wb / b * (- g * v_bus_c + i_bus_c)
+
+    return np.array([d_v_bus_a, d_v_bus_b, d_v_bus_c])

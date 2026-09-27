@@ -13,7 +13,7 @@ import polars as pl
 # Import sting code
 # -------------
 from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
-from sting.utils.transformations import dq02abc, abc2dq0, make_dq02abc
+from sting.utils.transformations import dq02abc, abc2dq0, dq02abc_jit
 from sting.generator.core import Generator
 
 # -------------
@@ -243,31 +243,6 @@ class VoltageSource4A(Generator):
 
         return [i_bus_a, i_bus_b, i_bus_c]
 
-    def make_derivative_state_emt(self, jit):
-
-        dq02abc = make_dq02abc(jit)
-
-        def step(x, u, r=self.r_pu, xf=self.x_pu, wb=self.wbase, dq02abc=dq02abc):
-            # Get state values
-            i_bus_a, i_bus_b, i_bus_c, angle_ref = x
-    
-            # Get input values
-            v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = u
-    
-            v_ref_a, v_ref_b, v_ref_c = dq02abc(v_ref_d, v_ref_q, 0, angle_ref)
-    
-            # Differential equations
-            d_i_bus_a = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
-            d_i_bus_b = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
-            d_i_bus_c = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
-            d_angle_ref = wb 
-    
-            return [d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref]
-
-        return step
-
-    def make_output_emt(self, jit):
-        return lambda x: x[:3]
     
     def plot_results_emt(self):
         """
@@ -285,3 +260,25 @@ class VoltageSource4A(Generator):
             time=t,
         )
         return results
+
+from numba import njit
+
+
+@njit
+def voltage_source_4a_dxdt(x, u, data):
+    r, xf, wb = data
+    # Get state values
+    i_bus_a, i_bus_b, i_bus_c, angle_ref = x
+
+    # Get input values
+    v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = u
+
+    v_ref_a, v_ref_b, v_ref_c = dq02abc_jit(v_ref_d, v_ref_q, 0, angle_ref)
+
+    # Differential equations
+    d_i_bus_a = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
+    d_i_bus_b = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
+    d_i_bus_c = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
+    d_angle_ref = wb 
+
+    return np.array([d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref])
