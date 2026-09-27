@@ -242,17 +242,15 @@ class SeriesRLBranch2A(Branch):
 from numba import njit
 
 @njit
-def series_rl_branch_2a_dxdt(x, u, data):
+def series_rl_branch_2a_dxdt(x, u, dx_dt, data, offset):
     r, xf, wb = data
     # Get state values
-    i_br_a, i_br_b, i_br_c = x
+    i_br_a, i_br_b, i_br_c = x[offset:offset+3]
 
     # Get input values
     v_from_bus_a, v_from_bus_b, v_from_bus_c, v_to_bus_a, v_to_bus_b, v_to_bus_c = u
 
     # Differential equations
-    d_i_br_a = wb / xf * (v_from_bus_a - v_to_bus_a - r * i_br_a)
-    d_i_br_b = wb / xf * (v_from_bus_b - v_to_bus_b - r * i_br_b)
-    d_i_br_c = wb / xf * (v_from_bus_c - v_to_bus_c - r * i_br_c)
-    
-    return np.array([d_i_br_a, d_i_br_b, d_i_br_c])
+    dx_dt[offset] = wb / xf * (v_from_bus_a - v_to_bus_a - r * i_br_a)
+    dx_dt[offset+1] = wb / xf * (v_from_bus_b - v_to_bus_b - r * i_br_b)
+    dx_dt[offset+2] = wb / xf * (v_from_bus_c - v_to_bus_c - r * i_br_c)

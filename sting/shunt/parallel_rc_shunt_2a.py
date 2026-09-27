@@ -219,18 +219,16 @@ class ParallelRCShunt2A(Shunt):
 
 from numba import njit
 
-@njit
-def parallel_rc_shunt_2a_dxdt(x, u, data):
+#@njit
+def parallel_rc_shunt_2a_dxdt(x, u, dx_dt, data, offset):
     g, b, wb = data
     # Get state values
-    v_bus_a, v_bus_b, v_bus_c = x
+    v_bus_a, v_bus_b, v_bus_c = x[offset:offset+3]
 
     # Get input values
     i_bus_a, i_bus_b, i_bus_c = u
 
     # Differential equations
-    d_v_bus_a = wb / b * (- g * v_bus_a + i_bus_a)
-    d_v_bus_b = wb / b * (- g * v_bus_b + i_bus_b)
-    d_v_bus_c = wb / b * (- g * v_bus_c + i_bus_c)
-
-    return np.array([d_v_bus_a, d_v_bus_b, d_v_bus_c])
+    dx_dt[offset] = wb / b * (- g * v_bus_a + i_bus_a)
+    dx_dt[offset+1] = wb / b * (- g * v_bus_b + i_bus_b)
+    dx_dt[offset+2] = wb / b * (- g * v_bus_c + i_bus_c)

@@ -53,7 +53,7 @@ class SimulationEMT:
         """Precompiling EMT simulation"""
         self.build_dictionaries()
 
-        x_index = np.array([[min(a), max(a)+1] for a in self.x_idx.values()])
+        x_index = np.array([min(a) for a in self.x_idx.values()])
         u_len = np.array([len(a) for a in self.u_idx.values()])
         u_stop = np.cumsum(u_len)
         u_start = np.insert(u_stop[:-1], 0, 0)
@@ -165,8 +165,6 @@ class SimulationEMT:
         # For example, {'voltage_source_4a_0': [0, 1, 2, 3], 'gfmi_18a_0': [4, 5, 6, 7, 8]}
         self.x_idx = {}
         self.u_idx = {}
-        #self.ud_idx = {}
-        #self.y_idx = {}
 
         for i, component_name in enumerate(self.states.component):
             self.x_idx.setdefault(component_name, []).append(i)
@@ -174,26 +172,6 @@ class SimulationEMT:
         for i, component_name in enumerate(self.inputs.component):
             self.u_idx.setdefault(component_name, []).append(i)
 
-        # for i, component_name in enumerate(ud.component):
-        #    self.ud_idx.setdefault(component_name, []).append(i)
-
-        #for i, component_name in enumerate(self.outputs.component):
-        #    self.y_idx.setdefault(component_name, []).append(i)
-
-        """# Create a dictionary: {'voltage_source_4a_0': {i_bus_a : [1]}, 'gfmi_18a_0': {i_bus_c : [2]}}
-        # so we can use xs_idx['voltage_source_4a_0']['i_bus_a']
-        self.xs_idx = {}
-        for i, xs in enumerate(self.states):
-            component_name = xs.component[0]
-            state_name = xs.name[0]
-            self.xs_idx.setdefault(component_name, {})[state_name] = i
-
-        # Create a dictionary: {'voltage_source_4a_0': {v_ref_d : [1]}, 'gfmi_18a_0': {p_ref : [2]}}
-        self.us_idx ={}
-        for i, us in enumerate(self.inputs):
-            component_name = us.component[0]
-            input_name = us.name[0]
-            self.us_idx.setdefault(component_name, {})[input_name] = i"""
 
     def plot_results(self, components = None, output_directory =None):
         """
@@ -247,68 +225,52 @@ from sting.shunt.parallel_rc_shunt_2a import parallel_rc_shunt_2a_dxdt
 from sting.generator.voltage_source_4a import voltage_source_4a_dxdt
 from sting.generator.gfli_16a import gfli_16a_dxdt
 
-@njit
+#@njit
 def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
     dx_dt = np.empty_like(x)
     i = 0
 
     for j in range(voltage_source_4a.shape[0]):
-        start, stop = x_index[i]
-
-        x_i = get_component_x(i, x, x_index)
+        offset = x_index[i]
         u_i = get_component_u(i, u, u_index, u_values)
 
-        dx_dt[start:stop] = voltage_source_4a_dxdt(x_i, u_i, voltage_source_4a[j])
+        voltage_source_4a_dxdt(x, u_i, dx_dt, voltage_source_4a[j], offset)
         i += 1
 
     # Generators
     for j in range(gfli_16a.shape[0]):
-        start, stop = x_index[i]
-
-        x_i = get_component_x(i, x, x_index)
+        offset = x_index[i]
         u_i = get_component_u(i, u, u_index, u_values)
 
-        dx_dt[start:stop] = gfli_16a_dxdt(x_i, u_i, gfli_16a[j])
+        gfli_16a_dxdt(x, u_i, dx_dt, gfli_16a[j], offset)
         i += 1
 
     # Shunts
     for j in range(parallel_rc_shunt_2a.shape[0]):
-        start, stop = x_index[i]
-
-        x_i = get_component_x(i, x, x_index)
+        offset = x_index[i]
         u_i = get_component_u(i, u, u_index, u_values)
 
-        dx_dt[start:stop] = parallel_rc_shunt_2a_dxdt(x_i, u_i, parallel_rc_shunt_2a[j])
+        parallel_rc_shunt_2a_dxdt(x, u_i, dx_dt, parallel_rc_shunt_2a[j], offset)
         i += 1
 
     # Branches
     for j in range(series_rl_branch_2a.shape[0]):
-        start, stop = x_index[i]
-
-        x_i = get_component_x(i, x, x_index)
+        offset = x_index[i]
         u_i = get_component_u(i, u, u_index, u_values)
 
-        dx_dt[start:stop] = series_rl_branch_2a_dxdt(x_i, u_i, series_rl_branch_2a[j])
+        series_rl_branch_2a_dxdt(x, u_i, dx_dt, series_rl_branch_2a[j], offset)
         i += 1
 
     return dx_dt
 
-
-@njit
-def get_component_x(i, x, x_index):
-    x_start, x_stop = x_index[i]
-    x_i =  x[x_start: x_stop]
-
-    return x_i
-
-@njit
+#@njit
 def get_component_u(i, u, u_index, u_values):
     u_start, u_stop = u_index[i]
     u_i = u[u_values[u_start:u_stop]]
 
     return u_i
 
-@njit
+#@njit
 def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
     
     y_stack = np.empty(n_outputs, dtype=x.dtype)
@@ -316,36 +278,37 @@ def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_bra
     offset = 0
 
     for _ in range(voltage_source_4a.shape[0]):
-        start, stop = x_index[i]
-        y_stack[offset:offset+3] = x[start:stop][:3]
+        start = x_index[i]
+        y_stack[offset:offset+3] = x[start:start+3]
         i += 1
         offset += 3
 
     # Generator outputs
     for _ in range(gfli_16a.shape[0]):
-        start, stop = x_index[i]
-        y_stack[offset:offset+3] = x[start:stop][-3:]
+        start = x_index[i]
+        # Take the last three states
+        y_stack[offset:offset+3] = x[start+13:start+16]
         i += 1
         offset += 3
 
     # Shunt outputs
     for _ in range(parallel_rc_shunt_2a.shape[0]):
-        start, stop = x_index[i]
-        y_stack[offset:offset+3] = x[start:stop]
+        start = x_index[i]
+        y_stack[offset:offset+3] = x[start:start+3]
         i += 1
         offset += 3
 
     # Branch outputs
     for _ in range(series_rl_branch_2a.shape[0]):
-        start, stop = x_index[i]
-        y_stack[offset:offset+3] = x[start:stop]
+        start = x_index[i]
+        y_stack[offset:offset+3] = x[start:start+3]
         i += 1
         offset += 3
 
     return y_stack
 
 
-@njit
+#@njit
 def system_step(
     t, x, 
     inputs,

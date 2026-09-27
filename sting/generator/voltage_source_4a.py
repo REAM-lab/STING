@@ -265,10 +265,10 @@ from numba import njit
 
 
 @njit
-def voltage_source_4a_dxdt(x, u, data):
+def voltage_source_4a_dxdt(x, u, dx_dt, data, offset):
     r, xf, wb = data
     # Get state values
-    i_bus_a, i_bus_b, i_bus_c, angle_ref = x
+    i_bus_a, i_bus_b, i_bus_c, angle_ref = x[offset:offset+4]
 
     # Get input values
     v_ref_d, v_ref_q, v_bus_a, v_bus_b, v_bus_c = u
@@ -276,9 +276,7 @@ def voltage_source_4a_dxdt(x, u, data):
     v_ref_a, v_ref_b, v_ref_c = dq02abc_jit(v_ref_d, v_ref_q, 0, angle_ref)
 
     # Differential equations
-    d_i_bus_a = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
-    d_i_bus_b = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
-    d_i_bus_c = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
-    d_angle_ref = wb 
-
-    return np.array([d_i_bus_a, d_i_bus_b, d_i_bus_c, d_angle_ref])
+    dx_dt[offset] = wb / xf * (v_ref_a - v_bus_a - r * i_bus_a)
+    dx_dt[offset+1] = wb / xf * (v_ref_b - v_bus_b - r * i_bus_b)
+    dx_dt[offset+2] = wb / xf * (v_ref_c - v_bus_c - r * i_bus_c)
+    dx_dt[offset+3] = wb 

@@ -293,7 +293,7 @@ def inner_current_controller_2a_dxdt(i_ref_d: float, i_ref_q: float, i_d: float,
     d_z_cc_d = ki_puHz * (i_ref_d - i_d)
     d_z_cc_q = ki_puHz * (i_ref_q - i_q)
 
-    return np.array([d_z_cc_d, d_z_cc_q])
+    return d_z_cc_d, d_z_cc_q
 
 @njit
 def inner_current_controller_2a_y(
@@ -308,4 +308,4 @@ def inner_current_controller_2a_y(
     v_out_d = out_pi_d + kffv * v_d - xf_pu * i_q * w
     v_out_q = out_pi_q + kffv * v_q + xf_pu * i_d * w
     
-    return np.array([v_out_d, v_out_q])
+    return v_out_d, v_out_q

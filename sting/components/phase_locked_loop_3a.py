@@ -237,4 +237,4 @@ def phase_locked_loop_3a_dxdt(v_pll_q, z_pll, theta_pll, v_a, v_b, v_c, tau, kp_
     d_theta_pll = (kp_rad_s * v_pll_q) + z_pll + wbase
     d_z_pll = ki_rad2_s2 * v_pll_q
 
-    return np.array([d_v_pll_q, d_z_pll, d_theta_pll])
+    return d_v_pll_q, d_z_pll, d_theta_pll

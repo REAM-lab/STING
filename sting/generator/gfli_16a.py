@@ -598,12 +598,11 @@ from sting.components.inner_current_controller_2a import inner_current_controlle
 from sting.components.lcl_filter_9a import lcl_filter_9a_dxdt
 
 @njit
-def gfli_16a_dxdt(x, u, data):
-
+def gfli_16a_dxdt(x, u, dx_dt, data, offset):
 
     # Unpack states
     (v_pll_q, z_pll, theta_pll, z_apc, z_rpc, z_cc_d, z_cc_q,
-    i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = x
+    i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c) = x[offset:offset+16]
     # Unpack *external* inputs
     p_ref, q_ref, v_bus_a, v_bus_b, v_bus_c = u
 
@@ -617,26 +616,28 @@ def gfli_16a_dxdt(x, u, data):
     p_bus = v_bus_d * i_bus_d + v_bus_q * i_bus_q
     q_bus = v_bus_q * i_bus_d - v_bus_d * i_bus_q
 
-    dxdt = np.zeros(16)
-
     #### Phase-locked loop ####
-    dxdt[0:3] = phase_locked_loop_3a_dxdt(
+    dv_pll_q, dz_pll, dtheta_pll = phase_locked_loop_3a_dxdt(
         v_pll_q, z_pll, theta_pll, 
         v_a=v_bus_a, v_b=v_bus_b, v_c=v_bus_c, 
         tau=tau_pll, ki_rad2_s2=ki_pll, kp_rad_s=kp_pll, wbase=wbase)
+
+    dx_dt[offset] = dv_pll_q
+    dx_dt[offset+1] = dz_pll
+    dx_dt[offset+2] = dtheta_pll
     
     # Frequency estimated by PLL
-    w_pll  = dxdt[2]/wbase
+    w_pll  = dtheta_pll/wbase
 
     #### Power controller ####
-    dxdt[3] = active_power_pi_1a_dxdt(p_ref=p_ref, p=p_bus, ki_puHz=ki_pc)
-    dxdt[4] = reactive_power_pi_1a_dxdt(q_ref=q_ref, q=q_bus, ki_puHz=ki_pc)
+    dx_dt[offset+3] = active_power_pi_1a_dxdt(p_ref=p_ref, p=p_bus, ki_puHz=ki_pc)
+    dx_dt[offset+4] = reactive_power_pi_1a_dxdt(q_ref=q_ref, q=q_bus, ki_puHz=ki_pc)
     # Reference currents from power controller
     i_ref_d = active_power_pi_1a_y(p_ref=p_ref, p=p_bus, z_apc=z_apc, kp_pu=kp_pc)
     i_ref_q = reactive_power_pi_1a_y(q_ref=q_ref, q=q_bus, z_rpc=z_rpc, kp_pu=kp_pc)
 
     #### Current controller ####
-    dxdt[5:7] = inner_current_controller_2a_dxdt(i_ref_d, i_ref_q, i_bus_d, i_bus_q, ki_puHz=ki_cc)
+    dx_dt[offset+5], dx_dt[offset+6] = inner_current_controller_2a_dxdt(i_ref_d, i_ref_q, i_bus_d, i_bus_q, ki_puHz=ki_cc)
     # Compute the voltage references from the inner current controller
     v_vsc_d, v_vsc_q =inner_current_controller_2a_y(
         z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, w_pll,
@@ -646,10 +647,10 @@ def gfli_16a_dxdt(x, u, data):
     v_vsc_a, v_vsc_b, v_vsc_c = dq02abc_jit(v_vsc_d, v_vsc_q, 0, theta_pll) 
     
     #### LCL filter ####
-    dxdt[7:16] = lcl_filter_9a_dxdt(
+    dx_lcl = lcl_filter_9a_dxdt(
         i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c,
         v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c,
         rf1, xf1, rf2, xf2, rsh, csh, wbase
         )
-    
-    return dxdt
+    for i, dx in enumerate(dx_lcl):
+        dx_dt[offset+7+i] = dx
