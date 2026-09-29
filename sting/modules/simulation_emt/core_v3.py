@@ -39,6 +39,7 @@ class SimulationEMT:
     series_rl_branch_2a: np.ndarray = None
     voltage_source_4a: np.ndarray = None
     gfli_16a: np.ndarray = None
+    gfmi_18a: np.ndarray = None
 
     # EMT simulation step
     step: None = None
@@ -77,7 +78,8 @@ class SimulationEMT:
             parallel_rc_shunt_2a=self.parallel_rc_shunt_2a,
             series_rl_branch_2a=self.series_rl_branch_2a,
             voltage_source_4a=self.voltage_source_4a,
-            gfli_16a=self.gfli_16a
+            gfli_16a=self.gfli_16a,
+            gfmi_18a=self.gfmi_18a
             )
 
         # Step once to precompile 
@@ -117,6 +119,15 @@ class SimulationEMT:
             "wbase"
         ).to_numpy()
 
+        gfmi_18a = system.query(["gfmi_18a"]).to_table(
+            "rf1_pu", "xf1_pu", "rf2_pu", "xf2_pu", "rsh_pu", "csh_pu", 
+            "k_q_pu", "w_q_puHz",
+            "kp_vc_pu", "ki_vc_puHz", "kffi_vc",
+            "kp_cc_pu", "ki_cc_puHz", "kffv_cc",
+            "kd_pu", "h_s",
+            "wbase"
+        ).to_numpy()
+
         return SimulationEMT(
             inputs=inputs, 
             states=states, 
@@ -126,7 +137,8 @@ class SimulationEMT:
             parallel_rc_shunt_2a=parallel_rc_shunt_2a,
             series_rl_branch_2a=series_rl_branch_2a,
             voltage_source_4a=voltage_source_4a,
-            gfli_16a=gfli_16a
+            gfli_16a=gfli_16a,
+            gfmi_18a=gfmi_18a
             )
         
 
@@ -224,9 +236,10 @@ from sting.branch.series_rl_branch_2a import series_rl_branch_2a_dxdt
 from sting.shunt.parallel_rc_shunt_2a import parallel_rc_shunt_2a_dxdt
 from sting.generator.voltage_source_4a import voltage_source_4a_dxdt
 from sting.generator.gfli_16a import gfli_16a_dxdt
+from sting.generator.gfmi_18a import gfmi_18a_dxdt
 
 #@njit
-def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
+def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a, gfmi_18a):
     dx_dt = np.empty_like(x)
     i = 0
 
@@ -243,6 +256,13 @@ def derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a
         u_i = get_component_u(i, u, u_index, u_values)
 
         gfli_16a_dxdt(x, u_i, dx_dt, gfli_16a[j], offset)
+        i += 1
+
+    for j in range(gfmi_18a.shape[0]):
+        offset = x_index[i]
+        u_i = get_component_u(i, u, u_index, u_values)
+
+        gfmi_18a_dxdt(x, u_i, dx_dt, gfmi_18a[j], offset)
         i += 1
 
     # Shunts
@@ -271,7 +291,7 @@ def get_component_u(i, u, u_index, u_values):
     return u_i
 
 #@njit
-def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a):
+def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a, gfmi_18a):
     
     y_stack = np.empty(n_outputs, dtype=x.dtype)
     i = 0
@@ -285,6 +305,13 @@ def output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_bra
 
     # Generator outputs
     for _ in range(gfli_16a.shape[0]):
+        start = x_index[i]
+        # Take the last three states
+        y_stack[offset:offset+3] = x[start+13:start+16]
+        i += 1
+        offset += 3
+
+    for _ in range(gfmi_18a.shape[0]):
         start = x_index[i]
         # Take the last three states
         y_stack[offset:offset+3] = x[start+13:start+16]
@@ -325,6 +352,7 @@ def system_step(
     series_rl_branch_2a,
     voltage_source_4a,
     gfli_16a,
+    gfmi_18a,
     ):
 
     # Build device input
@@ -332,11 +360,11 @@ def system_step(
 
     # Build output
     n_outputs = F.shape[1]
-    y_stack = output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a)
+    y_stack = output_dispatcher(x, x_index, n_outputs, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a, gfmi_18a)
 
     u = F @ y_stack + G @ u_device
 
     # Build state derivative
-    dx_dt = derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a)
+    dx_dt = derivative_dispatcher(x, x_index, u, u_index, u_values, parallel_rc_shunt_2a, series_rl_branch_2a, voltage_source_4a, gfli_16a, gfmi_18a)
        
     return dx_dt

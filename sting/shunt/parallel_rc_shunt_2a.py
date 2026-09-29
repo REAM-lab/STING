@@ -219,7 +219,7 @@ class ParallelRCShunt2A(Shunt):
 
 from numba import njit
 
-#@njit
+@njit
 def parallel_rc_shunt_2a_dxdt(x, u, dx_dt, data, offset):
     g, b, wb = data
     # Get state values

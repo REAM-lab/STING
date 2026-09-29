@@ -34,6 +34,8 @@ from sting.utils.transformations import (
     d_DQ2dq_dangle,
     d_dq2DQ_dangle,
     dq02abc,
+    dq02abc_jit, 
+    abc2dq0_jit
 )
 
 
@@ -708,3 +710,65 @@ class GFMI18A(Generator):
         M2 = np.zeros((u_stack, x_stack*u_grid))
         
         return (L11, L12, L21, L22, M1, M2)
+
+
+
+from numba import njit
+from sting.components.voltage_droop_controller_1a import voltage_droop_controller_1a_dxdt, voltage_droop_controller_1a_y
+from sting.components.inner_voltage_controller_2a import inner_voltage_controller_2a_dxdt, inner_voltage_controller_2a_y
+from sting.components.inner_current_controller_2a import inner_current_controller_2a_dxdt, inner_current_controller_2a_y
+from sting.components.lcl_filter_9a import lcl_filter_9a_dxdt
+from sting.components.rotational_inertia_2a import rotational_inertia_2a_dxdt
+
+@njit
+def gfmi_18a_dxdt(x, u, dx_dt, data, offset):
+
+    # Extract states
+    angle, w, \
+    q_f, \
+    z_vc_d, z_vc_q, \
+    z_cc_d, z_cc_q, \
+    i_vsc_a, i_vsc_b, i_vsc_c, \
+    v_sh_a, v_sh_b, v_sh_c, \
+    i_bus_a, i_bus_b, i_bus_c = x[offset:offset+16]
+
+    # Get inputs
+    p_ref, q_ref, v_ref, v_bus_a, v_bus_b, v_bus_c = u
+
+    # Unpack component parameters/data
+    (rf1, xf1, rf2, xf2, rsh, csh, k_q, w_q, kp_vc, ki_vc, kff_vc, kp_cc, ki_cc, kff_cc, kd_w, h, w_base) = data
+
+    # Transform currents and voltages to dq reference frame
+    i_vsc_d, i_vsc_q, _ = abc2dq0_jit(i_vsc_a, i_vsc_b, i_vsc_c, angle)
+    v_sh_d, v_sh_q, _ = abc2dq0_jit(v_sh_a, v_sh_b, v_sh_c, angle)
+    i_bus_d, i_bus_q, _ = abc2dq0_jit(i_bus_a, i_bus_b, i_bus_c, angle)
+
+    # Compute power at the shunt of the LCL filter
+    p_sh = v_sh_d * i_bus_d + v_sh_q * i_bus_q
+    q_sh = v_sh_q * i_bus_d - v_sh_d * i_bus_q
+
+    # Compute voltage reference for inner voltage control loop
+    u_ref_d, u_ref_q = voltage_droop_controller_1a_y(v_ref, q_ref, q_f, k_q)
+
+    # Compute current reference for inner control loops
+    i_ref_d, i_ref_q = inner_voltage_controller_2a_y(z_vc_d, z_vc_q, u_ref_d, u_ref_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, w, kp_vc, kff_vc, csh)
+
+    # Compute voltage reference for the LCL filter
+    v_vsc_d, v_vsc_q = inner_current_controller_2a_y(z_cc_d, z_cc_q, i_ref_d, i_ref_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, w, kp_cc, kff_cc, xf1)
+
+    # Transform voltage reference to abc reference frame
+    v_vsc_a, v_vsc_b, v_vsc_c = dq02abc_jit(v_vsc_d, v_vsc_q, 0, angle)
+
+    # Compute derivatives of the state variables
+    dx_dt[offset], dx_dt[offset+1] = rotational_inertia_2a_dxdt(w, p_ref, p_sh, kd_w, h, w_base)
+    dx_dt[offset+2] = voltage_droop_controller_1a_dxdt(q_sh, q_f, w_q)
+    dx_dt[offset+3], dx_dt[offset+4] = inner_voltage_controller_2a_dxdt(u_ref_d, u_ref_q, v_sh_d, v_sh_q, ki_vc)
+    dx_dt[offset+5], dx_dt[offset+6] = inner_current_controller_2a_dxdt(i_ref_d, i_ref_q, i_vsc_d, i_vsc_q, ki_cc)
+    dx_lcl = lcl_filter_9a_dxdt(
+        i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c,
+        v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c,
+        rf1, xf1, rf2, xf2, rsh, csh, w_base
+        )
+    
+    for i, dx in enumerate(dx_lcl):
+        dx_dt[offset+7+i] = dx

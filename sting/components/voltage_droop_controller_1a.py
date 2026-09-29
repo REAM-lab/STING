@@ -197,3 +197,21 @@ class VoltageDroopController1A:
                                     init=[v_ref, 0])
         )
         return ssm
+
+
+from numba import njit
+
+@njit(inline='always')
+def voltage_droop_controller_1a_dxdt(q: float, q_f: float, w_q_puHz:float):
+    # Compute derivative of the state variable associated to low-pass filter
+    return w_q_puHz * (q - q_f)
+
+@njit(inline='always')
+def voltage_droop_controller_1a_y(v_ref: float, q_ref: float, q_f: float, k_q_pu:float):
+    # Compute reference voltage in d_axis
+    v_d_ref = v_ref + k_q_pu * (q_ref - q_f)
+
+    # Fix the reference voltage in q_axis to zero
+    v_q_ref = 0.0
+
+    return v_d_ref, v_q_ref

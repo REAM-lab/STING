@@ -224,3 +224,30 @@ class InnerVoltageController2A:
             u = u,
             y = y
         )
+
+
+
+from numba import njit
+
+@njit
+def inner_voltage_controller_2a_dxdt(v_ref_d: float, v_ref_q: float, v_d: float, v_q: float, ki_puHz: float):
+
+    d_z_vc_d = ki_puHz * (v_ref_d - v_d)
+    d_z_vc_q = ki_puHz * (v_ref_q - v_q)
+
+    return d_z_vc_d, d_z_vc_q
+
+@njit
+def inner_voltage_controller_2a_y(
+        z_vc_d: float, z_vc_q: float, 
+        v_ref_d: float, v_ref_q: float, v_d: float, v_q: float, i_d: float, i_q: float, w: float,
+        kp_pu:float, kffi:float, cf_pu:float):
+    # Compute output of PI controller in d-axis and q-axis
+    out_pi_d = z_vc_d + kp_pu * (v_ref_d - v_d)
+    out_pi_q = z_vc_q + kp_pu * (v_ref_q - v_q)
+
+    # Compute output current in d-axis and q-axis
+    i_out_d = out_pi_d + kffi * i_d - cf_pu * v_q * w
+    i_out_q = out_pi_q + kffi * i_q + cf_pu * v_d * w
+    
+    return i_out_d, i_out_q

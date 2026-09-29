@@ -232,3 +232,16 @@ class RotationalInertia2A:
                                     init=[angle, 1])
         )
         return ssm
+
+
+from numba import njit
+
+@njit
+def rotational_inertia_2a_dxdt(w: float, p_ref: float, p: float, kd_w: float, h:float, w_base:float):
+    # Derivative of the angle
+    d_angle_pc = w_base * w
+    
+    # Derivative of the angular frequency
+    d_w_pc = 1/(2 * h) * (p_ref - p - kd_w * (w - 1))
+
+    return d_angle_pc, d_w_pc
