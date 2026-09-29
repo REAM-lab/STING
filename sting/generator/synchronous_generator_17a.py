@@ -8,8 +8,8 @@ import polars as pl
 
 from sting.components import (
     ExcitationSystem4A,
-    ParallelRCShunt2A,
-    SeriesRLBranch2A,
+    #ParallelRCShunt2A,
+    #SeriesRLBranch2A,
     SynchronousMachine7A,
     VoltageTransducer1A,
 )
@@ -69,8 +69,8 @@ class SynchronousGenerator17A(Generator):
     machine: SynchronousMachine7A = field(init=False)
     transducer: VoltageTransducer1A = field(init=False)
     exciter: ExcitationSystem4A = field(init=False)
-    rc_shunt: ParallelRCShunt2A = field(init=False)
-    rl_branch: SeriesRLBranch2A = field(init=False)
+    #rc_shunt: ParallelRCShunt2A = field(init=False)
+    #rl_branch: SeriesRLBranch2A = field(init=False)
 
 
     @property
@@ -96,8 +96,8 @@ class SynchronousGenerator17A(Generator):
         self.exciter = ExcitationSystem4A(
             tb_s=self.tb_s, tc_s=self.tc_s, ka_pu=self.ka_pu, ta_s=self.ta_s, 
             te_s=self.te_s, ke_pu=self.ke_pu, tf_s=self.tf_s, kf_pu=self.kf_pu)
-        self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
-        self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
+        #self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
+        #self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
         self.phase_angle_name = self.shaft.phase_angle_name
 
     def _calculate_emt_initial_conditions(self):

@@ -4,9 +4,9 @@ from typing import NamedTuple
 import numpy as np
 
 from sting.components import (
-    ParallelRCShunt2A,
+    #ParallelRCShunt2A,
     RotationalInertia2A,
-    SeriesRLBranch2A,
+    #SeriesRLBranch2A,
     SpeedGovernor1A,
     SynchronousMachine7A,
 )
@@ -65,8 +65,8 @@ class SynchronousGenerator14A(Generator):
     shaft: RotationalInertia2A = field(init=False)
     governor: SpeedGovernor1A = field(init=False)
     machine: SynchronousMachine7A = field(init=False)
-    rc_shunt: ParallelRCShunt2A = field(init=False)
-    rl_branch: SeriesRLBranch2A = field(init=False)
+    #rc_shunt: ParallelRCShunt2A = field(init=False)
+    #rl_branch: SeriesRLBranch2A = field(init=False)
 
 
     @property
@@ -90,8 +90,8 @@ class SynchronousGenerator14A(Generator):
             t_td0_s=self.t_td0_s, t_tq0_s=self.t_tq0_s, t_std0_s=self.t_std0_s, t_stq0_s=self.t_stq0_s,
             x_0_pu=self.x_0_pu, w_base=self.wbase
         )
-        self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
-        self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
+        #self.rc_shunt = ParallelRCShunt2A(g_pu=1/self.rsh_pu, b_pu=self.csh_pu, wbase=self.wbase)
+        #self.rl_branch = SeriesRLBranch2A(r_pu=self.rbr_pu, x_pu=self.xbr_pu, wbase=self.wbase)
         self.phase_angle_name = self.shaft.phase_angle_name
 
     def _calculate_emt_initial_conditions(self):

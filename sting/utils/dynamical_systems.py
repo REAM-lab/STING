@@ -14,7 +14,10 @@ import pylab as plt
 from plotly.subplots import make_subplots
 from scipy.integrate import solve_ivp
 from scipy.linalg import block_diag, eigvals, solve_continuous_lyapunov, cholesky
+import scipy.sparse as sp
 from scipy.linalg.lapack import dpstrf
+from sting.utils.matrix_tools import make_sparse_kron_product
+
 matplotlib.use("Agg")
 
 import copy
@@ -398,14 +401,17 @@ class StateSpaceModel:
             inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
             x0: list[float] = None, 
             settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-            output_directory: str = os.getcwd(), 
-            plot: bool = True):
+            add_initial_conditions=True,
+            ):
 
         if x0 is None:
             x0 = self.x.init
 
         if inputs is None:
             inputs = {}
+
+        # Function to get inputs at time t
+        func_u = lambda t: [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
 
         def state_space_ode(t: float, x: np.ndarray,  inputs: dict[str, dict[str, Callable[[float], float]]]):
             """
@@ -422,10 +428,10 @@ class StateSpaceModel:
             np.ndarray: Time derivative of the state vector (dx/dt).
             """
 
-            u = [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
+            u = func_u(t)
             return self.A @ x + self.B @ u
                
-        solution = solve_ivp(
+        sol = solve_ivp(
                         fun=state_space_ode,
                         t_span=[0, t_max],
                         y0=x0,
@@ -435,31 +441,23 @@ class StateSpaceModel:
                         max_step=settings['max_step'])
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
+        # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
             tps = np.linspace(0, t_max, 500)
-            solution = solution.sol(tps)
+            sol.y = sol.sol(tps)
+            sol.t = tps
 
-        if plot:
-            self.plot_simulation(output_directory=output_directory, tps=tps, solution=solution)
-        
-        return tps, solution
-    
-    def plot_simulation(self, output_directory: str, tps: np.ndarray, solution):
+        sol.x = sol.y
+        sol.u = np.array([func_u(t) for t in sol.t]).T
 
-        number_of_states = self.shape[2]
-        nrows = int(np.ceil(number_of_states / 2))
-        ncols = 2 if number_of_states > 1 else 1
+        if add_initial_conditions:
+            sol.x += self.x.init.reshape(-1,1)
+            sol.u += self.u.init.reshape(-1,1)
 
-        fig = make_subplots(rows=nrows, cols=ncols)
+        sol.y = self.C@sol.x + self.D@sol.u
 
-        for i in range(number_of_states):
-            row = i // ncols + 1
-            col = i % ncols + 1
-            fig.add_trace(go.Scatter(x=tps, y=solution[i]), row=row, col=col)
-            fig.update_xaxes(title_text='Time [s]', row=row, col=col)
-            fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
-        
-        fig.write_html(os.path.join(output_directory, "simulation.html"))
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
+
     
     def modal_analysis(self):
         """
@@ -532,27 +530,6 @@ class StateSpaceModel:
 
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
 
-
-    def gramian(self, kind: Literal["controllability", "observability"]):
-        """
-        Returns the Gramian of the state-space model.
-
-        Parameters
-        ----------
-        kind: Whether to compute the "controllability" or "observability" Gramian
-
-        cholesky: If True returns the Cholesky factorization of the Gramians
-
-        lower: Only applicable if `cholesky=True`, if True will return the 
-            lower Cholesky factorization of the Gramian.
-        """
-        match kind: 
-            case "controllability":
-                W = solve_continuous_lyapunov(self.A, -self.B@self.B.T)
-            case "observability":
-                W = solve_continuous_lyapunov(self.A.T, -self.C.T@self.C)
-
-        return W
 
 
 # -------------
@@ -628,52 +605,10 @@ class QuadraticBilinearModel:
         assert len(self.y) == C_y
         assert len(self.x) == A_x
 
-    def __getitem__(self, key):
-        """TODO: This function is untested...."""
-        if not isinstance(key, tuple) or len(key) != 2:
-            raise IndexError(
-                "Indexing must be of the form sys[outputs, inputs]"
-            )
-        n, m = self.B.shape
-        p, n = self.C.shape
 
-        output_idx, input_idx = key
-        output_idx = self._normalize_index(output_idx, p)
-        input_idx = self._normalize_index(input_idx, m)
-
-        A = self.A.copy()
-        B = self.B[:, input_idx]
-        C = self.C[output_idx, :]
-        D = self.D[np.ix_(output_idx, input_idx)]
-        H = self.H.copy()
-        N = np.hstack(np.hsplit(self.N, m)[input_idx])
-        u = self.u[input_idx]
-        y = self.y[output_idx]
-        x = copy.deepcopy(self.x)
-
-        return QuadraticBilinearModel(A=A,B=B,C=C,D=D,N=N,H=H,x=x,u=u,y=y)
-
-
-    @staticmethod
-    def _normalize_index(idx, n):
-        if isinstance(idx, slice):
-            return np.arange(n)[idx]
-
-        if np.isscalar(idx):
-            idx = int(idx)
-            if idx < 0:
-                idx += n
-            if not 0 <= idx < n:
-                raise IndexError("index out of range")
-            return np.array([idx])
-
-        idx = np.asarray(idx, dtype=int)
-        idx = np.where(idx < 0, idx + n, idx)
-
-        if np.any((idx < 0) | (idx >= n)):
-            raise IndexError("index out of range")
-
-        return idx
+    @property
+    def data(self):
+        return (self.A, self.B, self.C, self.D, self.H, self.N)
 
 
     @classmethod
@@ -732,11 +667,22 @@ class QuadraticBilinearModel:
 
             X = sys.B@inv@M_1
             Y = sys.B@inv@M_2 
-            
-        A = sys.A + sys.B@inv@L_11@sys.C 
-        H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
+
+        # For large systems we want to avoid computing these kronecker products directly
+        if n > 100:
+            I_n = sp.csr_array(np.eye(n))
+            N_sparse = sp.csr_array(sys.N)
+
+            H = sys.H + X + (N_sparse@sp.kron(sp.csr_array(inv@L_11@sys.C), I_n)).todense()
+            N = Y + (N_sparse@sp.kron(sp.csr_array(inv@L_12), I_n)).todense()
+
+        else:
+            H = sys.H + X + sys.N@np.kron(inv@L_11@sys.C, np.eye(n))
+            N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
+
+        # Evaluating the linear parts            
+        A = sys.A + sys.B@inv@L_11@sys.C
         B = sys.B@inv@L_12
-        N = Y + sys.N@np.kron(inv@L_12, np.eye(n))
         C = L_21@sys.C + L_21@sys.D@inv@L_11@sys.C
         D = L_21@sys.D@inv@L_12 + L_22
 
@@ -774,8 +720,11 @@ class QuadraticBilinearModel:
         # Construct interconnection matrices
         L11, L12, L21, L22 = get_ccm_matrices(system, attribute="qbm", dimI=2)
         # Permute the F and G 
-        T = build_ccm_permutation(system, attribute="qbm")
-        T = block_diag(T, np.eye(L11.shape[0] - T.shape[0]))
+        T_gen = build_ccm_permutation(system, attribute="qbm", tag="ccm_generator")
+        T_sh = build_ccm_permutation(system, attribute="qbm", tag="ccm_shunt")
+        T_br = build_ccm_permutation(system, attribute="qbm", tag="ccm_branch")
+        T = block_diag(T_gen, T_sh, T_br)
+        
         L11 = T @ L11
         L12 = T @ L12
 
@@ -800,24 +749,31 @@ class QuadraticBilinearModel:
         t_max: float, 
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
         settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-        shift=False):
+        shifted=False):
 
-        if shift:
+        if shifted:
             x0 = np.zeros_like(self.x.init)
             u0 = np.zeros_like(self.u.init)
-            qbm = self.shift_to_equilibrium()
-            #x_offset = self.x.init
-            #u_offset = self.u.init
 
         else:
             x0 = self.x.init
             u0 = self.u.init
-            qbm = self
 
         inputs_to_sim = lambda t: self.vectorize_inputs(inputs)(t) + u0
+
+        
+        # Evaluate kronecker products in sparse format
+        n, m = self.B.shape
+        kron_H = make_sparse_kron_product(self.H, n, n)
+        kron_N = make_sparse_kron_product(self.N, m, n)
+
+        def step(t, x, inputs):
+            u = inputs(t)
+            dx = self.A@x + kron_H(x,x) + kron_N(u, x) + self.B@u
+            return dx
                 
         sol = solve_ivp(
-            fun=qbm.get_derivatives_step,
+            fun=step,
             t_span=[0, t_max],
             y0=x0,
             dense_output=settings['dense_output'],  
@@ -833,52 +789,14 @@ class QuadraticBilinearModel:
 
         sol.x = sol.y
         sol.u = np.array([inputs_to_sim(t) for t in sol.t]).T
+
+        if shifted:
+            sol.x += self.x.init.reshape(-1,1)
+            sol.u += self.u.init.reshape(-1,1)
+
         sol.y = self.C@sol.x + self.D@sol.u
 
-        return sol
-
-    def write_simulation_csv(self, solution, output_directory):       
-        # Get the components in the same order as solution vector
-        _, comp_idx = np.unique(self.x.component, return_index=True)
-        components = self.x.component[np.sort(comp_idx)]  
-
-        # Write the simulation results to CSV files.
-        i = 0
-        for component in components:
-            number_of_states = sum(self.x.component == component)
-            state_names = self.x.name[self.x.component == component]
-            columns_for_df = ['time'] + state_names.tolist()
-            (pl.DataFrame(
-                data=np.column_stack((solution.t, solution.x[i:i+number_of_states].T)),
-                schema=columns_for_df
-            )
-            .write_csv(os.path.join(output_directory, f"{component}.csv"))
-            )
-            i += number_of_states
-
-    def write_simulation_plots(self, solution, output_directory):
-
-         # Get the components in the same order as solution vector
-        _, comp_idx = np.unique(self.x.component, return_index=True)
-        components = self.x.component[np.sort(comp_idx)] 
-        
-        # Make a html file for each component. Each file plots the states corresponding to each component.
-        i = 0
-        for component in components:
-            number_of_states = sum(self.x.component == component)
-            nrows = int(np.ceil(number_of_states / 2))
-            ncols = 2 if number_of_states > 1 else 1
-            fig = make_subplots(rows=nrows, cols=ncols)
-            for j in range(number_of_states):
-                row = j // ncols + 1
-                col = j % ncols + 1
-                fig.add_trace(go.Scatter(x=solution.t, y=solution.x[i]), row=row, col=col)
-                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
-                fig.update_yaxes(title_text=self.x.name[i], row=row, col=col)
-                i += 1
-
-            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
-            fig.write_html(os.path.join(output_directory, f"{component}.html"))
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
 
     def write_csv(self, filepath):
         # Create output directory if it doesn't exist
@@ -932,9 +850,9 @@ class QuadraticBilinearModel:
 
         A = (
             self.A 
-            + self.H @ (K1 + np.eye(n**2)) @ np.kron(x0, np.eye(n)) 
-            + self.N @ np.kron(u0, np.eye(n))
-        )
+            + self.H @ (K1 + sp.eye(n**2)) @ sp.kron(x0, sp.eye(n)) 
+            + self.N @ sp.kron(u0, sp.eye(n))
+        ).A
         B = (
             self.B 
             + self.N @ K2 @ np.kron(x0, np.eye(m)) 
@@ -969,13 +887,19 @@ class QuadraticBilinearModel:
                 return np.hstack([H_i.flatten(order="F").reshape(-1, 1) for H_i in np.hsplit(self.H, n)]).T
 
 
-    def project(self, W, V, name=None, component=None):
+    def project(self, W, V, name=None, component=None, sparse=True):
         A = W@self.A@V
         B = W@self.B
         C = self.C@V
 
-        H = W@self.H@np.kron(V,V)
-        N = W@self.N@np.kron(np.eye(self.B.shape[1]),V)
+        if sparse:
+            V = sp.csr_array(V)
+            lib = sp
+        else:
+            lib = np
+            
+        H = W@self.H@lib.kron(V,V)
+        N = W@self.N@lib.kron(lib.eye(self.B.shape[1]),V)
 
         if (name is None):
             name = [f"x{i}" for i in range(V.shape[1])]
@@ -988,7 +912,64 @@ class QuadraticBilinearModel:
     def vectorize_inputs(self, inputs):
         return lambda t: [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
 
+
+
+@dataclass
+class TimeDomainSolution:
+    t: np.ndarray
+    u: np.ndarray
+    x: np.ndarray
+    y: np.ndarray
+
+    inputs: DynamicalVariables
+    states: DynamicalVariables
+    outputs: DynamicalVariables
+
+    def write_csv(self, output_directory):
+        os.makedirs(output_directory , exist_ok=True)
+
+        # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.states.component, return_index=True)
+        components = self.states.component[np.sort(comp_idx)]  
+
+        # Write the simulation results to CSV files.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.states.component == component)
+            state_names = self.states.name[self.states.component == component]
+            columns_for_df = ['time'] + state_names.tolist()
+            (pl.DataFrame(
+                data=np.column_stack((self.t, self.x[i:i+number_of_states].T)),
+                schema=columns_for_df
+            )
+            .write_csv(os.path.join(output_directory, f"{component}.csv"))
+            )
+            i += number_of_states
+
+    def write_plots(self, output_directory):
+        os.makedirs(output_directory , exist_ok=True)
+
+            # Get the components in the same order as solution vector
+        _, comp_idx = np.unique(self.states.component, return_index=True)
+        components = self.states.component[np.sort(comp_idx)] 
         
+        # Make a html file for each component. Each file plots the states corresponding to each component.
+        i = 0
+        for component in components:
+            number_of_states = sum(self.states.component == component)
+            nrows = int(np.ceil(number_of_states / 2))
+            ncols = 2 if number_of_states > 1 else 1
+            fig = make_subplots(rows=nrows, cols=ncols)
+            for j in range(number_of_states):
+                row = j // ncols + 1
+                col = j % ncols + 1
+                fig.add_trace(go.Scatter(x=self.t, y=self.x[i]), row=row, col=col)
+                fig.update_xaxes(title_text='Time [s]', row=row, col=col)
+                fig.update_yaxes(title_text=self.states.name[i], row=row, col=col)
+                i += 1
+
+            fig.update_layout(title_text = component, title_x=0.5, showlegend = False, height=300*nrows)
+            fig.write_html(os.path.join(output_directory, f"{component}.html"))
 
 # -------------------------------------------
 # Helper functions
@@ -1001,9 +982,23 @@ def kronecker_commute(m, n):
     such that $K_{(m,n)} (x_1 otimes x_2) = (x_2 otimes x_1)$ where
     $x_1 in R^m, x_2 in R^n$.
     """
+    if n > 100:
+        I = sp.eye(m*n, format="coo")
+        
+        row, col = I.coords
+        data = I.data
+    
+        i, j = np.divmod(row, n)
+    
+        new_row = j * m + i
+    
+        K = sp.coo_array( (data, (new_row, col)), shape=(m * n, m * n))
+        return K
+    
     # Swap the first two axes of the identity matrix and flatten back
-    K = np.eye(m * n).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
+    K = np.eye(n * m).reshape((m, n, m, n)).transpose(1, 0, 2, 3).reshape((m * n, m * n))
     return K
+
 
 def cube_diag(*arrays):
     """

@@ -8,11 +8,12 @@ This module implements a passive RL load.
 import numpy as np
 from dataclasses import dataclass
 from typing import ClassVar, NamedTuple
+import copy
 
 # -------------
 # Import sting code
 # -------------
-from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
+from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables,QuadraticBilinearModel
 from sting.utils.transformations import abc2dq0
 from sting.load.core import Load
 from sting.modules.simulation_emt.utils import VariablesEMT
@@ -137,8 +138,39 @@ class ConstantImpedanceLoad(Load):
         return self.ssm
 
     def _build_quadratic_bilinear_model(self):
-        ssm = self._build_small_signal_model()
-        self.qbm = ssm.to_quadratic_bilinear()
+
+        # Parameters
+        r, x, wb = self.r_pu, self.x_pu, (2 * np.pi * self.base_frequency_Hz)
+
+        A = (wb/x) * np.array([
+                [-r, 0],  # i_d
+                [0, -r],  # i_q
+            ])
+        B = (wb/x) * np.array([
+                [0, 1, 0, -1, 0],
+                [0, 0, 1, 0, -1],
+            ])
+        N_w = wb * np.array([
+                [ 0, 1],  # w * i_q
+                [-1, 0],  # -w * i_d
+            ])
+        N = np.hstack((N_w, np.zeros((2, 8))))
+
+        u = DynamicalVariables(
+            name=["w_slack", "v_ground_d", "v_ground_q", "v_bus_d", "v_bus_q"],
+            init=[1, 0, 0, self.emt_init.v_bus_D, self.emt_init.v_bus_Q],
+            component=f"{self.type_}_{self.id}",
+            type=["device", "device", "device", "grid", "grid"],
+        )
+        x = DynamicalVariables(
+            name=["i_bus_d", "i_bus_q"], 
+            init=[self.emt_init.i_bus_D, self.emt_init.i_bus_Q], 
+            component=f"{self.type_}_{self.id}")
+        
+        y = copy.deepcopy(x)
+
+        self.qbm = QuadraticBilinearModel(A=A, B=B, C=np.eye(2), D=np.zeros((2, 5)), H=np.zeros((2, 4)), N=N, u=u, x=x, y=y)
+
         return self.qbm
 
     def define_variables_emt(self):

@@ -30,9 +30,9 @@ class VariablesEMT(NamedTuple):
 # ----------------
 @dataclass(slots=True, kw_only=True)
 class Shunt(Component):
-    bus: str
-    base_power_MVA: float
-    base_voltage_kV: float
+    bus: str = None
+    base_power_MVA: float = None
+    base_voltage_kV: float = None
     base_frequency_Hz: float
     tags: ClassVar[list[str]] = ["ccm_shunt"]
     bus_id: int = None
