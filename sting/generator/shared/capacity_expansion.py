@@ -153,7 +153,7 @@ def export_results_capacity_expansion(system: System, model: pyo.ConcreteModel, 
                                             pyo.value(model.eGenTotalCost)]})
     .write_csv(os.path.join(output_directory, 'generator_costs_summary.csv')))
 
-def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.05):
+def upload_built_capacities_from_csv(system: System, input_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.00):
     """Upload built capacities from a previous capex solution."""
     
     if not os.path.exists(os.path.join(input_directory, "generator_built_capacity.csv")):
@@ -170,10 +170,14 @@ def upload_built_capacities_from_csv(system: System, input_directory: str,  make
     if gens_to_update:
         for g in gens_to_update:
             if generator_built_capacity[g.name] > threshold_MW:
-                g.cap_existing_power_MW += generator_built_capacity[g.name] * overbuild_factor # The factor of 1.05 is to add a buffer to ensure that the built capacity from the previous solution is not exactly at the limit, which could cause numerical issues in the optimization.
+                total = g.cap_existing_power_MW + generator_built_capacity[g.name] * overbuild_factor
+                g.cap_existing_power_MW = min(total, g.cap_max_power_MW)
             if make_non_expandable:
                 g.expand_capacity = False
             else:
                 g.expand_capacity = False if g.cap_existing_power_MW >= g.cap_max_power_MW else True
-    
+            
     logger.info(f"> Updated existing capacities for {len(gens_to_update)} generators based on input file {os.path.join(input_directory, 'generator_built_capacity.csv')}")
+    logger.info(f"   - Make non-expandable: {make_non_expandable}")
+    logger.info(f"   - Threshold (MW): {threshold_MW}")
+    logger.info(f"   - Overbuild factor: {overbuild_factor}")

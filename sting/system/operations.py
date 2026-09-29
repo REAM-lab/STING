@@ -261,7 +261,7 @@ class SystemModifier:
         return zonal_system
     
     @timeit
-    def upload_built_capacities_from_csv(self, built_capacity_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1):
+    def upload_built_capacities_from_csv(self, built_capacity_directory: str,  make_non_expandable: bool = True, threshold_MW: float = 1e-1, overbuild_factor: float = 1.0):
         """
         Upload built capacities from a previous capex solution. 
         
@@ -273,8 +273,12 @@ class SystemModifier:
                     so that their capacities cannot be further expanded in the optimization. 
                     If False, we check the uploaded built capacity against the maximum capacity, and 
                     only make non-expandable those units for which the uploaded built capacity is greater or equal to the maximum capacity. 
+        - threshold_MW: `float`, default 1e-1
+                    The threshold below which built capacities are considered as zero.
+        - overbuild_factor: `float`, default 1.0
+                    A factor to multiply the built capacities by, to account for overbuilding.
 
         """
-        gen_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)
-        storage_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)
-        bus_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW)
+        gen_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW, overbuild_factor)
+        storage_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW, overbuild_factor)
+        bus_capex.upload_built_capacities_from_csv(self.system, built_capacity_directory, make_non_expandable, threshold_MW, overbuild_factor)

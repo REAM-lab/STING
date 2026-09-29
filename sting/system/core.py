@@ -211,6 +211,8 @@ class System:
               df = self.query([type_]).to_table(*cols) # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
               df.write_csv(os.path.join(output_directory, csv_filename))
 
+        logger.info(f"> System files were written successfully in the directory {output_directory}. \n")
+
     # ------------------------------------------------------------
     # Component Management + Searching
     # ------------------------------------------------------------

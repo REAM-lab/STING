@@ -258,7 +258,8 @@ def run_capex_with_initial_build(case_directory=os.getcwd(),
                                  built_capacity_directory=None, 
                                  make_non_expandable=False, 
                                  print_system_with_built_capacities=False,
-                                 threshold_MW: float = 1e-1):
+                                 threshold_MW: float = 1e-1, 
+                                 overbuild_factor: float = 1.0):
     """
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
@@ -277,7 +278,7 @@ def run_capex_with_initial_build(case_directory=os.getcwd(),
     # Upload built capacities
     sys_modifier = SystemModifier(system=system)
     sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
-                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW, overbuild_factor=overbuild_factor)
     
     if print_system_with_built_capacities:
         system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
@@ -301,7 +302,8 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
                                            built_capacity_directory=None, 
                                            make_non_expandable=True, 
                                            print_system_with_built_capacities=False,
-                                           threshold_MW: float = 1e-1):
+                                           threshold_MW: float = 1e-1,
+                                           overbuild_factor: float = 1.0):
     """
     Function to run unit commitment analysis with initial built capacities from a previous capacity expansion solution. 
     """
@@ -320,7 +322,7 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
     # Upload built capacities
     sys_modifier = SystemModifier(system=system)
     sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
-                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW, overbuild_factor=overbuild_factor)
     
     if print_system_with_built_capacities:
         system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
