@@ -105,14 +105,14 @@ class PhaseLockedLoop3A:
         The contents of this function should not be presented as original work by another author.
 
         The quadratic bilinear dynamics of the PLL are given by:
-            d/dt z_pi = ki * v_q
             d/dt v_q  = (1/tau) * (-v_D*z_s + v_Q*z_c - v_q)
-            d/dt z_s  = z_c * (w - wb*w_slack)
+            d/dt z_pi = ki * v_q
+            d/dt z_s  = z_c *  wb(w - w_slack)
                       =  z_c * (kp*v_q + z_pi + wb*w_set) - z_c * wb * w_slack - alpha * (z_c^2 + z_s^2 - 1)
             d/dt z_c  = -z_s * (kp*v_q + z_pi + wb*w_set) + z_s * wb * w_slack - alpha * (z_c^2 + z_s^2 - 1)
 
         Note: The output angular velocity is in per unit, that is w = wb * w_pu. 
-            w_pu = 1/wb * (kp * v_q + z_pi)
+            w_pu = 1/wb * (kp * v_q + z_pi) + w_set
 
             Moreover the the PI gains carry the unit second(s), thus w is modeled directly in the PLL not w_pu.
         """
@@ -183,7 +183,7 @@ class PhaseLockedLoop3A:
         ])
 
         D = np.array([
-            [1, 0, 0, 0, 0],
+            [1, -1, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
         ])

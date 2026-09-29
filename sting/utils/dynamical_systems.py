@@ -766,10 +766,12 @@ class QuadraticBilinearModel:
         n, m = self.B.shape
         kron_H = make_sparse_kron_product(self.H, n, n)
         kron_N = make_sparse_kron_product(self.N, m, n)
+        A = np.array(self.A)
+        B = np.array(self.B)
 
         def step(t, x, inputs):
             u = inputs(t)
-            dx = self.A@x + kron_H(x,x) + kron_N(u, x) + self.B@u
+            dx = A@x + kron_H(x,x) + kron_N(u, x) + B@u
             return dx
                 
         sol = solve_ivp(
@@ -852,7 +854,7 @@ class QuadraticBilinearModel:
             self.A 
             + self.H @ (K1 + sp.eye(n**2)) @ sp.kron(x0, sp.eye(n)) 
             + self.N @ sp.kron(u0, sp.eye(n))
-        ).A
+        )
         B = (
             self.B 
             + self.N @ K2 @ np.kron(x0, np.eye(m)) 
