@@ -139,9 +139,9 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
 
     # Run EMT simulation
     emt_sc = SimulationEMT(system=sys, output_directory=output_directory)
-    emt_sc.sim(t_max, inputs, settings=ivp_settings)
+    sol = emt_sc.sim(t_max, inputs, settings=ivp_settings)
 
-    return sys
+    return sys, sol
 
 
 def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None, log_filename: str = None,

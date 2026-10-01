@@ -8,6 +8,7 @@ import itertools
 import os
 import logging
 import inspect
+import time
 
 # ------------------
 # Import sting code
@@ -310,6 +311,7 @@ class SimulationEMT:
 
             return dx_dt
 
+        start_time = time.perf_counter()
         solution = solve_ivp(system_step, 
                         [0, t_max], # timeperiod 
                         self.variables.x.init, # initial conditions
@@ -317,17 +319,22 @@ class SimulationEMT:
                         args=(refactored_inputs, ),
                         method=settings['method'], 
                         max_step=settings['max_step'])
+        end_time = time.perf_counter()
+
+        solution.wall_time = end_time - start_time
         
         # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
             tps = np.linspace(0, t_max, 500)
-            solution = solution.sol(tps)
+            ans = solution.sol(tps)
 
         # Set the value of the EMT variables based on the solution of the ODEs
-        self.set_value(tps, solution, "x")    
+        self.set_value(tps, ans, "x")    
 
         self.write_results_csv(components=components_to_plot)
         self.plot_results(components=components_to_plot)
+
+        return solution
 
     def plot_results(self, components = None):
         """

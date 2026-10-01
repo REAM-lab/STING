@@ -166,7 +166,10 @@ class ModelReducer:
         H = sys.H @ Y
 
         return ModelReducer(zonal_models, list(zone_model_map.keys()), F, G, H, sys.L, sys.model_type)
-    
+
+    def shift_to_equilibrium(self):
+        models = [m.shift_to_equilibrium() for m in self.models]
+        return  ModelReducer(models, self.zones, self.F, self.G, self.H, self.L, self.model_type)
 
     def reduce_zonal_models(self, reducers:dict, shift_to_equilibrium=False):
         """

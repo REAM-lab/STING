@@ -62,8 +62,8 @@ ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 _, qbm = main.run_qbm(case_directory, system=system)
 sol = qbm.simulate(t_max=t_max, inputs=inputs)
 os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
-qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
-qbm.write_simulation_plots(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+sol.write_csv(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+sol.write_plots(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 
 
 # -------------------------------------------------------

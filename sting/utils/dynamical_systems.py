@@ -5,7 +5,7 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Callable, Self, Literal
-
+import time
 import matplotlib
 import numpy as np
 import plotly.graph_objects as go
@@ -430,7 +430,8 @@ class StateSpaceModel:
 
             u = func_u(t)
             return self.A @ x + self.B @ u
-               
+
+        start_time = time.perf_counter()
         sol = solve_ivp(
                         fun=state_space_ode,
                         t_span=[0, t_max],
@@ -439,6 +440,9 @@ class StateSpaceModel:
                         args=(inputs, ),
                         method=settings['method'], 
                         max_step=settings['max_step'])
+        end_time = time.perf_counter()
+        
+        sol.wall_time = end_time - start_time
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
         # Define timepoints that will be used to evaluate the solution of the ODEs
@@ -456,7 +460,7 @@ class StateSpaceModel:
 
         sol.y = self.C@sol.x + self.D@sol.u
 
-        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x, sol=sol)
 
     
     def modal_analysis(self):
@@ -773,7 +777,8 @@ class QuadraticBilinearModel:
             u = inputs(t)
             dx = A@x + kron_H(x,x) + kron_N(u, x) + B@u
             return dx
-                
+
+        start_time = time.perf_counter()
         sol = solve_ivp(
             fun=step,
             t_span=[0, t_max],
@@ -782,6 +787,9 @@ class QuadraticBilinearModel:
             args=(inputs_to_sim, ),
             method=settings['method'], 
             max_step=settings['max_step'])
+        end_time = time.perf_counter()
+                
+        sol.wall_time = end_time - start_time
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
@@ -798,7 +806,7 @@ class QuadraticBilinearModel:
 
         sol.y = self.C@sol.x + self.D@sol.u
 
-        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x)
+        return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x, sol=sol)
 
     def write_csv(self, filepath):
         # Create output directory if it doesn't exist
@@ -926,6 +934,8 @@ class TimeDomainSolution:
     inputs: DynamicalVariables
     states: DynamicalVariables
     outputs: DynamicalVariables
+
+    sol: None
 
     def write_csv(self, output_directory):
         os.makedirs(output_directory , exist_ok=True)

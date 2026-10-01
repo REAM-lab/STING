@@ -187,6 +187,8 @@ class SmallSignalModel:
 
         logger.info(f" - Plotting SSM simulation results in {output_directory}")
         sol.write_plots(output_directory)
+
+        return sol
             
 
     def write_csv_ccm_matrices(self, output_directory=None):
