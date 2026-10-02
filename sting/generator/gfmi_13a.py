@@ -10,6 +10,7 @@ from sting.branch.series_rl_branch_2a import SeriesRLBranch2A
 from sting.components import (
     LCLFilter9A,
     RotationalInertia2A,
+    TransientVirtualResistor2A
 )
 
 from sting.generator.core import Generator
@@ -35,12 +36,8 @@ from sting.utils.transformations import (
     dq02abc,
 )
 
-# ======================================================================
-# vcGFM
-# ======================================================================
-
 @dataclass(slots=True, kw_only=True, eq=False)
-class VCGFM(Generator):
+class GFMI13A(Generator):
     # LCL filter parameters
     rf1_pu: float
     xf1_pu: float
@@ -67,13 +64,13 @@ class VCGFM(Generator):
 
     lcl_filter: LCLFilter9A = field(init=False)
     virtual_inertia: RotationalInertia2A = field(init=False)
-    virtual_resistor: TransientVirtualResistor1A = field(init=False)
+    virtual_resistor: TransientVirtualResistor2A = field(init=False)
 
     def __post_init__(self):
 
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)
-        self.virtual_resistor = TransientVirtualResistor1A(w_tvr=self.w_tvr, R_v=self.R_v)
+        self.virtual_resistor = TransientVirtualResistor2A(w_tvr=self.w_tvr, R_v=self.R_v)
 
         self.phase_angle_name = self.virtual_inertia.phase_angle_name
 

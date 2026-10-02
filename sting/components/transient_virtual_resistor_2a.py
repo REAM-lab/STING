@@ -14,7 +14,7 @@ class InitialConditionsEMT(NamedTuple):
 
 
 @dataclass(slots=True)
-class TransientVirtualResistor1A:
+class TransientVirtualResistor2A:
     w_TVR_pu: float
     R_v_pu: float
 
