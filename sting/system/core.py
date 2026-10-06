@@ -24,6 +24,7 @@ from sting.generator import (
     GFLI16A,
     GFLI16C,
     GFLI23A,
+    GFMI13A,
     GFMI18A,
     GFMI18P,
     GFMI25A,
@@ -88,6 +89,7 @@ class System:
     gfli_a: list[GFLIa] = None
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
+    gfmi_13a: list[GFMI13A] = None
     gfmi_18a: list[GFMI18A] = None
     gfmi_18p: list[GFMI18P] = None # Deprecated
     gfmi_25a: list[GFMI25A] = None

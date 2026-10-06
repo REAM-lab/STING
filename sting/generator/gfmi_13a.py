@@ -59,8 +59,8 @@ class GFMI13A(Generator):
     alpha: float = 1
 
     # TVR parameters
-    w_tvr: float = 60.0
-    R_v: float = 0.09
+    w_tvr_pu: float
+    R_v_pu: float
 
     lcl_filter: LCLFilter9A = field(init=False)
     virtual_inertia: RotationalInertia2A = field(init=False)
@@ -70,7 +70,7 @@ class GFMI13A(Generator):
 
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)
-        self.virtual_resistor = TransientVirtualResistor2A(w_tvr=self.w_tvr, R_v=self.R_v)
+        self.virtual_resistor = TransientVirtualResistor2A(w_tvr_pu=self.w_tvr_pu, R_v_pu=self.R_v_pu)
 
         self.phase_angle_name = self.virtual_inertia.phase_angle_name
 
@@ -93,7 +93,7 @@ class GFMI13A(Generator):
             relative_phase_deg=self.power_flow_variables.vphase_bus,
             p_bus=self.power_flow_variables.p_bus,
             q_bus=self.power_flow_variables.q_bus,
-            reference_node="shunt",
+            reference_node="converter",
         )
 
         self.virtual_inertia.get_steady_state(
@@ -105,6 +105,7 @@ class GFMI13A(Generator):
         self.virtual_resistor.get_steady_state(
             i_d=lcl_init.i_bus_d,
             i_q=lcl_init.i_bus_q,
+            v_ref=lcl_init.v_vsc_d,
         )
 
     def define_variables_emt(self):
@@ -292,8 +293,8 @@ class GFMI13A(Generator):
         APC     0       Δp_ref      │  0   0        0               0              0           0        │   1         0       0
                 1,2     Δi_bus_dq   │  0   0        0               0              I₂          0        │   0         0       0
                 3,4     Δv_sh_dq    │  0   0        0               0              0           I₂       │   0         0       0
-        TVR     5,6     Δi_bus_dq   │  0   0        0               0              I₂          0        │   0         0       0
-                7       Δv_ref      │  0   0        0               0              0           0        │   0         1       0
+        TVR     5       Δv_ref      │  0   0        0               0              0           0        │   0         1       0
+                6,7     Δi_bus_dq   │  0   0        0               0              I₂          0        │   0         0       0
         LCL     8,9     Δv_vsc_dq   │  0   0        I₂              0              0           0        │   0         0       0
                 10,11   Δv_bus_dq   │  a   0        0               0              0           0        │   0         0       Rᵀ
                 12      Δω          │  0   1        0               0              0           0        │   0         0       0
@@ -303,7 +304,7 @@ class GFMI13A(Generator):
         """
 
         idx_F = [
-            ([1, 2], [6, 7], I), ([3, 4], [8, 9], I), ([5, 6], [6, 7], I), ([8 ,9], [2, 3], I), 
+            ([1, 2], [6, 7], I), ([3, 4], [8, 9], I), ([6, 7], [6, 7], I), ([8 ,9], [2, 3], I), 
             ([10, 11], [0], a), ([12], [1], 1),
         ]
 
@@ -311,7 +312,7 @@ class GFMI13A(Generator):
             F[np.ix_(rows, cols)] = value
 
         idx_G = [
-            ([0], [0], 1), ([7], [1], 1), ([10, 11], [2, 3], R.T),
+            ([0], [0], 1), ([5], [1], 1), ([10, 11], [2, 3], R.T),
         ]
 
         for rows, cols, value in idx_G:
@@ -337,7 +338,7 @@ class GFMI13A(Generator):
         virtual_resistor_ssm = self.virtual_resistor.get_small_signal_model(
             i_d = self.lcl_filter.emt_init.i_bus_d,
             i_q = self.lcl_filter.emt_init.i_bus_q,
-            v_ref = self.virtual_resistor.emt_init.v_ref
+            v_ref = self.lcl_filter.emt_init.v_vsc_d
         )
 
         lcl_filter_ssm = self.lcl_filter.get_small_signal_model(

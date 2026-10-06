@@ -11,31 +11,33 @@ class InitialConditionsEMT(NamedTuple):
     """Store the initial conditions of the TVR for the EMT simulation."""
     z_tvr_d: float
     z_tvr_q: float
+    v_ref: float
 
 
 @dataclass(slots=True)
 class TransientVirtualResistor2A:
-    w_TVR_pu: float
+    w_tvr_pu: float
     R_v_pu: float
 
     emt_init: InitialConditionsEMT = field(init=False)
 
-    def get_steady_state(self, i_d: float, i_q: float) -> InitialConditionsEMT:
+    def get_steady_state(self, i_d: float, i_q: float, v_ref: float) -> InitialConditionsEMT:
 
         self.emt_init = InitialConditionsEMT(
             z_tvr_d=self.R_v_pu * i_d,
             z_tvr_q=self.R_v_pu * i_q,
+            v_ref=v_ref
         )
 
         return self.emt_init
 
     def get_derivatives_step_emt_dq0(self, i_d: float, i_q: float, z_tvr_d: float, z_tvr_q: float) -> list[float]:
         
-        w_TVR = self.w_TVR_pu
+        w_tvr = self.w_tvr_pu
         R_v = self.R_v_pu
 
-        d_z_tvr_d = w_TVR * (R_v * i_d - z_tvr_d)
-        d_z_tvr_q = w_TVR * (R_v * i_q - z_tvr_q)
+        d_z_tvr_d = w_tvr * (R_v * i_d - z_tvr_d)
+        d_z_tvr_q = w_tvr * (R_v * i_q - z_tvr_q)
 
         return [d_z_tvr_d, d_z_tvr_q]
 
@@ -54,17 +56,17 @@ class TransientVirtualResistor2A:
     
     def get_small_signal_model(self, i_d: float, i_q: float, v_ref: float):
 
-        w_TVR = self.w_TVR_pu
+        w_tvr = self.w_tvr_pu
         R_v = self.R_v_pu
 
         A = np.array([
-            [-w_TVR,  0     ],
-            [0,      -w_TVR ],
+            [-w_tvr,  0     ],
+            [0,      -w_tvr ],
         ])
 
         B = np.array([
-            [0, w_TVR * R_v, 0],
-            [0, 0, w_TVR * R_v],
+            [0, w_tvr * R_v, 0],
+            [0, 0, w_tvr * R_v],
         ])
 
         C = np.array([
