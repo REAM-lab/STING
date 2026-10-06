@@ -763,7 +763,7 @@ class QuadraticBilinearModel:
             x0 = self.x.init
             u0 = self.u.init
 
-        inputs_to_sim = lambda t: self.vectorize_inputs(inputs)(t) + u0
+        inputs_to_sim = lambda t, x: self.vectorize_inputs(inputs)(t, x) + u0
 
         
         # Evaluate kronecker products in sparse format
@@ -774,7 +774,7 @@ class QuadraticBilinearModel:
         B = np.array(self.B)
 
         def step(t, x, inputs):
-            u = inputs(t)
+            u = inputs(t, x)
             dx = A@x + kron_H(x,x) + kron_N(u, x) + B@u
             return dx
 
@@ -798,7 +798,7 @@ class QuadraticBilinearModel:
             sol.t = tps
 
         sol.x = sol.y
-        sol.u = np.array([inputs_to_sim(t) for t in sol.t]).T
+        sol.u = np.array([inputs_to_sim(t, x) for t, x in zip(sol.t, sol.x.T)]).T
 
         if shifted:
             sol.x += self.x.init.reshape(-1,1)
@@ -884,7 +884,7 @@ class QuadraticBilinearModel:
 
         return qbm_new
 
-    def get_matricized_H(self, mode):
+    def get_matricized_H(self, mode, vec_order="F"):
         """Return a mode-i matricization of H"""
         H = self.H
         n, _ = H.shape
@@ -894,7 +894,7 @@ class QuadraticBilinearModel:
             case 2:
                 return np.hstack([H_i.T for H_i in np.hsplit(H, n)])
             case 3:
-                return np.hstack([H_i.flatten(order="F").reshape(-1, 1) for H_i in np.hsplit(self.H, n)]).T
+                return np.hstack([H_i.flatten(order=vec_order).reshape(-1, 1) for H_i in np.hsplit(self.H, n)]).T
 
 
     def project(self, W, V, name=None, component=None, sparse=True):
@@ -920,7 +920,7 @@ class QuadraticBilinearModel:
 
         
     def vectorize_inputs(self, inputs):
-        return lambda t: [inputs[component][name](t) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
+        return lambda t, x: [inputs[component][name](t, x) if inputs.get(component, {}).get(name) else 0.0 for (component, name) in zip(self.u.component, self.u.name)]
 
 
 

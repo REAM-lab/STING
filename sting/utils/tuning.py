@@ -30,7 +30,7 @@ class ParticipationFactors:
     A: np.ndarray
     states: None # DynamicalVariables
     metadata: pl.DataFrame = None
-    participation_factors: pl.DataFrame
+    participation_factors: pl.DataFrame = None
 
     def __post_init__(self):
         # Compute eigenvalues and vectors
