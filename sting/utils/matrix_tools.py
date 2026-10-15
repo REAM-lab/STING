@@ -1,5 +1,6 @@
 import numpy as np
 import polars as pl
+from scipy.sparse import coo_matrix
 
 def matrix_to_csv(filepath: str, matrix: np.ndarray, index: list, columns: list):
     """Write a numpy matrix to a tabular CSV with labeled rows and columns"""
@@ -77,3 +78,27 @@ def block_permute(X, rows, cols, index):
             m = index[j]
             Y[i, j] = X[n, m]
     return cell2mat(Y)
+
+
+def make_sparse_kron_product(A:np.ndarray, n1:int, n2:int):
+    """
+    Compute A x1 otimes x2 in sparse format.
+    """
+    # Dimension check A
+    m, ncols = A.shape
+    assert ncols == n1 * n2
+
+    # Extract sparse data
+    A = coo_matrix(A)
+    row = A.row
+    col = A.col
+    data = A.data
+
+    # kron(x, y)[i * ny + j] = x1[i] * x2[j]
+    i = col // n2
+    j = col % n2
+
+    def kron_func(x1, x2):
+        return np.bincount(row, weights=data * x1[i] * x2[j], minlength=m)
+
+    return kron_func

@@ -192,11 +192,17 @@ def upload_built_capacities_from_csv(system: System, input_directory: str, make_
     if storage_to_update:
         for stor in storage_to_update:
             if storage_built_power_capacity[stor.name] > threshold_MW:
-                stor.cap_existing_energy_MWh += storage_built_energy_capacity[stor.name] * overbuild_factor
-                stor.cap_existing_power_MW += storage_built_power_capacity[stor.name] * overbuild_factor
+                total = stor.cap_existing_power_MW + storage_built_power_capacity[stor.name] * overbuild_factor
+                stor.cap_existing_power_MW = min(total, stor.cap_max_power_MW)
+            if storage_built_energy_capacity[stor.name] > threshold_MW:
+                total = stor.cap_existing_energy_MWh + storage_built_energy_capacity[stor.name] * overbuild_factor
+                stor.cap_existing_energy_MWh = total
             if make_non_expandable:
                 stor.expand_capacity = False
             else:
                 stor.expand_capacity = False if stor.cap_existing_power_MW >= stor.cap_max_power_MW else True
     
     logger.info(f"> Updated existing capacities for {len(storage_to_update)} storage units based on input file {os.path.join(input_directory, 'storage_built_capacity.csv')}")
+    logger.info(f"   - Make non-expandable: {make_non_expandable}")
+    logger.info(f"   - Threshold (MW): {threshold_MW}")
+    logger.info(f"   - Overbuild factor: {overbuild_factor}")

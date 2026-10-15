@@ -117,7 +117,7 @@ def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, qbm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None, ivp_settings=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
@@ -139,9 +139,9 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
 
     # Run EMT simulation
     emt_sc = SimulationEMT(system=sys, output_directory=output_directory)
-    emt_sc.sim(t_max, inputs)
+    sol = emt_sc.sim(t_max, inputs, settings=ivp_settings)
 
-    return sys
+    return sys, sol
 
 
 def run_capex(case_directory=os.getcwd(), model_settings=None, solver_settings=None, output_directory=None, log_filename: str = None,
@@ -258,7 +258,8 @@ def run_capex_with_initial_build(case_directory=os.getcwd(),
                                  built_capacity_directory=None, 
                                  make_non_expandable=False, 
                                  print_system_with_built_capacities=False,
-                                 threshold_MW: float = 1e-1):
+                                 threshold_MW: float = 1e-1, 
+                                 overbuild_factor: float = 1.0):
     """
     Function to run capacity expansion analysis with initial built capacities from a previous solution. 
     """
@@ -277,7 +278,7 @@ def run_capex_with_initial_build(case_directory=os.getcwd(),
     # Upload built capacities
     sys_modifier = SystemModifier(system=system)
     sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
-                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW, overbuild_factor=overbuild_factor)
     
     if print_system_with_built_capacities:
         system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
@@ -301,7 +302,8 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
                                            built_capacity_directory=None, 
                                            make_non_expandable=True, 
                                            print_system_with_built_capacities=False,
-                                           threshold_MW: float = 1e-1):
+                                           threshold_MW: float = 1e-1,
+                                           overbuild_factor: float = 1.0):
     """
     Function to run unit commitment analysis with initial built capacities from a previous capacity expansion solution. 
     """
@@ -320,7 +322,7 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
     # Upload built capacities
     sys_modifier = SystemModifier(system=system)
     sys_modifier.upload_built_capacities_from_csv(built_capacity_directory=built_capacity_directory, 
-                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW)
+                                            make_non_expandable=make_non_expandable, threshold_MW=threshold_MW, overbuild_factor=overbuild_factor)
     
     if print_system_with_built_capacities:
         system.write_csv(types = [int, float, str, bool], output_directory=os.path.join(case_directory, "outputs", "system_with_built_capacities"))
@@ -337,42 +339,22 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
     return uc, system
 
 def run_model_reduction(
-        reductions:dict,
-        ssm: SmallSignalModel,
-        output_directory: str = None
+        system:System,
+        reducers:dict,
+        model_type:str = "ssm"
         ):
     """
     Routine to construct a small-signal model and then perform model order reduction (MOR)
     on each subsystem.
     """
-    # Interconnect all components in the same zone
-    ssm = copy.deepcopy(ssm)
-    ssm = ssm.group_by("zone").interconnect()
+    from sting.modules.model_order_reduction.core import ModelReducer
 
-    # Add a model reduction algorithm to each subsystem
-    for subsystem in ssm.system.linear_subsystems:
-        subsystem.reducer = reductions.get(subsystem.name, None)
+    sys_r = (
+        ModelReducer
+        .from_system(system, model_type)
+        .create_zonal_models()
+        .reduce_zonal_models(reducers)
+        .interconnect()
+        )
 
-    # Construct a state-space model of the full-order model (FOM)
-    models = ssm.get_component_attribute("ssm")
-    # Input of system are device inputs (according to defined G matrix)
-    u = lambda u: u[u.type == "device"]
-    # Output of system are all outputs (according to defined H matrix)
-    y = lambda y: y
-    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=u, y=y)
-
-    # Construct all reduced order models (ROMs)
-    ssm.apply("_construct_rom")
-    # Switch from using FOMs to ROMs 
-    ssm.apply("set_using", "reduced_order_model")
-
-    # Construct the state-space model 
-    models = ssm.get_component_attribute("ssm")
-    ssm.model = StateSpaceModel.from_interconnected(models, ssm.ccm_matrices, u=ssm.model.u, y=y)
-
-    if output_directory is None:
-        output_directory = os.path.join(ssm.system.case_directory, "outputs", "model_order_reduction")
-        os.makedirs(output_directory, exist_ok=True)
-        ssm.model.to_csv(output_directory)
-
-    return ssm
+    return sys_r

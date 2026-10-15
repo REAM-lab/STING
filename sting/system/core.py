@@ -17,14 +17,14 @@ import sting.system.stream as sl
 # Import sting code
 # -----------------------
 from sting.__init__ import __logo__
-from sting.branch.series_rl import BranchSeriesRL
+from sting.branch.series_rl_branch_2a import SeriesRLBranch2A
 from sting.bus.core import Bus
 from sting.generator import (
     GFLI13A,
     GFLI16A,
-    GFLI16B,
+    GFLI16C,
+    GFLI23A,
     GFMI18A,
-    GFMI18B,
     GFMI18P,
     GFMI25A,
     GFLI23A,
@@ -48,13 +48,8 @@ from sting.policies.energy_budgets.core import EnergyBudget
 from sting.policies.transmission_expansion_constraint.core import (
     TransmissionExpansionConstraint,
 )
-from sting.reduced_order_model.linear_subsystem import LinearSubsystem
-from sting.shunt.parallel_rc import ShuntParallelRC
+from sting.shunt.parallel_rc_shunt_2a import ParallelRCShunt2A
 from sting.storage.core import Storage
-
-# -----------------------
-# Import sting components
-# -----------------------
 from sting.system.component import Component, SystemComponent
 from sting.timescales.core import Scenario, Timepoint, Timeseries
 
@@ -64,50 +59,55 @@ logger.info(__logo__) # print logo when a System instance is created
 
 @dataclass(slots=True)
 class System:
-
-    # Settings and metadata
+    # Settings and Metadata #
     case_directory: str = None
     components: list[SystemComponent] = None 
     type_to_class: dict[str, type] = None
     class_to_type: dict[type, str] = None
 
-    # Components
-    generators: list[Generator] = None
-    capacity_factors: list[CapacityFactor] = None
-    storage: list[Storage] = None
-    voltage_source_4a: list[VoltageSource4A] = None
-    voltage_source_5a: list[VoltageSource5A] = None
-    gfli_13a: list[GFLI13A] = None
-    gfli_16a: list[GFLI16A] = None
-    gfli_16b: list[GFLI16B] = None
-    gfli_16d: list[GFLI16D] = None
-    gfmi_18a: list[GFMI18A] = None
-    gfmi_18b: list[GFMI18B] = None
-    gfmi_18p: list[GFMI18P] = None
-    gfmi_25a: list[GFMI25A] = None
-    gfli_23a: list[GFLI23A] = None 
-    gfli_16c: list[GFLI16C] = None 
-    gfli_16e: list[GFLI16E] = None
-    gfli_13a_lim: list[GFLI13ALIM] = None 
-    gfmi_18a_lim: list[GFMI18ALIM] = None
-    ups_21a: list[UPS21A] = None
-    synchronous_generator_14a: list[SynchronousGenerator14A] = None
-    synchronous_generator_17a: list[SynchronousGenerator17A] = None
-    synchronous_generator_23a: list[SynchronousGenerator23A] = None
-    linear_subsystems: list[LinearSubsystem] = None
+    # Power Flow Components #
     buses: list[Bus] = None
-    loads: list[Load] = None
-    switching_loads: list[SwitchingLoad] = None
-    constant_impedance_loads: list[ConstantImpedanceLoad] = None
     lines: list[LinePiModel] = None
-    branch_series_rl: list[BranchSeriesRL] = None
-    shunt_parallel_rc: list[ShuntParallelRC] = None
+    generators: list[Generator] = None
+    loads: list[Load] = None
+
+    # Capacity Expansion Components #
+    storage: list[Storage] = None
+    capacity_factors: list[CapacityFactor] = None
     timeseries: list[Timeseries] = None
     timepoints: list[Timepoint] = None
     scenarios: list[Scenario] = None
     energy_budgets: list[EnergyBudget] = None
     carbon_policies: list[CarbonPolicy] = None
     transmission_expansion_constraints: list[TransmissionExpansionConstraint] = None
+
+    # EMT Components #
+    voltage_source_4a: list[VoltageSource4A] = None
+    voltage_source_5a: list[VoltageSource5A] = None
+    # Inverters
+    gfli_13a: list[GFLI13A] = None
+    gfli_16a: list[GFLI16A] = None
+    gfli_16d: list[GFLI16D] = None
+    gfmi_18a: list[GFMI18A] = None
+    gfmi_18p: list[GFMI18P] = None # Deprecated
+    gfmi_25a: list[GFMI25A] = None
+    gfli_23a: list[GFLI23A] = None 
+    gfli_16c: list[GFLI16C] = None
+    gfli_16e: list[GFLI16E] = None
+    gfli_13a_lim: list[GFLI13ALIM] = None 
+    gfmi_18a_lim: list[GFMI18ALIM] = None
+    ups_21a: list[UPS21A] = None
+    # Generators
+    synchronous_generator_14a: list[SynchronousGenerator14A] = None
+    synchronous_generator_17a: list[SynchronousGenerator17A] = None
+    synchronous_generator_23a: list[SynchronousGenerator23A] = None
+    # Loads
+    switching_loads: list[SwitchingLoad] = None
+    constant_impedance_loads: list[ConstantImpedanceLoad] = None
+    # Circuits
+    series_rl_branch_2a: list[SeriesRLBranch2A] = None
+    parallel_rc_shunt_2a: list[ParallelRCShunt2A] = None
+    
 
     def __post_init__(self):
 
@@ -212,6 +212,8 @@ class System:
               cols = [c.name for c in cols if c.type in types]
               df = self.query([type_]).to_table(*cols) # we need [type_] to be a list to query multiple types if needed, for example [type1, type2]
               df.write_csv(os.path.join(output_directory, csv_filename))
+
+        logger.info(f"> System files were written successfully in the directory {output_directory}. \n")
 
     # ------------------------------------------------------------
     # Component Management + Searching

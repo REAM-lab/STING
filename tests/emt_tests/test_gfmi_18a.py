@@ -70,7 +70,7 @@ qbm.write_simulation_plots(sol, os.path.join(case_directory, "outputs", "quadrat
 file = "gfmi_18a_0.csv"
 cols_emt =["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
 cols_ssm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_lcl_sh_d", "v_lcl_sh_q", "i_bus_d", "i_bus_q"]
-cols_qbm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_br_d", "i_br_q"]
+cols_qbm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q"]
 
 compare_timeseries(
     df1=pl.read_csv(f"{case_directory}/outputs/simulation_emt/{file}"),
