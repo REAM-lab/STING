@@ -23,7 +23,7 @@ from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import R_DQ2dq, R_dq2DQ, d_DQ2dq_dangle, d_dq2DQ_dangle, abc2dq0, dq02abc
 from sting.components import (
     DCCircuit1A,
-    DCLoad1A,
+    DCLoad2B,
     InnerCurrentController2A,
     PhaseLockedLoop2A,
     LCLFilter9A,
@@ -58,15 +58,21 @@ class GFLI16C(Generator):
     # Outer control parameters
     kp_oc_pu: float  
     ki_oc_puHz: float  
+    # Current limit
+    Imax: float = None  
+    limiting: bool = False
     # Load parameters 
-    Tload_s: float  
+    Cload: float # output capacitance
+    v_eq_ref: float # output capacitor voltage reference 
+    kv_p: float # proportional gain of the voltage controller
+    kv_i: float # integral gain of the voltage controller
     
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
     phase_locked_loop: PhaseLockedLoop2A = field(init=False)
     dc_circuit: DCCircuit1A = field(init=False)
-    dc_load: DCLoad1A = field(init=False)
+    dc_load: DCLoad2B = field(init=False)
     outer_control: DCVoltageController1A = field(init=False)
     
     def __post_init__(self):
@@ -74,8 +80,14 @@ class GFLI16C(Generator):
         self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.wbase)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
         self.dc_circuit = DCCircuit1A(self.c_dc_pu, self.r_dc_pu, self.wbase)
-        self.dc_load = DCLoad1A(self.Tload_s)
+        self.dc_load = DCLoad2B(self.Cload, self.wbase, self.v_eq_ref, self.kv_p, self.kv_i)
         self.outer_control = DCVoltageController1A(self.kp_oc_pu, self.ki_oc_puHz, self.v_dc_ref)
+        
+        # Check limiting is correctly configured 
+        if self.limiting and self.Imax is None:
+            raise ValueError("Current limiting is enabled, but Imax is not set.")
+        elif not self.limiting and self.Imax is not None:
+            raise ValueError("Current limiting is disabled, but Imax is set.")
 
 
     @property
@@ -112,7 +124,7 @@ class GFLI16C(Generator):
         lcl_ssm = self.lcl_filter.get_small_signal_model(
             i_vsc_d=i_vsc_d, i_vsc_q=i_vsc_q, i_bus_d=i_bus_d, i_bus_q=i_bus_q, v_sh_d=v_sh_d, v_sh_q=v_sh_q)
         
-        dc_load_ssm = self.dc_load.get_small_signal_model(self.dc_load.emt_init.i_load)
+        dc_load_ssm = self.dc_load.get_small_signal_model()
         
         dc_circuit_ssm = self.dc_circuit.get_small_signal_model(
             self.dc_load.emt_init.i_load, 
@@ -128,10 +140,11 @@ class GFLI16C(Generator):
         i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
                         
         u = DynamicalVariables(
-            name = ["v_dc_ref", "i_load_ref", "i_ref_q", "v_bus_D", "v_bus_Q"],
-            type = ["device", "device", "device", "grid", "grid"],
+            name = ["v_dc_ref", "p_load", "v_eq_ref", "i_ref_q", "v_bus_D", "v_bus_Q"],
+            type = ["device", "device", "device", "device", "grid", "grid"],
             init = [self.dc_circuit.emt_init.v_dc, 
-                    self.dc_load.emt_init.i_load, 
+                    self.dc_load.p_load, 
+                    self.dc_load.v_eq_ref,
                     self.lcl_filter.emt_init.i_bus_q,
                     self.lcl_filter.emt_init.v_bus_D,
                     self.lcl_filter.emt_init.v_bus_Q
@@ -178,14 +191,14 @@ class GFLI16C(Generator):
         u_stack = [u_pll, u_inner_current_controller, u_lcl_filter, u_outer_control, u_dc_load, u_dc_circuit]
         y_stack = [y_pll, y_inner_current_controller, y_lcl_filter, y_outer_control, y_dc_load, y_dc_circuit]
         y_sys   = [Δi_bus_D, Δi_bus_Q]
-        u_sys   = [Δv_dc_ref, Δi_load_ref, Δi_q_ref, Δv_bus_D, Δv_bus_Q]
+        u_sys   = [Δv_dc_ref, Δp_load, Δv_eq_ref, Δi_q_ref, Δv_bus_D, Δv_bus_Q]
 
         note that:
         u_pll = [Δv_bus_D, Δv_bus_Q] (2 inputs)
         u_inner_current_controller = [Δi_ref_dq, Δi_vsc_dq, Δv_sh_dq, Δω] (7 inputs)
         u_lcl_filter = [Δv_vsc_dq, Δv_bus_dq, Δω] (5 inputs)
         u_outer_control = [Δv_dc_ref, Δv_dc] (2 inputs)
-        u_dc_load = [Δi_load_ref] (1 input)
+        u_dc_load = [Δv_dc, Δp_load, Δv_eq_ref] (3 input)
         u_dc_circuit = [Δi_load, Δi_dc] (2 inputs)
         
         y_pll = [Δϕ, Δω] (2 outputs)
@@ -196,10 +209,10 @@ class GFLI16C(Generator):
         y_dc_circuit = [Δv_dc] (1 output)
 
         thus: 
-        u_stack has 2 + 7 + 5 + 2 + 1 + 2 = 19 inputs
+        u_stack has 2 + 7 + 5 + 2 + 3 + 2 = 21 inputs
         y_stack has 2 + 2 + 6 + 1 + 1 + 1 = 13 outputs
         y_sys has 2 outputs
-        u_sys has 5 inputs.
+        u_sys has 6 inputs.
 
         Interconnection matrices
         ------------------------
@@ -248,10 +261,10 @@ class GFLI16C(Generator):
         a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
         b = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
 
-        F = np.zeros((19, 13))
-        G = np.zeros((19, 5))
+        F = np.zeros((21, 13))
+        G = np.zeros((21, 6))
         H = np.zeros((2, 13))
-        L = np.zeros((2, 5))
+        L = np.zeros((2, 6))
         
         a1 = v_vsc_d/v_dc
         a2 = i_vsc_d/v_dc
@@ -261,16 +274,33 @@ class GFLI16C(Generator):
         
         # Entries in F and G entered as tuples: (row_idx, col_idx, values)
         idx_F =[
-            ([4,5], [6, 7], I), ([6,7], [0], a), ([8], [1], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [1], 1),
-            ([2], [10], 1), ([15], [12], 1), ([17], [11], 1), ([18], [2], a2), ([18], [3], a4), ([18], [4], a1), ([18], [5], a3), ([18], [12], a5)
+            ([4,5], [6, 7], I), 
+            ([6,7], [0], a), 
+            ([8], [1], 1), 
+            ([9,10], [2,3], I), 
+            ([11,12], [0], a), 
+            ([13], [1], 1),
+            ([2], [10], 1), 
+            ([15], [12], 1), 
+            ([16], [12], 1), 
+            ([19], [11], 1),
+            ([20], [2], a2), 
+            ([20], [3], a4), 
+            ([20], [4], a1), 
+            ([20], [5], a3), 
+            ([20], [12], a5)
             ]
         for rows, cols, value in idx_F:
             F[np.ix_(rows, cols)] = value
         
         idx_G = [
-            ([3], [2], 1), ([0,1], [3,4], I), 
-            ([6,7], [3,4], R.T), ([11,12], [3,4], R.T),
-            ([14],[0], 1), ([16], [1], 1)
+            ([3], [3], 1), 
+            ([0,1], [4,5], I), 
+            ([6,7], [4,5], R.T), 
+            ([11,12], [4,5], R.T),
+            ([14],[0], 1), 
+            ([17], [1], 1),
+            ([18], [2], 1)
             ]
         for rows, cols, value in idx_G:
             G[np.ix_(rows, cols)] = value
@@ -312,7 +342,8 @@ class GFLI16C(Generator):
                                     )
         
         self.dc_load.get_steady_state(
-                        i_load = self.dc_circuit.emt_init.i_load
+            v_dc = self.v_dc_ref, 
+            p_load = self.dc_circuit.emt_init.i_load*self.dc_circuit.emt_init.v_dc
                     )
         
         self.outer_control.get_steady_state(
@@ -320,13 +351,46 @@ class GFLI16C(Generator):
             i_d = lcl_init.i_bus_d
         )
         
+        # Make checks on the steady state conditions 
+        if self.dc_load.emt_init.i_eq != self.dc_load.emt_init.v_eq/self.dc_load.r_load:
+            print("DC load steady state condition not satisfied: i_eq != v_eq / r_load")
+            
+        if self.dc_load.emt_init.i_eq != self.dc_load.emt_init.gamma_load:
+            print("DC load steady state condition not satisfied: i_eq != gamma_load")
+            
+        if self.dc_load.emt_init.i_load != (self.dc_load.emt_init.i_eq*self.dc_load.emt_init.v_eq)/self.dc_circuit.emt_init.v_dc:
+            print("DC load steady state condition not satisfied: i_load != (i_eq * v_eq) / v_dc")
+        
+        if self.dc_load.r_load != self.dc_load.emt_init.v_eq**2/self.dc_load.p_load:
+            print("DC load steady state condition not satisfied: r_load != v_eq^2 / p_load")
+        
+        if self.dc_load.v_eq_ref != self.dc_load.emt_init.v_eq:
+            print("DC load steady state condition not satisfied: v_eq_ref != v_eq")
+            
+        if self.dc_circuit.emt_init.i_load*self.dc_circuit.emt_init.v_dc != self.dc_load.emt_init.i_load*self.dc_load.emt_init.v_dc:
+            print("DC circuit and DC load steady state condition not satisfied: i_load * v_dc mismatch")
+            # print values
+            print(f"DC circuit: i_load * v_dc = {self.dc_circuit.emt_init.i_load*self.dc_circuit.emt_init.v_dc}")
+            print(f"DC load: i_load * v_dc = {self.dc_load.emt_init.i_load*self.dc_load.emt_init.v_dc}")
+            print(f"DC load: i_eq * v_eq = {self.dc_load.emt_init.i_eq*self.dc_load.emt_init.v_eq}")
+            
+        load_power = self.dc_load.emt_init.i_load*self.dc_load.emt_init.v_dc
+        circuit_power = self.dc_circuit.emt_init.i_load*self.dc_circuit.emt_init.v_dc
+        circuit_losses = self.dc_circuit.emt_init.i_loss*self.dc_circuit.emt_init.v_dc
+        
+        print(f"Load power: {load_power}")
+        print(f"Circuit power: {circuit_power}")
+        print(f"Circuit losses: {circuit_losses}")
+        print(f"Net circuit power: {circuit_power - circuit_losses}")
+        
+        print('done')
         
     def define_variables_emt(self):
         
         
         # States 
         x = DynamicalVariables(
-            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "i_load", "x_oc", "v_dc"],
+            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "v_eq", "gamma_load", "x_oc", "v_dc"],
             component = f"{self.type_}_{self.id}",
             init = [self.current_controller.emt_init.z_cc_d, 
                     self.current_controller.emt_init.z_cc_q,
@@ -335,16 +399,17 @@ class GFLI16C(Generator):
                     self.lcl_filter.emt_init.i_vsc_a, self.lcl_filter.emt_init.i_vsc_b, self.lcl_filter.emt_init.i_vsc_c,
                     self.lcl_filter.emt_init.v_sh_a, self.lcl_filter.emt_init.v_sh_b, self.lcl_filter.emt_init.v_sh_c,
                     self.lcl_filter.emt_init.i_bus_a, self.lcl_filter.emt_init.i_bus_b, self.lcl_filter.emt_init.i_bus_c,
-                    self.dc_load.emt_init.i_load, self.outer_control.emt_init.x_oc, self.dc_circuit.emt_init.v_dc]
+                    self.dc_load.emt_init.v_eq, self.dc_load.emt_init.gamma_load, self.outer_control.emt_init.x_oc, self.dc_circuit.emt_init.v_dc]
         )
 
         # Inputs 
         u = DynamicalVariables(
-            name=["v_dc_ref", "i_load_ref", "i_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
+            name=["v_dc_ref", "p_load", "v_eq_ref", "i_ref_q", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
-            type=["device", "device", "device", "grid", "grid", "grid"],
+            type=["device", "device", "device", "device", "grid", "grid", "grid"],
             init=[self.dc_circuit.emt_init.v_dc, 
-                    self.dc_load.emt_init.i_load,
+                    self.dc_load.p_load,
+                    self.dc_load.emt_init.v_eq,
                     self.lcl_filter.emt_init.i_bus_q,
                     self.lcl_filter.emt_init.v_bus_a, 
                     self.lcl_filter.emt_init.v_bus_b, 
@@ -361,6 +426,14 @@ class GFLI16C(Generator):
         )
         
         self.variables_emt = VariablesEMT(x=x,u=u,y=y)
+        
+        x0 = self.variables_emt.x.init
+        u0 = self.variables_emt.u.init
+        dx = np.array(self.get_derivative_state_emt(x0, u0), dtype=float)
+        for n, d in zip(self.variables_emt.x.name, dx):
+            print(f"{n:12s} {d: .3e}")
+            
+        print('done')
 
     def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """
@@ -368,10 +441,10 @@ class GFLI16C(Generator):
         """    
         
         # Get state values
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_load, x_oc, v_dc = x
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, v_eq, gamma_load, x_oc, v_dc = x
         
         # Get input values (external inputs)
-        v_dc_ref, i_load_ref, i_ref_q, v_bus_a, v_bus_b, v_bus_c = u
+        v_dc_ref, p_load, v_eq_ref, i_ref_q, v_bus_a, v_bus_b, v_bus_c = u
 
         # convert relevant quantities to dq (reference frame of the IBR)
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
@@ -390,14 +463,33 @@ class GFLI16C(Generator):
       
         # Compute current reference from outer loop voltage controller 
         i_ref_d = self.outer_control.get_algebraics_step_emt_dc(x_oc, v_dc_ref, v_dc)
+        
+        
+        if self.limiting:
+            # Enforce current limit by uniform scaling
+            Imagnitude = np.sqrt(i_ref_d**2 + i_ref_q**2)
+            if Imagnitude > self.Imax:
+                i_ref_d = i_ref_d*self.Imax/Imagnitude
+                i_ref_q = i_ref_q*self.Imax/Imagnitude            
       
         # Compute the voltage references from the inner current controller. No delay assumed in VSC.
         v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, # states in current controller
                                                                                i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, w_pll # inputs to current controller
                                                                                )
+        
+        if self.limiting:
+            # Enforce PWM limits by uniform scaling
+            v_vsc_mag = np.sqrt(v_vsc_d**2 + v_vsc_q**2)
+            if v_vsc_mag > v_dc:
+                v_vsc_d = v_vsc_d*(v_dc/v_vsc_mag)
+                v_vsc_q = v_vsc_q*(v_dc/v_vsc_mag)
 
         # Compute the time derivatives of the current controller
         d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q) # inputs to current controller
+        
+        if self.limiting:
+            if Imagnitude > self.Imax:
+                d_x_cc = [0.0, 0.0] # clamp this block to prevent windup 
 
         # Convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
@@ -411,11 +503,18 @@ class GFLI16C(Generator):
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs to LCL filter
             )
         
-        # Compute time derivative of load 
-        d_dc_load = self.dc_load.get_derivatives_step_emt_dc(i_load, i_load_ref)
+        
+        # Compute algebraic variables for the DC load
+        [i_eq, i_load, r_load] = self.dc_load.get_algebraic_step_emt_dc(v_eq, v_eq_ref, gamma_load, v_dc, p_load)
+        
+        d_dc_load = self.dc_load.get_derivatives_step_emt_dc(v_eq, v_eq_ref, i_eq, r_load)
         
         # Compute time derivative of outer loop control 
         d_outer_control = self.outer_control.get_derivatives_step_emt_dc(v_dc_ref, v_dc)
+        
+        if self.limiting:
+            if Imagnitude > self.Imax:
+                d_outer_control = [0.0] # Freeze outer control integrator to prevent windup 
         
         # Compute time derivative of dc circuit 
         d_dc_circuit = self.dc_circuit.get_derivatives_step_emt_dc(i_load, i_dc, v_dc)
@@ -424,7 +523,7 @@ class GFLI16C(Generator):
     
     def get_output_emt(self, x: np.ndarray) -> np.ndarray:
         
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_load, x_oc, v_dc = x
+        z_cc_d, z_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, v_eq, gamma_load, x_oc, v_dc = x
         
         return [i_bus_a, i_bus_b, i_bus_c]
 
@@ -433,18 +532,19 @@ class GFLI16C(Generator):
         Plot EMT simulation results
         """
 
-        pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_load, x_oc, v_dc = self.variables_emt.x.value
+        z_cc_d, z_cc_q, theta_pll, gamma_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, v_eq, gamma_load, x_oc, v_dc = self.variables_emt.x.value
         tps = self.variables_emt.x.time
 
         # Transform abc to dq0
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        i_bus_mag = (np.square(i_bus_d) + np.square(i_bus_q))**0.5
         
         results = DynamicalVariables(
-            name=['pi_cc_d', 'pi_cc_q', 'theta_pll', 'gamma_pll', 'i_vsc_d', 'i_vsc_q', 'v_sh_d', 'v_sh_q', 'i_bus_d', 'i_bus_q', 'i_load', 'x_oc', 'v_dc'],
+            name=['z_cc_d', 'z_cc_q', 'theta_pll', 'gamma_pll', 'i_vsc_d', 'i_vsc_q', 'v_sh_d', 'v_sh_q', 'i_bus_d', 'i_bus_q', 'v_eq', 'gamma_load', 'x_oc', 'v_dc', 'i_bus_mag'],
             component=f"{self.type_}_{self.id}",
-            value=[pi_cc_d, pi_cc_q, theta_pll, gamma_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_load, x_oc, v_dc],
+            value=[z_cc_d, z_cc_q, theta_pll, gamma_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, v_eq, gamma_load, x_oc, v_dc, i_bus_mag],
             time=tps
         )
         return results

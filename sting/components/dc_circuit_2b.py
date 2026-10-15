@@ -21,7 +21,11 @@ class InitialConditionsEMT(NamedTuple):
 # ------------------------------------
 @dataclass(slots=True)
 class DCCircuit2B:
-    """DC side circuit 2B model."""
+    """
+    DC side circuit 2B model.
+    Models battery resistance/associated losses.
+    Interchangeable with DCCircuit2A. 
+    """
 
     v_s: float
     l_dc: float

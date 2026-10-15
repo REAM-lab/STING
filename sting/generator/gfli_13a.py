@@ -210,7 +210,7 @@ class GFLI13A(Generator):
 
         # Entries in F and G entered as tuples: (row_idx, col_idx, values)
         idx_F =[
-            ([4,5], [6, 7], I), ([6,7], [0], a), ([8], [1], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [1], 1)
+            ([4,5], [6, 7], I), ([6,7], [0], a), ([8], [1], 1), ([9,10], [2,3], I), ([11,12], [0], a), ([13], [1], 1)
             ]
         for rows, cols, value in idx_F:
             F[np.ix_(rows, cols)] = value

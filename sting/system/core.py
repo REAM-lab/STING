@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass, fields
 from typing import get_type_hints
 
-import polars as pl
+#import polars as pl
 
 import sting.system.stream as sl
 
@@ -29,16 +29,14 @@ from sting.generator import (
     GFMI25A,
     GFLI23A,
     GFLI16C,
+    GFLI16D,
+    GFLI16E,
     GFLI13ALIM,
-    GFLI16CLIM,
-    GFLI23ALIM,
-    GFMI25ALIM,
     GFMI18ALIM,
-    GFMI25B,
+    UPS21A,
     SynchronousGenerator14A,
     SynchronousGenerator17A,
     SynchronousGenerator23A,
-    UPSA,
     VoltageSource4A,
     VoltageSource5A,
 )
@@ -82,22 +80,20 @@ class System:
     gfli_13a: list[GFLI13A] = None
     gfli_16a: list[GFLI16A] = None
     gfli_16b: list[GFLI16B] = None
+    gfli_16d: list[GFLI16D] = None
     gfmi_18a: list[GFMI18A] = None
     gfmi_18b: list[GFMI18B] = None
     gfmi_18p: list[GFMI18P] = None
     gfmi_25a: list[GFMI25A] = None
     gfli_23a: list[GFLI23A] = None 
     gfli_16c: list[GFLI16C] = None 
-    gfli_16c_lim: list[GFLI16CLIM] = None 
+    gfli_16e: list[GFLI16E] = None
     gfli_13a_lim: list[GFLI13ALIM] = None 
-    gfli_23a_lim: list[GFLI23ALIM] = None
-    gfmi_25a_lim: list[GFMI25ALIM] = None
     gfmi_18a_lim: list[GFMI18ALIM] = None
-    gfmi_25b: list[GFMI25B] = None  
+    ups_21a: list[UPS21A] = None
     synchronous_generator_14a: list[SynchronousGenerator14A] = None
     synchronous_generator_17a: list[SynchronousGenerator17A] = None
     synchronous_generator_23a: list[SynchronousGenerator23A] = None
-    ups_a: list[UPSA] = None
     linear_subsystems: list[LinearSubsystem] = None
     buses: list[Bus] = None
     loads: list[Load] = None

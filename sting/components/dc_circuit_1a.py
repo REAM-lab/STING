@@ -11,6 +11,7 @@ class InitialConditionsEMT(NamedTuple):
     v_dc: float
     i_dc: float
     i_load: float 
+    i_loss: float 
 
 # ------------------------------------
 # Main class
@@ -30,10 +31,12 @@ class DCCircuit1A:
         # DC-side initial conditions 
         i_dc = p / v_dc  
         i_load = -v_dc/self.r_dc - i_dc 
+        print(f"I loss = {v_dc/self.r_dc }")
         self.emt_init = InitialConditionsEMT(
                 v_dc = v_dc,
                 i_dc = i_dc,               
-                i_load = i_load
+                i_load = i_load,
+                i_loss = v_dc/self.r_dc 
             )
 
     def get_small_signal_model(self, i_load: float, i_dc: float, v_dc: float) -> StateSpaceModel:

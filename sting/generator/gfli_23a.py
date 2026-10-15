@@ -20,9 +20,9 @@ from sting.utils.dynamical_systems import StateSpaceModel, DynamicalVariables
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.transformations import dq02abc, abc2dq0
 from sting.components import (
-    DCCircuit2A,
+    DCCircuit2B,
     DCController6A,
-    DCLoad1A,
+    DCLoad2B,
     InnerCurrentController2A,
     LCLFilter9A,
     PhaseLockedLoop2A
@@ -59,22 +59,32 @@ class GFLI23A(Generator):
     c_dc_pu: float # DC link capacitance, [pu]
     v_dc_ref: float # DC bus reference voltage, [pu]
     v_s_pu: float # DC voltage source voltage, [pu]
+    r_eq_pu: float # Battery resistance [pu]
     Ti_L_s: float # measurement filter time constants [s]
     Tv_dc_s: float 
     Ti_dc_s: float 
     kff_idc: float 
     kff_iload: float 
-    i_load_ref: float 
     Ti_load_s: float # for DC/DC controller - measurement filter 
-    Tload_s: float # time constant for xactuation of load current change 
+    Imax: float =None # Current limit, AC-DC converter
+    Imax_bat: float = None# Current limit, battery (proxy for power limit)
+    SOC_init: float = None# initial battery state of charge 
+    Emax: float = None # battery capacity 
+    limiting: bool = False # Enable or disable current limiting
+    # Load parameters 
+    Cload: float # output capacitance
+    v_eq_ref: float # output capacitor voltage reference 
+    kv_p: float # proportional gain of the voltage controller
+    kv_i: float # integral gain of the voltage controller
+    p_load: float # load power, [pu]
     
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
     phase_locked_loop: PhaseLockedLoop2A = field(init=False)
     dc_controller: DCController6A = field(init=False)
-    dc_circuit: DCCircuit2A = field(init=False)
-    dc_load: DCLoad1A = field(init=False)
+    dc_circuit: DCCircuit2B = field(init=False)
+    dc_load: DCLoad2B = field(init=False)
 
     @property
     def rf2_pu(self):
@@ -93,8 +103,27 @@ class GFLI23A(Generator):
             self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.wbase)
             self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
             self.dc_controller = DCController6A(self.Ti_L_s, self.Tv_dc_s, self.Ti_dc_s, self.Ti_load_s, self.kp_vdc_pu, self.ki_vdc_puHz, self.kp_iL_pu, self.ki_iL_puHz, self.kff_idc, self.kff_iload)
-            self.dc_circuit = DCCircuit2A(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.wbase)
-            self.dc_load = DCLoad1A(self.Tload_s) 
+            self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase)
+            self.dc_load = DCLoad2B(self.Cload, self.wbase, self.v_eq_ref, self.kv_p, self.kv_i, self.p_load) 
+            
+            # Make sure limits are correctly configured 
+            if self.limiting:
+                if self.Imax is None:
+                    raise ValueError("Imax must be specified when limiting is enabled.")
+                if self.Imax_bat is None:
+                    raise ValueError("Imax_bat must be specified when limiting is enabled.")
+                if self.SOC_init is None:
+                    raise ValueError("SOC_init must be specified when limiting is enabled.")
+                if self.Emax is None:
+                    raise ValueError("Emax must be specified when limiting is enabled.")
+            elif self.Imax is not None:
+                raise ValueError("Imax should not be specified when limiting is disabled.")
+            elif self.Imax_bat is not None:
+                raise ValueError("Imax_bat should not be specified when limiting is disabled.")
+            elif self.SOC_init is not None:
+                raise ValueError("SOC_init should not be specified when limiting is disabled.")
+            elif self.Emax is not None:
+                raise ValueError("Emax should not be specified when limiting is disabled.")
                 
     def _calculate_emt_initial_conditions(self):
         
@@ -121,22 +150,26 @@ class GFLI23A(Generator):
                 relative_phase_deg = self.power_flow_variables.vphase_bus
             )
             
+            self.dc_load.get_steady_state(
+                            v_dc = self.v_dc_ref,
+                            p_load = self.p_load
+                        )
+            
+            # compute i_load 
+            i_load = self.p_load / self.v_dc_ref
+            
             self.dc_circuit.get_steady_state(
                         p = lcl_init.v_vsc_d * lcl_init.i_vsc_d + lcl_init.v_vsc_q * lcl_init.i_vsc_q,
                         v_dc = self.v_dc_ref,
-                        i_load = self.i_load_ref
+                        i_load = i_load
                     )
             
             self.dc_controller.get_steady_state(
                 i_L = self.dc_circuit.emt_init.i_L,
                 i_dc = self.dc_circuit.emt_init.i_dc,
-                i_load = self.i_load_ref,
+                i_load = i_load,
                 d = self.dc_circuit.emt_init.d,
                 v_dc = self.v_dc_ref
-            )
-    
-            self.dc_load.get_steady_state(
-                i_load = self.i_load_ref
             )
             
             
@@ -164,7 +197,7 @@ class GFLI23A(Generator):
                     i_dc = self.dc_circuit.emt_init.i_dc,
                     i_L = self.dc_circuit.emt_init.i_L,
                     v_dc = self.dc_circuit.emt_init.v_dc,
-                    i_load = self.i_load_ref,
+                    i_load = self.p_load/self.v_dc_ref,
                     x_1 = self.dc_controller.emt_init.x_1,
                     x_2 = self.dc_controller.emt_init.x_2,
                     d = self.dc_circuit.emt_init.d
@@ -175,17 +208,16 @@ class GFLI23A(Generator):
             i_L = self.dc_circuit.emt_init.i_L,
             v_dc = self.dc_circuit.emt_init.v_dc)
 
-        dc_load_ssm = self.dc_load.get_small_signal_model(
-            i_load = self.dc_load.emt_init.i_load)
+        dc_load_ssm = self.dc_load.get_small_signal_model()
 
         # Inverter level inputs and outputs
         v_bus_D, v_bus_Q = self.lcl_filter.emt_init.v_bus_D, self.lcl_filter.emt_init.v_bus_Q
         i_bus_D, i_bus_Q = self.lcl_filter.emt_init.i_bus_D, self.lcl_filter.emt_init.i_bus_Q
         # Inputs and outputs
         u = DynamicalVariables(
-            name=["i_ref_d", "i_ref_q", "v_dc_ref", "v_s", "i_load_ref", "v_bus_D", "v_bus_Q"],
-            type=["device", "device", "device","device","device", "grid", "grid"],
-            init=[i_bus_d, i_bus_q, self.v_dc_ref, self.v_s_pu, self.i_load_ref, v_bus_D, v_bus_Q])
+            name=["i_ref_d", "i_ref_q", "v_dc_ref", "v_s", "p_load", "v_eq_ref", "v_bus_D", "v_bus_Q"],
+            type=["device", "device", "device","device","device", "device", "grid", "grid"],
+            init=[i_bus_d, i_bus_q, self.v_dc_ref, self.v_s_pu, self.dc_load.p_load, self.dc_load.emt_init.v_eq, v_bus_D, v_bus_Q])
 
         y = DynamicalVariables(
             name=['i_bus_D', 'i_bus_Q'],
@@ -221,7 +253,7 @@ class GFLI23A(Generator):
             u_stack = [u_pll, u_inner_current_controller, u_lcl_filter, u_dc_controller, u_dc_circuit, u_dc_load]
             y_stack = [y_pll, y_inner_current_controller, y_lcl_filter, y_dc_controller, y_dc_circuit,y_dc_load]
             y_sys   = [Δi_bus_D, Δi_bus_Q]
-            u_sys   = [Δi_d_ref, Δi_q_ref, Δv_dc_ref, Δv_s, Δi_load_ref, Δv_bus_D, Δv_bus_Q]
+            u_sys   = [Δi_d_ref, Δi_q_ref, Δv_dc_ref, Δv_s, Δp_load, Δv_eq_ref, Δv_bus_D, Δv_bus_Q]
     
             note that:
             u_pll = [Δv_bus_D, Δv_bus_Q] (2 inputs)
@@ -229,7 +261,7 @@ class GFLI23A(Generator):
             u_lcl_filter = [Δv_vsc_dq, Δv_bus_dq, Δω] (5 inputs)
             u_dc_controller = [Δi_L, Δv_dc, Δi_dc, Δi_load, Δv_dc_ref] (5 inputs)
             u_dc_circuit = [Δv_s, Δd, Δi_dc, Δi_load] (4 inputs)
-            u_dc_load = [Δi_load_ref] (1 input)
+            u_dc_load = [Δv_dc, Δp_load, Δv_eq_ref] (3 inputs)
             
             y_pll = [Δϕ, Δω] (2 outputs)
             y_inner_current_controller = [Δv_ref_dq] (2 outputs)
@@ -239,10 +271,10 @@ class GFLI23A(Generator):
             y_dc_load = [Δi_load] (1 output)
     
             thus: 
-            u_stack has 2 + 7 + 5 + 5 + 4 + 1 = 24 inputs 
+            u_stack has 2 + 7 + 5 + 5 + 4 + 3 = 26 inputs 
             y_stack has 2 + 2 + 6 + 1 + 2 + 1 = 14 outputs
             y_sys has 2 outputs
-            u_sys has 7 inputs
+            u_sys has 8 inputs
         
         """
 
@@ -253,10 +285,10 @@ class GFLI23A(Generator):
         a = d_DQ2dq_dangle(v_bus_D, v_bus_Q, angle).reshape(2,1)
         b = d_dq2DQ_dangle(i_bus_d, i_bus_q, angle).reshape(2,1)
 
-        F = np.zeros((24, 14))
-        G = np.zeros((24, 7))
+        F = np.zeros((26, 14))
+        G = np.zeros((26, 8))
         H = np.zeros((2, 14))
-        L = np.zeros((2, 7))
+        L = np.zeros((2, 8))
         
         a1 = v_vsc_d/v_dc
         a2 = i_vsc_d/v_dc
@@ -266,18 +298,42 @@ class GFLI23A(Generator):
 
         # Entries in F and G entered as tuples: (row_idx, col_idx, values)
         idx_F =[
-            ([4,5], [6, 7], I), ([6,7], [0], a), ([8], [1], 1), ([9,10], [2,3], I), ([11,12], [1], a), ([13], [1], 1),
-            ([14],[11], 1), ([15], [12], 1), ([16], [2],a2), ([16],[3], a4), ([16], [4], a1), ([16], [5], a3), ([16], [12], a5),
-            ([21], [2],a2), ([21],[3], a4), ([21], [4], a1), ([21], [5], a3), ([21], [12], a5),
-            ([17],[13], 1), ([20], [10], 1), ([22],[13], 1)
+            ([4,5], [6, 7], I), 
+            ([6,7], [0], a), 
+            ([8], [1], 1), 
+            ([9,10], [2,3], I), 
+            ([11,12], [0], a), 
+            ([13], [1], 1),
+            ([14],[11], 1),
+            ([15], [12], 1), 
+            ([16], [2],a2), 
+            ([16],[3], a4), 
+            ([16], [4], a1), 
+            ([16], [5], a3), 
+            ([16], [12], a5),
+            ([21], [2],a2), 
+            ([21],[3], a4), 
+            ([21], [4], a1), 
+            ([21], [5], a3), 
+            ([21], [12], a5),
+            ([17],[13], 1), 
+            ([20], [10], 1), 
+            ([22],[13], 1),
+            ([23], [12], 1)
             ]
         for rows, cols, value in idx_F:
             F[np.ix_(rows, cols)] = value
         
         idx_G = [
-            ([2], [0], 1), ([3], [1], 1), ([0,1], [5,6], I), 
-            ([6,7], [5,6], R.T), ([11,12], [5,6], R.T),
-            ([18],[2], 1), ([19], [3], 1), ([23], [4], 1)
+            ([2], [0], 1), 
+            ([3], [1], 1), 
+            ([0,1], [6,7], I), 
+            ([6,7], [6,7], R.T), 
+            ([11,12], [6,7], R.T),
+            ([18],[2], 1), 
+            ([19], [3], 1), 
+            ([24], [4], 1),
+            ([25], [5], 1)
             ]
         for rows, cols, value in idx_G:
             G[np.ix_(rows, cols)] = value
@@ -291,7 +347,7 @@ class GFLI23A(Generator):
 
         # States 
         x = DynamicalVariables(
-            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "i_load"],
+            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load"],
             component = f"{self.type_}_{self.id}",
             init = [self.current_controller.emt_init.z_cc_d, 
                     self.current_controller.emt_init.z_cc_q,
@@ -308,19 +364,21 @@ class GFLI23A(Generator):
                                         self.dc_controller.emt_init.x_2,
                                         self.dc_circuit.emt_init.i_L,
                                         self.dc_circuit.emt_init.v_dc,
-                                        self.dc_load.emt_init.i_load]
+                                        self.dc_load.emt_init.v_eq,
+                                        self.dc_load.emt_init.gamma_load]
         )
 
         # Inputs 
         u = DynamicalVariables(
-            name=["i_ref_d", "i_ref_q", "v_dc_ref", "v_s", "i_load_ref","v_bus_a", "v_bus_b", "v_bus_c"],
+            name=["i_ref_d", "i_ref_q", "v_dc_ref", "v_s", "p_load", "v_eq_ref", "v_bus_a", "v_bus_b", "v_bus_c"],
             component=f"{self.type_}_{self.id}",
-            type=["device", "device", "device", "device", "device", "grid", "grid", "grid"],
+            type=["device", "device", "device", "device", "device", "device", "grid", "grid", "grid"],
             init=[ self.lcl_filter.emt_init.i_bus_d,
                   self.lcl_filter.emt_init.i_bus_q,
                   self.v_dc_ref,
                   self.v_s_pu,
-                  self.i_load_ref,
+                  self.dc_load.p_load,
+                  self.dc_load.v_eq_ref,
                   self.lcl_filter.emt_init.v_bus_a, 
                   self.lcl_filter.emt_init.v_bus_b, 
                   self.lcl_filter.emt_init.v_bus_c]
@@ -340,10 +398,17 @@ class GFLI23A(Generator):
     def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         
         # Get state values
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load = x
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = x
         
         # Get input values (external inputs)
-        i_ref_d, i_ref_q, v_dc_ref, v_s, i_load_ref, v_bus_a, v_bus_b, v_bus_c = u
+        i_ref_d, i_ref_q, v_dc_ref, v_s, p_load, v_eq_ref, v_bus_a, v_bus_b, v_bus_c = u
+        
+        if self.limiting:
+            # Enforce current limit by uniform scaling
+            Imagnitude = np.sqrt(i_ref_d**2 + i_ref_q**2)
+            if Imagnitude > self.Imax:
+                i_ref_d = i_ref_d*self.Imax/Imagnitude
+                i_ref_q = i_ref_q*self.Imax/Imagnitude 
 
         # convert relevant quantities to dq (reference frame of the IBR)
         v_bus_d, v_bus_q, _ = abc2dq0(v_bus_a, v_bus_b, v_bus_c, theta_pll) 
@@ -362,9 +427,20 @@ class GFLI23A(Generator):
         v_vsc_d, v_vsc_q = self.current_controller.get_algebraics_step_emt_dq0(z_cc_d, z_cc_q, # states in current controller
                                                                                i_ref_d, i_ref_q, i_bus_d, i_bus_q, v_bus_d, v_bus_q, w_pll # inputs to current controller
                                                                                )
+        
+        if self.limiting:
+            # Enforce PWM limits by uniform scaling
+            v_vsc_mag = np.sqrt(v_vsc_d**2 + v_vsc_q**2)
+            if v_vsc_mag > v_dc:
+                v_vsc_d = v_vsc_d*(v_dc/v_vsc_mag)
+                v_vsc_q = v_vsc_q*(v_dc/v_vsc_mag)
 
         # Compute the time derivatives of the current controller
         d_x_cc = self.current_controller.get_derivatives_step_emt_dq0(i_ref_d, i_ref_q, i_bus_d, i_bus_q) # inputs to current controller
+        
+        if self.limiting:
+            if Imagnitude > self.Imax:
+                d_x_cc = [0.0, 0.0] # clamp this block to prevent windup 
 
         # Convert to abc to feed into filter dynamics 
         v_vsc_a, v_vsc_b, v_vsc_c = dq02abc(v_vsc_d, v_vsc_q, 0, theta_pll) 
@@ -380,16 +456,34 @@ class GFLI23A(Generator):
             i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, # states in LCL filter
             v_vsc_a, v_vsc_b, v_vsc_c, v_bus_a, v_bus_b, v_bus_c # inputs to LCL filter
             )
-        d_dc_controller = self.dc_controller.get_derivatives_step_emt_dc(i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_dc, i_load_ref, v_dc_ref)
+        
+        if self.limiting:
+            # Limit battery current 
+            if np.abs(i_L) > self.Imax_bat:
+                i_L = np.sign(i_L)*self.Imax_bat
+        
+            # Limit duty cycle
+            if d > 1.0:
+                d = 1
+            elif d < 0:
+                d = 0 
+                
+        # Compute algebraic variables for the DC load
+        [i_eq, i_load, r_load] = self.dc_load.get_algebraic_step_emt_dc(v_eq, v_eq_ref, gamma_load, v_dc, p_load)
+        
+        d_dc_load = self.dc_load.get_derivatives_step_emt_dc(v_eq, v_eq_ref, i_eq, r_load)
+            
+        d_dc_controller = self.dc_controller.get_derivatives_step_emt_dc(i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_dc, i_load, v_dc_ref)
+        
         d_dc_circuit = self.dc_circuit.get_derivatives_step_emt_dc(i_L, v_dc, v_s, d, i_load, i_dc)
-        d_dc_load = self.dc_load.get_derivatives_step_emt_dc(i_load, i_load_ref)
+
         
         return d_x_cc + d_x_pll + d_x_lcl + d_dc_controller + d_dc_circuit + d_dc_load
     
     def get_output_emt(self, x: np.ndarray) -> np.ndarray:
 
         # Output is i_bus_abc 
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load = x
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = x
         
         return [i_bus_a, i_bus_b, i_bus_c]
     
@@ -399,21 +493,31 @@ class GFLI23A(Generator):
         Plot EMT simulation results
         """
 
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load = self.variables_emt.x.value        
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = self.variables_emt.x.value
         tps = self.variables_emt.x.time
 
         # Transform abc to dq0
         i_vsc_d, i_vsc_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_vsc_a, i_vsc_b, i_vsc_c, theta_pll)])
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
+        i_bus_mag = (np.square(i_bus_d) + np.square(i_bus_q))**0.5
         
+        # Calculate SOC from i_L 
+        soc = np.zeros_like(i_bus_mag)
+        if self.limiting:
+            for i, t in enumerate(tps):
+                if i == 0:
+                    soc[i] = self.SOC_init + i_L[i]
+                else:
+                    soc[i] = soc[i-1] + i_L[i]
+                
         # Get duty cycle 
         duty_cycle = self.dc_controller.kp_iL*(self.dc_controller.kp_vdc*(self.v_dc_ref - v_dc_f) + x_1 - i_L_f + self.dc_controller.kff_idc*i_dc_f + self.dc_controller.kff_iload*i_load_f) + x_2
         
         results = DynamicalVariables(
-            name=["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "i_load", 'duty_cycle'],
+            name=["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load", "i_bus_mag",'soc', 'duty_cycle'],
             component=f"{self.type_}_{self.id}",
-            value=[z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, i_load, duty_cycle],
+            value=[z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load, i_bus_mag,soc, duty_cycle],
             time=tps
         )
         return results

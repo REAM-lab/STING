@@ -27,3 +27,6 @@ from .excitation_system_4a import ExcitationSystem4A
 from .voltage_droop_controller_1a import VoltageDroopController1A
 from .voltage_transducer_1a import VoltageTransducer1A
 from .dc_circuit_2b import DCCircuit2B
+from .dc_circuit_1b import DCCircuit1B
+from .dc_load_2b import DCLoad2B
+from .dc_load_2a import DCLoad2A
