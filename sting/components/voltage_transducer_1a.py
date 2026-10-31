@@ -78,7 +78,7 @@ class VoltageTransducer1A:
         df =  1/(2*v_mag)
         ddf = -1/(8*v_mag**3)
 
-        c0 = v_mag + df*(-v_mag**2) + ddf*(v_mag**4)
+        c0 = v_mag - df*(v_mag**2) + ddf*(v_mag**4)
         c1 = df - 2*ddf*(v_mag**2)
         c2 = ddf
 

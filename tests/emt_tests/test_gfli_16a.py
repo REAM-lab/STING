@@ -38,10 +38,10 @@ system.apply("post_system_init", system)
 # -------------------------------------------------------
 
 # Step function inputs to simulate
-def step1(t):
+def step1(t, x=None):
     return 0.5 if t >= 0.5 else 0.0
 
-def step2(t):
+def step2(t, x=None):
     return -0.5 if t >= 0.5 else 0.0
 
 inputs = {
@@ -54,7 +54,7 @@ inputs = {
 t_max = 1.5 # Simulation length in seconds
 
 # EMT
-main.run_emt(t_max, inputs, case_directory, system=system)
+#main.run_emt(t_max, inputs, case_directory, system=system)
 # SSM
 _, ssm = main.run_ssm(case_directory, system=system)
 ssm.simulate_ssm(t_max=t_max, inputs=inputs)

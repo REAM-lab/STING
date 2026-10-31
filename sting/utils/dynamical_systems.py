@@ -402,6 +402,7 @@ class StateSpaceModel:
             x0: list[float] = None, 
             settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
             add_initial_conditions=True,
+            use_jacobain=True,
             ):
 
         if x0 is None:
@@ -431,6 +432,11 @@ class StateSpaceModel:
             u = func_u(t)
             return self.A @ x + self.B @ u
 
+        if use_jacobain:
+            jac = lambda t, y, *args: self.A
+        else:
+            jac = None
+
         start_time = time.perf_counter()
         sol = solve_ivp(
                         fun=state_space_ode,
@@ -439,7 +445,8 @@ class StateSpaceModel:
                         dense_output=settings['dense_output'],  
                         args=(inputs, ),
                         method=settings['method'], 
-                        max_step=settings['max_step'])
+                        max_step=settings['max_step'],
+                        jac=jac)
         end_time = time.perf_counter()
         
         sol.wall_time = end_time - start_time
@@ -535,7 +542,6 @@ class StateSpaceModel:
         return StateSpaceModel(A=A_t, B=B_t, C=C_t, D=self.D, x=x, u=self.u, y=self.y)
 
 
-
 # -------------
 # Functions
 # -------------
@@ -608,6 +614,51 @@ class QuadraticBilinearModel:
         assert len(self.u) == B_u
         assert len(self.y) == C_y
         assert len(self.x) == A_x
+
+
+    def __getitem__(self, key):
+        """TODO: This function is untested...."""
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise IndexError(
+                "Indexing must be of the form sys[outputs, inputs]"
+            )
+        n, m = self.B.shape
+        p, n = self.C.shape
+
+        output_idx, input_idx = key
+        output_idx = self._normalize_index(output_idx, p)
+        input_idx = self._normalize_index(input_idx, m)
+
+        A = self.A.copy()
+        B = self.B[:, input_idx]
+        C = self.C[output_idx, :]
+        D = self.D[np.ix_(output_idx, input_idx)]
+        H = self.H.copy()
+        N = np.hstack(np.array(np.hsplit(self.N, m))[input_idx])
+        u = self.u[input_idx]
+        y = self.y[output_idx]
+        x = copy.deepcopy(self.x)
+
+        return QuadraticBilinearModel(A=A,B=B,C=C,D=D,N=N,H=H,x=x,u=u,y=y)
+
+
+    @staticmethod
+    def _normalize_index(idx, n):
+        if isinstance(idx, slice):
+            return np.arange(n)[idx]
+
+        if np.isscalar(idx):
+            idx = int(idx)
+            if not 0 <= idx < n:
+                raise IndexError("index out of range")
+            return np.array([idx])
+
+        idx = np.asarray(idx, dtype=int)
+
+        if np.any((idx < 0) | (idx >= n)):
+            raise IndexError("index out of range")
+
+        return idx
 
 
     @property
@@ -741,6 +792,10 @@ class QuadraticBilinearModel:
 
         return qbm
 
+    def to_linear(self):
+        # Convert to a linear system. Assumes you have called shift_to_equilibrium first.
+        return StateSpaceModel(A=self.A, B=self.B, C=self.C, D=self.D, u=self.u, x=self.x, y=self.y)
+
 
     def get_derivatives_step(self, t: float, x: np.ndarray,  inputs: Callable):
         u = inputs(t)
@@ -753,7 +808,8 @@ class QuadraticBilinearModel:
         t_max: float, 
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
         settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-        shifted=False):
+        shifted=False,
+        use_jacobian=True):
 
         if shifted:
             x0 = np.zeros_like(self.x.init)
@@ -766,12 +822,22 @@ class QuadraticBilinearModel:
         inputs_to_sim = lambda t, x: self.vectorize_inputs(inputs)(t, x) + u0
 
         
+
         # Evaluate kronecker products in sparse format
         n, m = self.B.shape
         kron_H = make_sparse_kron_product(self.H, n, n)
         kron_N = make_sparse_kron_product(self.N, m, n)
         A = np.array(self.A)
         B = np.array(self.B)
+        Q = self.get_symmetrized().get_matricized_H(mode=3, vec_order="C")
+        
+
+        if use_jacobian:
+            # NOTE: *Assuming* N = 0
+            jac =lambda t, y, *args: A + 2*(y.T @ Q).reshape(n, n)
+            
+        else: 
+            jac = None
 
         def step(t, x, inputs):
             u = inputs(t, x)
@@ -786,7 +852,9 @@ class QuadraticBilinearModel:
             dense_output=settings['dense_output'],  
             args=(inputs_to_sim, ),
             method=settings['method'], 
-            max_step=settings['max_step'])
+            max_step=settings['max_step'],
+            jac=jac
+            )
         end_time = time.perf_counter()
                 
         sol.wall_time = end_time - start_time
@@ -799,12 +867,14 @@ class QuadraticBilinearModel:
 
         sol.x = sol.y
         sol.u = np.array([inputs_to_sim(t, x) for t, x in zip(sol.t, sol.x.T)]).T
+        sol.y = self.C@sol.x + self.D@sol.u
 
         if shifted:
             sol.x += self.x.init.reshape(-1,1)
             sol.u += self.u.init.reshape(-1,1)
+            sol.y += self.y.init.reshape(-1,1)
 
-        sol.y = self.C@sol.x + self.D@sol.u
+        
 
         return TimeDomainSolution(t=sol.t, x=sol.x, u=sol.u, y=sol.y, inputs=self.u, outputs=self.y, states=self.x, sol=sol)
 
@@ -821,6 +891,9 @@ class QuadraticBilinearModel:
         u = self.u.to_list()
         y = self.y.to_list()
         x = self.x.to_list()
+
+        x_unlabeled = [f"x{i}" for i in range(len(x))]
+        u_unlabeled = [f"u{i}" for i in range(len(u))]
         
         # Export each matrix
         matrix_to_csv(
@@ -835,13 +908,32 @@ class QuadraticBilinearModel:
         matrix_to_csv(
             filepath=os.path.join(filepath, "D.csv"), matrix=self.D, index=y, columns=u
         )
-        # TODO add save options for H and N
-        #matrix_to_csv(
-        #    filepath=os.path.join(filepath, "H.csv"), matrix=self.H, index=x, columns=None
-        #)
-        #matrix_to_csv(
-        #    filepath=os.path.join(filepath, "N.csv"), matrix=self.N, index=x, columns=None
-        #)
+       
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "H.csv"), matrix=self.H, index=x, columns=[f"{x_i}*{x_j}" for x_i in x_unlabeled for x_j in x_unlabeled]
+        )
+        matrix_to_csv(
+            filepath=os.path.join(filepath, "N.csv"), matrix=self.N, index=x, columns=[f"{u_i}*{x_j}" for u_i in u_unlabeled for x_j in x_unlabeled]
+        )
+
+    def read_csv(cls, filepath):
+        A, x, _ = csv_to_matrix(os.path.join(filepath, "A.csv"))
+        B, _, _ = csv_to_matrix(os.path.join(filepath, "B.csv"))
+        C, _, _ = csv_to_matrix(os.path.join(filepath, "C.csv"))
+        D, y, u = csv_to_matrix(os.path.join(filepath, "D.csv"))
+        H, _, _ = csv_to_matrix(os.path.join(filepath, "H.csv"))
+        N, _, _ = csv_to_matrix(os.path.join(filepath, "N.csv"))
+
+        x = tuple(map(list, zip(*x)))
+        x = DynamicalVariables(component=x[0], name=x[1])
+
+        y = tuple(map(list, zip(*y)))
+        y = DynamicalVariables(component=y[0], name=y[1])
+
+        u = tuple(map(list, zip(*u)))
+        u = DynamicalVariables(component=u[0], name=u[1])
+
+        return cls(A=A, B=B, C=C, D=D, H=H, N=N, x=x, y=y, u=u)
 
     def shift_to_equilibrium(self):
         """
@@ -858,12 +950,12 @@ class QuadraticBilinearModel:
         K1 = kronecker_commute(n,n)
         K2 = kronecker_commute(n,m)
 
-        A = (
+        A = np.asarray(
             self.A 
             + self.H @ (K1 + sp.eye(n**2)) @ sp.kron(x0, sp.eye(n)) 
             + self.N @ sp.kron(u0, sp.eye(n))
         )
-        B = (
+        B = np.asarray(
             self.B 
             + self.N @ K2 @ np.kron(x0, np.eye(m)) 
         )

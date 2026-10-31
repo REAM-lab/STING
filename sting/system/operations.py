@@ -52,6 +52,7 @@ class SystemModifier:
 
             z_load = ConstantImpedanceLoad(
                 name=load.name,
+                zone=load.zone,
                 bus=load.bus,
                 timepoint=load.timepoint,
                 bus_id=load.bus_id,

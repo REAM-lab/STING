@@ -31,7 +31,7 @@ class BalancedTruncation:
     """
     r: int 
     method: Literal["truncate", "singular perturbation"] = "truncate"
-    library: Literal["slycot", "slycot-sqrt", "scipy"] = "slycot"
+    library: Literal["slycot", "slycot-sqrt", "scipy"] = "slycot-sqrt"
 
     def reduce(self, sys:StateSpaceModel):
         # Unpack state-space matrices

@@ -5,7 +5,7 @@ import pylab as plt
 
 from sting import datasets, main
 from sting.generator import GFMI18A
-from sting.utils.dynamical_systems import make_smooth_step
+from sting.utils.dynamical_systems import smooth_step
 from sting.utils.plotting_tools import compare_timeseries
 
 # Set up a temporary directory used by all tests
@@ -43,12 +43,12 @@ system.apply("post_system_init", system)
 
 inputs = {
     'voltage_source_4a_0': {
-        'v_ref_d': lambda t: 0
+        'v_ref_d': lambda t, x=None, id=None: 0
         }, 
     'gfmi_18a_0': {
-        'v_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
-        'p_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
-        'q_ref': make_smooth_step(step_time=0.10, initial_value=0.0, final_value=-0.50, transient_width=5e-3) 
+        'v_ref': lambda t, x=None, id=None: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
+        'p_ref': lambda t, x=None, id=None: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=0.50, transient_width=5e-3),
+        'q_ref': lambda t, x=None, id=None: smooth_step(t, step_time=0.10, initial_value=0.0, final_value=-0.50, transient_width=5e-3) 
         }
 }
 t_max = 1.5 # Simulation length in seconds
@@ -62,14 +62,14 @@ ssm.simulate_ssm(t_max=t_max, inputs=inputs)
 _, qbm = main.run_qbm(case_directory, system=system)
 sol = qbm.simulate(t_max=t_max, inputs=inputs)
 os.makedirs(os.path.join(case_directory, "outputs", "quadratic_bilinear"), exist_ok=True)
-qbm.write_simulation_csv(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
-qbm.write_simulation_plots(sol, os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+sol.write_csv(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
+sol.write_plots(os.path.join(case_directory, "outputs", "quadratic_bilinear"))
 # -------------------------------------------------------
 # Compare the results of the EMT and small-signal model simulations
 # -------------------------------------------------------
 file = "gfmi_18a_0.csv"
 cols_emt =["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
-cols_ssm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_lcl_sh_d", "v_lcl_sh_q", "i_bus_d", "i_bus_q"]
+cols_ssm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q"]
 cols_qbm = ["w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q"]
 
 compare_timeseries(

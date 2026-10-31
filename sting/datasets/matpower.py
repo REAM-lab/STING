@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 import re
 import polars as pl
-
+import warnings
+import copy
 
 @dataclass
 class MatpowerCase:
@@ -12,7 +13,7 @@ class MatpowerCase:
     base_frequency_Hz:float = 60.0
 
     @classmethod
-    def from_file(cls, filepath) -> 'MatpowerCase':
+    def from_file(cls, filepath, base_voltage_kV=None) -> 'MatpowerCase':
         """
         Parse a MATPOWER case file.
 
@@ -95,7 +96,7 @@ class MatpowerCase:
                 if i > 0:
                     comment = lines[i - 1].strip()
                     if comment.startswith("%"):
-                        cols = comment[1:].split()
+                        cols = comment[1:].split("%")[0].split()
 
                 rows = []
 
@@ -107,7 +108,7 @@ class MatpowerCase:
                         break
 
                     if row_line and not row_line.startswith("%"):
-                        row_line = row_line.rstrip(";")
+                        row_line = row_line.split(";")[0]
                         rows.append([
                             float(x)
                             for x in row_line.split()
@@ -124,6 +125,10 @@ class MatpowerCase:
                 continue            
 
             i += 1
+
+        # Fill missing voltages with assumed `base_voltage_kV` parameter
+        if base_voltage_kV:
+            case.tables["bus"] = case.tables["bus"].with_columns(pl.col("baseKV").replace({0:base_voltage_kV}))
 
         return case
 
@@ -173,27 +178,42 @@ class MatpowerCase:
                 base_frequency_Hz = pl.lit(self.base_frequency_Hz),
                 base_power_MVA = pl.lit(self.base_power_MVA),
             )
-            # Drop buses without shunts
+        )
+        if df.filter( (pl.col("b_pu") < 0) | (pl.col("g_pu") < 0) ).height > 0:
+            warnings.warn("Negative shunt parameters detected. Dropping buses with negative shunt parameters.")
+
+        df = (df
             .filter(
-                (pl.col("b_pu") != 0) | (pl.col("g_pu") != 0)
+                (pl.col("b_pu") > 0) | (pl.col("g_pu") > 0)
             )
             .select("bus", "b_pu", "g_pu", "base_power_MVA", "base_voltage_kV", "base_frequency_Hz")
         )
         return df
 
     def load_data(self):
+
+        if self.tables["bus"].filter(pl.col("Pd") < 0 ).height > 0:
+            warnings.warn("Negative loads detected. Flipping negative reactive load injections to positive reactive load consumption.")
+
+        if self.tables["bus"].filter(pl.col("Qd") == 0, pl.col("Pd") > 0 ).height > 0:
+                warnings.warn("Purely resistive loads detected. Adding 1 MVAR to loads with no reactive consumption.")
+
         df = (
             self.tables["bus"]
             .rename({"Pd":"load_MW", "Qd":"load_MVAR"})
             .with_columns(
                 bus = pl.col("bus_i").cast(pl.Int64).cast(pl.String),
                 timepoint = pl.lit("t0"),
+                # Note: Flip reactive injections to loads
                 load_MVAR = pl.col("load_MVAR").abs()
             )
             .select("bus", "load_MW", "load_MVAR", "timepoint")
             # Drop buses without loads
             .filter(
                (pl.col("load_MW") != 0) |  (pl.col("load_MVAR") != 0)
+            )
+            .with_columns(
+                pl.when(pl.col("load_MVAR") == 0 ).then(pl.col("load_MVAR")+1).otherwise(pl.col("load_MVAR"))
             )
         )
         return df
@@ -255,9 +275,9 @@ class MatpowerCase:
             # Estimate line parameters
             .with_columns(
                 name = pl.col("from_bus")+"_to_" + pl.col("to_bus"),
-                x_pu_mile = pl.col("base_voltage_kV").replace(x_pu_per_mile, default=None),
-                r_pu_mile = pl.col("base_voltage_kV").replace(r_pu_per_mile, default=None),
-                b_pu_mile = pl.col("base_voltage_kV").replace(b_pu_per_mile, default=None),
+                x_pu_mile = pl.col("base_voltage_kV").replace_strict(x_pu_per_mile, default=None),
+                r_pu_mile = pl.col("base_voltage_kV").replace_strict(r_pu_per_mile, default=None),
+                b_pu_mile = pl.col("base_voltage_kV").replace_strict(b_pu_per_mile, default=None),
             )
             .with_columns(
                 estimated_miles = pl.col("x_pu") / pl.col("x_pu_mile")
@@ -352,7 +372,7 @@ class MatpowerCase:
 
         return df
 
-    def to_system(self, generators=None, force_dispatch_tol=None):
+    def to_system(self, generators=None, force_dispatch_tol=None, case_directory=None):
         from sting import main
         from sting.bus.core import Bus
         from sting.line.pi_model import LinePiModel
@@ -382,8 +402,9 @@ class MatpowerCase:
                 for attribute in row.keys():
                     # Transfer generator data from MATPOWER to each instance
                     setattr(gen, attribute, row[attribute])
-                system.add(gen)
+                system.add(copy.deepcopy(gen))
 
         system.apply("post_system_init", system)
+        system.case_directory = case_directory
 
         return system

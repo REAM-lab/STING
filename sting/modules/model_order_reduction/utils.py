@@ -77,9 +77,16 @@ def get_balancing_transform(P, Q, r:int=None, R=None, L=None):
     the state-space model are equal and diagonal.
     """
     if R is None:
-        R = cholesky(P, lower=True)
+        try:
+            R = cholesky(P, lower=True)
+        except:
+            R = cholesky(P + np.eye(P.shape[0])*1e-8, lower=True)
+
     if L is None:
-        L = cholesky(Q, lower=True)
+        try:
+            L = cholesky(Q, lower=True)
+        except:
+            L = cholesky(Q+ np.eye(Q.shape[0])*1e-8, lower=True)
     
     U, sigma, Vh = svd(L.T @ R)
     V = Vh.T

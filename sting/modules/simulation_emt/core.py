@@ -332,7 +332,7 @@ class SimulationEMT:
         self.set_value(tps, ans, "x")    
 
         self.write_results_csv(components=components_to_plot)
-        self.plot_results(components=components_to_plot)
+        # self.plot_results(components=components_to_plot)
 
         return solution
 

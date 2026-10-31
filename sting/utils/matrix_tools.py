@@ -5,8 +5,8 @@ from scipy.sparse import coo_matrix
 def matrix_to_csv(filepath: str, matrix: np.ndarray, index: list, columns: list):
     """Write a numpy matrix to a tabular CSV with labeled rows and columns"""
     # Cast index and columns to strings (if they are not strings already)
-    index = [str(s) for s in index if not isinstance(s, str)]
-    columns = [str(s) for s in columns if not isinstance(s, str)]
+    index = [str(s) if not isinstance(s, str) else s for s in index]
+    columns = [str(s) if not isinstance(s, str) else s for s in columns]
 
     df = (
         pl.DataFrame(matrix, schema=columns)
