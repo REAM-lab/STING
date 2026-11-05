@@ -14,17 +14,13 @@ from sting.components import (
     InnerCurrentController2A,
     InnerVoltageController2A,
     LCLFilter9A,
-    ParallelRCShunt2A,
     RotationalInertia2A,
-    SeriesRLBranch2A,
-    SeriesRLBranch2B,
     VoltageDroopController1A,
 )
 from sting.generator.core import Generator
 from sting.modules.simulation_emt.utils import VariablesEMT
 from sting.utils.dynamical_systems import (
     DynamicalVariables,
-    QuadraticBilinearModel,
     StateSpaceModel,
 )
 from sting.utils.matrix_tools import coordinates_to_matrix
@@ -72,10 +68,6 @@ class GFMI18ALIM(Generator):
 
     # Components
     lcl_filter: LCLFilter9A = field(init=False)
-    # LCL filter components for quadratic bilinear model
-    lcl_br1: SeriesRLBranch2B = field(init=False)
-    lcl_br2: SeriesRLBranch2A = field(init=False)
-    lcl_sh: ParallelRCShunt2A  = field(init=False)
     
     voltage_controller: InnerVoltageController2A = field(init=False)
     current_controller: InnerCurrentController2A = field(init=False)
@@ -85,9 +77,6 @@ class GFMI18ALIM(Generator):
 
     def __post_init__(self):
         self.lcl_filter = LCLFilter9A(self.rf1_pu, self.xf1_pu, self.rsh_pu, self.csh_pu, self.rf2_pu, self.xf2_pu, self.wbase)
-        self.lcl_br1 = SeriesRLBranch2B(self.rf1_pu, self.xf1_pu, self.wbase)
-        self.lcl_br2 = SeriesRLBranch2A(self.rf2_pu, self.xf2_pu, self.wbase)
-        self.lcl_sh = ParallelRCShunt2A(1/self.rsh_pu, self.csh_pu, self.wbase)
         self.voltage_controller = InnerVoltageController2A(self.kp_vc_pu, self.ki_vc_puHz, self.kffi_vc, self.csh_pu)
         self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kffv_cc, self.xf1_pu)
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase, alpha=self.alpha)
@@ -486,100 +475,7 @@ class GFMI18ALIM(Generator):
 
         return self.ssm
 
-    def _build_quadratic_bilinear_model(self):
-        init =  self.lcl_filter.emt_init
-        
-        # Power controllers
-        apc_qbm = self.virtual_inertia.get_quadratic_bilinear_model(
-            w = 1,
-            angle_rad = self.virtual_inertia.emt_init.angle,
-            p_ref = self.virtual_inertia.emt_init.p_ref,
-            p = self.virtual_inertia.emt_init.p_ref,
-        )
-        rpc_qbm = self.voltage_droop.get_quadratic_bilinear_model(
-            q_ref = self.voltage_droop.emt_init.q_ref,
-            v_ref = self.voltage_droop.emt_init.v_ref,
-            q = self.voltage_droop.emt_init.q_ref
-        )
-        # Inner-controllers
-        ivc_qbm = self.voltage_controller.get_small_signal_model(
-            z_vc_d = self.voltage_controller.emt_init.z_vc_d,
-            z_vc_q = self.voltage_controller.emt_init.z_vc_q,
-            v_d = init.v_sh_d,
-            v_q = init.v_sh_q,
-            i_d = init.i_bus_d,
-            i_q = init.i_bus_q,
-            w=1
-        )
-        # Convert to a QBM model and set initial conditions to zero
-        ivc_qbm =  ivc_qbm.to_quadratic_bilinear()
-        ivc_qbm.x.init *= 0
-        ivc_qbm.y.init *= 0
-        ivc_qbm.u.init *= 0
 
-        icc_qbm = self.current_controller.get_quadratic_bilinear_model(
-            z_cc_d = self.current_controller.emt_init.z_cc_d,
-            z_cc_q = self.current_controller.emt_init.z_cc_q,
-            i_d = init.i_vsc_d,
-            i_q = init.i_vsc_q,
-            v_d = init.v_sh_d,
-            v_q = init.v_sh_q,
-            w=1
-        )
-        # LCL Filter
-        br1_qbm = self.lcl_br1.get_quadratic_bilinear_model(
-            v_from_d = init.v_vsc_d, 
-            v_from_q = init.v_vsc_q, 
-            v_to_d = init.v_sh_d, 
-            v_to_q = init.v_vsc_q,
-            i_d = init.i_vsc_d, 
-            i_q = init.i_vsc_q
-            )
-        br2_qbm = self.lcl_br2.get_quadratic_bilinear_model(
-            v_from_D = init.v_sh_D, 
-            v_from_Q = init.v_sh_Q,
-            v_to_D = init.v_bus_D, 
-            v_to_Q = init.v_bus_Q,
-            i_D = init.i_bus_D, 
-            i_Q = init.i_bus_Q
-        )
-        sh_qbm = self.lcl_sh.get_quadratic_bilinear_model(
-            v_D = init.v_sh_D, 
-            v_Q = init.v_sh_Q, 
-            i_D = (init.i_vsc_D - init.i_bus_D), 
-            i_Q = (init.i_vsc_Q - init.i_bus_Q) 
-        )
-
-        # Inputs and outputs
-        u = DynamicalVariables(
-            name=["p_ref", "q_ref", "v_ref", "w_slack", "one", "v_bus_D", "v_bus_Q"],
-            type=["device", "device", "device", "device", "device", "grid", "grid"],
-            init=[
-                self.virtual_inertia.emt_init.p_ref,
-                self.voltage_droop.emt_init.q_ref,
-                self.voltage_droop.emt_init.v_ref,
-                1,
-                1,
-                init.v_bus_D,
-                init.v_bus_Q
-            ])
-
-        y = DynamicalVariables(name=["i_bus_D", "i_bus_Q"], init=[init.i_bus_D, init.i_bus_Q])
-
-        # Generate quadratic bilinear model
-        components = [apc_qbm, rpc_qbm, ivc_qbm, icc_qbm, br1_qbm, br2_qbm, sh_qbm]
-
-        v_ref_dq = np.array([[self.voltage_droop.emt_init.v_ref],[0]])
-        v_sh_dq = np.array([[init.v_sh_d],[init.v_sh_q]])
-        i_bus_dq = np.array([[init.i_bus_d],[init.i_bus_q]])
-        i_ref_dq = np.array([[init.i_vsc_d],[init.i_vsc_q]])
-        connections = self.get_interconnections_qbm(v_ref_dq, v_sh_dq, i_bus_dq, i_ref_dq)
-        self.qbm = QuadraticBilinearModel.from_interconnected(components, connections, u, y, component_label=f"{self.type_}_{self.id}")
-
-        return self.qbm
-
-
-    def get_interconnections_qbm(self, v_ref_dq, v_sh_dq, i_bus_dq, i_ref_dq):
         """        
         Recall the transformation from DQ to dq  
             i_d =  i_D*cos + i_Q*sin

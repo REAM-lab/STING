@@ -6,6 +6,8 @@ from .gfmi_25a import GFMI25A
 from .gfli_23a import GFLI23A
 from .gfli_16c import GFLI16C
 from .gfli_16e import GFLI16E
+from .gfli_16d import GFLI16D
+from .gfli_16e import GFLI16E
 from .gfli_13a_lim import GFLI13ALIM
 from .gfmi_18a_lim import GFMI18ALIM
 from .voltage_source_4a import VoltageSource4A

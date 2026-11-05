@@ -25,13 +25,17 @@ class DCCircuit2B:
     DC side circuit 2B model.
     Models battery resistance/associated losses.
     Interchangeable with DCCircuit2A. 
+    Models battery state of charge (SOC).
     """
 
-    v_s: float
-    l_dc: float
-    c_dc: float
-    r_eq: float 
+    v_s: float # battery voltage in pu 
+    l_dc: float # battery dc-dc converter inductance in pu 
+    c_dc: float # dc link capacitance in pu 
+    r_eq: float # battery resistive losses in pu 
     wbase: float
+    Cbatt: float # capacity of battery in pu 
+    eta_batt: float # battery efficiency in pu
+    soc_init: float # initial state of charge of the battery in pu 
 
     emt_init: InitialConditionsEMT = field(init=False)
 
@@ -71,19 +75,20 @@ class DCCircuit2B:
         Δy      │   C   │   D
 
         Define the state vector, input vector, and output vector are:
-        Δx = [Δi_L, Δv_dc]
+        Δx = [Δi_L, Δv_dc, Δsoc]
         Δu = [Δv_s, Δd, Δi_dc, Δi_load]
         Δy = [Δi_L, Δv_dc]
 
         Then, the state-space matrices are defined as follows:
 
-                   │ Δi_L            Δv_dc            │ Δv_s       Δd                Δi_dc        Δi_load
+                   │ Δi_L            Δv_dc            Δsoc    │ Δv_s       Δd                Δi_dc        Δi_load
         ─────────────────────────────────────────────────────────────────────────────────────────────
-        dΔi_L/dt   │ -r_eq/l_d       ωb*(dₒ-1)/l_dc   │ ωb*1/l_dc  ωb*(v_dc)ₒ/l_dc   0            0
-        dΔv_dc/dt  │ ωb*(1-dₒ)/c_dc  0                │ 0          -ωb*(i_L)ₒ/c_dc   -ωb*1/c_dc   -ωb*1/c_dc
+        dΔi_L/dt   │ -r_eq/l_d       ωb*(dₒ-1)/l_dc   0       │ ωb*1/l_dc  ωb*(v_dc)ₒ/l_dc   0            0
+        dΔv_dc/dt  │ ωb*(1-dₒ)/c_dc  0                0       │ 0          -ωb*(i_L)ₒ/c_dc   -ωb*1/c_dc   -ωb*1/c_dc
+        dΔsoc/dt   │ 1/Cbatt                0         0       │ 0          0                 0            0
         ─────────────────────────────────────────────────────────────────────────────────────────────
-        i_L        │ 1               0                │ 0          0                 0            0
-        v_dc       │ 0               1                │ 0          0                 0            0
+        i_L        │ 1               0                0       │ 0          0                 0            0
+        v_dc       │ 0               1                0       │ 0          0                 0            0
 
         
         """
@@ -92,19 +97,23 @@ class DCCircuit2B:
         l_dc = self.l_dc
         c_dc = self.c_dc
         r_eq = self.r_eq
+        Cbatt = self.Cbatt
 
         model = StateSpaceModel(
-            A = wbase * np.array([[-r_eq/l_dc,         (d-1)/l_dc], 
-                                [(1-d)/c_dc,         0]]),
+            A = wbase * np.array([[-r_eq/l_dc,         (d-1)/l_dc, 0], 
+                                [(1-d)/c_dc,         0, 0],
+                                [self.eta_batt/Cbatt,                  0, 0]]),
             B = wbase * np.array([[1/l_dc, v_dc/l_dc,       0,       0],
-                                  [0,      -i_L/c_dc, -1/c_dc, -1/c_dc]]),
-            C = np.eye(2),
+                                  [0,      -i_L/c_dc, -1/c_dc, -1/c_dc],
+                                  [0,                  0,       0,       0]]),
+            C = np.array([[1, 0, 0],
+                          [0, 1, 0]]),
             D = np.zeros((2,4)),
             u = DynamicalVariables(name=['v_s', 'd', 'i_dc','i_load']),
             y = DynamicalVariables(name=['i_L','v_dc']),
             x = DynamicalVariables(
-                name = ['i_L', 'v_dc'],
-                init = [i_L, v_dc]
+                name = ['i_L', 'v_dc', 'soc'],
+                init = [i_L, v_dc, self.soc_init]
         )
         )
 
@@ -113,9 +122,9 @@ class DCCircuit2B:
     def define_variables_emt_dc(self):
 
         x = DynamicalVariables(
-            name = ['i_L', 'v_dc'],
+            name = ['i_L', 'v_dc', 'soc'],
             component = f"{self.__class__.__name__}",
-            init = [self.emt_init.i_L, self.emt_init.v_dc]
+            init = [self.emt_init.i_L, self.emt_init.v_dc, self.soc_init]
         )
 
         u = DynamicalVariables(
@@ -135,10 +144,11 @@ class DCCircuit2B:
 
     def get_derivatives_step_emt_dc(self, i_L: float, v_dc: float, v_s: float, d: float, i_load: float, i_dc: float):
         """
-        Compute the derivatives of the state variables for the DC circuit 2A model.
+        Compute the derivatives of the state variables for the DC circuit 2B model.
         Differential equations:
         di_L/dt = (ωb/l_dc) * (v_s - i_L*r_eq - (1 - d) * v_dc)
         dv_dc/dt = (ωb/c_dc) * (-i_dc - i_load + (1 - d) * i_L)
+        d_soc/dt = (1/Cbatt) * i_L * eta_batt
 
         Inputs:
         - i_L: Inductor current [pu]
@@ -149,7 +159,7 @@ class DCCircuit2B:
         - i_dc: DC current [pu]
 
         Returns:
-        - List of derivatives [di_L/dt, dv_dc/dt]
+        - List of derivatives [di_L/dt, dv_dc/dt, d_soc/dt]
         """
         wb = self.wbase
         l_dc = self.l_dc
@@ -158,5 +168,6 @@ class DCCircuit2B:
 
         d_i_L = (wb/l_dc) * (v_s - i_L*r_eq - (1 - d) * v_dc)
         d_v_dc = (wb/c_dc) * (-i_dc - i_load + (1 - d) * i_L)
+        d_soc = (1/self.Cbatt)*i_L*self.eta_batt 
 
-        return [d_i_L, d_v_dc]
+        return [d_i_L, d_v_dc, d_soc]

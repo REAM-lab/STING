@@ -86,8 +86,8 @@ class GFLI16C(Generator):
         # Check limiting is correctly configured 
         if self.limiting and self.Imax is None:
             raise ValueError("Current limiting is enabled, but Imax is not set.")
-        elif not self.limiting and self.Imax is not None:
-            raise ValueError("Current limiting is disabled, but Imax is set.")
+        # elif not self.limiting and self.Imax is not None:
+        #     raise ValueError("Current limiting is disabled, but Imax is set.")
 
 
     @property

@@ -81,8 +81,9 @@ class GFMI25A(Generator):
     limiting: bool = False # Flag to enable or disable limiting in EMT model 
     Imax: float = None # Current limit, AC-DC converter
     Imax_bat: float = None # Current limit, battery (proxy for power limit)
-    SOC_init: float = None # initial battery state of charge 
-    Emax: float = None # battery capacity 
+    SOC_init: float = 0.5 # initial battery state of charge in pu 
+    Emax: float = 100 # battery capacity in pu 
+    eta_batt: float = 0.90 # battery efficiency as a fraction 
     # Load parameters 
     Cload: float # output capacitance
     v_eq_ref: float # output capacitor voltage reference 
@@ -107,7 +108,7 @@ class GFMI25A(Generator):
         self.virtual_inertia = RotationalInertia2A(self.h_s, self.kd_pu, self.wbase)
         self.voltage_droop = VoltageDroopController1A(self.k_q_pu, self.w_q_puHz)
         self.dc_controller = DCController6A(self.Ti_L_s, self.Tv_dc_s, self.Ti_dc_s, self.Ti_load_s, self.kp_vdc_pu, self.ki_vdc_puHz, self.kp_iL_pu, self.ki_iL_puHz, self.kff_idc, self.kff_iload)
-        self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase)
+        self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase, self.Emax, self.eta_batt, self.SOC_init)
         self.dc_load = DCLoad2B(self.Cload, self.wbase, self.v_eq_ref, self.kv_p, self.kv_i, self.p_load)
 
         self.phase_angle_name = self.virtual_inertia.phase_angle_name
@@ -122,14 +123,14 @@ class GFMI25A(Generator):
                 raise ValueError("SOC_init must be specified when limiting is enabled.")
             if self.Emax is None:
                 raise ValueError("Emax must be specified when limiting is enabled.")
-        elif self.Imax is not None:
-            raise ValueError("Limiting is disabled, but Imax is specified.")
-        elif self.Imax_bat is not None:
-            raise ValueError("Limiting is disabled, but Imax_bat is specified.")
-        elif self.SOC_init is not None:
-            raise ValueError("Limiting is disabled, but SOC_init is specified.")
-        elif self.Emax is not None:
-            raise ValueError("Limiting is disabled, but Emax is specified.")
+        # elif self.Imax is not None:
+        #     raise ValueError("Limiting is disabled, but Imax is specified.")
+        # elif self.Imax_bat is not None:
+        #     raise ValueError("Limiting is disabled, but Imax_bat is specified.")
+        # elif self.SOC_init is not None:
+        #     raise ValueError("Limiting is disabled, but SOC_init is specified.")
+        # elif self.Emax is not None:
+        #     raise ValueError("Limiting is disabled, but Emax is specified.")
 
 
     @property
@@ -212,7 +213,7 @@ class GFMI25A(Generator):
         # States 
         x = DynamicalVariables(
             name = ["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b", "v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c",
-                    "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load"],
+                    "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "soc", "v_eq", "gamma_load"],
             component = f"{self.type_}_{self.id}",
             init = [self.virtual_inertia.emt_init.angle,
                     self.virtual_inertia.emt_init.w,
@@ -238,6 +239,7 @@ class GFMI25A(Generator):
                     self.dc_controller.emt_init.x_2,
                     self.dc_circuit.emt_init.i_L,
                     self.dc_circuit.emt_init.v_dc,
+                    self.dc_circuit.soc_init,
                     self.dc_load.emt_init.v_eq,
                     self.dc_load.emt_init.gamma_load]
         )
@@ -281,7 +283,7 @@ class GFMI25A(Generator):
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c, \
         i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, \
-        i_L, v_dc, \
+        i_L, v_dc, soc, \
         v_eq, gamma_load = x
 
         # Get inputs (external inputs)
@@ -384,7 +386,7 @@ class GFMI25A(Generator):
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c, \
         i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, \
-        i_L, v_dc, \
+        i_L, v_dc, soc, \
         v_eq, gamma_load = x
 
         return [i_bus_a, i_bus_b, i_bus_c]
@@ -399,7 +401,7 @@ class GFMI25A(Generator):
         v_sh_a, v_sh_b, v_sh_c, \
         i_bus_a, i_bus_b, i_bus_c, \
         i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, \
-        i_L, v_dc, \
+        i_L, v_dc, soc, \
         v_eq, gamma_load = self.variables_emt.x.value
         
         tps = self.variables_emt.x.time
@@ -425,21 +427,12 @@ class GFMI25A(Generator):
         # Get duty cycle 
         duty_cycle = self.dc_controller.kp_iL*(self.dc_controller.kp_vdc*(self.v_dc_ref - v_dc_f) + x_1 - i_L_f + self.dc_controller.kff_idc*i_dc_f + self.dc_controller.kff_iload*i_load_f) + x_2
         
-        # Calculate SOC from i_L 
-        soc = np.zeros_like(i_bus_mag)
-        if self.limiting:
-            for i, t in enumerate(tps):
-                if i == 0:
-                    soc[i] = self.SOC_init + i_L[i]
-                else:
-                    soc[i] = soc[i-1] + i_L[i]
-        
         results_emt = DynamicalVariables(
             name = ["angle", "w", "q_f", "z_vc_d", "z_vc_q", "z_cc_d", "z_cc_q", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", 
-                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load", "i_load", 'p_vsc', 'p_sh', 'i_bus_mag', 'soc', 'duty_cycle'],
+                    "v_dc_f", "i_dc_f", "i_load_f", "x_1", "x_2", "i_L", "v_dc", "soc", "v_eq", "gamma_load", "i_load", 'p_vsc', 'p_sh', 'i_bus_mag', 'duty_cycle'],
             component = f"{self.type_}_{self.id}",
             value=[angle*np.pi/180, w, q_f, z_vc_d, z_vc_q, z_cc_d, z_cc_q, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, 
-                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load, i_load, p_vsc, p_sh, i_bus_mag, soc, duty_cycle],
+                   v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, soc, v_eq, gamma_load, i_load, p_vsc, p_sh, i_bus_mag, duty_cycle],
             time=tps
         )
         

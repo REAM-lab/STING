@@ -68,8 +68,9 @@ class GFLI23A(Generator):
     Ti_load_s: float # for DC/DC controller - measurement filter 
     Imax: float =None # Current limit, AC-DC converter
     Imax_bat: float = None# Current limit, battery (proxy for power limit)
-    SOC_init: float = None# initial battery state of charge 
-    Emax: float = None # battery capacity 
+    SOC_init: float = 0.5 # initial battery state of charge in pu 
+    Emax: float = 100 # battery capacity in pu 
+    eta_batt: float = 0.90 # battery efficiency as a fraction 
     limiting: bool = False # Enable or disable current limiting
     # Load parameters 
     Cload: float # output capacitance
@@ -103,7 +104,7 @@ class GFLI23A(Generator):
             self.phase_locked_loop = PhaseLockedLoop2A(self.kp_pll_rad_s, self.ki_pll_rad2_s2, self.wbase)
             self.current_controller = InnerCurrentController2A(self.kp_cc_pu, self.ki_cc_puHz, self.kff_cc, self.xf1_pu + self.xf2_pu)
             self.dc_controller = DCController6A(self.Ti_L_s, self.Tv_dc_s, self.Ti_dc_s, self.Ti_load_s, self.kp_vdc_pu, self.ki_vdc_puHz, self.kp_iL_pu, self.ki_iL_puHz, self.kff_idc, self.kff_iload)
-            self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase)
+            self.dc_circuit = DCCircuit2B(self.v_s_pu, self.l_dc_pu, self.c_dc_pu, self.r_eq_pu, self.wbase, self.Emax, self.eta_batt, self.SOC_init)
             self.dc_load = DCLoad2B(self.Cload, self.wbase, self.v_eq_ref, self.kv_p, self.kv_i, self.p_load) 
             
             # Make sure limits are correctly configured 
@@ -116,14 +117,14 @@ class GFLI23A(Generator):
                     raise ValueError("SOC_init must be specified when limiting is enabled.")
                 if self.Emax is None:
                     raise ValueError("Emax must be specified when limiting is enabled.")
-            elif self.Imax is not None:
-                raise ValueError("Imax should not be specified when limiting is disabled.")
-            elif self.Imax_bat is not None:
-                raise ValueError("Imax_bat should not be specified when limiting is disabled.")
-            elif self.SOC_init is not None:
-                raise ValueError("SOC_init should not be specified when limiting is disabled.")
-            elif self.Emax is not None:
-                raise ValueError("Emax should not be specified when limiting is disabled.")
+            # elif self.Imax is not None:
+            #     raise ValueError("Imax should not be specified when limiting is disabled.")
+            # elif self.Imax_bat is not None:
+            #     raise ValueError("Imax_bat should not be specified when limiting is disabled.")
+            # elif self.SOC_init is not None:
+            #     raise ValueError("SOC_init should not be specified when limiting is disabled.")
+            # elif self.Emax is not None:
+            #     raise ValueError("Emax should not be specified when limiting is disabled.")
                 
     def _calculate_emt_initial_conditions(self):
         
@@ -347,7 +348,7 @@ class GFLI23A(Generator):
 
         # States 
         x = DynamicalVariables(
-            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load"],
+            name = ["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_a", "i_vsc_b", "i_vsc_c", "v_sh_a", "v_sh_b","v_sh_c", "i_bus_a", "i_bus_b", "i_bus_c", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "soc", "v_eq", "gamma_load"],
             component = f"{self.type_}_{self.id}",
             init = [self.current_controller.emt_init.z_cc_d, 
                     self.current_controller.emt_init.z_cc_q,
@@ -364,6 +365,7 @@ class GFLI23A(Generator):
                                         self.dc_controller.emt_init.x_2,
                                         self.dc_circuit.emt_init.i_L,
                                         self.dc_circuit.emt_init.v_dc,
+                                        self.dc_circuit.soc_init,
                                         self.dc_load.emt_init.v_eq,
                                         self.dc_load.emt_init.gamma_load]
         )
@@ -398,7 +400,7 @@ class GFLI23A(Generator):
     def get_derivative_state_emt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         
         # Get state values
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = x
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, soc, v_eq, gamma_load = x
         
         # Get input values (external inputs)
         i_ref_d, i_ref_q, v_dc_ref, v_s, p_load, v_eq_ref, v_bus_a, v_bus_b, v_bus_c = u
@@ -483,7 +485,7 @@ class GFLI23A(Generator):
     def get_output_emt(self, x: np.ndarray) -> np.ndarray:
 
         # Output is i_bus_abc 
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = x
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, soc, v_eq, gamma_load = x
         
         return [i_bus_a, i_bus_b, i_bus_c]
     
@@ -493,7 +495,7 @@ class GFLI23A(Generator):
         Plot EMT simulation results
         """
 
-        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load = self.variables_emt.x.value
+        z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_a, i_vsc_b, i_vsc_c, v_sh_a, v_sh_b, v_sh_c, i_bus_a, i_bus_b, i_bus_c, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, soc, v_eq, gamma_load = self.variables_emt.x.value
         tps = self.variables_emt.x.time
 
         # Transform abc to dq0
@@ -501,23 +503,14 @@ class GFLI23A(Generator):
         v_sh_d, v_sh_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(v_sh_a, v_sh_b, v_sh_c, theta_pll)])
         i_bus_d, i_bus_q, _ = zip(*[abc2dq0(a, b, c, ang) for a, b, c, ang in zip(i_bus_a, i_bus_b, i_bus_c, theta_pll)])
         i_bus_mag = (np.square(i_bus_d) + np.square(i_bus_q))**0.5
-        
-        # Calculate SOC from i_L 
-        soc = np.zeros_like(i_bus_mag)
-        if self.limiting:
-            for i, t in enumerate(tps):
-                if i == 0:
-                    soc[i] = self.SOC_init + i_L[i]
-                else:
-                    soc[i] = soc[i-1] + i_L[i]
                 
         # Get duty cycle 
         duty_cycle = self.dc_controller.kp_iL*(self.dc_controller.kp_vdc*(self.v_dc_ref - v_dc_f) + x_1 - i_L_f + self.dc_controller.kff_idc*i_dc_f + self.dc_controller.kff_iload*i_load_f) + x_2
         
         results = DynamicalVariables(
-            name=["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "v_eq", "gamma_load", "i_bus_mag",'soc', 'duty_cycle'],
+            name=["z_cc_d", "z_cc_q", "theta_pll", "gamma_pll", "i_vsc_d", "i_vsc_q", "v_sh_d", "v_sh_q", "i_bus_d", "i_bus_q", "i_L_f", "v_dc_f", "i_dc_f", "i_load_f","x_1", "x_2", "i_L", "v_dc", "soc", "v_eq", "gamma_load", "i_bus_mag",'soc', 'duty_cycle'],
             component=f"{self.type_}_{self.id}",
-            value=[z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, v_eq, gamma_load, i_bus_mag,soc, duty_cycle],
+            value=[z_cc_d, z_cc_q, theta_pll, z_pll, i_vsc_d, i_vsc_q, v_sh_d, v_sh_q, i_bus_d, i_bus_q, i_L_f, v_dc_f, i_dc_f, i_load_f, x_1, x_2, i_L, v_dc, soc, v_eq, gamma_load, i_bus_mag,soc, duty_cycle],
             time=tps
         )
         return results
