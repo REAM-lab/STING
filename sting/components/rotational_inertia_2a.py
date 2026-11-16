@@ -108,7 +108,9 @@ class RotationalInertia2A:
         Note that the third input is a dummy variable equal to 1 for all time.
         """
         Z = np.zeros((3,3))
-        h, kd, wb, a = self.h_s, self.kd_w_pu, self.w_nom, self.alpha
+        h, kd, wb = self.h_s, self.kd_w_pu, self.w_nom
+        a1 = self.alpha * np.sin(angle_rad) * 0.5
+        a2 = self.alpha * np.cos(angle_rad) * 0.5
 
         A = np.array([
             [-kd/(2*h),  0,  0], # w_pu
@@ -119,22 +121,22 @@ class RotationalInertia2A:
         B = np.array([
         #   | p_ref | w_slack  | u_one |    p    |
             [1/(2*h), 0,        kd/(2*h), -1/(2*h)],
-            [      0, 0,        a,               0],
-            [      0, 0,        a,               0], 
+            [      0, 0,        a1,              0],
+            [      0, 0,        a2,              0], 
         ])
 
         H_sin = np.array([
         #   w*s | s^2 | c*s 
             [  0,   0,   0],
-            [  0,  -a,   0],
-            [-wb,  -a,   0]
+            [  0,  -a1,  0],
+            [-wb,  -a2,  0]
         ])
 
         H_cos = np.array([
         #   w*c | s*c | c^2 
             [ 0,   0,   0],
-            [wb,   0,  -a],
-            [ 0,   0,  -a]
+            [wb,   0, -a1],
+            [ 0,   0, -a2]
         ])
         H = np.hstack((Z, H_sin, H_cos))
 

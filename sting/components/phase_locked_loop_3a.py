@@ -121,7 +121,8 @@ class PhaseLockedLoop3A:
         v_bus_DQ = v_mag * np.exp(phase_rad * 1j)
 
         ki, kp, wb, tau = self.ki_rad2_s2, self.kp_rad_s, self.wbase, self.tau
-        a = self.alpha
+        a1 = self.alpha * np.sin(phase_rad) * 0.5
+        a2 = self.alpha * np.cos(phase_rad) * 0.5
 
         A = np.array([
             [-1/tau, 0, 0, 0], # v_filter_q
@@ -131,25 +132,25 @@ class PhaseLockedLoop3A:
         ])
 
         B = np.array([
-            [0,0,0,0,0],
-            [0,0,0,0,0],
-            [0,0,a,0,0],
-            [0,0,a,0,0]
+            [0,0, 0,0,0],
+            [0,0, 0,0,0],
+            [0,0,a1,0,0],
+            [0,0,a2,0,0]
         ])
 
         # Nonlinear dynamics of sin and cos "lifted" states
         H0 = np.zeros((4,4))
         H_sin = np.array([
-            [  0,  0, 0, 0],
-            [  0,  0, 0, 0],
-            [  0,  0,-a, 0],
-            [-kp, -1,-a, 0],
+            [  0,  0,  0, 0],
+            [  0,  0,  0, 0],
+            [  0,  0,-a1, 0],
+            [-kp, -1,-a2, 0],
         ])
         H_cos = np.array([
-            [  0,  0, 0, 0],
-            [  0,  0, 0, 0],
-            [ kp,  1, 0,-a],
-            [  0,  0, 0,-a],
+            [  0,  0, 0,  0],
+            [  0,  0, 0,  0],
+            [ kp,  1, 0,-a1],
+            [  0,  0, 0,-a2],
         ])
         H = np.hstack([H0, H0, H_sin, H_cos])
 
