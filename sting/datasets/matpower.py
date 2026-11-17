@@ -295,7 +295,7 @@ class MatpowerCase:
 
         return df
 
-    def generator_data(self, force_dispatch_tol=None):
+    def generator_data(self):
         """
         Parameters
         ----------
@@ -344,10 +344,6 @@ class MatpowerCase:
                 right_on="bus_i"
             )
             .rename({
-                "Qmax":"maximum_reactive_power_MVAR", 
-                "Qmin":"minimum_reactive_power_MVAR", 
-                "Pmax":"maximum_active_power_MW", 
-                "Pmin":"minimum_active_power_MW",
                 "mBase":"base_power_MVA",
                 "baseKV":"base_voltage_kV"}
                 )
@@ -357,22 +353,11 @@ class MatpowerCase:
             )
         )
 
-        if force_dispatch_tol:
-            df = (
-                df
-                .with_columns(
-                    maximum_reactive_power_MVAR = pl.col("Qg") + force_dispatch_tol,
-                    minimum_reactive_power_MVAR= pl.col("Qg") - force_dispatch_tol,
-                    maximum_active_power_MW= pl.col("Pg") + force_dispatch_tol,
-                    minimum_active_power_MW= pl.col("Pg") - force_dispatch_tol,
-                )
-            )
-
-        df = df.select("bus", "base_power_MVA", "minimum_active_power_MW", "maximum_active_power_MW", "minimum_reactive_power_MVAR", "maximum_reactive_power_MVAR", "base_frequency_Hz")
+        df = df.select("bus", "base_power_MVA", "base_frequency_Hz")
 
         return df
 
-    def to_system(self, generators=None, force_dispatch_tol=None, case_directory=None):
+    def to_system(self, generators=None, case_directory=None):
         from sting import main
         from sting.bus.core import Bus
         from sting.line.pi_model import LinePiModel
@@ -398,7 +383,7 @@ class MatpowerCase:
             system.add(ParallelRCShunt2A(**row))
 
         if generators is not None:
-            for gen, row in zip(generators, self.generator_data(force_dispatch_tol).iter_rows(named=True)):
+            for gen, row in zip(generators, self.generator_data().iter_rows(named=True)):
                 for attribute in row.keys():
                     # Transfer generator data from MATPOWER to each instance
                     setattr(gen, attribute, row[attribute])

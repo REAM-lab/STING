@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 from scipy.linalg import block_diag
+from scipy.sparse import csr_matrix
 #from sting.system.core import System
 from sting.utils.component_connections import get_ccm_matrices, build_ccm_permutation
 from sting.utils.matrix_tools import block_permute
@@ -150,9 +151,9 @@ class ModelReducer:
 
             # Only select inputs that are device-level OR from other subsystems
             inputs = zone_data.inputs[[j for j, k in enumerate(u_i) if k in w]] 
-
+            outputs = zone_data.outputs[np.where(zone_data.H)[1]]
             # Interconnect all zone models to create a single zonal model
-            zone_model = zone_data.interconnect(u=inputs, y=zone_data.outputs)
+            zone_model = zone_data.interconnect(u=inputs, y=outputs)
             zonal_models.append(zone_model)    
 
         # Update the system-level interconnection matrices (to remove intrazonal connections)
@@ -166,6 +167,63 @@ class ModelReducer:
         H = sys.H @ Y
 
         return ModelReducer(zonal_models, list(zone_model_map.keys()), F, G, H, sys.L, sys.model_type)
+
+    def mask_outputs(self, from_zones):
+        ##  Start by building F_minus  ##
+        # Sort all components by their zone
+        sys = self.sort()
+    
+        # Map each zone to the list of models in that zone
+        zone_model_map = defaultdict(ModelReducer)
+        for z, m in zip(sys.zones, sys.models):
+            zone_model_map[z].models.append(m)
+
+        # Number of subsystems/zones
+        s = len(zone_model_map)
+        # For each subsystem create a range to index u_stack and y_stack in F, G, and H
+        y_stack = np.cumsum([0] + [len(m.outputs) for m in zone_model_map.values()])
+        y = [range(y_stack[i-1], y_stack[i]) for i in range(1, s+1)]
+        u_stack = np.cumsum([0] + [len(m.inputs) for m in zone_model_map.values()])
+        u = [range(u_stack[i-1], u_stack[i]) for i in range(1, s+1)]
+    
+        # Select the block diagonal elements of F corresponding to each subsystem
+        diagF = [sys.F[u[i], :][:, y[i]] for i in range(s)]
+        F_minus = sys.F - block_diag(*diagF)
+
+        ##  Mask each components outputs in the H and L matrices  ##
+        # List of the index of new model outputs
+        y_masked= []
+        start_id = 0
+
+        for i, model in enumerate(sys.models):
+            n_outputs = len(model.y)
+            range_outputs = range(start_id, start_id + n_outputs)
+
+            # If the zones outputs should be masked
+            if sys.zones[i] in from_zones:
+                # Find all outputs that are inputs to another subsystem
+                _, cols = np.where(F_minus[:,range_outputs])
+                selected_outputs = np.unique(cols)
+                y_masked.extend(selected_outputs + start_id)
+
+            else:
+                # Otherwise use all outputs
+                y_masked.extend(range_outputs)
+            
+            start_id += n_outputs
+
+        # Finally, update the H and L matrices
+        m = len(y_masked)
+
+        Z = csr_matrix(
+            (np.ones(m), (np.arange(m), y_masked)),
+            shape=(m, start_id)
+        ).toarray()
+
+        H = Z @ sys.H
+        L = Z @ sys.L
+
+        return ModelReducer(sys.models, sys.zones, sys.F, sys.G, H, L, sys.model_type)
 
     def shift_to_equilibrium(self):
         models = [m.shift_to_equilibrium() for m in self.models]
