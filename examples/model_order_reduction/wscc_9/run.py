@@ -48,8 +48,8 @@ singular_perturbation = {zone_name: SingularPerturbation(r=r, basis="eigen")}
 interconnected_reduction = InterconnectedBalancedTruncation(r={zone_name:r}, method="singular perturbation")
 
 # Construct a reduced-order model (ROM).
-rom1 = main.run_model_reduction(system, balanced_truncation)
-rom2 = main.run_model_reduction(system, singular_perturbation)
+rom1 = main.run_model_reduction(system, balanced_truncation, zones_to_reduce=["external"])
+rom2 = main.run_model_reduction(system, singular_perturbation, zones_to_reduce=["external"])
 
 model_reducer = ModelReducer.from_system(system, "ssm").create_zonal_models()
 rom3 = interconnected_reduction.reduce(model_reducer).interconnect()

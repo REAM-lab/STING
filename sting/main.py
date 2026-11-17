@@ -341,6 +341,7 @@ def run_unit_commitment_with_initial_build(case_directory=os.getcwd(),
 def run_model_reduction(
         system:System,
         reducers:dict,
+        zones_to_reduce,
         model_type:str = "ssm"
         ):
     """
@@ -352,6 +353,7 @@ def run_model_reduction(
     sys_r = (
         ModelReducer
         .from_system(system, model_type)
+        .mask_outputs(zones_to_reduce)
         .create_zonal_models()
         .reduce_zonal_models(reducers)
         .interconnect()

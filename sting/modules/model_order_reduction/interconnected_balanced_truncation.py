@@ -71,4 +71,4 @@ class InterconnectedBalancedTruncation:
 
         # Return reduced order model
         F,G,H,L = model_reducer.connections
-        return ModelReducer(reduced_models, zones, F, G, H, L, model_reducer.model_class)        
+        return ModelReducer(reduced_models, zones, F, G, H, L, model_reducer.model_type)        
