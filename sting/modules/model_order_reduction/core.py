@@ -225,6 +225,45 @@ class ModelReducer:
 
         return ModelReducer(sys.models, sys.zones, sys.F, sys.G, H, L, sys.model_type)
 
+    def mask_inputs(self, indices):
+        masked_models = []
+        device_id = 0
+        input_id = 0
+        selected_u_stack = []
+
+        indices = []
+        u_device = np.array([i for m in self.models for i in m.u[m.u.type == "device"].name])
+
+        indices, = np.where([("ref" in u.split("_")) for u in u_device ])
+        
+        
+        for i, model in enumerate(self.models):
+            n_device = model.u.n_device
+            n_inputs = len(model.u)
+            # Get the inputs specified by the global selection
+            selected_inputs = indices[(indices >= device_id) & (indices < device_id + n_device)]
+            selected_inputs = selected_inputs - device_id
+            # Also include all grid-side inputs
+            grid_inputs, = np.where([ (u_type == "grid") for  u_type in list(model.u.type) ])
+
+            selected_inputs = np.union1d(grid_inputs, selected_inputs)
+
+            masked_models.append(model[:, selected_inputs])
+
+            device_id += n_device
+
+            selected_u_stack.extend(selected_inputs + input_id)
+
+            input_id += n_inputs
+
+        row_indices = np.array(selected_u_stack)
+
+        F = self.F[row_indices, :]
+        G = self.G[np.ix_(row_indices, indices)]
+        L = self.L[:, indices]
+
+        return ModelReducer(masked_models, self.zones, F, G, self.H, L, self.model_type)
+
     def shift_to_equilibrium(self):
         models = [m.shift_to_equilibrium() for m in self.models]
         return  ModelReducer(models, self.zones, self.F, self.G, self.H, self.L, self.model_type)

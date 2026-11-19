@@ -403,6 +403,7 @@ class StateSpaceModel:
             settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
             add_initial_conditions=True,
             use_jacobain=True,
+            timepoints=None,
             ):
 
         if x0 is None:
@@ -452,11 +453,11 @@ class StateSpaceModel:
         sol.wall_time = end_time - start_time
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
-        # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
-            tps = np.linspace(0, t_max, 500)
-            sol.y = sol.sol(tps)
-            sol.t = tps
+            if timepoints is None:
+                timepoints = np.linspace(0, t_max, 500)
+            sol.y = sol.sol(timepoints)
+            sol.t = timepoints
 
         sol.x = sol.y
         sol.u = np.array([func_u(t) for t in sol.t]).T
@@ -809,7 +810,9 @@ class QuadraticBilinearModel:
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
         settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
         shifted=False,
-        use_jacobian=True):
+        use_jacobian=True,
+        timepoints=None,
+        ):
 
         if shifted:
             x0 = np.zeros_like(self.x.init)
@@ -861,9 +864,10 @@ class QuadraticBilinearModel:
                         
         # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
-            tps = np.linspace(0, t_max, 500)
-            sol.y = sol.sol(tps)
-            sol.t = tps
+            if timepoints is None:
+                timepoints = np.linspace(0, t_max, 500)
+            sol.y = sol.sol(timepoints)
+            sol.t = timepoints
 
         sol.x = sol.y
         sol.u = np.array([inputs_to_sim(t, x) for t, x in zip(sol.t, sol.x.T)]).T

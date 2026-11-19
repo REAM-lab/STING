@@ -117,7 +117,7 @@ def run_qbm(case_directory = os.getcwd(), model_settings=None, solver_settings=N
 
     return sys, qbm
 
-def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None, ivp_settings=None):
+def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solver_settings=None, system=None, output_directory=None, ivp_settings=None, ivp_timepoints=None):
     """
     Routine to simulate the EMT dynamics of the system from a case study directory.
     """
@@ -139,7 +139,7 @@ def run_emt(t_max, inputs, case_directory=os.getcwd(), model_settings=None, solv
 
     # Run EMT simulation
     emt_sc = SimulationEMT(system=sys, output_directory=output_directory)
-    sol = emt_sc.sim(t_max, inputs, settings=ivp_settings)
+    sol = emt_sc.sim(t_max, inputs, settings=ivp_settings, timepoints=ivp_timepoints)
 
     return sys, sol
 

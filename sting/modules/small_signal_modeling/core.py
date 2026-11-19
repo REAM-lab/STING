@@ -171,7 +171,8 @@ class SmallSignalModel:
         t_max: float, 
         inputs: dict[str, dict[str, Callable[[float], float]]] = None, 
         settings={'dense_output': True, 'method': 'Radau', 'max_step': 0.001},
-        output_directory=None
+        output_directory=None, 
+        timepoints=None
         ):
         """Construction and solution of differential equations associated to system-level small-signal model."""
         if output_directory is None:
@@ -180,7 +181,7 @@ class SmallSignalModel:
         os.makedirs(output_directory, exist_ok=True)
 
         x0 = np.zeros_like(self.model.x.init)
-        sol = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings)
+        sol = self.model.simulate(t_max=t_max, inputs=inputs, x0=x0, settings=settings, timepoints=timepoints)
 
         logger.info(f" - Writing SSM simulation results in {output_directory}")
         sol.write_csv(output_directory)

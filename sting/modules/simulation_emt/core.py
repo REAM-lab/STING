@@ -281,7 +281,7 @@ class SimulationEMT:
             setattr(var_component, "time", time)
 
     @timeit
-    def sim(self, t_max, inputs, settings=None, components_to_plot=None):
+    def sim(self, t_max, inputs, settings=None, components_to_plot=None, timepoints=None):
         """
         Run the EMT simulation for the system.
         """
@@ -325,11 +325,12 @@ class SimulationEMT:
         
         # Define timepoints that will be used to evaluate the solution of the ODEs
         if settings['dense_output']:
-            tps = np.linspace(0, t_max, 500)
-            ans = solution.sol(tps)
+            if timepoints is None:
+                timepoints = np.linspace(0, t_max, 500)
+            ans = solution.sol(timepoints)
 
         # Set the value of the EMT variables based on the solution of the ODEs
-        self.set_value(tps, ans, "x")    
+        self.set_value(timepoints, ans, "x")    
 
         self.write_results_csv(components=components_to_plot)
         # self.plot_results(components=components_to_plot)
